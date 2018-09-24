@@ -1,0 +1,6 @@
+# ignoring objects
+*.o
+*.d
+# ignoring binaries
+*.elf
+*.hex
