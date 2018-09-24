@@ -67,7 +67,7 @@ String::String(unsigned char c)
 {
 	init();
 	char buf[4];
-	utoa(c, buf, 10);
+	// utoa(c, buf, 10);
 	*this = buf;
 }
 
@@ -75,7 +75,7 @@ String::String(const int value, unsigned char base)
 {
 	init();
 	char buf[18];
-	itoa(value, buf, base);
+	// itoa(value, buf, base);
 	*this = buf;
 }
 
@@ -83,7 +83,7 @@ String::String(unsigned int value, unsigned char base)
 {
 	init();
 	char buf[17];
-  	utoa(value, buf, base);
+  	// utoa(value, buf, base);
 	*this = buf;
 }
 
@@ -249,7 +249,7 @@ String & String::append(const char *cstr, unsigned int length)
 {
 	unsigned int newlen = len + length;
 	bool self = false;
-	unsigned int buffer_offset; 
+	unsigned int buffer_offset;
 	if ( (cstr >= buffer) && (cstr < (buffer+len) ) ) {
 		self = true;
 		buffer_offset = (unsigned int)(cstr-buffer);
@@ -315,7 +315,7 @@ String & String::append(unsigned long num)
 String & String::append(float num)
 {
 	char buf[30];
-	dtostrf(num, 4, 2, buf); 
+	dtostrf(num, 4, 2, buf);
 	append(buf, strlen(buf));
 	return *this;
 }
@@ -458,7 +458,7 @@ unsigned char String::equalsIgnoreCase( const String &s2 ) const
 	const char *p2 = s2.buffer;
 	while (*p1) {
 		if (tolower(*p1++) != tolower(*p2++)) return 0;
-	} 
+	}
 	return 1;
 }
 
@@ -489,7 +489,7 @@ char String::charAt(unsigned int loc) const
 	return operator[](loc);
 }
 
-void String::setCharAt(unsigned int loc, char c) 
+void String::setCharAt(unsigned int loc, char c)
 {
 	if (loc < len) buffer[loc] = c;
 }
@@ -603,7 +603,7 @@ String String::substring(unsigned int left, unsigned int right) const
 	if (left > len) return out;
 	if (right > len) right = len;
 	char temp = buffer[right];  // save the replaced character
-	buffer[right] = '\0';	
+	buffer[right] = '\0';
 	out = buffer + left;  // pointer arithmetic
 	buffer[right] = temp;  //restore character
 	return out;
@@ -732,5 +732,3 @@ float String::toFloat(void) const
 	if (buffer) return strtof(buffer, (char **)NULL);
 	return 0.0;
 }
-
-
