@@ -166,7 +166,7 @@ voidFuncPtr isr_table_portE[CORE_MAX_PIN_PORTE+1] = { [0 ... CORE_MAX_PIN_PORTE]
 
 // The Pin Config Register is used to look up the correct interrupt table
 // for the corresponding port.
-inline voidFuncPtr* getIsrTable(volatile uint32_t *config) {
+static voidFuncPtr* getIsrTable(volatile uint32_t *config) {
 	voidFuncPtr* isr_table = NULL;
 	if(&PORTA_PCR0 <= config && config <= &PORTA_PCR31) isr_table = isr_table_portA;
 	else if(&PORTB_PCR0 <= config && config <= &PORTB_PCR31) isr_table = isr_table_portB;
@@ -450,7 +450,7 @@ extern void usb_init(void);
 
 #if F_CPU > 16000000
 #define F_TIMER (F_PLL/2)
-#else 
+#else
 #define F_TIMER (F_PLL)
 #endif//Low Power
 
@@ -945,7 +945,7 @@ void analogWriteFrequency(uint8_t pin, float frequency)
 	}
 #endif
 
-	
+
 	for (prescale = 0; prescale < 7; prescale++) {
 		minfreq = (float)(ftmClock >> prescale) / 65536.0f;	//Use ftmClock instead of F_TIMER
 		if (frequency >= minfreq) break;
@@ -1259,7 +1259,7 @@ uint32_t pulseIn_low(volatile uint8_t *reg, uint32_t timeout)
 {
 	uint32_t timeout_count = timeout * PULSEIN_LOOPS_PER_USEC;
 	uint32_t usec_start, usec_stop;
-	
+
 	// wait for any previous pulse to end
 	while (!*reg) {
 		if (--timeout_count == 0) return 0;
@@ -1312,7 +1312,7 @@ uint32_t pulseIn_low(volatile uint8_t *reg, uint8_t mask, uint32_t timeout)
 {
 	uint32_t timeout_count = timeout * PULSEIN_LOOPS_PER_USEC;
 	uint32_t usec_start, usec_stop;
-	
+
 	// wait for any previous pulse to end
 	while (!(*reg & mask)) {
 		if (--timeout_count == 0) return 0;

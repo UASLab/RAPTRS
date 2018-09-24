@@ -20,10 +20,10 @@ COREPATH = core
 LIBRARYPATH = libraries
 
 # path location for Teensy Loader, teensy_post_compile and teensy_reboot
-TOOLSPATH = $(CURDIR)/tools
+TOOLSPATH = $(CURDIR)/../tools
 
 # path location for the arm-none-eabi compiler
-COMPILERPATH = $(CURDIR)/tools/arm/bin
+COMPILERPATH = $(CURDIR)/../tools/arm/bin
 
 UNIX_TIME = $(shell date '+%s')
 
@@ -46,7 +46,7 @@ LIBS = -lm -lstdc++
 CPPFLAGS += -D__MK66FX1M0__ -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
 LDSCRIPT = $(COREPATH)/mk66fx1m0.ld
 LDFLAGS += -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(LDSCRIPT)
-LIBS += -larm_cortexM4lf_math -L$(abspath $(CURDIR)/tools)
+LIBS += -larm_cortexM4lf_math -L$(abspath $(CURDIR)/../tools)
 
 # set arduino define if given
 ARDUINO = 10803

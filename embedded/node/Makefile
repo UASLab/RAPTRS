@@ -20,18 +20,18 @@ COREPATH = core
 LIBRARYPATH = libraries
 
 # path location for Teensy Loader, teensy_post_compile and teensy_reboot
-TOOLSPATH = $(CURDIR)/tools
+TOOLSPATH = $(CURDIR)/../tools
 
 # path location for the arm-none-eabi compiler
-COMPILERPATH = /usr/bin
+COMPILERPATH = $(CURDIR)/../tools/arm/bin
 
 UNIX_TIME = $(shell date '+%s')
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os  -Wno-psabi -mthumb -ffunction-sections -fdata-sections -nostdlib -MMD $(OPTIONS) -DTEENSYDUINO=138 -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
+CPPFLAGS = -g -Os -Wno-psabi -mthumb -ffunction-sections -fdata-sections -nostdlib -MMD $(OPTIONS) -DTEENSYDUINO=138 -DF_CPU=$(TEENSY_CORE_SPEED) -Isrc -I$(COREPATH)
 
 # compiler options for C++ only
-CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
+CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti -std=c++17
 
 # compiler options for C only
 CFLAGS =
@@ -40,13 +40,13 @@ CFLAGS =
 LDFLAGS = -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(UNIX_TIME)
 
 # additional libraries to link
-LIBS = -lm
+LIBS = -lm -lstdc++
 
 # compiler options
 CPPFLAGS += -D__MK66FX1M0__ -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16
 LDSCRIPT = $(COREPATH)/mk66fx1m0.ld
 LDFLAGS += -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(LDSCRIPT)
-LIBS += -larm_cortexM4lf_math -L$(abspath $(CURDIR)/tools)
+LIBS += -larm_cortexM4lf_math -L$(abspath $(CURDIR)/../tools)
 
 # set arduino define if given
 ARDUINO = 10803
