@@ -42,6 +42,7 @@
 *.o
 *.d
 # binary files
+soc/bin/
 *.hex
 *.elf
 
