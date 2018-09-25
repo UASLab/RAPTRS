@@ -27,7 +27,7 @@ TARGET_FILT := filter-test
 TARGET_TELEM := telemetry-server
 
 # compiler
-CXX := arm-linux-gnueabihf-g++-7
+CXX := arm-linux-gnueabihf-g++-8
 
 # cxx flags
 override CXXFLAGS += -std=c++17 -O3 -Wno-psabi -I includes/
@@ -63,7 +63,13 @@ sensor-processing.o \
 fmu.o \
 configuration.o \
 definition-tree.o \
-flightcode.o
+flightcode.o \
+netBuffer.o \
+netChannel.o \
+netChat.o \
+netSocket.o \
+strutils.o \
+telnet.o
 
 # datalog server objects
 OBJECTS_DATALOG := \

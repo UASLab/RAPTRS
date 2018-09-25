@@ -57,6 +57,7 @@ class DefinitionTree {
     void GetMember(std::string Name,struct VariableDefinition *VariableDefinitionPtr);
     size_t Size(std::string Name);
     void GetKeys(std::string Name,std::vector<std::string> *KeysPtr);
+    void GetChildren(std::string Name,std::vector<std::string> *KeysPtr);
     void PrettyPrint(std::string Prefix);
     void Erase(std::string Name);
     void Clear();
