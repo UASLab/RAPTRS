@@ -64,12 +64,10 @@ fmu.o \
 configuration.o \
 definition-tree.o \
 flightcode.o \
-netBuffer.o \
-netChannel.o \
-netChat.o \
-netSocket.o \
-strutils.o \
-telnet.o
+wgs84.o \
+waypoint.o \
+route.o \
+route_mgr.o
 
 # datalog server objects
 OBJECTS_DATALOG := \

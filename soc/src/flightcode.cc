@@ -29,8 +29,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "effector.hxx"
 #include "telemetry.hxx"
 #include "datalog.hxx"
-#include "netSocket.h"
-#include "telnet.hxx"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -125,13 +123,6 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
   std::cout << "Entering main loop." << std::endl;
 
-  netInit();                    // do this before creating telnet instance
-  UGTelnet telnet( 6500, &GlobalData );
-  telnet.open();
-  std::cout << "Telnet interface opened on port 6500" << std::endl;
-  
-  GlobalData.PrettyPrint("/");
-
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
@@ -181,7 +172,6 @@ std::cout << CtrlEngaged << "\t" << tempMPU << "\t" << vCellMin << "\t" << cmdGe
       Telemetry.Send();
       // run datalog
       Datalog.LogBinaryData();
-      telnet.process();
     }
   }
 	return 0;
