@@ -22,13 +22,78 @@
 
 #include "messages.h"
 
-void pack_fmu_config(struct fmu_config *unpacked, struct msg_fmu_config *packed)
+#define MSG_MAX_LEN 100
+#define MSG_I2C_HEADER_LEN 6
+#define MSG_SERIAL_HEADER_LEN 8
+#define MSG_CHECKSUM_LEN 2
+
+unsigned int msg_packed_len[NUM_MSG_ID] = {};
+unsigned int msg_unpacked_len[NUM_MSG_ID] = {};
+void (*pack_msg[NUM_MSG_ID]) (void *unpacked,void *packed) = {
+  pack_fmu_config
+};
+void (*unpack_msg[NUM_MSG_ID]) (void *packed,void *unpacked) = {
+  pack_fmu_config
+};
+
+unsigned char *msg_build_i2c(unsigned int hash,MsgId_t msg,void *payload)
+{
+  static unsigned char tx_buffer[MSG_MAX_LEN + MSG_I2C_HEADER_LEN + MSG_CHECKSUM_LEN];
+  static unsigned char packed_buffer[MSG_MAX_LEN];
+  unsigned short checksum;
+  if (!payload) {return NULL;}
+  /* hash */
+  tx_buffer[0] = hash & 0xFF;
+  tx_buffer[1] = (hash >> 8) & 0xFF;
+  tx_buffer[2] = (hash >> 16) & 0xFF;
+  tx_buffer[3] = (hash >> 24) & 0xFF;
+  /* msg length */
+  tx_buffer[4] = ((unsigned short) msg) & 0xFF;
+  tx_buffer[5] = (((unsigned short) msg) >> 8) & 0xFF;
+  /* pack the payload */
+  (*pack_msg[msg])(payload,(void *)packed_buffer);
+  memcpy(tx_buffer + MSG_I2C_HEADER_LEN,packed_buffer,msg_packed_len[msg]);
+  /* checksum */
+  checksum = fletcher16(tx_buffer,MSG_I2C_HEADER_LEN + msg_packed_len[msg]);
+  tx_buffer[MSG_I2C_HEADER_LEN + msg_packed_len[msg]] = checksum & 0xFF;
+  tx_buffer[MSG_I2C_HEADER_LEN + msg_packed_len[msg] + 1] = (checksum >> 8) & 0xFF;
+  return tx_buffer; 
+}
+
+unsigned char *msg_build_serial(unsigned int hash,MsgId_t msg,void *payload)
+{
+  static unsigned char tx_buffer[MSG_MAX_LEN + MSG_SERIAL_HEADER_LEN + MSG_CHECKSUM_LEN];
+  static unsigned char packed_buffer[MSG_MAX_LEN];
+  unsigned short checksum;
+  if (!payload) {return NULL;}
+  /* header */
+  tx_buffer[0] = 0x42;
+  tx_buffer[1] = 0x46;
+  /* hash */
+  tx_buffer[2] = hash & 0xFF;
+  tx_buffer[3] = (hash >> 8) & 0xFF;
+  tx_buffer[4] = (hash >> 16) & 0xFF;
+  tx_buffer[5] = (hash >> 24) & 0xFF;
+  /* msg length */
+  tx_buffer[6] = ((unsigned short) msg) & 0xFF;
+  tx_buffer[7] = (((unsigned short) msg) >> 8) & 0xFF;
+  /* pack the payload */
+  (*pack_msg[msg])(payload,(void *)packed_buffer);
+  memcpy(tx_buffer + MSG_SERIAL_HEADER_LEN,packed_buffer,msg_packed_len[msg]);
+  /* checksum */
+  checksum = fletcher16(tx_buffer,MSG_SERIAL_HEADER_LEN + msg_packed_len[msg]);
+  tx_buffer[MSG_SERIAL_HEADER_LEN + msg_packed_len[msg]] = checksum & 0xFF;
+  tx_buffer[MSG_SERIAL_HEADER_LEN + msg_packed_len[msg] + 1] = (checksum >> 8) & 0xFF;
+  return tx_buffer;  
+}
+
+void pack_fmu_config(void *unpacked, void *packed)
 {
   if ((unpacked) && (packed)) {
-    packed->srd           = unpacked->srd;
-    packed->rot_yaw_rad   = unpacked->rot_yaw_rad * 511.5f / M_PI + 511.5f;
-    packed->rot_roll_rad  = unpacked->rot_roll_rad * 511.5f / M_PI + 511.5f;
-    packed->rot_pitch_rad = unpacked->rot_pitch_rad * 511.5f / M_PI + 255.5f;
+    ((struct msg_fmu_config *) packed)->srd           = ((struct fmu_config *) unpacked)->srd;
+    ((struct msg_fmu_config *) packed)->rot_yaw_rad   = ((struct fmu_config *) unpacked)->rot_yaw_rad * 511.5f / M_PI + 511.5f;
+    ((struct msg_fmu_config *) packed)->rot_roll_rad  = ((struct fmu_config *) unpacked)->rot_roll_rad * 511.5f / M_PI + 511.5f;
+    ((struct msg_fmu_config *) packed)->rot_pitch_rad = ((struct fmu_config *) unpacked)->rot_pitch_rad * 511.5f / M_PI + 255.5f;
   }
 }
 

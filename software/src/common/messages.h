@@ -23,6 +23,7 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
+#include "checksum.h"
 #include "array_macros.h"
 #include "global_defs.h"
 #include "math.h"
@@ -43,6 +44,40 @@ extern "C" {
 * while data messages are common for each type (i.e. static pressure).
 * All units are SI units where appropriate.
 */
+
+enum MessageIds {
+  MSG_FMU_CFG,
+  MSG_INT_MPU9250_CFG,
+  MSG_INT_BME280_CFG,
+  MSG_MPU9250_CFG,
+  MSG_BME280_CFG,
+  MSG_UBLOX_CFG,
+  MSG_SBUS_CFG,
+  MSG_SWIFT_CFG,
+  MSG_AMS5915_CFG,
+  MSG_ANALOG_CFG,
+  MSG_DIGITAL_CFG,
+  MSG_VOLTAGE_CFG,
+  MSG_TIME_DATA,
+  MSG_ACCEL_DATA,
+  MSG_GYRO_DATA,
+  MSG_MAG_DATA,
+  MSG_INCEPTOR_DATA,
+  MSG_TEMPERATURE_DATA,
+  MSG_GNSS_DATA,
+  MSG_STATIC_PRESS_DATA,
+  MSG_DIFF_PRESS_DATA,
+  MSG_ANALOG_DATA,
+  MSG_DIGITAL_DATA,
+  MSG_VOLTAGE_DATA,
+  NUM_MSG_ID
+};
+typedef enum MessageIds MsgId_t;
+
+unsigned char *msg_build_i2c(unsigned int hash,MsgId_t msg,void *payload);
+void *msg_parse_i2c(unsigned char *buffer,unsigned int *hash,MsgId_t *msg);
+unsigned char *msg_build_serial(unsigned int hash,MsgId_t msg,void *payload);
+void *msg_parse_serial(unsigned char byte,unsigned int *hash,MsgId_t *msg);
 
 #pragma pack(push,1)
 
@@ -389,7 +424,7 @@ struct msg_voltage_data {
 /*
 * Functions to convert the unpacked structures to the packed structures and back
 */
-void pack_fmu_config(struct fmu_config *unpacked, struct msg_fmu_config *packed);
+void pack_fmu_config(void *unpacked, void *packed);
 void unpack_fmu_config(struct msg_fmu_config *packed, struct fmu_config *unpacked);
 void pack_int_mpu9250_config(struct int_mpu9250_config *unpacked, struct msg_int_mpu9250_config *packed);
 void unpack_int_mpu9250_config(struct msg_int_mpu9250_config *packed, struct int_mpu9250_config *unpacked);
