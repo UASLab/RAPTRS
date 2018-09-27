@@ -25,10 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "control.h"
 #include "mission.h"
 #include "sensors.h"
-#include "../common/ArduinoJson.h"
+#include "ArduinoJson.h"
 #include "hardware-defs.h"
 #include "definition-tree.h"
-#include "../common/EEPROM.h"
+#include "EEPROM.h"
 #include "Arduino.h"
 
 class AircraftConfiguration {

@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "Arduino.h"
 #include "definition-tree.h"
-#include "../common/ArduinoJson.h"
+#include "ArduinoJson.h"
 #include <memory>
 
 class ControlFunctionClass {

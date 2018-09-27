@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef HARDWARE_DEFS_H_
 #define HARDWARE_DEFS_H_
 
-#include "../common/i2c_t3.h"
+#include "i2c_t3.h"
 #include "Arduino.h"
 
 // FMU Software Version

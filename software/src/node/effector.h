@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EFFECTOR_H_
 
 #include "Arduino.h"
-#include "../common/ArduinoJson.h"
-#include "../common/SBUS.h"
+#include "ArduinoJson.h"
+#include "SBUS.h"
 #include "hardware-defs.h"
 #include "utils.h"
 #include <memory>

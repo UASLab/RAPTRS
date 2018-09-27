@@ -23,8 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define COMMS_H_
 
 #include "mission.h"
-#include "../common/Vector.h"
-#include "../common/i2c_t3.h"
+#include "Vector.h"
+#include "i2c_t3.h"
 #include "Arduino.h"
 
 class AircraftSocComms {

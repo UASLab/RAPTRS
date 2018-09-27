@@ -21,19 +21,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef SENSORS_H_
 #define SENSORS_H_
 
-#include "../common/AMS5915.h"
-#include "../common/BME280.h"
-#include "../common/MPU9250.h"
-#include "../common/SBUS.h"
-#include "../common/UBLOX.h"
+#include "AMS5915.h"
+#include "BME280.h"
+#include "MPU9250.h"
+#include "SBUS.h"
+#include "UBLOX.h"
 #include "utils.h"
 #include "hardware-defs.h"
-#include "../common/ArduinoJson.h"
-#include "../common/Vector.h"
-#include "../common/Eigen.h"
-#include "../common/EEPROM.h"
-#include "../common/i2c_t3.h"
-#include "../common/SPI.h"
+#include "ArduinoJson.h"
+#include "Vector.h"
+#include "Eigen.h"
+#include "EEPROM.h"
+#include "i2c_t3.h"
+#include "SPI.h"
 #include "Arduino.h"
 
 /* class for external MPU-9250 sensors */

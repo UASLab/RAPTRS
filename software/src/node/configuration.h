@@ -21,11 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#include "../common/ArduinoJson.h"
+#include "ArduinoJson.h"
 #include "effector.h"
 #include "sensors.h"
 #include "hardware-defs.h"
-#include "../common/EEPROM.h"
+#include "EEPROM.h"
 #include "Arduino.h"
 
 class AircraftConfiguration {

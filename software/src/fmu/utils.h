@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef UTILS_H_
 #define UTILS_H_
 
-#include "../common/Vector.h"
+#include "Vector.h"
 #include "Arduino.h"
 
 uint64_t micros_64();

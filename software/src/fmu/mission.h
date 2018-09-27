@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "effector.h"
 #include "control.h"
 #include "sensors.h"
-#include "../common/ArduinoJson.h"
+#include "ArduinoJson.h"
 #include "Arduino.h"
 
 class AircraftMission {
