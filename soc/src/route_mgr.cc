@@ -178,13 +178,7 @@ void FGRouteMgr::update() {
 
     } else {
         // FIXME: we've been commanded to follow a route, but no route
-        // has been defined.
-
-        // We are in ill-defined territory, should we do some sort of
-        // circle of our home position?
-
-	// FIXME: need to go to circle mode somehow here!!!!
-	/* mission_mgr.request_task_circle(); */
+        // has been defined.  Assert something?  Print a warning message?
     }
 
     // route_node.setDouble( "wp_dist_m", direct_distance );
