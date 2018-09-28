@@ -39,8 +39,7 @@
 *.h5
 *.mat
 # object files
-*.o
-*.d
+software/obj/
 # binary files
 software/bin/
 *.hex
