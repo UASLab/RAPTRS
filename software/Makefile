@@ -63,6 +63,8 @@ SOC_FLIGHT = src/soc/flight
 SOC_DATALOG = src/soc/log
 # soc telemetry code
 SOC_TELEM = src/soc/telem
+# soc surface cal code
+SOC_SURF_CAL = src/soc/cal
 #soc common code 
 SOC_COMMON = src/soc/common
 # fmu
@@ -97,6 +99,8 @@ soc_datalog_c_files = $(wildcard $(SOC_DATALOG)/*.c)
 soc_datalog_cpp_files = $(wildcard $(SOC_DATALOG)/*.cpp)
 soc_telem_c_files = $(wildcard $(SOC_TELEM)/*.c)
 soc_telem_cpp_files = $(wildcard $(SOC_TELEM)/*.cpp)
+soc_surf_cal_c_files = $(wildcard $(SOC_SURF_CAL)/*.c)
+soc_surf_cal_cpp_files = $(wildcard $(SOC_SURF_CAL)/*.cpp)
 soc_common_c_files = $(wildcard $(SOC_COMMON)/*.c)
 soc_common_cpp_files = $(wildcard $(SOC_COMMON)/*.cpp)
 fmu_c_files = $(wildcard $(FMU)/*.c)
@@ -115,6 +119,7 @@ node_core_cpp_files = $(wildcard $(NODE_CORE)/*.cpp)
 soc_flight_src = $(soc_flight_c_files:.c=.o) $(soc_flight_cpp_files:.cpp=.o) $(soc_common_src)
 soc_datalog_src = $(soc_datalog_c_files:.c=.o) $(soc_datalog_cpp_files:.cpp=.o) $(soc_common_src)
 soc_telem_src = $(soc_telem_c_files:.c=.o) $(soc_telem_cpp_files:.cpp=.o) $(soc_common_src)
+soc_surf_cal_src = $(soc_surf_cal_c_files:.c=.o) $(soc_surf_cal_cpp_files:.cpp=.o) $(soc_common_src)
 soc_common_src = $(soc_common_c_files:.c=.o) $(soc_common_cpp_files:.cpp=.o)
 fmu_src = $(fmu_c_files:.c=.o) $(fmu_cpp_files:.cpp=.o) $(common_src) $(arduino_src) $(fmu_core_src)
 node_src = $(node_c_files:.c=.o) $(node_cpp_files:.cpp=.o) $(common_src) $(arduino_src) $(node_core_src)
@@ -126,6 +131,7 @@ node_core_src = $(node_core_c_files:.c=.o) $(node_core_cpp_files:.cpp=.o)
 soc_flight_obj = $(foreach src,$(soc_flight_src), $(BUILD)/$(SOC_ARCH)/$(src))
 soc_datalog_obj = $(foreach src,$(soc_datalog_src), $(BUILD)/$(SOC_ARCH)/$(src))
 soc_telem_obj = $(foreach src,$(soc_telem_src), $(BUILD)/$(SOC_ARCH)/$(src))
+soc_surf_cal_obj = $(foreach src,$(soc_surf_cal_src), $(BUILD)/$(SOC_ARCH)/$(src))
 fmu_obj = $(foreach src,$(fmu_src), $(BUILD)/$(FMU_ARCH)/$(src))
 node_obj = $(foreach src,$(node_src), $(BUILD)/$(NODE_ARCH)/$(src))
 # --- Compiler ---
@@ -153,6 +159,7 @@ NODE_LDSCRIPT = $(NODE_CORE)/mk66fx1m0.ld
 NODE_LDFLAGS =  -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(NODE_LDSCRIPT)  
 NODE_LIBS = -larm_cortexM4lf_math -lm -lstdc++ -L$(TOOLS)
 # --- Rules ---
+.PHONY: all flight datalog telem fmu node fmu_build node_build soc_flight soc_datalog soc_telem fmu_hex node_hex post_compile_fmu post_compile_node reboot upload_fmu upload_node display clean
 all: soc_flight soc_datalog soc_telem fmu_hex node_hex display
 
 flight: soc_flight display
@@ -160,6 +167,8 @@ flight: soc_flight display
 datalog: soc_datalog display
 
 telem: soc_telem display
+
+surf_cal: soc_surf_cal display
 
 fmu: fmu_hex display
 
@@ -174,6 +183,8 @@ soc_flight: $(BIN)/flight
 soc_datalog: $(BIN)/datalog-server
 
 soc_telem: $(BIN)/telem-server
+
+soc_surf_cal: $(BIN)/surf_cal
 
 fmu_hex: $(BIN)/fmu.hex
 
@@ -236,6 +247,11 @@ $(BIN)/telem-server: $(soc_telem_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
 	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_telem_obj)
+
+$(BIN)/surf_cal: $(soc_surf_cal_obj)
+	@echo -e "[CXX]\t$<"
+	@mkdir -p "$(dir $@)"
+	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_surf_cal_obj)
 
 $(BIN)/fmu.elf: $(fmu_obj) $(FMU_LDSCRIPT)
 	@echo -e "[LD]\t$@"
