@@ -167,14 +167,13 @@ float refV_ms = *GlobalData.GetValuePtr<float*>("/Control/refV_ms");
 float refH_m = *GlobalData.GetValuePtr<float*>("/Control/refH_m");
 
 float cmdMotor_nd = *GlobalData.GetValuePtr<float*>("/Control/cmdMotor_nd");
-float cmdGear_nd = *GlobalData.GetValuePtr<float*>("/Control/cmdGear_nd");
 //
 std::string CtrlEngaged = Mission.GetEngagedController();
 
 float tempMPU = *GlobalData.GetValuePtr<float*>("/Sensors/Fmu/Mpu9250/Temperature_C");
 float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
 
-std::cout << CtrlEngaged << "\t" << tempMPU << "\t" << vCellMin << "\t" << cmdGear_nd << "\t" << cmdMotor_nd << "\t" << refV_ms << "\t" << refH_m << std::endl;
+std::cout << CtrlEngaged << "\t" << tempMPU << "\t" << vCellMin << "\t" << cmdMotor_nd << "\t" << refV_ms << "\t" << refH_m << std::endl;
 
       }
       // run telemetry
