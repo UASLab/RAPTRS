@@ -1,5 +1,5 @@
 
-#include "inclinometer.hxx"
+#include "inclinometer.h"
 
 Incline::Incline() {
   OpenPort();

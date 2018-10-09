@@ -2,20 +2,20 @@
 
 */
 
-#include "hardware-defs.hxx"
-#include "definition-tree.hxx"
-#include "configuration.hxx"
-#include "fmu.hxx"
+#include "hardware-defs.h"
+#include "definition-tree.h"
+#include "configuration.h"
+#include "fmu.h"
 // #include "sensor-processing.hxx"
 // #include "mission.hxx"
 // #include "control.hxx"
 // #include "excitation.hxx"
-#include "effector.hxx"
+#include "effector.h"
 // #include "datalog.hxx"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "inclinometer.hxx"
+#include "inclinometer.h"
 
 #include <Eigen/Dense>
 
@@ -75,30 +75,30 @@ int main(int argc, char* argv[]) {
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration,&GlobalData);
   std::cout << "\tdone!" << std::endl;
-  if (AircraftConfiguration.HasMember("Sensor-Processing")) {
-    std::cout << "\tConfiguring sensor processing..." << std::flush;
-    SenProc.Configure(AircraftConfiguration["Sensor-Processing"],&GlobalData);
-    std::cout << "done!" << std::endl;
-    if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
-      std::cout << "\tConfiguring mission manager..." << std::flush;
-      Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
-      std::cout << "done!" << std::endl;
-      std::cout << "\tConfiguring control laws..." << std::flush;
-      Control.Configure(AircraftConfiguration["Control"],&GlobalData);
-      std::cout << "done!" << std::endl;
-      std::cout << "\tConfiguring effectors..." << std::flush;
-      Effectors.Configure(AircraftConfiguration["Effectors"],&GlobalData);
-      std::cout << "done!" << std::endl;
-      if (AircraftConfiguration.HasMember("Excitation")) {
-        std::cout << "\tConfiguring excitations..." << std::flush;
-        Excitation.Configure(AircraftConfiguration["Excitation"],&GlobalData);
-        std::cout << "done!" << std::endl;
-      }
-    }
-  }
-  std::cout << "\tConfiguring datalog..." << std::flush;
-  Datalog.RegisterGlobalData(GlobalData);
-  std::cout << "done!" << std::endl;
+  // if (AircraftConfiguration.HasMember("Sensor-Processing")) {
+  //   std::cout << "\tConfiguring sensor processing..." << std::flush;
+  //   SenProc.Configure(AircraftConfiguration["Sensor-Processing"],&GlobalData);
+  //   std::cout << "done!" << std::endl;
+  //   if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
+  //     std::cout << "\tConfiguring mission manager..." << std::flush;
+  //     Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
+  //     std::cout << "done!" << std::endl;
+  //     std::cout << "\tConfiguring control laws..." << std::flush;
+  //     Control.Configure(AircraftConfiguration["Control"],&GlobalData);
+  //     std::cout << "done!" << std::endl;
+  //     std::cout << "\tConfiguring effectors..." << std::flush;
+  //     Effectors.Configure(AircraftConfiguration["Effectors"],&GlobalData);
+  //     std::cout << "done!" << std::endl;
+  //     if (AircraftConfiguration.HasMember("Excitation")) {
+  //       std::cout << "\tConfiguring excitations..." << std::flush;
+  //       Excitation.Configure(AircraftConfiguration["Excitation"],&GlobalData);
+  //       std::cout << "done!" << std::endl;
+  //     }
+  //   }
+  // }
+  // std::cout << "\tConfiguring datalog..." << std::flush;
+  // Datalog.RegisterGlobalData(GlobalData);
+  // std::cout << "done!" << std::endl;
 
   // Define Delays
   int DelayMove = 2000000; // delay for 2 second after servo move
