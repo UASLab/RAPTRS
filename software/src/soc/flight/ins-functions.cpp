@@ -18,6 +18,10 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 #include "ins-functions.h"
 
 void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
@@ -210,6 +214,7 @@ void Ekf15StateIns::Initialize() {
     uNavINS_.update(*config_.t,*config_.GpsTow,*config_.GpsVn,*config_.GpsVe,*config_.GpsVd,*config_.GpsLat,*config_.GpsLon,*config_.GpsAlt,*config_.ImuGx,*config_.ImuGy,*config_.ImuGz,*config_.ImuAx,*config_.ImuAy,*config_.ImuAz,*config_.ImuHx,*config_.ImuHy,*config_.ImuHz);
     if (uNavINS_.initialized()) {
       Initialized_ = true;
+      cout << "EKF INITIALIZED" << endl;
     }
   }
 }
@@ -231,6 +236,7 @@ void Ekf15StateIns::Run(Mode mode) {
     data_.Pitch = uNavINS_.getPitch_rad();
     data_.Roll = uNavINS_.getRoll_rad();
     data_.Yaw = uNavINS_.getYaw_rad();
+    // cout << "ekf: " << data_.Roll << " " << data_.Pitch << " " << data_.Yaw << endl;
     data_.Heading = uNavINS_.getHeading_rad();
     data_.Track = uNavINS_.getGroundTrack_rad();
     data_.Lat = uNavINS_.getLatitude_rad();
