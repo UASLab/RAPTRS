@@ -41,6 +41,7 @@
 # "make flight" builds the soc flight software
 # "make datalog" builds the soc datalog-server software
 # "make telem" builds the soc telem-server software
+# "make surf_cal" builds the soc surf_cal software
 # "make fmu" builds the fmu software
 # "make node" builds the node software
 # "make upload_fmu" uploads the fmu software
@@ -159,8 +160,8 @@ NODE_LDSCRIPT = $(NODE_CORE)/mk66fx1m0.ld
 NODE_LDFLAGS =  -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(NODE_LDSCRIPT)  
 NODE_LIBS = -larm_cortexM4lf_math -lm -lstdc++ -L$(TOOLS)
 # --- Rules ---
-.PHONY: all flight datalog telem fmu node fmu_build node_build soc_flight soc_datalog soc_telem fmu_hex node_hex post_compile_fmu post_compile_node reboot upload_fmu upload_node display clean
-all: soc_flight soc_datalog soc_telem fmu_hex node_hex display
+.PHONY: all flight datalog telem surf_cal fmu node fmu_build node_build soc_flight soc_datalog soc_telem fmu_hex node_hex post_compile_fmu post_compile_node reboot upload_fmu upload_node display clean
+all: soc_flight soc_datalog soc_telem soc_surf_cal fmu_hex node_hex display
 
 flight: soc_flight display
 
