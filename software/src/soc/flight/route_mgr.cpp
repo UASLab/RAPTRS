@@ -14,7 +14,7 @@ static float *vn_ptr = NULL;
 static float *ve_ptr = NULL;
 static double *lat_rad_ptr = NULL;
 static double *lon_rad_ptr = NULL;
-
+static uint8_t *gps_fix = NULL;
 
 FGRouteMgr::FGRouteMgr() :
     active( new SGRoute ),
@@ -22,6 +22,7 @@ FGRouteMgr::FGRouteMgr() :
     last_lon( 0.0 ),
     last_lat( 0.0 ),
     last_az( 0.0 ),
+    pos_set( false ),
     start_mode( FIRST_WPT ),
     completion_mode( LOOP ),
     dist_remaining_m( 0.0 )
@@ -38,25 +39,16 @@ FGRouteMgr::~FGRouteMgr() {
 
 // bind property nodes
 void FGRouteMgr::bind() {
-    // property nodes
-    //pos_node = pyGetNode("/position", true);
-    //vel_node = pyGetNode("/velocity", true);
-    //orient_node = pyGetNode("/orientation", true);
-    //route_node = pyGetNode("/task/route", true);
-    //home_node = pyGetNode("/task/home", true);
-    //targets_node = pyGetNode("/autopilot/targets", true);
-
-    // defaults
-    //route_node.setString("start_mode", "first_wpt");
-    //route_node.setString("completion_mode", "loop");
 }
 
 
 void FGRouteMgr::init( const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr ) {
+    printf("Initializing Route Manager...\n");
     vn_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/NorthVelocity_ms");
     ve_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/EastVelocity_ms");
     lat_rad_ptr = DefinitionTreePtr->GetValuePtr<double*>("/Sensor-Processing/Latitude_rad");
     lon_rad_ptr = DefinitionTreePtr->GetValuePtr<double*>("/Sensor-Processing/Longitude_rad");
+    gps_fix = DefinitionTreePtr->GetValuePtr<uint8_t*>("/Sensors/uBlox/Fix");
 
     active->clear();
     standby->clear();
@@ -84,7 +76,15 @@ void FGRouteMgr::update() {
     double wp_msl_m = 0.0;
 
     double gs_mps = sqrt(*vn_ptr * *vn_ptr + *ve_ptr * *ve_ptr);
+    double lat_deg = *lat_rad_ptr * r2d;
+    double lon_deg = *lon_rad_ptr * r2d;
 
+    if ( !pos_set && *gps_fix == 1 ) {
+        printf("Positioning relative waypoints...\n");
+        active->refresh_offset_positions(SGWayPoint(lon_deg, lat_deg), 0.0);
+        pos_set = true;
+    }
+    
     // route_node.setLong("route_size", active->size());
     if ( active->size() > 0 ) {
         // route start up logic: if start_mode == first_wpt then
@@ -109,8 +109,6 @@ void FGRouteMgr::update() {
         SGWayPoint wp = active->get_current();
 
         // compute direct-to course and distance
-        double lat_deg = *lat_rad_ptr * r2d;
-        double lon_deg = *lon_rad_ptr * r2d;
         wp.CourseAndDistance( lon_deg, lat_deg,
                               &direct_course, &direct_distance );
 
@@ -138,7 +136,14 @@ void FGRouteMgr::update() {
         // distance to the target waypoint.  This can be
         // overridden later by leg following and replaced with
         // distance remaining along the leg.
-        nav_dist_m = direct_distance;
+        //nav_dist_m = direct_distance;
+        nav_dist_m = dist_m;
+
+        static int count = 0;
+        if ( count++ > 10 ) {
+            printf("crs:%.0f xtrk:%.1f dist:%.0f\n", leg_course, xtrack_m, nav_dist_m);
+            count = 0;
+        }
 
         // estimate distance remaining to completion of route
         dist_remaining_m = nav_dist_m
@@ -194,6 +199,7 @@ bool FGRouteMgr::swap() {
 
     // set target way point to the first waypoint in the new active route
     active->set_current( 0 );
+    pos_set = false;
 
     return true;
 }

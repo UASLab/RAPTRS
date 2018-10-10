@@ -32,6 +32,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "netSocket.h"
 #include "telnet.hxx"
 #include "FGFS.h"
+#include "route_mgr.hxx"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -59,7 +60,8 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-
+  FGRouteMgr route_mgr;
+  
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
   std::cout << "\tInitializing FMU..." << std::flush;
@@ -121,6 +123,11 @@ int main(int argc, char* argv[]) {
     std::cout << "done!" << std::endl;
   }
 
+  if (AircraftConfiguration.HasMember("Route")) {
+      std::cout << "\tConfiguring route following..." << std::endl;
+      route_mgr.init(AircraftConfiguration["Route"],&GlobalData);
+  }
+
   std::cout << "\tConfiguring datalog..." << std::flush;
   Datalog.RegisterGlobalData(GlobalData);
   std::cout << "done!" << std::endl;
@@ -154,6 +161,7 @@ int main(int argc, char* argv[]) {
               // run sensor processing
               SenProc.Run();
               fgfs_airdata_update(); // overwrite processed air data
+              route_mgr.update();
               // get and set engaged and armed controllers
               Control.SetEngagedController(Mission.GetEngagedController());
               Control.SetArmedController(Mission.GetArmedController());
@@ -200,7 +208,6 @@ int main(int argc, char* argv[]) {
       Telemetry.Send();
       // run datalog
       Datalog.LogBinaryData();
-    }
   }
   return 0;
 }

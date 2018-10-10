@@ -57,17 +57,11 @@ private:
     SGRoute *active;
     SGRoute *standby;
 
-    //pyPropertyNode pos_node;
-    //pyPropertyNode vel_node;
-    //pyPropertyNode orient_node;
-    //pyPropertyNode route_node;
-    //pyPropertyNode targets_node;
-    //pyPropertyNode home_node;
-    
     double last_lon;
     double last_lat;
     double last_az;
-
+    bool pos_set;
+    
     // route behaviors
     StartMode start_mode;
     CompletionMode completion_mode;

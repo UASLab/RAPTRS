@@ -44,12 +44,12 @@ SGWayPoint::SGWayPoint( const rapidjson::Value& Config ):
 	target_lat = Config["lat"].GetFloat();
 	mode = ABSOLUTE;
     }
-    if ( Config.HasMember("offset_heading_deg") ) {
-	offset_hdg_deg = Config["offset_heading_deg"].GetFloat();
+    if ( Config.HasMember("heading_deg") ) {
+	offset_hdg_deg = Config["heading_deg"].GetFloat();
 	mode = RELATIVE;
     }
-    if ( Config.HasMember("offset_dist_m") ) {
-	offset_dist_m = Config["offset_dist_m"].GetFloat();
+    if ( Config.HasMember("dist_m") ) {
+	offset_dist_m = Config["dist_m"].GetFloat();
 	mode = RELATIVE;
     }
     if ( mode == INVALID ) {
