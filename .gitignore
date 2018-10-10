@@ -44,4 +44,5 @@ software/obj/
 software/bin/
 *.hex
 *.elf
-
+# emacs droppings
+*~
