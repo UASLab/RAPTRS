@@ -137,6 +137,7 @@ int main(int argc, char* argv[]) {
   // with simulated values
   fgfs_imu_init(&GlobalData);
   fgfs_gps_init(&GlobalData);
+  fgfs_airdata_init(&GlobalData);
   fgfs_act_init(&GlobalData);
   
   /* main loop */
@@ -152,6 +153,7 @@ int main(int argc, char* argv[]) {
               SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
               // run sensor processing
               SenProc.Run();
+              fgfs_airdata_update(); // overwrite processed air data
               // get and set engaged and armed controllers
               Control.SetEngagedController(Mission.GetEngagedController());
               Control.SetArmedController(Mission.GetArmedController());

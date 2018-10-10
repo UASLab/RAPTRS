@@ -3,8 +3,6 @@
 // DESCRIPTION: aquire live sensor data from an running copy of Flightgear
 //
 
-// #include <pyprops.hxx>
-
 #include <string>
 using std::string;
 
@@ -22,7 +20,6 @@ using std::endl;
 #include "nav_functions_float.hxx"
 #include "netSocket.h"
 #include "FGFS.h"
-
 
 static netSocket sock_imu;
 static netSocket sock_gps;
@@ -54,6 +51,8 @@ static double ve = 0.0;
 static double vd = 0.0;
 static uint8_t sats = 0;
 static uint8_t fix = 0;
+
+static float ias_kt = 0.0;
 
 static float cmd_ail = 0.0;
 static float cmd_ele = 0.0;
@@ -93,35 +92,27 @@ static double *vd_ptr = NULL;
 static uint8_t *sats_ptr = NULL;
 static uint8_t *fix_ptr = NULL;
 
+static float *ias_ptr = NULL;
+
 static float *cmd_left_ail_ptr = NULL;
 static float *cmd_right_ail_ptr = NULL;
 static float *cmd_ele_ptr = NULL;
 static float *cmd_thr_ptr = NULL;
 static float *cmd_rud_ptr = NULL;
 
-static bool airdata_inited = false;
-
 static const float D2R = M_PI / 180.0;
 static const float SG_METER_TO_FEET = 1.0 / 0.3048;
+static const float KTS_TO_MPS = 0.514444;
 
 Vector3f mag_ned;
 Vector3f mag_body;
 Quaternionf q_N2B;
 Matrix3f C_N2B;
 
-// initialize fgfs_imu input property nodes
-static void bind_imu_input() {
-}
 
-
-// initialize airdata output property nodes 
-static void bind_airdata_output() {
-    airdata_inited = true;
-}
-
-
-// function prototypes
 bool fgfs_imu_init( DefinitionTree *DefTree ) {
+    printf("fgfs_imu_init()\n");
+    
     p_ptr = DefTree->GetValuePtr<float*>("/Sensors/Fmu/Mpu9250/GyroX_rads");
     q_ptr = DefTree->GetValuePtr<float*>("/Sensors/Fmu/Mpu9250/GyroY_rads");
     r_ptr = DefTree->GetValuePtr<float*>("/Sensors/Fmu/Mpu9250/GyroZ_rads");
@@ -151,14 +142,8 @@ bool fgfs_imu_init( DefinitionTree *DefTree ) {
 }
 
 
-bool fgfs_airdata_init() {
-    bind_airdata_output();
-
-    return true;
-}
-
-
 bool fgfs_gps_init( DefinitionTree *DefTree ) {
+    printf("fgfs_gps_init()\n");
     // bind def tree pointers
     lon_ptr = DefTree->GetValuePtr<double*>("/Sensors/uBlox/Longitude_rad");
     lat_ptr = DefTree->GetValuePtr<double*>("/Sensors/uBlox/Latitude_rad");
@@ -193,7 +178,7 @@ bool fgfs_gps_init( DefinitionTree *DefTree ) {
 
 
 bool fgfs_act_init( DefinitionTree *DefTree ) {
-    printf("actuator_init()\n");
+    printf("fgfs_act_init()\n");
 
     cmd_left_ail_ptr = DefTree->GetValuePtr<float*>("/Control/cmdAilL_rad");
     cmd_right_ail_ptr = DefTree->GetValuePtr<float*>("/Control/cmdAilR_rad");
@@ -219,6 +204,11 @@ bool fgfs_act_init( DefinitionTree *DefTree ) {
     return true;
 }
 
+
+bool fgfs_airdata_init( DefinitionTree *DefTree ) {
+    printf("fgfs_airdata_init()\n");
+    ias_ptr = DefTree->GetValuePtr<float*>("/Sensor-Processing/vIAS_ms");
+}
 
 // swap big/little endian bytes
 static void my_swap( uint8_t *buf, int index, int count )
@@ -268,7 +258,7 @@ bool fgfs_imu_update() {
 	ax = *(float *)buf; buf += 4;
 	ay = *(float *)buf; buf += 4;
 	az = *(float *)buf; buf += 4;
-	float airspeed = *(float *)buf; buf += 4;
+	ias_kt = *(float *)buf; buf += 4;
 	float pressure = *(float *)buf; buf += 4;
 	float roll_truth = *(float *)buf; buf += 4;
 	float pitch_truth = *(float *)buf; buf += 4;
@@ -281,7 +271,6 @@ bool fgfs_imu_update() {
         mag_body.normalize();
         // cout << "mag vector (body): " << mag_body(0) << " " << mag_body(1) << " " << mag_body(2) << endl;
 
-	if ( airdata_inited ) {
 	    //airdata_node.setDouble( "timestamp", cur_time );
 	    //airdata_node.setDouble( "airspeed_kt", airspeed );
 	    const double inhg2mbar = 33.8638866667;
@@ -300,7 +289,6 @@ bool fgfs_imu_update() {
 	    //mah += thr*75.0 * (1000.0/3600.0) * dt;
 	    // fixme: last_time = cur_time;
 	    //power_node.setDouble( "total_mah", mah );
-	}
     }
 
     *p_ptr = p;
@@ -316,22 +304,6 @@ bool fgfs_imu_update() {
 
     return fresh_data;
 }
-
-bool fgfs_airdata_update() {
-    bool fresh_data = false;
-
-    static double last_time = 0.0;
-    // fixme! double cur_time = airdata_node.getDouble("timestamp");
-
-    //if ( cur_time > last_time ) {
-    //	fresh_data = true;
-    //}
-
-    // last_time = cur_time;
-
-    return fresh_data;
-}
-
 
 bool fgfs_gps_update() {
     const int fgfs_gps_size = 40;
@@ -496,13 +468,13 @@ bool fgfs_act_update() {
     return true;
 }
 
+bool fgfs_airdata_update() {
+    *ias_ptr = ias_kt * KTS_TO_MPS;
+    return true;
+}
 
 void fgfs_imu_close() {
     sock_imu.close();
-}
-
-void fgfs_airdata_close() {
-    // no op
 }
 
 void fgfs_gps_close() {
