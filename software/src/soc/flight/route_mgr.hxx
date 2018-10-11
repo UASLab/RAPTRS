@@ -69,6 +69,11 @@ private:
     // stats
     double dist_remaining_m;
 
+    // output signals
+    float leg_course;
+    float xtrack_m;
+    float nav_dist_m;
+    
     SGWayPoint make_waypoint( const string& wpt_string );
 
     // build a route from a property (sub) tree
@@ -78,8 +83,6 @@ public:
 
     FGRouteMgr();
     ~FGRouteMgr();
-
-    void bind();
 
     void init( const rapidjson::Value& Config,
                DefinitionTree *DefinitionTreePtr );

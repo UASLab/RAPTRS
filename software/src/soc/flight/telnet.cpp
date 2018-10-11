@@ -229,17 +229,17 @@ PropsChannel::foundTerminator()
 		}
 	    } else {
                 dir = path;
-
             }
 
 	    if ( dir.length() ) {
+                string line = "path: " + dir + getTerminator();
+                push( line.c_str() );
                 vector<string> children;
                 deftree->GetKeys(dir, &children);
 		for ( unsigned int i = 0; i < children.size(); i++ ) {
 		    string line = children[i];
-                    string full_path = dir + "/" + children[i];
-                    string type = query_type(full_path);
-                    string value = query_value(full_path);
+                    string type = query_type(children[i]);
+                    string value = query_value(children[i]);
                     if ( type == "node" ) {
                         line += "/";
                     } else {

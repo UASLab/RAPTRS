@@ -76,7 +76,7 @@ double SGRoute::distance_off_route( double x, double y ) const {
 void SGRoute::update_distance(unsigned int index)
 {
     SGWayPoint& curr = route[ index ];
-    double course, dist;
+    float course, dist;
 
     if ( index == 0 ) {
 	dist = 0;

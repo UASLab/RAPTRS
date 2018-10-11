@@ -38,7 +38,7 @@ static inline double M0( double e2 ) {
 // and az2.  Lat, lon, and azimuth are in degrees.  distance in meters
 int geo_direct_wgs_84 ( double lat1, double lon1, double az1,
                         double s, double *lat2, double *lon2,
-                        double *az2 )
+                        float *az2 )
 {
     double a = EQURAD, rf = iFLATTENING;
     double testv = 1.0E-10;
@@ -129,8 +129,8 @@ int geo_direct_wgs_84 ( double lat1, double lon1, double az1,
 // az1, az2 and distance (s).  Lat, lon, and azimuth are in degrees.
 // distance in meters
 int geo_inverse_wgs_84( double lat1, double lon1, double lat2,
-                        double lon2, double *az1, double *az2,
-                        double *s )
+                        double lon2, float *az1, float *az2,
+                        float *s )
 {
     double a = EQURAD, rf = iFLATTENING;
     int iter=0;
@@ -169,7 +169,7 @@ int geo_inverse_wgs_84( double lat1, double lon1, double lat2,
 	       (fabs(lat1+lat2) < testv) ) 
     {
 	// Geodesic passes through the pole (antipodal)
-	double s1,s2;
+	float s1,s2;
 	geo_inverse_wgs_84( lat1,lon1, lat1,lon2, az1,az2, &s1 );
 	geo_inverse_wgs_84( lat2,lon2, lat1,lon2, az1,az2, &s2 );
 	*az2 = *az1;

@@ -85,15 +85,15 @@ SGWayPoint::~SGWayPoint() {
 // are in meters.
 void SGWayPoint::CourseAndDistance( const double cur_lon,
 				    const double cur_lat,
-				    double *course, double *dist ) {
-    double reverse = 0.0;
+				    float *course, float *dist ) {
+    float reverse = 0.0;
     geo_inverse_wgs_84(cur_lat, cur_lon, target_lat, target_lon,
                        course, &reverse, dist);
 }
 
 // Calculate course and distances between two waypoints
 void SGWayPoint::CourseAndDistance( const SGWayPoint &wp,
-                                    double *course, double *dist ) {
+                                    float *course, float *dist ) {
     CourseAndDistance( wp.get_target_lon(),
 		       wp.get_target_lat(),
 		       course, dist );
@@ -113,7 +113,7 @@ void SGWayPoint::update_relative_pos( const SGWayPoint &ref,
     if ( course > 360.0 ) { course -= 360.0; }
     course = 360.0 - course; // invert to make this routine happy
 
-    double az2 = 0.0;
+    float az2 = 0.0;
     geo_direct_wgs_84(ref.get_target_lat(), ref.get_target_lon(),
                       course, offset_dist_m,
                       &target_lat, &target_lon, &az2);

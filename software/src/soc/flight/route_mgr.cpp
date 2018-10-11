@@ -25,9 +25,11 @@ FGRouteMgr::FGRouteMgr() :
     pos_set( false ),
     start_mode( FIRST_WPT ),
     completion_mode( LOOP ),
-    dist_remaining_m( 0.0 )
+    dist_remaining_m( 0.0 ),
+    leg_course( 0.0 ),
+    xtrack_m( 0.0 ),
+    nav_dist_m( 0.0 )
 {
-    bind();
 }
 
 
@@ -37,19 +39,21 @@ FGRouteMgr::~FGRouteMgr() {
 }
 
 
-// bind property nodes
-void FGRouteMgr::bind() {
-}
-
-
 void FGRouteMgr::init( const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr ) {
     printf("Initializing Route Manager...\n");
+
+    // input signals
     vn_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/NorthVelocity_ms");
     ve_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/EastVelocity_ms");
     lat_rad_ptr = DefinitionTreePtr->GetValuePtr<double*>("/Sensor-Processing/Latitude_rad");
     lon_rad_ptr = DefinitionTreePtr->GetValuePtr<double*>("/Sensor-Processing/Longitude_rad");
     gps_fix = DefinitionTreePtr->GetValuePtr<uint8_t*>("/Sensors/uBlox/Fix");
 
+    // output signals
+    DefinitionTreePtr->InitMember("/Guidance/leg_course_deg",(float*)&leg_course,"Route manager current leg heading",false,false);
+    DefinitionTreePtr->InitMember("/Guidance/xtrack_m",(float*)&xtrack_m,"Route manager cross track error",false,false);
+    DefinitionTreePtr->InitMember("/Guidance/dist_m",(float*)&nav_dist_m,"Route manager distance remaining on leg",false,false);
+    
     active->clear();
     standby->clear();
 
@@ -66,11 +70,8 @@ void FGRouteMgr::init( const rapidjson::Value& Config, DefinitionTree *Definitio
 
 
 void FGRouteMgr::update() {
-    double direct_course, direct_distance;
-    double leg_course, leg_distance;
-
-    double nav_course = 0.0;
-    double nav_dist_m = 0.0;
+    float direct_course, direct_distance;
+    float leg_distance;
 
     double wp_agl_m = 0.0;
     double wp_msl_m = 0.0;
@@ -125,7 +126,7 @@ void FGRouteMgr::update() {
 
         // compute cross-track error
         double angle_rad = angle * d2r;
-        double xtrack_m = sin( angle_rad ) * direct_distance;
+        xtrack_m = sin( angle_rad ) * direct_distance;
         double dist_m = cos( angle_rad ) * direct_distance;
         /* printf("direct_dist = %.1f angle = %.1f dist_m = %.1f\n",
            direct_distance, angle, dist_m); */

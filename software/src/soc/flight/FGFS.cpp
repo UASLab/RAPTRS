@@ -208,6 +208,7 @@ bool fgfs_act_init( DefinitionTree *DefTree ) {
 bool fgfs_airdata_init( DefinitionTree *DefTree ) {
     printf("fgfs_airdata_init()\n");
     ias_ptr = DefTree->GetValuePtr<float*>("/Sensor-Processing/vIAS_ms");
+    return true;
 }
 
 // swap big/little endian bytes

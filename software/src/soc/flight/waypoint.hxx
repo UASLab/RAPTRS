@@ -101,7 +101,7 @@ public:
      * @param dist (out) distance from current location to this waypoint
      */
     void CourseAndDistance( const double cur_lon, const double cur_lat,
-			    double *course, double *dist );
+			    float *course, float *dist );
 
     /**
      * Calculate course and distances between a specified starting waypoint
@@ -111,7 +111,7 @@ public:
      * @param dist (out) distance from current location to this waypoint
      */
     void CourseAndDistance( const SGWayPoint &wp,
-			    double *course, double *dist );
+			    float *course, float *dist );
 
     /**
      * Update the target_lon and target_lat values of this waypoint
