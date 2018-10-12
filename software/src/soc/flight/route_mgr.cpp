@@ -50,9 +50,9 @@ void FGRouteMgr::init( const rapidjson::Value& Config, DefinitionTree *Definitio
     gps_fix = DefinitionTreePtr->GetValuePtr<uint8_t*>("/Sensors/uBlox/Fix");
 
     // output signals
-    DefinitionTreePtr->InitMember("/Guidance/leg_course_deg",(float*)&leg_course,"Route manager current leg heading",false,false);
-    DefinitionTreePtr->InitMember("/Guidance/xtrack_m",(float*)&xtrack_m,"Route manager cross track error",false,false);
-    DefinitionTreePtr->InitMember("/Guidance/dist_m",(float*)&nav_dist_m,"Route manager distance remaining on leg",false,false);
+    DefinitionTreePtr->InitMember("/Route/leg_course_deg",(float*)&leg_course,"Route manager current leg heading",false,false);
+    DefinitionTreePtr->InitMember("/Route/xtrack_m",(float*)&xtrack_m,"Route manager cross track error",false,false);
+    DefinitionTreePtr->InitMember("/Route/dist_m",(float*)&nav_dist_m,"Route manager distance remaining on leg",false,false);
     
     active->clear();
     standby->clear();
