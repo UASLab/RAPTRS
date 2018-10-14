@@ -21,6 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef EXCITATION_WAVEFORMS_HXX_
 #define EXCITATION_WAVEFORMS_HXX_
 
+#include <math.h>
+
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -262,6 +264,56 @@ private:
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
+  };
+  struct Data {
+    uint8_t Mode = kStandby;
+    float Excitation = 0.0f;
+  };
+  Config config_;
+  Data data_;
+  uint64_t Time0_us = 0;
+  float ExciteTime_s = 0;
+  bool TimeLatch = false;
+};
+
+/*
+1-Cos Class - Adds a 1-cosine signal for the specified duration
+Example JSON configuration:
+{
+  "Type": "1-Cos"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Pause": X,
+  "Amplitude": X
+  }
+}
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the 1-cos wave
+   * Pause is the pause time at the peak of the 1-cos wave
+*/
+
+class Pulse_1_Cos: public GenericFunction {
+public:
+  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Run(Mode mode);
+  void Initialize();
+  bool Initialized();
+  void Clear(DefinitionTree *DefinitionTreePtr);
+private:
+  struct Config {
+    uint64_t *Time_us;
+    float *Signal;
+    float Amplitude = 0.0f;
+    float Frequency = 0.0f;
+    float StartTime_s = 0.0f;
+    float Duration_s = 0.0f;
+    float Pause_s = 0.0f;
     float Scale = 1.0f;
   };
   struct Data {
