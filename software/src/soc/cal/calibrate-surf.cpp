@@ -6,12 +6,9 @@
 #include "definition-tree.h"
 #include "configuration.h"
 #include "fmu.h"
-// #include "sensor-processing.hxx"
-// #include "mission.hxx"
-// #include "control.hxx"
-// #include "excitation.hxx"
+#include "mission.h"
+#include "control.h"
 #include "effector.h"
-// #include "datalog.hxx"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -42,12 +39,9 @@ int main(int argc, char* argv[]) {
   DefinitionTree GlobalData;
   Configuration Config;
   FlightManagementUnit Fmu;
-  // SensorProcessing SenProc;
-  // MissionManager Mission;
-  // ControlLaws Control;
-  // ExcitationSystem Excitation;
+  MissionManager Mission;
+  ControlLaws Control;
   AircraftEffectors Effectors;
-  // DatalogClient Datalog;
 
   /* Setup Inclinometer */
   Incline incline;
@@ -75,30 +69,19 @@ int main(int argc, char* argv[]) {
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration,&GlobalData);
   std::cout << "\tdone!" << std::endl;
-  // if (AircraftConfiguration.HasMember("Sensor-Processing")) {
-  //   std::cout << "\tConfiguring sensor processing..." << std::flush;
-  //   SenProc.Configure(AircraftConfiguration["Sensor-Processing"],&GlobalData);
-  //   std::cout << "done!" << std::endl;
-  //   if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
-  //     std::cout << "\tConfiguring mission manager..." << std::flush;
-  //     Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
-  //     std::cout << "done!" << std::endl;
-  //     std::cout << "\tConfiguring control laws..." << std::flush;
-  //     Control.Configure(AircraftConfiguration["Control"],&GlobalData);
-  //     std::cout << "done!" << std::endl;
-  //     std::cout << "\tConfiguring effectors..." << std::flush;
-  //     Effectors.Configure(AircraftConfiguration["Effectors"],&GlobalData);
-  //     std::cout << "done!" << std::endl;
-  //     if (AircraftConfiguration.HasMember("Excitation")) {
-  //       std::cout << "\tConfiguring excitations..." << std::flush;
-  //       Excitation.Configure(AircraftConfiguration["Excitation"],&GlobalData);
-  //       std::cout << "done!" << std::endl;
-  //     }
-  //   }
-  // }
-  // std::cout << "\tConfiguring datalog..." << std::flush;
-  // Datalog.RegisterGlobalData(GlobalData);
-  // std::cout << "done!" << std::endl;
+  if (AircraftConfiguration.HasMember("Sensor-Processing")) {
+    if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
+      std::cout << "\tConfiguring mission manager..." << std::flush;
+      Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
+      std::cout << "done!" << std::endl;
+      std::cout << "\tConfiguring control laws..." << std::flush;
+      Control.Configure(AircraftConfiguration["Control"],&GlobalData);
+      std::cout << "done!" << std::endl;
+      std::cout << "\tConfiguring effectors..." << std::flush;
+      Effectors.Configure(AircraftConfiguration["Effectors"],&GlobalData);
+      std::cout << "done!" << std::endl;
+    }
+  }
 
   // Define Delays
   int DelayMove = 2000000; // delay for 2 second after servo move
@@ -229,6 +212,7 @@ int main(int argc, char* argv[]) {
 
       // Read the Inclinometer and pot data
       potValSum_V = 0.0;
+
       for (int iRead = 0; iRead < NumRead; ++iRead) {
         while (!Fmu.ReceiveSensorData()) // Wait for new FMU data
 
@@ -246,7 +230,7 @@ int main(int argc, char* argv[]) {
 
         // Read Pot fmu
         // if(AnalogString != ""){
-          potValTemp_V = GlobalData.GetValuePtr<float*>("/Sensors/" + AnalogString + "/Voltage_V"); // /Sensors/Surf/posLTE1/Voltage_V
+          potValTemp_V = GlobalData.GetValuePtr<float*>(AnalogPath); // /Sensors/Surf/posLTE1/Voltage_V
 
           potValSum_V += *potValTemp_V;
         // }

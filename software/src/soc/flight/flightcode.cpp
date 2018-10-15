@@ -149,65 +149,60 @@ int main(int argc, char* argv[]) {
   
   /* main loop */
   while(1) {
-      if (Fmu.ReceiveSensorData()) {
-          // insert flightgear sim data calls
-          fgfs_imu_update();
-          fgfs_gps_update();
-          if (SenProc.Configured()&&SenProc.Initialized()) {
-              // run mission
-              Mission.Run();
-              // get and set engaged sensor processing
-              SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
-              // run sensor processing
-              SenProc.Run();
-              fgfs_airdata_update(); // overwrite processed air data
-              route_mgr.update();
-              // get and set engaged and armed controllers
-              Control.SetEngagedController(Mission.GetEngagedController());
-              Control.SetArmedController(Mission.GetArmedController());
-              // get and set engaged excitation
-              Excitation.SetEngagedExcitation(Mission.GetEngagedExcitation());
-              if (Mission.GetEngagedController()!="Fmu") {
-                  // loop through control levels running excitations and control laws
-                  for (size_t i=0; i < Control.ActiveControlLevels(); i++) {
-                      // run excitation
-                      Excitation.RunEngaged(Control.GetActiveLevel(i));
-                      // run control
-                      Control.RunEngaged(i);
-                  }
-                  // send effector commands to FMU
-                  Fmu.SendEffectorCommands(Effectors.Run());
-              }
-              fgfs_act_update();
-              // run armed excitations
-              Excitation.RunArmed();
-              // run armed control laws
-              Control.RunArmed();
-
-              // float refV_ms = *GlobalData.GetValuePtr<float*>("/Control/refV_ms");
-              // float refH_m = *GlobalData.GetValuePtr<float*>("/Control/refH_m");
-
-              // float cmdMotor_nd = *GlobalData.GetValuePtr<float*>("/Control/cmdMotor_nd");
-              // //
-              // std::string CtrlEngaged = Mission.GetEngagedController();
-
-              // float tempMPU = *GlobalData.GetValuePtr<float*>("/Sensors/Fmu/Mpu9250/Temperature_C");
-              // float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
-
-              // std::cout << CtrlEngaged << "\t" << tempMPU << "\t" << vCellMin << "\t" << cmdMotor_nd << "\t" << refV_ms << "\t" << refH_m << std::endl;
-
+    if (Fmu.ReceiveSensorData()) {
+      // insert flightgear sim data calls
+      fgfs_imu_update();
+      fgfs_gps_update();
+      if (SenProc.Configured()&&SenProc.Initialized()) {
+        // run mission
+        Mission.Run();
+        // get and set engaged sensor processing
+        SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
+        // run sensor processing
+        SenProc.Run();
+        fgfs_airdata_update(); // overwrite processed air data
+        route_mgr.update();
+        // get and set engaged and armed controllers
+        Control.SetEngagedController(Mission.GetEngagedController());
+        Control.SetArmedController(Mission.GetArmedController());
+        // get and set engaged excitation
+        Excitation.SetEngagedExcitation(Mission.GetEngagedExcitation());
+        if (Mission.GetEngagedController()!="Fmu") {
+          // loop through control levels running excitations and control laws
+          for (size_t i=0; i < Control.ActiveControlLevels(); i++) {
+            // run excitation
+            Excitation.RunEngaged(Control.GetActiveLevel(i));
+            // run control
+            Control.RunEngaged(i);
           }
-          // run telemetry
-          Telemetry.Send();
-          // run datalog
-          Datalog.LogBinaryData();
-          telnet.process();
-      }
+          // send effector commands to FMU
+          Fmu.SendEffectorCommands(Effectors.Run());
+        }
+        fgfs_act_update();
+        // run armed excitations
+        Excitation.RunArmed();
+        // run armed control laws
+        Control.RunArmed();
 
+        //
+        std::string CtrlEngaged = Mission.GetEngagedController();
+
+        float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
+
+        std::cout << CtrlEngaged << "\t" << vCellMin << std::endl;
+
+      }
       // run telemetry
       Telemetry.Send();
       // run datalog
       Datalog.LogBinaryData();
+      telnet.process();
+    }
+
+    // run telemetry
+    Telemetry.Send();
+    // run datalog
+    Datalog.LogBinaryData();
   }
   return 0;
 }

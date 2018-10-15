@@ -81,6 +81,8 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config, DefinitionTree 
                       ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Doublet3211>());
                     } else if (WaveformValue["Type"] == "LinearChirp") {
                       ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<LinearChirp>());
+                    } else if (WaveformValue["Type"] == "1-Cos") {
+                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Pulse_1_Cos>());
                     } else if (WaveformValue["Type"] == "MultiSine") {
                       ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<MultiSine>());
                     } else {
@@ -118,7 +120,7 @@ void ExcitationSystem::SetEngagedExcitation(std::string ExcitationGroupName) {
 void ExcitationSystem::RunEngaged(std::string ControlLevel) {
   // iterate through all groups
   for (auto Group = ExcitationGroupKeys_.begin(); Group != ExcitationGroupKeys_.end(); ++Group) {
-    auto GroupIndex = std::distance(ExcitationGroupKeys_.begin(),Group); 
+    auto GroupIndex = std::distance(ExcitationGroupKeys_.begin(),Group);
     // iterate through all levels
     for (auto Level = ExcitationGroupLevels_[GroupIndex].begin(); Level != ExcitationGroupLevels_[GroupIndex].end(); ++Level) {
       auto LevelIndex = std::distance(ExcitationGroupLevels_[GroupIndex].begin(),Level);
@@ -126,7 +128,7 @@ void ExcitationSystem::RunEngaged(std::string ControlLevel) {
       for (auto Func : ExcitationGroups_[GroupIndex][LevelIndex]) {
         if (((*Group)==EngagedGroup_)&&((*Level)==ControlLevel)) {
           Func->Run(GenericFunction::kEngage);
-        } 
+        }
       }
     }
   }
@@ -135,7 +137,7 @@ void ExcitationSystem::RunEngaged(std::string ControlLevel) {
 void ExcitationSystem::RunArmed() {
   // iterate through all groups
   for (auto Group = ExcitationGroupKeys_.begin(); Group != ExcitationGroupKeys_.end(); ++Group) {
-    auto GroupIndex = std::distance(ExcitationGroupKeys_.begin(),Group); 
+    auto GroupIndex = std::distance(ExcitationGroupKeys_.begin(),Group);
     // iterate through all levels
     for (auto Level = ExcitationGroupLevels_[GroupIndex].begin(); Level != ExcitationGroupLevels_[GroupIndex].end(); ++Level) {
       auto LevelIndex = std::distance(ExcitationGroupLevels_[GroupIndex].begin(),Level);
@@ -143,7 +145,7 @@ void ExcitationSystem::RunArmed() {
       for (auto Func : ExcitationGroups_[GroupIndex][LevelIndex]) {
         if ((*Group)!=EngagedGroup_) {
           Func->Run(GenericFunction::kArm);
-        } 
+        }
       }
     }
   }

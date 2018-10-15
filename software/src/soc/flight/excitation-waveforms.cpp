@@ -531,6 +531,114 @@ void LinearChirp::Clear(DefinitionTree *DefinitionTreePtr) {
   TimeLatch = false;
 }
 
+void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+  std::string SignalName;
+  std::string OutputName;
+  if (Config.HasMember("Scale-Factor")) {
+    config_.Scale = Config["Scale-Factor"].GetFloat();
+  }
+  if (Config.HasMember("Signal")) {
+    SignalName = Config["Signal"].GetString();
+    OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
+
+    // pointer to log excitation data
+    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+
+    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
+      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
+    } else {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
+  }
+  if (Config.HasMember("Time")) {
+    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
+      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
+    } else {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
+  }
+  if (Config.HasMember("Start-Time")) {
+    config_.StartTime_s = Config["Start-Time"].GetFloat();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Start time not specified in configuration."));
+  }
+  if (Config.HasMember("Duration")) {
+    config_.Duration_s = Config["Duration"].GetFloat();
+    config_.Frequency = (2 * M_PI) / config_.Duration_s;
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Duration not specified in configuration."));
+  }
+  if (Config.HasMember("Pause")) {
+    config_.Pause_s = Config["Pause"].GetFloat();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Pause not specified in configuration."));
+  }
+  if (Config.HasMember("Amplitude")) {
+    config_.Amplitude = Config["Amplitude"].GetFloat();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Amplitude not specified in configuration."));
+  }
+}
+
+void Pulse_1_Cos::Initialize() {}
+bool Pulse_1_Cos::Initialized() {return true;}
+
+void Pulse_1_Cos::Run(Mode mode) {
+  if (mode == kEngage) {
+    // initialize the time when first called
+    if (!TimeLatch) {
+      Time0_us = *config_.Time_us;
+      TimeLatch = true;
+    }
+    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+
+    // chirp logic
+    if (ExciteTime_s < 0){
+      // do nothing
+      data_.Excitation = 0;
+    } else if (ExciteTime_s < (config_.Duration_s + config_.Pause_s)) {
+      // 1-Cos Excitation
+      if (ExciteTime_s < (0.5*config_.Duration_s)) {
+        data_.Excitation = config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * ExciteTime_s));
+      } else if (ExciteTime_s < (0.5*config_.Duration_s + config_.Pause_s)) {
+        data_.Excitation = config_.Amplitude;
+      } else {
+        data_.Excitation = config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * (ExciteTime_s - config_.Pause_s)));
+      }
+    } else {
+      // do nothing
+      data_.Excitation = 0;
+    }
+  } else {
+    // reset the time latch
+    TimeLatch = false;
+    // do nothing
+    data_.Excitation = 0;
+  }
+
+  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.Mode = (uint8_t)mode;
+  *config_.Signal = *config_.Signal + data_.Excitation;
+}
+
+void Pulse_1_Cos::Clear(DefinitionTree *DefinitionTreePtr) {
+  config_.Scale = 1.0f;
+  config_.Amplitude = 0.0f;
+  config_.Frequency = 0.0f;
+  config_.StartTime_s = 0.0f;
+  config_.Duration_s = 0.0f;
+  config_.Pause_s = 0.0f;
+  data_.Mode = kStandby;
+  data_.Excitation = 0.0f;
+  Time0_us = 0;
+  ExciteTime_s = 0;
+  TimeLatch = false;
+}
+
 void MultiSine::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
   std::string SignalName;
   std::string OutputName;
