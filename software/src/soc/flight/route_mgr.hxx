@@ -71,6 +71,7 @@ private:
 
     // output signals
     float leg_course;
+    float course_error_rad;
     float xtrack_m;
     float nav_dist_m;
     

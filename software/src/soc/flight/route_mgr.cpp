@@ -12,6 +12,7 @@ static const double d2r = M_PI / 180.0;
 
 static float *vn_ptr = NULL;
 static float *ve_ptr = NULL;
+static float *track_ptr = NULL;
 static double *lat_rad_ptr = NULL;
 static double *lon_rad_ptr = NULL;
 static uint8_t *gps_fix = NULL;
@@ -45,12 +46,13 @@ void FGRouteMgr::init( const rapidjson::Value& Config, DefinitionTree *Definitio
     // input signals
     vn_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/NorthVelocity_ms");
     ve_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/EastVelocity_ms");
+    track_ptr = DefinitionTreePtr->GetValuePtr<float*>("/Sensor-Processing/Track_rad");
     lat_rad_ptr = DefinitionTreePtr->GetValuePtr<double*>("/Sensor-Processing/Latitude_rad");
     lon_rad_ptr = DefinitionTreePtr->GetValuePtr<double*>("/Sensor-Processing/Longitude_rad");
     gps_fix = DefinitionTreePtr->GetValuePtr<uint8_t*>("/Sensors/uBlox/Fix");
 
     // output signals
-    DefinitionTreePtr->InitMember("/Route/leg_course_deg",(float*)&leg_course,"Route manager current leg heading",false,false);
+    DefinitionTreePtr->InitMember("/Route/course_error_rad",(float*)&course_error_rad,"Route manager course error",false,false);
     DefinitionTreePtr->InitMember("/Route/xtrack_m",(float*)&xtrack_m,"Route manager cross track error",false,false);
     DefinitionTreePtr->InitMember("/Route/dist_m",(float*)&nav_dist_m,"Route manager distance remaining on leg",false,false);
     
@@ -77,8 +79,10 @@ void FGRouteMgr::update() {
     double wp_msl_m = 0.0;
 
     double gs_mps = sqrt(*vn_ptr * *vn_ptr + *ve_ptr * *ve_ptr);
+    double track_deg = *track_ptr * r2d;
     double lat_deg = *lat_rad_ptr * r2d;
     double lon_deg = *lon_rad_ptr * r2d;
+    
 
     if ( !pos_set && *gps_fix == 1 ) {
         printf("Positioning relative waypoints...\n");
@@ -124,6 +128,15 @@ void FGRouteMgr::update() {
             angle -= 360.0;
         }
 
+        // compute course error
+        double course_error = leg_course - track_deg;
+        if ( course_error < -180.0 ) {
+            course_error += 360.0;
+        } else if ( course_error > 180.0 ) {
+            course_error -= 360.0;
+        }
+        course_error_rad = course_error * d2r;
+        
         // compute cross-track error
         double angle_rad = angle * d2r;
         xtrack_m = sin( angle_rad ) * direct_distance;
@@ -142,7 +155,7 @@ void FGRouteMgr::update() {
 
         static int count = 0;
         if ( count++ > 10 ) {
-            printf("crs:%.0f xtrk:%.1f dist:%.0f\n", leg_course, xtrack_m, nav_dist_m);
+            printf("crs:%.0f err:%.0f xtrk:%.1f dist:%.0f\n", leg_course, course_error, xtrack_m, nav_dist_m);
             count = 0;
         }
 

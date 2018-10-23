@@ -88,6 +88,11 @@ int main(int argc, char* argv[]) {
     GlobalData.PrettyPrint("/Sensor-Processing/");
     std::cout << std::endl;
 
+    if (AircraftConfiguration.HasMember("Route")) {
+      std::cout << "\tConfiguring route following..." << std::endl;
+      route_mgr.init(AircraftConfiguration["Route"],&GlobalData);
+    }
+
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring mission manager..." << std::flush;
       Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
@@ -121,11 +126,6 @@ int main(int argc, char* argv[]) {
     std::cout << "\tConfiguring telemetry..." << std::flush;
     Telemetry.Configure(AircraftConfiguration["Telemetry"],&GlobalData);
     std::cout << "done!" << std::endl;
-  }
-
-  if (AircraftConfiguration.HasMember("Route")) {
-      std::cout << "\tConfiguring route following..." << std::endl;
-      route_mgr.init(AircraftConfiguration["Route"],&GlobalData);
   }
 
   std::cout << "\tConfiguring datalog..." << std::flush;
@@ -185,11 +185,11 @@ int main(int argc, char* argv[]) {
         Control.RunArmed();
 
         //
-        std::string CtrlEngaged = Mission.GetEngagedController();
+        // std::string CtrlEngaged = Mission.GetEngagedController();
 
-        float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
+        // float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
 
-        std::cout << CtrlEngaged << "\t" << vCellMin << std::endl;
+        // std::cout << CtrlEngaged << "\t" << vCellMin << std::endl;
 
       }
       // run telemetry
