@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
     std::cout << "\tConfiguring sensor processing..." << std::flush;
-    SenProc.Configure(AircraftConfiguration["Sensor-Processing"],&GlobalData);
+    SenProc.Configure(AircraftConfiguration["Sensor-Processing"]);
     std::cout << "done!" << std::endl;
     GlobalData.PrettyPrint("/Sensor-Processing/");
     std::cout << std::endl;
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
       std::cout << std::endl;
 
       std::cout << "\tConfiguring control laws..." << std::flush;
-      Control.Configure(AircraftConfiguration["Control"],&GlobalData);
+      Control.Configure(AircraftConfiguration["Control"]);
       std::cout << "done!" << std::endl;
       GlobalData.PrettyPrint("/Control/");
       std::cout << std::endl;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 
       if (AircraftConfiguration.HasMember("Excitation")) {
         std::cout << "\tConfiguring excitations..." << std::flush;
-        Excitation.Configure(AircraftConfiguration["Excitation"],&GlobalData);
+        Excitation.Configure(AircraftConfiguration["Excitation"]);
         std::cout << "done!" << std::endl;
         GlobalData.PrettyPrint("/Excitation/");
         std::cout << std::endl;

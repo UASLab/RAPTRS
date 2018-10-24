@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "sensor-processing.h"
 
 /* configures sensor processing given a JSON value and registers data with global defs */
-void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr) {
+void SensorProcessing::Configure(const rapidjson::Value& Config) {
   std::map<std::string,std::string> OutputKeysMap;
   // configuring baseline sensor processing
   if (Config.HasMember("Baseline")) {
@@ -58,7 +58,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *
         }
 
         // configure the function
-        BaselineSensorProcessing_.back()->Configure(Func,PathName,DefinitionTreePtr);
+        BaselineSensorProcessing_.back()->Configure(Func,PathName);
 
       } else {
         throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type not specified in configuration."));
@@ -67,7 +67,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *
     // getting a list of all baseline keys and adding to superset of output keys
     // modify the key to remove the intermediate path
     // (i.e. /Sensor-Processing/Baseline/Ias --> /Sensor-Processing/Ias)
-    DefinitionTreePtr->GetKeys(PathName,&BaselineDataKeys_);
+    deftree.GetKeys(PathName,&BaselineDataKeys_);
     for (auto Key : BaselineDataKeys_) {
       std::string MemberName = RootPath_+Key.substr(Key.rfind("/"));
       if (Key.substr(Key.rfind("/"))!="/Mode") {
@@ -116,7 +116,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *
             }
 
             // configure the function
-            ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].back()->Configure(Func,PathName,DefinitionTreePtr);
+            ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].back()->Configure(Func,PathName);
 
           } else {
             throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type not specified in configuration."));
@@ -125,7 +125,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *
         // getting a list of all research keys and adding to superset of output keys
         // modify the key to remove the intermediate path
         // (i.e. /Sensor-Processing/GroupName/Ias --> /Sensor-Processing/Ias)
-        DefinitionTreePtr->GetKeys(PathName,&ResearchDataKeys_[ResearchGroupKeys_.back()]);
+        deftree.GetKeys(PathName,&ResearchDataKeys_[ResearchGroupKeys_.back()]);
         for (auto Key : ResearchDataKeys_[ResearchGroupKeys_.back()]) {
           std::string MemberName = RootPath_+Key.substr(Key.rfind("/"));
           if (Key.substr(Key.rfind("/"))!="/Mode") {
@@ -148,52 +148,11 @@ void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *
       if (BaselineKey.substr(BaselineKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
         std::string KeyName = BaselineKey.substr(BaselineKey.rfind("/"));
         // setup baseline data pointer
-        DefinitionTree::VariableDefinition TempDef;
-        DefinitionTreePtr->GetMember(BaselineKey,&TempDef);
-        BaselineDataPtr_[KeyName] = TempDef.Value;
-        // check to see if output key has already been registered
-        if (DefinitionTreePtr->Size(OutputKey)==0) {
-          // register output if it has not already been
-          if (DefinitionTreePtr->GetValuePtr<uint64_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint64_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint64_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<uint32_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint32_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint32_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<uint16_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint16_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint16_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<uint8_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint8_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint8_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<int64_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int64_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<int64_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<int32_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int32_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<int32_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<int16_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int16_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<int16_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<int8_t*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int8_t*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<int8_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<float*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<float*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<float>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
-          if (DefinitionTreePtr->GetValuePtr<double*>(BaselineKey)) {
-            OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<double*>(BaselineKey));
-            DefinitionTreePtr->InitMember(OutputKey,std::get_if<double>(&OutputData_[KeyName]),TempDef.Description,true,false);
-          }
+        Element *ele = deftree.getElement(BaselineKey);
+        BaselineDataPtr_[KeyName] = ele;
+        if (ele) {
+            OutputData_[KeyName] = ele;
+            deftree.makeAlias(BaselineKey, OutputKey);
         }
       }
     }
@@ -204,52 +163,11 @@ void SensorProcessing::Configure(const rapidjson::Value& Config,DefinitionTree *
         if (ResearchKey.substr(ResearchKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
           std::string KeyName = ResearchKey.substr(ResearchKey.rfind("/"));
           // setup research data pointer
-          DefinitionTree::VariableDefinition TempDef;
-          DefinitionTreePtr->GetMember(ResearchKey,&TempDef);
-          ResearchDataPtr_[GroupKey][KeyName] = TempDef.Value;
-          // check to see if output key has already been registered
-          if (DefinitionTreePtr->Size(OutputKey)==0) {
-            // register output if it has not already been
-            if (DefinitionTreePtr->GetValuePtr<uint64_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint64_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint64_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<uint32_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint32_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint32_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<uint16_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint16_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint16_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<uint8_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<uint8_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<uint8_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<int64_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int64_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<int64_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<int32_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int32_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<int32_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<int16_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int16_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<int16_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<int8_t*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<int8_t*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<int8_t>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<float*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<float*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<float>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
-            if (DefinitionTreePtr->GetValuePtr<double*>(ResearchKey)) {
-              OutputData_[KeyName] = *(DefinitionTreePtr->GetValuePtr<double*>(ResearchKey));
-              DefinitionTreePtr->InitMember(OutputKey,std::get_if<double>(&OutputData_[KeyName]),TempDef.Description,true,false);
-            }
+          Element *ele = deftree.getElement(ResearchKey);
+          ResearchDataPtr_[GroupKey][KeyName] = ele;
+          if (ele) {
+              OutputData_[KeyName] = ele;
+              deftree.makeAlias(ResearchKey, OutputKey);
           }
         }
       }
@@ -310,42 +228,6 @@ void SensorProcessing::Run() {
         Func->Run(GenericFunction::kArm);
       }
     }
-    // setting the output
-    for (auto Key : BaselineDataKeys_) {
-      std::string KeyName = Key.substr(Key.rfind("/"));
-      if (KeyName!="/Mode") {
-        if (std::get_if<uint64_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint64_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<uint32_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint32_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<uint16_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint16_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<uint8_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint8_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<int64_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int64_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<int32_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int32_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<int16_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int16_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<int8_t*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int8_t*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<float*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<float*>(&BaselineDataPtr_[KeyName]));
-        }
-        if (std::get_if<double*>(&BaselineDataPtr_[KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<double*>(&BaselineDataPtr_[KeyName]));
-        }
-      }
-    }
   } else {
     // running baseline sensor processing
     for (auto Func : BaselineSensorProcessing_) {
@@ -358,43 +240,6 @@ void SensorProcessing::Run() {
           Func->Run(GenericFunction::kEngage);
         } else {
           Func->Run(GenericFunction::kArm);
-        }
-      }
-    }
-
-    // setting the output
-    for (auto Key : ResearchDataKeys_[EngagedGroup_]) {
-      std::string KeyName = Key.substr(Key.rfind("/"));
-      if (KeyName!="/Mode") {
-        if (std::get_if<uint64_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint64_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<uint32_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint32_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<uint16_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint16_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<uint8_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<uint8_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<int64_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int64_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<int32_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int32_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<int16_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int16_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<int8_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<int8_t*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<float*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<float*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
-        }
-        if (std::get_if<double*>(&ResearchDataPtr_[EngagedGroup_][KeyName])) {
-          OutputData_[KeyName] = **(std::get_if<double*>(&ResearchDataPtr_[EngagedGroup_][KeyName]));
         }
       }
     }

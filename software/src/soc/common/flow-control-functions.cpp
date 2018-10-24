@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "flow-control-functions.h"
 
-void If::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void If::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
     OutputName = RootPath + "/" + Config["Output"].GetString();
@@ -34,40 +34,36 @@ void If::Configure(const rapidjson::Value& Config,std::string RootPath,Definitio
   }
   if (Config.HasMember("Input")) {
     InputKey_ = Config["Input"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(InputKey_)) {
-      config_.Input = DefinitionTreePtr->GetValuePtr<float*>(InputKey_);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
-    }
+    config_.input_node = deftree.getElement(InputKey_);
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input not specified in configuration."));
   }
   // pointer to log run mode data
   ModeKey_ = OutputName+"/Mode";
-  DefinitionTreePtr->InitMember(ModeKey_,&data_.Mode,"Control law mode",true,false);
+  data_.mode_node = deftree.initElement(ModeKey_, "Control law mode", true, false);
   // pointer to log command data
   OutputKey_ = OutputName+"/"+Config["Output"].GetString();
-  DefinitionTreePtr->InitMember(OutputKey_,&data_.Output,"Control law output",true,false);
+  data_.mode_node = deftree.initElement(OutputKey_, "Control law output", true, false);
 }
 
 void If::Initialize() {}
 bool If::Initialized() {return true;}
 
 void If::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-  if (*config_.Input > config_.Threshold) {
-    data_.Output = 1;
-  } else {
-    data_.Output = 0;
-  }
+    data_.mode_node->setInt( mode );
+    if (config_.input_node->getFloat() > config_.Threshold) {
+        data_.output_node->setInt(1);
+    } else {
+        data_.output_node->setInt(0);
+    }
 }
 
-void If::Clear(DefinitionTree *DefinitionTreePtr) {
+void If::Clear() {
   config_.Threshold = 0.0f;
-  data_.Mode = kStandby;
-  data_.Output = 0;
-  DefinitionTreePtr->Erase(ModeKey_);
-  DefinitionTreePtr->Erase(OutputKey_);
+  data_.mode_node->setInt(kStandby);
+  data_.output_node->setInt(0);
+  deftree.Erase(ModeKey_);
+  deftree.Erase(OutputKey_);
   InputKey_.clear();
   ModeKey_.clear();
   OutputKey_.clear();

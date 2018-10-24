@@ -436,6 +436,7 @@ std::string FlightManagementUnit::GetSensorOutputName(const rapidjson::Value& Co
       }
     }
   }
+  return "";
 }
 
 /* Send a BFS Bus message. */

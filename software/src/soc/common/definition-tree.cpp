@@ -163,6 +163,7 @@ std::string DefinitionTree::GetValue(const struct VariableDefinition *VariableDe
     } else if ( auto val = std::get_if<double*>(&VariableDefinitionPtr->Value) ) {
         return std::to_string(**val);
     }
+    return "";
 }
 
 /* Erases definition tree members at a given tree level */

@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 
 /*
 Generic Function Class
@@ -63,11 +63,11 @@ class GenericFunction {
       kHold,
       kEngage
     };
-    virtual void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    virtual void Configure(const rapidjson::Value& Config,std::string RootPath);
     virtual void Initialize();
     virtual bool Initialized();
     virtual void Run(Mode mode);
-    virtual void Clear(DefinitionTree *DefinitionTreePtr);
+    virtual void Clear();
 };
 
 #endif

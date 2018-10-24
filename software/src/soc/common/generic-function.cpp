@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "generic-function.h"
 
-void GenericFunction::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {}
+void GenericFunction::Configure(const rapidjson::Value& Config,std::string RootPath) {}
 void GenericFunction::Initialize() {}
-bool GenericFunction::Initialized() {}
+bool GenericFunction::Initialized() { return true; }
 void GenericFunction::Run(Mode mode) {}
-void GenericFunction::Clear(DefinitionTree *DefinitionTreePtr) {}
+void GenericFunction::Clear() {}

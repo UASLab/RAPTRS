@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "excitation.h"
 
 /* configures excitation system given a JSON value and registers data with global defs */
-void ExcitationSystem::Configure(const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr) {
+void ExcitationSystem::Configure(const rapidjson::Value& Config) {
   // the excitation group name
   if (Config.HasMember("Groups")) {
     // making sure time is configured
@@ -89,7 +89,7 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config, DefinitionTree 
                       throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform type does not match known types."));
                     }
                     // configuring the waveform
-                    ExcitationGroups_[GroupIndex][LevelIndex].back()->Configure(Waveform,PathName,DefinitionTreePtr);
+                    ExcitationGroups_[GroupIndex][LevelIndex].back()->Configure(Waveform,PathName);
                   } else {
                     throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform type not specified in definition."));
                   }

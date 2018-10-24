@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EXCITATION_HXX_
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 #include "general-functions.h"
 #include "excitation-waveforms.h"
@@ -79,7 +79,7 @@ Where:
 
 class ExcitationSystem {
   public:
-    void Configure(const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config);
     void SetEngagedExcitation(std::string ExcitationGroupName);
     void RunEngaged(std::string ControlLevel);
     void RunArmed();

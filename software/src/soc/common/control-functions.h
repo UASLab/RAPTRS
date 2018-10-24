@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 #include "control-algorithms.h"
 
@@ -73,23 +73,23 @@ Data types for all input and output values are float.
 
 class PID2Class: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      float *Reference;
-      float *Feedback;
-      float *dt;
-      float SampleTime;
-      bool UseFixedTimeSample = false;
+        float SampleTime;
+        bool UseFixedTimeSample = false;
+        Element *reference_node{NULL};
+        Element *feedback_node{NULL};
+        Element *dt_node{NULL};
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      float Output = 0.0f;
-      int8_t Saturated = 0;
+        Element *mode_node{NULL};
+        Element *output_node{NULL};
+        Element *saturated_node{NULL};
     };
     __PID2Class PID2Class_;
     Config config_;
@@ -130,22 +130,22 @@ Data types for all input and output values are float.
 
 class PIDClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      float *Reference;
-      float *dt;
-      float SampleTime;
-      bool UseFixedTimeSample = false;
+        float SampleTime;
+        bool UseFixedTimeSample = false;
+        Element *reference_node{NULL};
+        Element *dt_node{NULL};
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      float Output = 0.0f;
-      int8_t Saturated = 0;
+        Element *mode_node{NULL};
+        Element *output_node{NULL};
+        Element *saturated_node{NULL};
     };
     __PID2Class PID2Class_;
     Config config_;
@@ -193,14 +193,14 @@ Thus, x[k+1] = Ad*x + Bd*u;
 
 class SSClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      std::vector<float*> Inputs;
+      std::vector<Element *> Inputs;
       Eigen::VectorXf u;
       Eigen::VectorXf x;
       Eigen::MatrixXf A;
@@ -213,11 +213,14 @@ class SSClass: public GenericFunction {
       float* TimeSource = 0;
       float timePrev = 0;
       bool UseFixedTimeSample = false;
+        Element *time_source_node{NULL};
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      Eigen::VectorXf y;
-      Eigen::VectorXi ySat;
+        Eigen::VectorXf y;
+        Eigen::VectorXi ySat;
+        Element *mode_node{NULL};
+        vector<Element *>y_node;
+        vector<Element *>ySat_node;
     };
     __SSClass SSClass_;
     Config config_;
@@ -259,27 +262,33 @@ Data types for all input and output values are float.
 
 class TecsClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
-    float *ref_vel_mps;
-    float *ref_agl_m;
-    float *vel_mps;
-    float *agl_m;
-    float error_total;
-    float error_diff;
+    //float *ref_vel_mps;
+    //float *ref_agl_m;
+    //float *vel_mps;
+    //float *agl_m;
+    Element *ref_vel_node{NULL};
+    Element *ref_agl_node{NULL};
+    Element *vel_node{NULL};
+    Element *agl_node{NULL};
+    //float error_total;
+    //float error_diff;
+    Element *error_total_node;
+    Element *error_diff_node;
 
     bool initFlag = false;
     float mass_kg = 0.0;
     float weight_bal = 1.0;
     float min_mps = 0.0;
     float max_mps;
-    uint8_t mode = kStandby;
+    //uint8_t mode = kStandby;
+    Element *mode_node{NULL};
     int8_t error_totalSat = 0;
     int8_t error_diffSat = 0;
-
 };
 #endif

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define SENSOR_PROCESSING_HXX_
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -49,7 +49,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 class SensorProcessing {
   public:
-    void Configure(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config);
     bool Configured();
     bool Initialized();
     void SetEngagedSensorProcessing(std::string EngagedSensorProcessing);
@@ -64,9 +64,9 @@ class SensorProcessing {
     std::vector<std::string> BaselineDataKeys_;
     std::vector<std::string> ResearchGroupKeys_;
     std::map<std::string,std::vector<std::string>> ResearchDataKeys_;
-    std::map<std::string,std::variant<uint64_t,uint32_t,uint16_t,uint8_t,int64_t,int32_t,int16_t,int8_t,float, double>> OutputData_;
-    std::map<std::string,std::variant<uint64_t*,uint32_t*,uint16_t*,uint8_t*,int64_t*,int32_t*,int16_t*,int8_t*,float*,double*>> BaselineDataPtr_;
-    std::map<std::string,std::map<std::string,std::variant<uint64_t*,uint32_t*,uint16_t*,uint8_t*,int64_t*,int32_t*,int16_t*,int8_t*,float*,double*>>> ResearchDataPtr_;
+    map<string, Element *> OutputData_;
+    map<string, Element *> BaselineDataPtr_;
+    map<string, map<string, Element *> > ResearchDataPtr_;
 };
 
 #endif

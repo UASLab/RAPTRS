@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "control-functions.h"
 
 /* PID2 class methods, see control-functions.hxx for more information */
-void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float Kp = 1;
   float Ki = 0;
   float Kd = 0;
@@ -39,33 +39,25 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath,De
     SystemName = RootPath;
 
     // pointer to log run mode data
-    DefinitionTreePtr->InitMember(RootPath + "/Mode", &data_.Mode, "Run mode", true, false);
+    data_.mode_node = deftree.initElement(RootPath + "/Mode", "Run mode", true, false);
+    data_.mode_node->setInt(kStandby);
 
     // pointer to log command data
-    DefinitionTreePtr->InitMember(RootPath + "/" + OutputName, &data_.Output, "Control law output", true, false);
-
+    data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", true, false);
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
 
   if (Config.HasMember("Reference")) {
     ReferenceKey_ = Config["Reference"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(ReferenceKey_)) {
-      config_.Reference = DefinitionTreePtr->GetValuePtr<float*>(ReferenceKey_);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference ")+ReferenceKey_+std::string(" not found in global data."));
-    }
+    config_.reference_node = deftree.getElement(ReferenceKey_, true);
   } else {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference not specified in configuration."));
   }
 
   if (Config.HasMember("Feedback")) {
     FeedbackKey_ = Config["Feedback"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(FeedbackKey_)) {
-      config_.Feedback = DefinitionTreePtr->GetValuePtr<float*>(FeedbackKey_);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Feedback ")+FeedbackKey_+std::string(" not found in global data."));
-    }
+    config_.feedback_node = deftree.getElement(FeedbackKey_, true);
   } else {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Feedback not specified in configuration."));
   }
@@ -92,9 +84,8 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath,De
   if (Config.HasMember("Sample-Time")) {
     if (Config["Sample-Time"].IsString()) {
       SampleTimeKey_ = Config["Sample-Time"].GetString();
-      if (DefinitionTreePtr->GetValuePtr<float*>(SampleTimeKey_)) {
-        config_.dt = DefinitionTreePtr->GetValuePtr<float*>(SampleTimeKey_);
-      } else {
+      config_.dt_node = deftree.getElement(SampleTimeKey_);
+      if ( !config_.dt_node ) {
         throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time ")+SampleTimeKey_+std::string(" not found in global data."));
       }
     } else {
@@ -118,7 +109,7 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath,De
   if (Config.HasMember("Limits")) {
     SaturateOutput = true;
     // pointer to log saturation data
-    DefinitionTreePtr->InitMember(SystemName + "/Saturated", &data_.Saturated, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
 
     if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
       UpperLimit = Config["Limits"]["Upper"].GetFloat();
@@ -136,30 +127,37 @@ void PID2Class::Initialize() {}
 bool PID2Class::Initialized() {return true;}
 
 void PID2Class::Run(Mode mode) {
-  // mode
-  data_.Mode = (uint8_t) mode;
+    // mode
+    data_.mode_node->setInt(mode);
 
-  // sample time
-  if(!config_.UseFixedTimeSample) {
-    config_.SampleTime = *config_.dt;
-  }
+    // sample time
+    if(!config_.UseFixedTimeSample) {
+        config_.SampleTime = config_.dt_node->getFloat();
+    }
 
-  // Run
-  PID2Class_.Run(mode,*config_.Reference,*config_.Feedback,config_.SampleTime,&data_.Output,&data_.Saturated);
+    // Run
+    float Output = 0.0f;
+    int8_t Saturated = 0;
+    PID2Class_.Run(mode,
+                   config_.reference_node->getFloat(),
+                   config_.feedback_node->getFloat(),
+                   config_.SampleTime, &Output, &Saturated);
+    data_.output_node->setFloat(Output);
+    data_.saturated_node->setInt(Saturated);
 }
 
-void PID2Class::Clear(DefinitionTree *DefinitionTreePtr) {
+void PID2Class::Clear() {
   config_.UseFixedTimeSample = false;
-  data_.Mode = kStandby;
-  data_.Saturated = 0;
-  data_.Output = 0.0f;
+  data_.mode_node->setInt(kStandby);
+  data_.saturated_node->setInt(0);
+  data_.output_node->setFloat(0.0f);
   ReferenceKey_.clear();
   FeedbackKey_.clear();
   PID2Class_.Clear();
 }
 
 /* PID class methods, see control-functions.hxx for more information */
-void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float Kp = 1;
   float Ki = 0;
   float Kd = 0;
@@ -175,22 +173,17 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath,Def
     SystemName = RootPath;
 
     // pointer to log run mode data
-    DefinitionTreePtr->InitMember(RootPath + "/Mode", &data_.Mode, "Run mode", true, false);
+    deftree.initElement(RootPath + "/Mode", "Run mode", true, false);
 
     // pointer to log command data
-    DefinitionTreePtr->InitMember(RootPath + "/" + OutputName, &data_.Output, "Control law output", true, false);
-
+    deftree.initElement(RootPath + "/" + OutputName, "Control law output", true, false);
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
 
   if (Config.HasMember("Reference")) {
     ReferenceKey_ = Config["Reference"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(ReferenceKey_)) {
-      config_.Reference = DefinitionTreePtr->GetValuePtr<float*>(ReferenceKey_);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference ")+ReferenceKey_+std::string(" not found in global data."));
-    }
+    config_.reference_node = deftree.getElement(ReferenceKey_, true);
   } else {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference not specified in configuration."));
   }
@@ -217,9 +210,8 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath,Def
   if (Config.HasMember("Sample-Time")) {
     if (Config["Sample-Time"].IsString()) {
       SampleTimeKey_ = Config["Sample-Time"].GetString();
-      if (DefinitionTreePtr->GetValuePtr<float*>(SampleTimeKey_)) {
-        config_.dt = DefinitionTreePtr->GetValuePtr<float*>(SampleTimeKey_);
-      } else {
+      config_.dt_node = deftree.getElement(SampleTimeKey_);
+      if ( !config_.dt_node ) {
         throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time ")+SampleTimeKey_+std::string(" not found in global data."));
       }
     } else {
@@ -233,7 +225,7 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath,Def
   if (Config.HasMember("Limits")) {
     SaturateOutput = true;
     // pointer to log saturation data
-    DefinitionTreePtr->InitMember(SystemName + "/Saturated", &data_.Saturated, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
 
     if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
       UpperLimit = Config["Limits"]["Upper"].GetFloat();
@@ -251,30 +243,34 @@ void PIDClass::Initialize() {}
 bool PIDClass::Initialized() {return true;}
 
 void PIDClass::Run(Mode mode) {
-  // mode
-  data_.Mode = (uint8_t) mode;
+    // mode
+    data_.mode_node->setInt( mode );
 
-  // sample time
-  if(!config_.UseFixedTimeSample) {
-    config_.SampleTime = *config_.dt;
-  }
+    // sample time
+    if(!config_.UseFixedTimeSample) {
+        config_.SampleTime = config_.dt_node->getFloat();
+    }
 
-  // Run
-  PID2Class_.Run(mode,*config_.Reference, 0.0, config_.SampleTime, &data_.Output, &data_.Saturated);
+    // Run
+    float Output = 0.0f;
+    int8_t Saturated = 0;
+    PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.SampleTime, &Output, &Saturated);
+    data_.output_node->setFloat(Output);
+    data_.saturated_node->setInt(Saturated);
 }
 
-void PIDClass::Clear(DefinitionTree *DefinitionTreePtr) {
+void PIDClass::Clear() {
   config_.UseFixedTimeSample = false;
-  data_.Mode = kStandby;
-  data_.Saturated = 0;
-  data_.Output = 0.0f;
+  data_.mode_node->setInt(kStandby);
+  data_.saturated_node->setInt(0);
+  data_.output_node->setFloat(0.0f);
   ReferenceKey_.clear();
   PID2Class_.Clear();
 }
 
 
 /* SS class methods, see control-functions.hxx for more information */
-void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float mass_kg;
   float weight_bal;
   float max_mps;
@@ -289,7 +285,8 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath,Defi
     SystemName = Config["Name"].GetString();
 
     // pointer to log run mode data
-    DefinitionTreePtr->InitMember(RootPath + SystemName + "/Mode", &data_.Mode, "Run mode", true, false);
+    data_.mode_node = deftree.initElement(RootPath + SystemName + "/Mode", "Run mode", true, false);
+    data_.mode_node->setInt(kStandby);
 
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Name not specified in configuration."));
@@ -300,8 +297,9 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath,Defi
     for (size_t i=0; i < Config["Inputs"].Size(); i++) {
       const rapidjson::Value& Input = Config["Inputs"][i];
       InputKeys_.push_back(Input.GetString());
-      if (DefinitionTreePtr->GetValuePtr<float*>(InputKeys_.back())) {
-        config_.Inputs.push_back(DefinitionTreePtr->GetValuePtr<float*>(InputKeys_.back()));
+      Element *ele = deftree.getElement(InputKeys_.back());
+      if (ele) {
+          config_.Inputs.push_back(ele);
       } else {
         throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
@@ -314,16 +312,18 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath,Defi
   if (Config.HasMember("Outputs")) {
     // resize output matrix
     data_.y.resize(Config["Outputs"].Size());
+    data_.y_node.resize(Config["Outputs"].Size());
     data_.ySat.resize(Config["Outputs"].Size());
+    data_.ySat_node.resize(Config["Outputs"].Size());
     for (size_t i=0; i < Config["Outputs"].Size(); i++) {
       const rapidjson::Value& Output = Config["Outputs"][i];
       OutputName = Output.GetString();
 
       // pointer to log output
-      DefinitionTreePtr->InitMember(RootPath + SystemName + "/" + OutputName, &data_.y(i), "SS output", true, false);
+      data_.y_node[i] = deftree.initElement(RootPath + SystemName + "/" + OutputName, "SS output", true, false);
 
       // pointer to log saturation data
-      DefinitionTreePtr->InitMember(RootPath + SystemName + "/Saturated" + "/" + OutputName, &data_.ySat(i), "Output saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+      data_.ySat_node[i] = deftree.initElement(RootPath + SystemName + "/Saturated" + "/" + OutputName, "Output saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
 
     }
   } else {
@@ -400,10 +400,9 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath,Defi
   // grab time source input (optional)
   if (Config.HasMember("Time-Source")) {
     TimeSourceKey_ = Config["Time-Source"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(TimeSourceKey_)) {
-      config_.TimeSource = DefinitionTreePtr->GetValuePtr<float*>(TimeSourceKey_);
-      config_.UseFixedTimeSample = false;
-    } else {
+    config_.time_source_node = deftree.getElement(TimeSourceKey_);
+    config_.UseFixedTimeSample = false;
+    if ( !config_.time_source_node ) {
       throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Time-Source ")+TimeSourceKey_+std::string(" not found in global data."));
     }
   }
@@ -437,32 +436,36 @@ void SSClass::Initialize() {}
 bool SSClass::Initialized() {return true;}
 
 void SSClass::Run(Mode mode) {
-  // mode
-  data_.Mode = (uint8_t) mode;
+    // mode
+    data_.mode_node->setInt(mode);
 
-  // sample time computation
-  float dt = 0;
-  if (config_.UseFixedTimeSample == false) {
-    dt = *config_.TimeSource - config_.timePrev;
-    config_.timePrev = *config_.TimeSource;
-    if (dt > 2*config_.dt) {dt = config_.dt;} // Catch large dt
-    if (dt <= 0) {dt = config_.dt;} // Catch negative and zero dt
-  } else {
-    dt = config_.dt;
-  }
+    // sample time computation
+    float dt = 0;
+    if (config_.UseFixedTimeSample == false) {
+        dt = *config_.TimeSource - config_.timePrev;
+        config_.timePrev = *config_.TimeSource;
+        if (dt > 2*config_.dt) {dt = config_.dt;} // Catch large dt
+        if (dt <= 0) {dt = config_.dt;} // Catch negative and zero dt
+    } else {
+        dt = config_.dt;
+    }
 
-  // inputs to Eigen3 vector
-  for (size_t i=0; i < config_.Inputs.size(); i++) {
-    config_.u(i) = *config_.Inputs[i];
-  }
+    // inputs to Eigen3 vector
+    for (size_t i=0; i < config_.Inputs.size(); i++) {
+        config_.u(i) = config_.Inputs[i]->getFloat();
+    }
 
-  // Call Algorithm
-  SSClass_.Run(mode, config_.u, dt, &data_.y, &data_.ySat);
+    // Call Algorithm
+    SSClass_.Run(mode, config_.u, dt, &data_.y, &data_.ySat);
+    for (size_t i=0; i < data_.y_node.size(); i++) {
+        data_.y_node[i]->setFloat(data_.y(i));
+        data_.ySat_node[i]->setInt(data_.ySat(i));
+    }
 }
 
-void SSClass::Clear(DefinitionTree *DefinitionTreePtr) {
+void SSClass::Clear() {
   config_.UseFixedTimeSample = false;
-  data_.Mode = kStandby;
+  data_.mode_node->setInt(kStandby);
   config_.A.resize(0,0);
   config_.B.resize(0,0);
   config_.C.resize(0,0);
@@ -473,7 +476,7 @@ void SSClass::Clear(DefinitionTree *DefinitionTreePtr) {
 }
 
 /* Tecs class methods, see control-functions.hxx for more information */
-void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
   std::string SystemName, OutputName;
 
@@ -482,7 +485,8 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
     SystemName = Config["Name"].GetString();
 
     // pointer to log run mode data
-    DefinitionTreePtr->InitMember(RootPath + "/" + SystemName + "/Mode", &mode, "Run mode", true, false);
+    mode_node = deftree.initElement(RootPath + "/" + SystemName + "/Mode", "Run mode", true, false);
+    mode_node->setInt(kStandby);
 
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Name not specified in configuration."));
@@ -505,10 +509,9 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
   }
 
   if (Config.HasMember("RefSpeed")) {
-    std::string RefSpeedKey = Config["RefSpeed"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(RefSpeedKey)) {
-      ref_vel_mps = DefinitionTreePtr->GetValuePtr<float*>(RefSpeedKey);
-    } else {
+    string RefSpeedKey = Config["RefSpeed"].GetString();
+    ref_vel_node = deftree.getElement(RefSpeedKey);
+    if ( !ref_vel_node ){
       throw std::runtime_error(std::string("ERROR")+std::string(": RefSpeed ")+RefSpeedKey+std::string(" not found in global data."));
     }
   } else {
@@ -516,10 +519,9 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
   }
 
   if (Config.HasMember("RefAltitude")) {
-    std::string RefAltitudeKey = Config["RefAltitude"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(RefAltitudeKey)) {
-      ref_agl_m = DefinitionTreePtr->GetValuePtr<float*>(RefAltitudeKey);
-    } else {
+    string RefAltitudeKey = Config["RefAltitude"].GetString();
+    ref_agl_node = deftree.getElement(RefAltitudeKey);
+    if ( !ref_agl_node ) {
       throw std::runtime_error(std::string("ERROR")+std::string(": RefAltitude ")+RefAltitudeKey+std::string(" not found in global data."));
     }
   } else {
@@ -527,10 +529,9 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
   }
 
   if (Config.HasMember("FeedbackSpeed")) {
-    std::string FeedbackSpeedKey = Config["FeedbackSpeed"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(FeedbackSpeedKey)) {
-      vel_mps = DefinitionTreePtr->GetValuePtr<float*>(FeedbackSpeedKey);
-    } else {
+    string FeedbackSpeedKey = Config["FeedbackSpeed"].GetString();
+    vel_node = deftree.getElement(FeedbackSpeedKey);
+    if ( !vel_node ) {
       throw std::runtime_error(std::string("ERROR")+std::string(": FeedbackSpeed ")+FeedbackSpeedKey+std::string(" not found in global data."));
     }
   } else {
@@ -538,10 +539,9 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
   }
 
   if (Config.HasMember("FeedbackAltitude")) {
-    std::string FeedbackAltitudeKey = Config["FeedbackAltitude"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(FeedbackAltitudeKey)) {
-      agl_m = DefinitionTreePtr->GetValuePtr<float*>(FeedbackAltitudeKey);
-    } else {
+    string FeedbackAltitudeKey = Config["FeedbackAltitude"].GetString();
+    agl_node = deftree.getElement(FeedbackAltitudeKey);
+    if ( !agl_node ) {
       throw std::runtime_error(std::string("ERROR")+std::string(": FeedbackAltitude ")+FeedbackAltitudeKey+std::string(" not found in global data."));
     }
   } else {
@@ -552,7 +552,7 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
     OutputName = Config["OutputTotal"].GetString();
 
     // pointer to log output
-    DefinitionTreePtr->InitMember(RootPath + "/" + SystemName + "/" + OutputName, &error_total, "Tecs Total Energy Error", true, false);
+    error_total_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Total Energy Error", true, false);
 
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": OutputTotal not specified in configuration."));
@@ -562,7 +562,7 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
     OutputName = Config["OutputDiff"].GetString();
 
     // pointer to log output
-    DefinitionTreePtr->InitMember(RootPath + "/" + SystemName + "/" + OutputName, &error_diff, "Tecs Diff Energy Error ", true, false);
+    error_diff_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Diff Energy Error ", true, false);
 
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": OutputDiff not specified in configuration."));
@@ -592,12 +592,12 @@ void TecsClass::Run(Mode mode) {
   }
 
   // Feedback energy
-  float energy_pot = mass_kg * g * (*agl_m);
-  float energy_kin = 0.5 * mass_kg * (*vel_mps) * (*vel_mps);
+  float energy_pot = mass_kg * g * (agl_node->getFloat());
+  float energy_kin = 0.5 * mass_kg * (vel_node->getFloat()) * (vel_node->getFloat());
 
   // Reference energy
-  float target_pot = mass_kg * g * (*ref_agl_m);
-  float target_kin = 0.5 * mass_kg * (*ref_vel_mps) * (*ref_vel_mps);
+  float target_pot = mass_kg * g * (ref_agl_node->getFloat());
+  float target_kin = 0.5 * mass_kg * (ref_vel_node->getFloat()) * (ref_vel_node->getFloat());
 
   // Energy error
   float error_pot = target_pot - energy_pot;
@@ -617,8 +617,8 @@ void TecsClass::Run(Mode mode) {
   // if max_error < 0: we are overspeed
 
   // total energy error and (weighted) energy balance
-  error_total = error_pot + error_kin;
-  error_diff =  (2.0 - weight_bal) * error_kin - weight_bal * error_pot;
+  float error_total = error_pot + error_kin;
+  float error_diff =  (2.0 - weight_bal) * error_kin - weight_bal * error_pot;
 
   // clamp error_diff to kinetic error range.  This prevents tecs from
   // requesting a pitch attitude that would over/under-speed the
@@ -629,7 +629,10 @@ void TecsClass::Run(Mode mode) {
   // clamp max total error to avoid an overspeed condition in a climb
   // if max pitch angle is saturated.
   if ( error_total > max_error ) { error_total = max_error; }
+
+  error_total_node->setFloat(error_total);
+  error_diff_node->setFloat(error_diff);
 }
 
-void TecsClass::Clear(DefinitionTree *DefinitionTreePtr) {
+void TecsClass::Clear() {
 }

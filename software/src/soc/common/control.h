@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define CONTROL_HXX_
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -86,7 +86,7 @@ Where:
 
 class ControlLaws {
   public:
-    void Configure(const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config);
     void SetEngagedController(std::string ControlGroupName);
     void SetArmedController(std::string ControlGroupName);
     size_t ActiveControlLevels();
@@ -101,8 +101,8 @@ class ControlLaws {
     std::vector<std::string> SocGroupKeys_;
     std::map<std::string,std::vector<std::string>> SocLevelNames_;
     std::map<std::string,std::vector<std::vector<std::string>>> SocDataKeys_;
-    std::map<std::string,std::variant<uint64_t,uint32_t,uint16_t,uint8_t,int64_t,int32_t,int16_t,int8_t,float, double>> OutputData_;
-    std::map<std::string,std::map<std::string,std::variant<uint64_t*,uint32_t*,uint16_t*,uint8_t*,int64_t*,int32_t*,int16_t*,int8_t*,float*,double*>>> SocDataPtr_;
+    map<string, Element *> OutputData_;
+    map<string, map<string, Element *>> SocDataPtr_;
 };
 
 #endif

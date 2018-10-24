@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 #include <sys/time.h>
 
@@ -48,21 +48,23 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class IndicatedAirspeed: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      std::vector<float*> DifferentialPressure;
+      std::vector<Element *> DifferentialPressure;
       float InitTime = 0.0f;
     };
     struct Data {
-      std::vector<float> DifferentialPressureBias;
-      float AvgDifferentialPressure = 0.0f;
-      uint8_t Mode = kStandby;
-      float Ias_ms = 0.0f;
+        std::vector<float> DifferentialPressureBias;
+        float AvgDifferentialPressure = 0.0f;
+        //uint8_t Mode = kStandby;
+        //float Ias_ms = 0.0f;
+        Element *mode_node{NULL};
+        Element *ias_ms_node{NULL};
     };
     Config config_;
     Data data_;
@@ -95,21 +97,23 @@ Pressures are expected to be in Pa and altitude is in m
 */
 class AglAltitude: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      std::vector<float*> StaticPressure;
+      std::vector<Element *> StaticPressure;
       float InitTime = 0.0f;
     };
     struct Data {
-      float PressAlt0 = 0.0f;
-      float AvgStaticPressure = 0.0f;
-      uint8_t Mode = kStandby;
-      float Agl_m = 0.0f;
+        float PressAlt0 = 0.0f;
+        float AvgStaticPressure = 0.0f;
+        //uint8_t Mode = kStandby;
+        //float Agl_m = 0.0f;
+        Element *mode_node{NULL};
+        Element *agl_m_node{NULL};
     };
     Config config_;
     Data data_;
@@ -145,25 +149,27 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class PitotStatic: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      float* StaticPressure;
-      float* DifferentialPressure;
-      float InitTime = 0.0f;
+        //float* StaticPressure;
+        //float* DifferentialPressure;
+        float InitTime = 0.0f;
+        Element *static_press_node{NULL};
+        Element *diff_press_node{NULL};
     };
     struct Data {
-      uint8_t Mode = kStandby;
+        Element *mode_node{NULL};
 
-      float DifferentialPressureBias = 0.0f;
-      float Ias_ms = 0.0f;
+        float DifferentialPressureBias = 0.0f;
+        Element *ias_ms_node{NULL};
 
-      float PressAlt0 = 0.0f;
-      float Agl_m = 0.0f;
+        float PressAlt0 = 0.0f;
+        Element *agl_m_node{NULL};
     };
 
     Config config_;
@@ -207,31 +213,31 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class FiveHole: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      float* StaticPressure;
-      float* TipPressure;
-      float* Alpha1Pressure;
-      float* Alpha2Pressure;
-      float* Beta1Pressure;
-      float* Beta2Pressure;
+      Element *StaticPressure_node;
+      Element *TipPressure_node;
+      Element *Alpha1Pressure_node;
+      Element *Alpha2Pressure_node;
+      Element *Beta1Pressure_node;
+      Element *Beta2Pressure_node;
       float InitTime = 0.0f;
       float kAlpha = 0.0f;
       float kBeta = 0.0f;
     };
     struct Data {
-      uint8_t Mode = kStandby;
+        Element *mode_node{NULL};
 
-      float PressAlt0 = 0.0f;
-      float Agl_m = 0.0f;
+        float PressAlt0 = 0.0f;
+        Element *agl_m_node{NULL};
 
-      float TipPressureBias = 0.0f;
-      float Ias_ms = 0.0f;
+        float TipPressureBias = 0.0f;
+        Element *ias_ms_node{NULL};
 
       float Alpha1PressureBias = 0.0f;
       float Alpha2PressureBias = 0.0f;

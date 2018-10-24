@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef FLOW_CONTROL_FUNCTIONS_HXX_
 #define FLOW_CONTROL_FUNCTIONS_HXX_
 
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 /* 
 If Class - Outputs a 0 or 1 depending on input and threshold values
@@ -40,19 +40,22 @@ Data type for the output is uint8_t, 1 if the input value is greater than the th
 */
 class If: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
-      float *Input;
-      float Threshold = 0.0f;
+        Element *input_node{NULL};
+        // float *Input;
+        float Threshold = 0.0f;
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      uint8_t Output = 0;
+        // uint8_t Mode = kStandby;
+        // uint8_t Output = 0;
+        Element *mode_node{NULL};
+        Element *output_node{NULL};
     };
     Config config_;
     Data data_;
