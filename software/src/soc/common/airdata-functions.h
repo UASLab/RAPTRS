@@ -239,13 +239,13 @@ class FiveHole: public GenericFunction {
         float TipPressureBias = 0.0f;
         Element *ias_ms_node{NULL};
 
-      float Alpha1PressureBias = 0.0f;
-      float Alpha2PressureBias = 0.0f;
-      float Alpha_rad = 0.0f;
+        float Alpha1PressureBias = 0.0f;
+        float Alpha2PressureBias = 0.0f;
+        Element *Alpha_rad_node{NULL};
 
-      float Beta1PressureBias = 0.0f;
-      float Beta2PressureBias = 0.0f;
-      float Beta_rad = 0.0f;
+        float Beta1PressureBias = 0.0f;
+        float Beta2PressureBias = 0.0f;
+        Element *Beta_rad_node{NULL};
     };
 
     Config config_;

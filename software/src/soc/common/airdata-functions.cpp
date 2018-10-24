@@ -497,18 +497,18 @@ void FiveHole::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
   // pointer to log run mode data
   ModeKey_ = SysName+"/Mode";
-  mode_node = deftree.initElement(ModeKey_, "Run mode", true, false);
-  mode_node->setInt(kStandby);
+  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", true, false);
+  data_.mode_node->setInt(kStandby);
   
   // pointer to log ias data
   OutputAglKey_ = SysName+"/"+OutputAglName;
-  deftree.InitMember(OutputAglKey_,&data_.Agl_m,"Altitude above ground, m",true,false);
+  data_.agl_m_node = deftree.initElement(OutputAglKey_,"Altitude above ground, m",true,false);
   OutputIasKey_ = SysName+"/"+OutputIasName;
-  deftree.InitMember(OutputIasKey_,&data_.Ias_ms,"Indicated airspeed, m/s",true,false);
+  data_.ias_ms_node = deftree.initElement(OutputIasKey_,"Indicated airspeed, m/s",true,false);
   OutputAlphaKey_ = SysName+"/"+OutputAlphaName;
-  deftree.InitMember(OutputAlphaKey_,&data_.Alpha_rad,"Angle of attack, rad",true,false);
+  data_.Alpha_rad_node = deftree.initElement(OutputAlphaKey_,"Angle of attack, rad",true,false);
   OutputBetaKey_ = SysName+"/"+OutputBetaName;
-  deftree.InitMember(OutputBetaKey_,&data_.Beta_rad,"Sideslip angle, rad",true,false);
+  data_.Beta_rad_node = deftree.initElement(OutputBetaKey_,"Sideslip angle, rad",true,false);
 }
 
 void FiveHole::Initialize() {
@@ -524,90 +524,80 @@ void FiveHole::Initialize() {
   // if less than init time, compute bias
   if (ElapsedTime < config_.InitTime) {
     // compute pressure biases, using Welford's algorithm
-    data_.PressAlt0 += (AirData_.getPressureAltitude(*config_.StaticPressure) - data_.PressAlt0) / (float)NumberSamples_;
-    data_.TipPressureBias += (*config_.TipPressure - data_.TipPressureBias) / (float)NumberSamples_;
-    data_.Alpha1PressureBias += (*config_.Alpha1Pressure - data_.Alpha1PressureBias) / (float)NumberSamples_;
-    data_.Alpha2PressureBias += (*config_.Alpha2Pressure - data_.Alpha2PressureBias) / (float)NumberSamples_;
-    data_.Beta1PressureBias += (*config_.Beta1Pressure - data_.Beta1PressureBias) / (float)NumberSamples_;
-    data_.Beta2PressureBias += (*config_.Beta2Pressure - data_.Beta2PressureBias) / (float)NumberSamples_;
+      data_.PressAlt0 += (AirData_.getPressureAltitude(config_.StaticPressure_node->getFloat()) - data_.PressAlt0) / (float)NumberSamples_;
+      data_.TipPressureBias += (config_.TipPressure_node->getFloat() - data_.TipPressureBias) / (float)NumberSamples_;
+      data_.Alpha1PressureBias += (config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias) / (float)NumberSamples_;
+      data_.Alpha2PressureBias += (config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias) / (float)NumberSamples_;
+      data_.Beta1PressureBias += (config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias) / (float)NumberSamples_;
+      data_.Beta2PressureBias += (config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias) / (float)NumberSamples_;
 
-    NumberSamples_++;
+      NumberSamples_++;
   } else {
-    Initialized_ = true;
+      Initialized_ = true;
   }
 }
 
 bool FiveHole::Initialized() {
-  return Initialized_;
+    return Initialized_;
 }
 
 void FiveHole::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-  if (mode!=kStandby) {
-    // compute indicated airspeed
-    data_.Ias_ms = AirData_.getIAS(*config_.TipPressure - data_.TipPressureBias);
+    data_.mode_node->setInt(mode);
+    if (mode!=kStandby) {
+        // compute indicated airspeed
+        data_.ias_ms_node->setFloat( AirData_.getIAS(config_.TipPressure_node->getFloat() - data_.TipPressureBias) );
 
-    // compute altitude above ground level
-    data_.Agl_m = AirData_.getAGL(*config_.StaticPressure, data_.PressAlt0);
+        // compute altitude above ground level
+        data_.agl_m_node->setFloat( AirData_.getAGL(config_.StaticPressure_node->getFloat(), data_.PressAlt0) );
 
-    // compute Alpha and Beta
-    // if the airspeed is low, the non-dimensionalizing pressures on the side port will be very small and result in huge angles
-    if (data_.Ias_ms > 2.0f) {
-      // compute alpha
-      data_.Alpha_rad = AirData_.getAngle(*config_.TipPressure - data_.TipPressureBias,
-        *config_.Alpha1Pressure - data_.Alpha1PressureBias,
-        *config_.Alpha2Pressure - data_.Alpha2PressureBias,
-        *config_.Beta1Pressure - data_.Beta1PressureBias,
-        *config_.Beta2Pressure - data_.Beta2PressureBias,
-        config_.kAlpha);
+        // compute Alpha and Beta
+        // if the airspeed is low, the non-dimensionalizing pressures on the side port will be very small and result in huge angles
+        if (data_.ias_ms_node->getFloat() > 2.0f) {
+            // compute alpha
+            data_.Alpha_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.kAlpha) );
 
-      // limit alpha to +/-45 deg
-      if (data_.Alpha_rad > 0.7854f) {
-        data_.Alpha_rad = 0.7854f;
-      } else if (data_.Alpha_rad < -0.7854f) {
-        data_.Alpha_rad = -0.7854f;
-      }
+            // limit alpha to +/-45 deg
+            if (data_.Alpha_rad_node->getFloat() > 0.7854f) {
+                data_.Alpha_rad_node->setFloat( 0.7854f );
+            } else if (data_.Alpha_rad_node->getFloat() < -0.7854f) {
+                data_.Alpha_rad_node->setFloat( -0.7854f );
+            }
 
-      // compute beta
-      data_.Beta_rad = AirData_.getAngle(*config_.TipPressure - data_.TipPressureBias,
-        *config_.Beta1Pressure - data_.Beta1PressureBias,
-        *config_.Beta2Pressure - data_.Beta2PressureBias,
-        *config_.Alpha1Pressure - data_.Alpha1PressureBias,
-        *config_.Alpha2Pressure - data_.Alpha2PressureBias,
-        config_.kBeta);
+            // compute beta
+            data_.Beta_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.kBeta) );
 
-      // limit beta to +/-45 deg
-      if (data_.Beta_rad > 0.7854f) {
-        data_.Beta_rad = 0.7854f;
-      } else if (data_.Beta_rad < -0.7854f) {
-        data_.Beta_rad = -0.7854f;
-      }
+            // limit beta to +/-45 deg
+            if (data_.Beta_rad_node->getFloat() > 0.7854f) {
+                data_.Beta_rad_node->setFloat( 0.7854f );
+            } else if (data_.Beta_rad_node->getFloat() < -0.7854f) {
+                data_.Beta_rad_node->setFloat( -0.7854f );
+            }
 
-    } else { // airspeed < theshold
-      data_.Alpha_rad = 0.0f;
-      data_.Beta_rad = 0.0f;
+        } else { // airspeed < theshold
+            data_.Alpha_rad_node->setFloat( 0.0f );
+            data_.Beta_rad_node->setFloat( 0.0f );
+        }
     }
-  }
 }
 
 void FiveHole::Clear() {
   config_.InitTime = 0.0f;
 
-  data_.Mode = kStandby;
+  data_.mode_node->setInt(kStandby);
 
   data_.TipPressureBias = 0.0f;
-  data_.Ias_ms = 0.0f;
+  data_.ias_ms_node->setFloat( 0.0f );
 
-  data_.Agl_m = 0.0f;
+  data_.agl_m_node->setFloat( 0.0f );
   data_.PressAlt0 = 0.0f;
 
   data_.Alpha1PressureBias = 0.0f;
   data_.Alpha2PressureBias = 0.0f;
-  data_.Alpha_rad = 0.0f;
+  data_.Alpha_rad_node->setFloat( 0.0f );
 
   data_.Beta1PressureBias = 0.0f;
   data_.Beta2PressureBias = 0.0f;
-  data_.Beta_rad = 0.0f;
+  data_.Beta_rad_node->setFloat( 0.0f );
 
   bool TimeLatch_ = false;
   bool Initialized_ = false;
