@@ -20,40 +20,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "allocation-functions.h"
 
-void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // grab inputs
   if (Config.HasMember("Inputs")) {
     for (size_t i=0; i < Config["Inputs"].Size(); i++) {
       const rapidjson::Value& Input = Config["Inputs"][i];
       InputKeys_.push_back(Input.GetString());
-      if (DefinitionTreePtr->GetValuePtr<float*>(InputKeys_.back())) {
-        config_.Inputs.push_back(DefinitionTreePtr->GetValuePtr<float*>(InputKeys_.back()));
+      Element *ele = deftree.getElement(InputKeys_.back());
+      if ( ele ) {
+          config_.input_nodes.push_back(ele);
       } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
+          throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Inputs not specified in configuration."));
   }
   // resize objective matrix
-  config_.Objectives.resize(config_.Inputs.size(),1);
+  config_.Objectives.resize(config_.input_nodes.size(),1);
   // grab outputs
   if (Config.HasMember("Outputs")) {
     // resize output matrix
     data_.uCmd.resize(Config["Outputs"].Size(),1);
+    data_.uCmd_nodes.resize(Config["Outputs"].Size());
     data_.uSat.resize(Config["Outputs"].Size(),1);
     for (size_t i=0; i < Config["Outputs"].Size(); i++) {
       const rapidjson::Value& Output = Config["Outputs"][i];
       std::string OutputName = Output.GetString();
 
       // pointer to log run mode data
-      DefinitionTreePtr->InitMember(RootPath + "/Mode", &data_.Mode, "Run mode", true, false);
+      data_.Mode = deftree.initElement(RootPath + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
+      data_.Mode->setInt(kStandby);
 
       // pointer to log saturation data
-      //DefinitionTreePtr->InitMember(RootPath + "/Saturated" + "/" + OutputName, &data_.uSat(i), "Allocation saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+      //deftree.initElement(RootPath + "/Saturated" + "/" + OutputName, &data_.uSat(i), "Allocation saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
 
       // pointer to log output
-      DefinitionTreePtr->InitMember(RootPath + "/" + OutputName, &data_.uCmd(i), "Allocator output", true, false);
+      data_.uCmd_nodes[i] = deftree.initElement(RootPath + "/" + OutputName, "Allocator output", LOG_FLOAT, LOG_NONE);
     }
   } else {
     throw std::runtime_error(std::string("ERROR") + RootPath + std::string(": Outputs not specified in configuration."));
@@ -96,10 +99,10 @@ void PseudoInverseAllocation::Initialize() {}
 bool PseudoInverseAllocation::Initialized() {return true;}
 
 void PseudoInverseAllocation::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
+  data_.Mode->setInt(mode);
   // grab inputs
-  for (size_t i=0; i < config_.Inputs.size(); i++) {
-    config_.Objectives(i) = *config_.Inputs[i];
+  for (size_t i=0; i < config_.input_nodes.size(); i++) {
+      config_.Objectives(i) = config_.input_nodes[i]->getFloat();
   }
 
   // Pseduo-Inverse solver using singular value decomposition
@@ -117,16 +120,18 @@ void PseudoInverseAllocation::Run(Mode mode) {
     } else {
       data_.uSat(i) = 0;
     }
+    data_.uCmd_nodes[i]->setFloat( data_.uCmd(i) );
   }
 }
 
-void PseudoInverseAllocation::Clear(DefinitionTree *DefinitionTreePtr) {
+void PseudoInverseAllocation::Clear() {
   config_.Objectives.resize(0);
   config_.Effectiveness.resize(0,0);
   config_.LowerLimit.resize(0);
   config_.UpperLimit.resize(0);
-  data_.Mode = (uint8_t) kStandby;
+  data_.Mode->setInt(kStandby);
   data_.uCmd.resize(0);
+  data_.uCmd_nodes.resize(0);
   data_.uSat.resize(0);
   InputKeys_.clear();
 }
