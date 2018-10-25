@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "filter-functions.h"
 
-void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::vector<float> a,b;
   // get output name
   std::string OutputName;
@@ -32,9 +32,8 @@ void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPat
   // get the input
   if (Config.HasMember("Input")) {
     InputKey_ = Config["Input"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(InputKey_)) {
-      config_.Input = DefinitionTreePtr->GetValuePtr<float*>(InputKey_);
-    } else {
+    config_.input_node = deftree.getElement(InputKey_);
+    if ( !config_.input_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
     }
   } else {
@@ -57,10 +56,12 @@ void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPat
 
   // pointer to log run mode data
   ModeKey_ = RootPath+"/Mode";
-  DefinitionTreePtr->InitMember(ModeKey_,&data_.Mode,"Control law mode",true,false);
+  data_.Mode = deftree.initElement(ModeKey_,"Control law mode", LOG_UINT8, LOG_NONE);
+  data_.Mode->setInt(kStandby);
+  
   // pointer to log command data
   OutputKey_ = RootPath+"/"+Config["Output"].GetString();
-  DefinitionTreePtr->InitMember(OutputKey_,&data_.Output,"Control law output",true,false);
+  data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
 
   // configure filter
   filter_.Configure(b,a);
@@ -73,16 +74,16 @@ bool GeneralFilter::Initialized() {
 }
 
 void GeneralFilter::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-  data_.Output = filter_.Run(*config_.Input);
+    data_.Mode->setInt(mode);
+    data_.output_node->setFloat( filter_.Run(config_.input_node->getFloat()) );
 }
 
-void GeneralFilter::Clear(DefinitionTree *DefinitionTreePtr) {
+void GeneralFilter::Clear() {
   filter_.Clear();
-  data_.Mode = kStandby;
-  data_.Output = 0.0f;
-  DefinitionTreePtr->Erase(ModeKey_);
-  DefinitionTreePtr->Erase(OutputKey_);
+  data_.Mode->setInt(kStandby);
+  data_.output_node->setFloat(0.0f);
+  deftree.Erase(ModeKey_);
+  deftree.Erase(OutputKey_);
   InputKey_.clear();
   ModeKey_.clear();
   OutputKey_.clear();

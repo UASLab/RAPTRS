@@ -59,11 +59,11 @@ class GeneralFilter: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      float *Input;
+        Element *input_node{NULL};
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      float Output = 0.0f;
+        Element *Mode{NULL};
+        Element *output_node{NULL};
     };
     __GeneralFilter filter_;
     Config config_;
