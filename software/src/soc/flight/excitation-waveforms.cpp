@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "excitation-waveforms.h"
 
-void Pulse::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void Pulse::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -31,22 +31,20 @@ void Pulse::Configure(const rapidjson::Value& Config,std::string RootPath,Defini
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -74,47 +72,47 @@ void Pulse::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
-      TimeLatch = true;
+        Time0_us = config_.time_node->getLong();
+        TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
     // pulse logic
     if (ExciteTime_s < 0){
-      // do nothing
-      data_.Excitation = 0;
+        // do nothing
+        data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-      // add the pulse to the signal
-      data_.Excitation = config_.Amplitude;
+        // add the pulse to the signal
+        data_.excitation_node->setFloat(config_.Amplitude);
     } else {
-      // do nothing
-      data_.Excitation = 0;
+        // do nothing
+        data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0.0);
   }
 
-  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat(config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
-void Pulse::Clear(DefinitionTree *DefinitionTreePtr) {
+void Pulse::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat(0.0f);
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;
 }
 
-void Doublet::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void Doublet::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -125,22 +123,20 @@ void Doublet::Configure(const rapidjson::Value& Config,std::string RootPath,Defi
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -168,50 +164,50 @@ void Doublet::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
+      Time0_us = config_.time_node->getLong();
       TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
     // doublet logic
     if (ExciteTime_s < 0){
-      // do nothing
-      data_.Excitation = 0;
+        // do nothing
+        data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-      // add the doublet to the signal
-      data_.Excitation = config_.Amplitude;
+        // add the doublet to the signal
+        data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < 2.0f*config_.Duration_s) {
-      // add the doublet to the signal
-      data_.Excitation = -1*config_.Amplitude;
+        // add the doublet to the signal
+        data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else {
-      // do nothing
-      data_.Excitation = 0;
+        // do nothing
+        data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0);
   }
 
-  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat() );
 }
 
-void Doublet::Clear(DefinitionTree *DefinitionTreePtr) {
+void Doublet::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat(0.0f);
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;
 }
 
-void Doublet121::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void Doublet121::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -222,22 +218,20 @@ void Doublet121::Configure(const rapidjson::Value& Config,std::string RootPath,D
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -265,53 +259,53 @@ void Doublet121::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
+      Time0_us = config_.time_node->getLong();
       TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
     // doublet logic, 1-2-1
     if (ExciteTime_s < 0){
-      // do nothing
-      data_.Excitation = 0;
+        // do nothing
+        data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-      // add the doublet to the signal
-      data_.Excitation = config_.Amplitude;
+        // add the doublet to the signal
+        data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < 3.0f*config_.Duration_s) {
-      // add the doublet to the signal
-      data_.Excitation = -1*config_.Amplitude;
+        // add the doublet to the signal
+        data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else if (ExciteTime_s < 4.0f*config_.Duration_s) {
-      // add the doublet to the signal
-      data_.Excitation = config_.Amplitude;
+        // add the doublet to the signal
+        data_.excitation_node->setFloat(config_.Amplitude);
     } else {
-      // do nothing
-      data_.Excitation = 0;
+        // do nothing
+        data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0.0);
   }
 
-  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
-void Doublet121::Clear(DefinitionTree *DefinitionTreePtr) {
+void Doublet121::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat(0.0f);
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;
 }
 
-void Doublet3211::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void Doublet3211::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -322,22 +316,20 @@ void Doublet3211::Configure(const rapidjson::Value& Config,std::string RootPath,
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -365,56 +357,56 @@ void Doublet3211::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
+      Time0_us = config_.time_node->getLong();
       TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
     // doublet logic, 3-2-1-1
     if (ExciteTime_s < 0){
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < (3.0f*config_.Duration_s)) {
       // add the doublet to the signal
-      data_.Excitation = config_.Amplitude;
+        data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < (5.0f*config_.Duration_s)) {
       // add the doublet to the signal
-      data_.Excitation = -1*config_.Amplitude;
+        data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else if (ExciteTime_s < (6.0f*config_.Duration_s)) {
       // add the doublet to the signal
-      data_.Excitation = config_.Amplitude;
+        data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < (7.0f*config_.Duration_s)) {
       // add the doublet to the signal
-      data_.Excitation = -1*config_.Amplitude;
+        data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else {
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0.0);
   }
 
-  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat(config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
-void Doublet3211::Clear(DefinitionTree *DefinitionTreePtr) {
+void Doublet3211::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat(0.0f);
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;
 }
 
-void LinearChirp::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void LinearChirp::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -425,22 +417,20 @@ void LinearChirp::Configure(const rapidjson::Value& Config,std::string RootPath,
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -483,40 +473,40 @@ void LinearChirp::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
+      Time0_us = config_.time_node->getLong();
       TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
 
     // chirp logic
     if (ExciteTime_s < 0){
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
       // linear varying instantanious frequency
       float freq_rps = config_.Frequency[0]+(config_.Frequency[1]-config_.Frequency[0])*ExciteTime_s / (2.0f*config_.Duration_s);
       // linear varying amplitude
       float amp_nd = config_.Amplitude[0]+(config_.Amplitude[1]-config_.Amplitude[0])*ExciteTime_s / (config_.Duration_s);
       // chirp Equation
-      data_.Excitation = amp_nd*sinf(freq_rps*ExciteTime_s);
+      data_.excitation_node->setFloat(amp_nd*sinf(freq_rps*ExciteTime_s));
     } else {
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0.0);
   }
 
-  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale);
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
-void LinearChirp::Clear(DefinitionTree *DefinitionTreePtr) {
+void LinearChirp::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude[0] = 0.0f;
   config_.Amplitude[1] = 0.0f;
@@ -525,13 +515,13 @@ void LinearChirp::Clear(DefinitionTree *DefinitionTreePtr) {
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat(0.0f);
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;
 }
 
-void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -542,22 +532,20 @@ void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath,
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -591,41 +579,41 @@ void Pulse_1_Cos::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
+      Time0_us = config_.time_node->getLong();
       TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us-Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
     // chirp logic
     if (ExciteTime_s < 0){
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < (config_.Duration_s + config_.Pause_s)) {
-      // 1-Cos Excitation
+      // 1-Cos excitation_node->setFloat(
       if (ExciteTime_s < (0.5*config_.Duration_s)) {
-        data_.Excitation = config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * ExciteTime_s));
+          data_.excitation_node->setFloat( config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * ExciteTime_s)) );
       } else if (ExciteTime_s < (0.5*config_.Duration_s + config_.Pause_s)) {
-        data_.Excitation = config_.Amplitude;
+          data_.excitation_node->setFloat(config_.Amplitude);
       } else {
-        data_.Excitation = config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * (ExciteTime_s - config_.Pause_s)));
+          data_.excitation_node->setFloat( config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * (ExciteTime_s - config_.Pause_s))) );
       }
     } else {
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0.0);
   }
 
-  data_.Excitation = data_.Excitation * config_.Scale;
+  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
-void Pulse_1_Cos::Clear(DefinitionTree *DefinitionTreePtr) {
+void Pulse_1_Cos::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.Frequency = 0.0f;
@@ -633,13 +621,13 @@ void Pulse_1_Cos::Clear(DefinitionTree *DefinitionTreePtr) {
   config_.Duration_s = 0.0f;
   config_.Pause_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat( 0.0f );
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;
 }
 
-void MultiSine::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void MultiSine::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
   if (Config.HasMember("Scale-Factor")) {
@@ -650,22 +638,20 @@ void MultiSine::Configure(const rapidjson::Value& Config,std::string RootPath,De
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
 
     // pointer to log excitation data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Excitation,"Excitation system output",true,false);
+    data_.excitation_node = deftree.initElement(OutputName, "Excitation system output", LOG_FLOAT, LOG_NONE);
 
-    if (DefinitionTreePtr->GetValuePtr<float*>(SignalName)) {
-      config_.Signal = DefinitionTreePtr->GetValuePtr<float*>(SignalName);
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+    config_.signal_node = deftree.getElement(SignalName);
+    if ( !config_.signal_node ) {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    if (DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString())) {
-      config_.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-    }
+      config_.time_node = deftree.getElement(Config["Time"].GetString());
+      if ( config_.time_node ) {
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+      }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -715,36 +701,36 @@ void MultiSine::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-      Time0_us = *config_.Time_us;
+      Time0_us = config_.time_node->getLong();
       TimeLatch = true;
     }
-    ExciteTime_s = (float)(*config_.Time_us - Time0_us)/1e6 - config_.StartTime_s;
+    ExciteTime_s = (float)(config_.time_node->getLong() - Time0_us)/1e6 - config_.StartTime_s;
 
     // multisine logic
     if (ExciteTime_s < 0){
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
       // Scale the waveform to preserve unity
       float scale = sqrtf(0.5f/((float)config_.Amplitude.size()));
       // Compute the Waveform - scale * sum(amp .* cos(freq * t + phase))
-      data_.Excitation=scale*(config_.Amplitude*(config_.Frequency*ExciteTime_s + config_.Phase).cos()).sum();
+      data_.excitation_node->setFloat( scale*(config_.Amplitude*(config_.Frequency*ExciteTime_s + config_.Phase).cos()).sum() );
     } else {
       // do nothing
-      data_.Excitation = 0;
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
     TimeLatch = false;
     // do nothing
-    data_.Excitation = 0;
+    data_.excitation_node->setFloat(0.0);
   }
-  data_.Excitation = data_.Excitation * config_.Scale;
+    data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
-  *config_.Signal = *config_.Signal + data_.Excitation;
+  config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
-void MultiSine::Clear(DefinitionTree *DefinitionTreePtr) {
+void MultiSine::Clear() {
   config_.Scale = 1.0f;
   config_.Amplitude.resize(0,1);
   config_.Frequency.resize(0,1);
@@ -752,7 +738,7 @@ void MultiSine::Clear(DefinitionTree *DefinitionTreePtr) {
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
   data_.Mode = kStandby;
-  data_.Excitation = 0.0f;
+  data_.excitation_node->setFloat(0.0f);
   Time0_us = 0;
   ExciteTime_s = 0;
   TimeLatch = false;

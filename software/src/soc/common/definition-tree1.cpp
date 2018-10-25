@@ -18,7 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "definition-tree.h"
+#include "definition-tree1.h"
 
 /* Defines new definition tree member given a variable definition struct */
 void DefinitionTree::DefineMember(std::string Name,struct VariableDefinition &VariableDefinitionRef) {

@@ -27,7 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include <Eigen/Dense>
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 
 /* Excitation related functions. Each function describes its JSON
@@ -58,23 +58,23 @@ Where:
 
 class Pulse: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
-    float Amplitude = 0.0f;
-    float StartTime_s = 0.0f;
-    float Duration_s = 0.0f;
-    float Scale = 1.0f;
+      Element *time_node{NULL};
+      Element *signal_node{NULL};
+      float Amplitude = 0.0f;
+      float StartTime_s = 0.0f;
+      float Duration_s = 0.0f;
+      float Scale = 1.0f;
   };
   struct Data {
-    uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+      uint8_t Mode = kStandby;
+      Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;
@@ -106,15 +106,15 @@ Where:
 
 class Doublet: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
+    Element *time_node;
+    Element *signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -122,7 +122,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;
@@ -154,15 +154,15 @@ Where:
 
 class Doublet121: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
+    Element *time_node;
+    Element *signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -170,7 +170,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;
@@ -202,15 +202,15 @@ Where:
 
 class Doublet3211: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
+    Element *time_node;
+    Element *signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -218,7 +218,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;
@@ -251,15 +251,15 @@ Where:
 
 class LinearChirp: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
+    Element *time_node;
+    Element *signal_node;
     float Amplitude[2] = {0.0f};
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
@@ -268,7 +268,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;
@@ -300,15 +300,15 @@ Where:
 
 class Pulse_1_Cos: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
+    Element *time_node;
+    Element *signal_node;
     float Amplitude = 0.0f;
     float Frequency = 0.0f;
     float StartTime_s = 0.0f;
@@ -318,7 +318,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;
@@ -352,15 +352,15 @@ Where:
 
 class MultiSine: public GenericFunction {
 public:
-  void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
   void Run(Mode mode);
   void Initialize();
   bool Initialized();
-  void Clear(DefinitionTree *DefinitionTreePtr);
+  void Clear();
 private:
   struct Config {
-    uint64_t *Time_us;
-    float *Signal;
+    Element *time_node;
+    Element *signal_node;
     Eigen::Array<float,Eigen::Dynamic,1> Amplitude;
     Eigen::Array<float,Eigen::Dynamic,1> Frequency;
     Eigen::Array<float,Eigen::Dynamic,1> Phase;
@@ -370,7 +370,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    float Excitation = 0.0f;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;

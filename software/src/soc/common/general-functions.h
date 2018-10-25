@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 
 /*
@@ -42,11 +42,11 @@ Data type for the output is float.
 */
 class ConstantClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
       float Constant = 0.0f;
@@ -82,11 +82,11 @@ Data types for the input and output are both float.
 */
 class GainClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
       float *Input;
@@ -125,11 +125,11 @@ Data types for the input and output are both float.
 */
 class SumClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
       std::vector<float*> Inputs;
@@ -163,11 +163,11 @@ Data types for the input and output are both float.
 */
 class LatchClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
       float *Input;

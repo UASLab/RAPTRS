@@ -10,8 +10,8 @@ using std::endl;
 DefinitionTree2 deftree;
 
 Element *DefinitionTree2::initElement(string name, string desc,
-                                      Element::log_tag_t datalog,
-                                      Element::log_tag_t telemetry) {
+                                      log_tag_t datalog,
+                                      log_tag_t telemetry) {
     def_tree_t::iterator it;
     it = data.find(name);
     if ( it != data.end() ) {

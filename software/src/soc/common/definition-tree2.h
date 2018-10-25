@@ -37,7 +37,7 @@ class Element {
         long l;
         float f;
         double d;
-    };
+    } x = {0};
 
  public:
     
@@ -48,59 +48,59 @@ class Element {
     Element() {}
     ~Element() {}
 
-    void setBool( bool val ) { b = val; tag = BOOL; }
-    void setInt( int val ) { i = val; tag = INT; }
-    void setLong( long val ) { l = val; tag = LONG; }
-    void setFloat( float val ) { f = val; tag = FLOAT; }
-    void setDouble( double val ) { d = val; tag = DOUBLE; }
+    void setBool( bool val ) { x.b = val; tag = BOOL; }
+    void setInt( int val ) { x.i = val; tag = INT; }
+    void setLong( long val ) { x.l = val; tag = LONG; }
+    void setFloat( float val ) { x.f = val; tag = FLOAT; }
+    void setDouble( double val ) { x.d = val; tag = DOUBLE; }
 
     bool getBool() {
         switch(tag) {
-            case BOOL: return b;
-            case INT: return i;
-            case LONG: return l;
-            case FLOAT: return f;
-            case DOUBLE: return d;
+            case BOOL: return x.b;
+            case INT: return x.i;
+            case LONG: return x.l;
+            case FLOAT: return x.f;
+            case DOUBLE: return x.d;
             default: return false;
         }
     }
     int getInt() {
         switch(tag) {
-            case BOOL: return b;
-            case INT: return i;
-            case LONG: return l;
-            case FLOAT: return f;
-            case DOUBLE: return d;
+            case BOOL: return x.b;
+            case INT: return x.i;
+            case LONG: return x.l;
+            case FLOAT: return x.f;
+            case DOUBLE: return x.d;
             default: return 0;
         }
     }
     long getLong() {
         switch(tag) {
-            case BOOL: return b;
-            case INT: return i;
-            case LONG: return l;
-            case FLOAT: return f;
-            case DOUBLE: return d;
+            case BOOL: return x.b;
+            case INT: return x.i;
+            case LONG: return x.l;
+            case FLOAT: return x.f;
+            case DOUBLE: return x.d;
             default: return 0;
         }
     }
     float getFloat() {
         switch(tag) {
-            case BOOL: return b;
-            case INT: return i;
-            case LONG: return l;
-            case FLOAT: return f;
-            case DOUBLE: return d;
+            case BOOL: return x.b;
+            case INT: return x.i;
+            case LONG: return x.l;
+            case FLOAT: return x.f;
+            case DOUBLE: return x.d;
             default: return 0.0;
         }
     }
     double getDouble() {
         switch(tag) {
-            case BOOL: return b;
-            case INT: return i;
-            case LONG: return l;
-            case FLOAT: return f;
-            case DOUBLE: return d;
+            case BOOL: return x.b;
+            case INT: return x.i;
+            case LONG: return x.l;
+            case FLOAT: return x.f;
+            case DOUBLE: return x.d;
             default: return 0.0;
         }
     }
