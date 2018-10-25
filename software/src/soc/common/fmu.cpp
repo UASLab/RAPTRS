@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "fmu.h"
 
+#include <string>
+using std::to_string;
+
 /* Opens port to communicate with FMU. */
 void FlightManagementUnit::Begin() {
   if ((FmuFileDesc_=open(Port_.c_str(),O_RDWR|O_NOCTTY|O_NONBLOCK))<0) {
@@ -39,7 +42,7 @@ void FlightManagementUnit::Begin() {
 }
 
 /* Updates FMU configuration given a JSON value and registers data with global defs */
-void FlightManagementUnit::Configure(const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr) {
+void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
   std::vector<uint8_t> Payload;
 
   // switch FMU to configuration mode
@@ -93,7 +96,7 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config, DefinitionT
   // register sensor data with global definition tree
   if (Config.HasMember("Sensors")) {
     std::cout << "\t\tRegistering Sensors with DefinitionTree..." << std::flush;
-    RegisterSensors(Config["Sensors"],DefinitionTreePtr);
+    RegisterSensors(Config["Sensors"]);
     std::cout << "done!" << std::endl;
   }
 }
@@ -137,18 +140,23 @@ bool FlightManagementUnit::ReceiveSensorData() {
       // resize data buffers
       if (AcquireInternalData & 0x01) {
         SensorData_.Time_us.resize(1);
+        SensorNodes_.Time_us.resize(1);
       }
       if (AcquireInternalData & 0x02) {
         SensorData_.InternalMpu9250.resize(1);
+        SensorNodes_.InternalMpu9250.resize(1);
       }
       if (AcquireInternalData & 0x04) {
         SensorData_.InternalBme280.resize(1);
+        SensorNodes_.InternalBme280.resize(1);
       }
       if (AcquireInternalData & 0x08) {
         SensorData_.InputVoltage_V.resize(1);
+        SensorNodes_.input_volts.resize(1);
       }
       if (AcquireInternalData & 0x10) {
         SensorData_.RegulatedVoltage_V.resize(1);
+        SensorNodes_.reg_volts.resize(1);
       }
       SensorData_.PwmVoltage_V.resize(NumberPwmVoltageSensor);
       SensorData_.SbusVoltage_V.resize(NumberSbusVoltageSensor);
@@ -159,6 +167,15 @@ bool FlightManagementUnit::ReceiveSensorData() {
       SensorData_.Ams5915.resize(NumberAms5915Sensor);
       SensorData_.Sbus.resize(NumberSbusSensor);
       SensorData_.Analog.resize(NumberAnalogSensor);
+      SensorNodes_.pwm_volts.resize(NumberPwmVoltageSensor);
+      SensorNodes_.sbus_volts.resize(NumberSbusVoltageSensor);
+      SensorNodes_.Mpu9250.resize(NumberMpu9250Sensor);
+      SensorNodes_.Bme280.resize(NumberBme280Sensor);
+      SensorNodes_.uBlox.resize(NumberuBloxSensor);
+      SensorNodes_.Swift.resize(NumberSwiftSensor);
+      SensorNodes_.Ams5915.resize(NumberAms5915Sensor);
+      SensorNodes_.Sbus.resize(NumberSbusSensor);
+      SensorNodes_.Analog.resize(NumberAnalogSensor);
 
       // sensor data
       memcpy(SensorData_.Time_us.data(),Payload.data()+PayloadLocation,SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]));
@@ -189,6 +206,10 @@ bool FlightManagementUnit::ReceiveSensorData() {
       PayloadLocation += SensorData_.Sbus.size()*sizeof(SbusSensorData);
       memcpy(SensorData_.Analog.data(),Payload.data()+PayloadLocation,SensorData_.Analog.size()*sizeof(AnalogSensorData));
       PayloadLocation += SensorData_.Analog.size()*sizeof(AnalogSensorData);
+
+      // copy the incoming sensor data into the definition tree
+      PublishSensors();
+      
       return true;
     } else {
       return false;
@@ -290,116 +311,116 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config) {
 }
 
 /* Registers sensor data with global definition tree */
-void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr) {
+void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config) {
   for (size_t i=0; i < SensorData_.Time_us.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Time",i);
-    DefinitionTreePtr->InitMember(Path,&SensorData_.Time_us[i],"Flight management unit time, us",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Time",i);
+    SensorNodes_.Time_us[i] = deftree.initElement(Path, "Flight management unit time, us", true, false);
   }
   for (size_t i=0; i < SensorData_.InternalMpu9250.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"InternalMpu9250",i);
-    DefinitionTreePtr->InitMember(Path+"/AccelX_mss",&SensorData_.InternalMpu9250[i].Accel_mss(0,0),"Flight management unit MPU-9250 X accelerometer, corrected for installation rotation, m/s/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/AccelY_mss",&SensorData_.InternalMpu9250[i].Accel_mss(1,0),"Flight management unit MPU-9250 Y accelerometer, corrected for installation rotation, m/s/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/AccelZ_mss",&SensorData_.InternalMpu9250[i].Accel_mss(2,0),"Flight management unit MPU-9250 Z accelerometer, corrected for installation rotation, m/s/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/GyroX_rads",&SensorData_.InternalMpu9250[i].Gyro_rads(0,0),"Flight management unit MPU-9250 X gyro, corrected for installation rotation, rad/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/GyroY_rads",&SensorData_.InternalMpu9250[i].Gyro_rads(1,0),"Flight management unit MPU-9250 Y gyro, corrected for installation rotation, rad/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/GyroZ_rads",&SensorData_.InternalMpu9250[i].Gyro_rads(2,0),"Flight management unit MPU-9250 Z gyro, corrected for installation rotation, rad/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/MagX_uT",&SensorData_.InternalMpu9250[i].Mag_uT(0,0),"Flight management unit MPU-9250 X magnetometer, corrected for installation rotation, uT",true,false);
-    DefinitionTreePtr->InitMember(Path+"/MagY_uT",&SensorData_.InternalMpu9250[i].Mag_uT(1,0),"Flight management unit MPU-9250 Y magnetometer, corrected for installation rotation, uT",true,false);
-    DefinitionTreePtr->InitMember(Path+"/MagZ_uT",&SensorData_.InternalMpu9250[i].Mag_uT(2,0),"Flight management unit MPU-9250 Z magnetometer, corrected for installation rotation, uT",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Temperature_C",&SensorData_.InternalMpu9250[i].Temperature_C,"Flight management unit MPU-9250 temperature, C",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"InternalMpu9250",i);
+    SensorNodes_.InternalMpu9250[i].ax = deftree.initElement(Path+"/AccelX_mss", "Flight management unit MPU-9250 X accelerometer, corrected for installation rotation, m/s/s", true, false);
+    SensorNodes_.InternalMpu9250[i].ay = deftree.initElement(Path+"/AccelY_mss", "Flight management unit MPU-9250 Y accelerometer, corrected for installation rotation, m/s/s", true, false);
+    SensorNodes_.InternalMpu9250[i].az = deftree.initElement(Path+"/AccelZ_mss", "Flight management unit MPU-9250 Z accelerometer, corrected for installation rotation, m/s/s", true, false);
+    SensorNodes_.InternalMpu9250[i].p = deftree.initElement(Path+"/GyroX_rads", "Flight management unit MPU-9250 X gyro, corrected for installation rotation, rad/s", true, false);
+    SensorNodes_.InternalMpu9250[i].q = deftree.initElement(Path+"/GyroY_rads", "Flight management unit MPU-9250 Y gyro, corrected for installation rotation, rad/s", true, false);
+    SensorNodes_.InternalMpu9250[i].r = deftree.initElement(Path+"/GyroZ_rads", "Flight management unit MPU-9250 Z gyro, corrected for installation rotation, rad/s", true, false);
+    SensorNodes_.InternalMpu9250[i].hx = deftree.initElement(Path+"/MagX_uT", "Flight management unit MPU-9250 X magnetometer, corrected for installation rotation, uT", true, false);
+    SensorNodes_.InternalMpu9250[i].hy = deftree.initElement(Path+"/MagY_uT", "Flight management unit MPU-9250 Y magnetometer, corrected for installation rotation, uT", true, false);
+    SensorNodes_.InternalMpu9250[i].hz = deftree.initElement(Path+"/MagZ_uT", "Flight management unit MPU-9250 Z magnetometer, corrected for installation rotation, uT", true, false);
+    SensorNodes_.InternalMpu9250[i].temp = deftree.initElement(Path+"/Temperature_C", "Flight management unit MPU-9250 temperature, C", true, false);
   }
   for (size_t i=0; i < SensorData_.InternalBme280.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"InternalBme280",i);
-    DefinitionTreePtr->InitMember(Path+"/Pressure_Pa",&SensorData_.InternalBme280[i].Pressure_Pa,"Flight management unit BME-280 static pressure, Pa",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Temperature_C",&SensorData_.InternalBme280[i].Temperature_C,"Flight management unit BME-280 temperature, C",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Humidity_RH",&SensorData_.InternalBme280[i].Humidity_RH,"Flight management unit BME-280 percent relative humidity",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"InternalBme280",i);
+    SensorNodes_.InternalBme280[i].press = deftree.initElement(Path+"/Pressure_Pa", "Flight management unit BME-280 static pressure, Pa", true, false);
+    SensorNodes_.InternalBme280[i].temp = deftree.initElement(Path+"/Temperature_C", "Flight management unit BME-280 temperature, C", true, false);
+    SensorNodes_.InternalBme280[i].hum = deftree.initElement(Path+"/Humidity_RH", "Flight management unit BME-280 percent relative humidity", true, false);
   }
   for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"InputVoltage",i);
-    DefinitionTreePtr->InitMember(Path,&SensorData_.InputVoltage_V[i],"Flight management unit input voltage, V",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"InputVoltage",i);
+    SensorNodes_.input_volts[i] = deftree.initElement(Path, "Flight management unit input voltage, V", true, false);
   }
   for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"RegulatedVoltage",i);
-    DefinitionTreePtr->InitMember(Path,&SensorData_.RegulatedVoltage_V[i],"Flight management unit regulated voltage, V",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"RegulatedVoltage",i);
+    SensorNodes_.reg_volts[i] = deftree.initElement(Path, "Flight management unit regulated voltage, V", true, false);
   }
   for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"PwmVoltage",i);
-    DefinitionTreePtr->InitMember(Path,&SensorData_.PwmVoltage_V[i],"Flight management unit PWM servo voltage, V",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"PwmVoltage",i);
+    SensorNodes_.pwm_volts[i] = deftree.initElement(Path, "Flight management unit PWM servo voltage, V", true, false);
   }
   for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"SbusVoltage",i);
-    DefinitionTreePtr->InitMember(Path,&SensorData_.SbusVoltage_V[i],"Flight management unit SBUS servo voltage, V",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"SbusVoltage",i);
+    SensorNodes_.sbus_volts[i] = deftree.initElement(Path, "Flight management unit SBUS servo voltage, V", true, false);
   }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Mpu9250",i);
-    DefinitionTreePtr->InitMember(Path+"/Status",&SensorData_.Mpu9250[i].status,"MPU-9250_" + std::to_string(i) + " read status, positive if a good sensor read",true,false);
-    DefinitionTreePtr->InitMember(Path+"/AccelX_mss",&SensorData_.Mpu9250[i].Accel_mss(0,0),"MPU-9250_" + std::to_string(i) + " X accelerometer, corrected for installation rotation, m/s/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/AccelY_mss",&SensorData_.Mpu9250[i].Accel_mss(1,0),"MPU-9250_" + std::to_string(i) + " Y accelerometer, corrected for installation rotation, m/s/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/AccelZ_mss",&SensorData_.Mpu9250[i].Accel_mss(2,0),"MPU-9250_" + std::to_string(i) + " Z accelerometer, corrected for installation rotation, m/s/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/GyroX_rads",&SensorData_.Mpu9250[i].Gyro_rads(0,0),"MPU-9250_" + std::to_string(i) + " X gyro, corrected for installation rotation, rad/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/GyroY_rads",&SensorData_.Mpu9250[i].Gyro_rads(1,0),"MPU-9250_" + std::to_string(i) + " Y gyro, corrected for installation rotation, rad/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/GyroZ_rads",&SensorData_.Mpu9250[i].Gyro_rads(2,0),"MPU-9250_" + std::to_string(i) + " Z gyro, corrected for installation rotation, rad/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/MagX_uT",&SensorData_.Mpu9250[i].Mag_uT(0,0),"MPU-9250_" + std::to_string(i) + " X magnetometer, corrected for installation rotation, uT",true,false);
-    DefinitionTreePtr->InitMember(Path+"/MagY_uT",&SensorData_.Mpu9250[i].Mag_uT(1,0),"MPU-9250_" + std::to_string(i) + " Y magnetometer, corrected for installation rotation, uT",true,false);
-    DefinitionTreePtr->InitMember(Path+"/MagZ_uT",&SensorData_.Mpu9250[i].Mag_uT(2,0),"MPU-9250_" + std::to_string(i) + " Z magnetometer, corrected for installation rotation, uT",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Temperature_C",&SensorData_.Mpu9250[i].Temperature_C,"MPU-9250_" + std::to_string(i) + " temperature, C",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Mpu9250",i);
+    SensorNodes_.Mpu9250[i].status = deftree.initElement(Path+"/Status", "MPU-9250_" + to_string(i) + " read status, positive if a good sensor read", true, false);
+    SensorNodes_.Mpu9250[i].ax = deftree.initElement(Path+"/AccelX_mss", "MPU-9250_" + to_string(i) + " X accelerometer, corrected for installation rotation, m/s/s", true, false);
+    SensorNodes_.Mpu9250[i].ay = deftree.initElement(Path+"/AccelY_mss", "MPU-9250_" + to_string(i) + " Y accelerometer, corrected for installation rotation, m/s/s", true, false);
+    SensorNodes_.Mpu9250[i].az = deftree.initElement(Path+"/AccelZ_mss", "MPU-9250_" + to_string(i) + " Z accelerometer, corrected for installation rotation, m/s/s", true, false);
+    SensorNodes_.Mpu9250[i].p = deftree.initElement(Path+"/GyroX_rads", "MPU-9250_" + to_string(i) + " X gyro, corrected for installation rotation, rad/s", true, false);
+    SensorNodes_.Mpu9250[i].q = deftree.initElement(Path+"/GyroY_rads", "MPU-9250_" + to_string(i) + " Y gyro, corrected for installation rotation, rad/s", true, false);
+    SensorNodes_.Mpu9250[i].r = deftree.initElement(Path+"/GyroZ_rads", "MPU-9250_" + to_string(i) + " Z gyro, corrected for installation rotation, rad/s", true, false);
+    SensorNodes_.Mpu9250[i].hx = deftree.initElement(Path+"/MagX_uT", "MPU-9250_" + to_string(i) + " X magnetometer, corrected for installation rotation, uT", true, false);
+    SensorNodes_.Mpu9250[i].hy = deftree.initElement(Path+"/MagY_uT", "MPU-9250_" + to_string(i) + " Y magnetometer, corrected for installation rotation, uT", true, false);
+    SensorNodes_.Mpu9250[i].hz = deftree.initElement(Path+"/MagZ_uT", "MPU-9250_" + to_string(i) + " Z magnetometer, corrected for installation rotation, uT", true, false);
+    SensorNodes_.Mpu9250[i].temp = deftree.initElement(Path+"/Temperature_C", "MPU-9250_" + to_string(i) + " temperature, C", true, false);
   }
   for (size_t i=0; i < SensorData_.Bme280.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Bme280",i);
-    DefinitionTreePtr->InitMember(Path+"/Status",&SensorData_.Bme280[i].status,"BME-280_" + std::to_string(i) + " read status, positive if a good sensor read",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Pressure_Pa",&SensorData_.Bme280[i].Pressure_Pa,"BME-280_" + std::to_string(i) + " static pressure, Pa",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Temperature_C",&SensorData_.Bme280[i].Temperature_C,"BME-280_" + std::to_string(i) + " temperature, C",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Humidity_RH",&SensorData_.Bme280[i].Humidity_RH,"BME-280_" + std::to_string(i) + " percent relative humidity",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Bme280",i);
+    SensorNodes_.Bme280[i].status = deftree.initElement(Path+"/Status", "BME-280_" + to_string(i) + " read status, positive if a good sensor read", true, false);
+    SensorNodes_.Bme280[i].press = deftree.initElement(Path+"/Pressure_Pa", "BME-280_" + to_string(i) + " static pressure, Pa", true, false);
+    SensorNodes_.Bme280[i].temp = deftree.initElement(Path+"/Temperature_C", "BME-280_" + to_string(i) + " temperature, C", true, false);
+    SensorNodes_.Bme280[i].hum = deftree.initElement(Path+"/Humidity_RH", "BME-280_" + to_string(i) + " percent relative humidity", true, false);
   }
   for (size_t i=0; i < SensorData_.uBlox.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"uBlox",i);
-    DefinitionTreePtr->InitMember(Path+"/Fix",(uint8_t*)&SensorData_.uBlox[i].Fix,"uBlox_" + std::to_string(i) + " fix status, true for 3D fix only",true,false);
-    DefinitionTreePtr->InitMember(Path+"/NumberSatellites",&SensorData_.uBlox[i].NumberSatellites,"uBlox_" + std::to_string(i) + " number of satellites used in solution",true,false);
-    DefinitionTreePtr->InitMember(Path+"/TOW",&SensorData_.uBlox[i].TOW,"uBlox_" + std::to_string(i) + " GPS time of the navigation epoch",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Year",&SensorData_.uBlox[i].Year,"uBlox_" + std::to_string(i) + " UTC year",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Month",&SensorData_.uBlox[i].Month,"uBlox_" + std::to_string(i) + " UTC month",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Day",&SensorData_.uBlox[i].Day,"uBlox_" + std::to_string(i) + " UTC day",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Hour",&SensorData_.uBlox[i].Hour,"uBlox_" + std::to_string(i) + " UTC hour",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Minute",&SensorData_.uBlox[i].Min,"uBlox_" + std::to_string(i) + " UTC minute",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Second",&SensorData_.uBlox[i].Sec,"uBlox_" + std::to_string(i) + " UTC second",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Latitude_rad",&SensorData_.uBlox[i].LLA(0,0),"uBlox_" + std::to_string(i) + " latitude, rad",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Longitude_rad",&SensorData_.uBlox[i].LLA(1,0),"uBlox_" + std::to_string(i) + " longitude, rad",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Altitude_m",&SensorData_.uBlox[i].LLA(2,0),"uBlox_" + std::to_string(i) + " altitude above mean sea level, m",true,false);
-    DefinitionTreePtr->InitMember(Path+"/NorthVelocity_ms",&SensorData_.uBlox[i].NEDVelocity_ms(0,0),"uBlox_" + std::to_string(i) + " north velocity, m/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/EastVelocity_ms",&SensorData_.uBlox[i].NEDVelocity_ms(1,0),"uBlox_" + std::to_string(i) + " east velocity, m/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/DownVelocity_ms",&SensorData_.uBlox[i].NEDVelocity_ms(2,0),"uBlox_" + std::to_string(i) + " down velocity, m/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/HorizontalAccuracy_m",&SensorData_.uBlox[i].Accuracy(0,0),"uBlox_" + std::to_string(i) + " horizontal accuracy estimate, m",true,false);
-    DefinitionTreePtr->InitMember(Path+"/VerticalAccuracy_m",&SensorData_.uBlox[i].Accuracy(1,0),"uBlox_" + std::to_string(i) + " vertical accuracy estimate, m",true,false);
-    DefinitionTreePtr->InitMember(Path+"/VelocityAccuracy_ms",&SensorData_.uBlox[i].Accuracy(2,0),"uBlox_" + std::to_string(i) + " velocity accuracy estimate, m/s",true,false);
-    DefinitionTreePtr->InitMember(Path+"/pDOP",&SensorData_.uBlox[i].pDOP,"uBlox_" + std::to_string(i) + " position dilution of precision",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"uBlox",i);
+    SensorNodes_.uBlox[i].fix = deftree.initElement(Path+"/Fix", "uBlox_" + to_string(i) + " fix status, true for 3D fix only", true, false);
+    SensorNodes_.uBlox[i].sats = deftree.initElement(Path+"/NumberSatellites", "uBlox_" + to_string(i) + " number of satellites used in solution", true, false);
+    SensorNodes_.uBlox[i].tow = deftree.initElement(Path+"/TOW", "uBlox_" + to_string(i) + " GPS time of the navigation epoch", true, false);
+    SensorNodes_.uBlox[i].year = deftree.initElement(Path+"/Year", "uBlox_" + to_string(i) + " UTC year", true, false);
+    SensorNodes_.uBlox[i].month = deftree.initElement(Path+"/Month", "uBlox_" + to_string(i) + " UTC month", true, false);
+    SensorNodes_.uBlox[i].day = deftree.initElement(Path+"/Day", "uBlox_" + to_string(i) + " UTC day", true, false);
+    SensorNodes_.uBlox[i].hour = deftree.initElement(Path+"/Hour", "uBlox_" + to_string(i) + " UTC hour", true, false);
+    SensorNodes_.uBlox[i].min = deftree.initElement(Path+"/Minute", "uBlox_" + to_string(i) + " UTC minute", true, false);
+    SensorNodes_.uBlox[i].sec = deftree.initElement(Path+"/Second", "uBlox_" + to_string(i) + " UTC second", true, false);
+    SensorNodes_.uBlox[i].lat = deftree.initElement(Path+"/Latitude_rad", "uBlox_" + to_string(i) + " latitude, rad", true, false);
+    SensorNodes_.uBlox[i].lon = deftree.initElement(Path+"/Longitude_rad", "uBlox_" + to_string(i) + " longitude, rad", true, false);
+    SensorNodes_.uBlox[i].alt = deftree.initElement(Path+"/Altitude_m", "uBlox_" + to_string(i) + " altitude above mean sea level, m", true, false);
+    SensorNodes_.uBlox[i].vn = deftree.initElement(Path+"/NorthVelocity_ms", "uBlox_" + to_string(i) + " north velocity, m/s", true, false);
+    SensorNodes_.uBlox[i].ve = deftree.initElement(Path+"/EastVelocity_ms", "uBlox_" + to_string(i) + " east velocity, m/s", true, false);
+    SensorNodes_.uBlox[i].vd = deftree.initElement(Path+"/DownVelocity_ms", "uBlox_" + to_string(i) + " down velocity, m/s", true, false);
+    SensorNodes_.uBlox[i].horiz_acc = deftree.initElement(Path+"/HorizontalAccuracy_m", "uBlox_" + to_string(i) + " horizontal accuracy estimate, m", true, false);
+    SensorNodes_.uBlox[i].vert_acc = deftree.initElement(Path+"/VerticalAccuracy_m", "uBlox_" + to_string(i) + " vertical accuracy estimate, m", true, false);
+    SensorNodes_.uBlox[i].vel_acc = deftree.initElement(Path+"/VelocityAccuracy_ms", "uBlox_" + to_string(i) + " velocity accuracy estimate, m/s", true, false);
+    SensorNodes_.uBlox[i].pdop = deftree.initElement(Path+"/pDOP", "uBlox_" + to_string(i) + " position dilution of precision", true, false);
   }
   for (size_t i=0; i < SensorData_.Swift.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Swift",i);
-    DefinitionTreePtr->InitMember(Path+"/Static/Status",&SensorData_.Swift[i].Static.status,"Swift_" + std::to_string(i) + " static pressure read status, positive if a good sensor read",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Static/Pressure_Pa",&SensorData_.Swift[i].Static.Pressure_Pa,"Swift_" + std::to_string(i) + " static pressure, Pa",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Static/Temperature_C",&SensorData_.Swift[i].Static.Temperature_C,"Swift_" + std::to_string(i) + " static pressure transducer temperature, C",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Differential/Status",&SensorData_.Swift[i].Differential.status,"Swift_" + std::to_string(i) + " differential pressure read status, positive if a good sensor read",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Differential/Pressure_Pa",&SensorData_.Swift[i].Differential.Pressure_Pa,"Swift_" + std::to_string(i) + " differential pressure, Pa",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Differential/Temperature_C",&SensorData_.Swift[i].Differential.Temperature_C,"Swift_" + std::to_string(i) + " differential pressure transducer temperature, C",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Swift",i);
+    SensorNodes_.Swift[i].Static.status = deftree.initElement(Path+"/Static/Status", "Swift_" + to_string(i) + " static pressure read status, positive if a good sensor read", true, false);
+    SensorNodes_.Swift[i].Static.press = deftree.initElement(Path+"/Static/Pressure_Pa", "Swift_" + to_string(i) + " static pressure, Pa", true, false);
+    SensorNodes_.Swift[i].Static.temp = deftree.initElement(Path+"/Static/Temperature_C", "Swift_" + to_string(i) + " static pressure transducer temperature, C", true, false);
+    SensorNodes_.Swift[i].Differential.status = deftree.initElement(Path+"/Differential/Status", "Swift_" + to_string(i) + " differential pressure read status, positive if a good sensor read", true, false);
+    SensorNodes_.Swift[i].Differential.press = deftree.initElement(Path+"/Differential/Pressure_Pa", "Swift_" + to_string(i) + " differential pressure, Pa", true, false);
+    SensorNodes_.Swift[i].Differential.temp = deftree.initElement(Path+"/Differential/Temperature_C", "Swift_" + to_string(i) + " differential pressure transducer temperature, C", true, false);
   }
   for (size_t i=0; i < SensorData_.Ams5915.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Ams5915",i);
-    DefinitionTreePtr->InitMember(Path+"/Status",&SensorData_.Ams5915[i].status,"AMS-5915_" + std::to_string(i) + " read status, positive if a good sensor read",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Pressure_Pa",&SensorData_.Ams5915[i].Pressure_Pa,"AMS-5915_" + std::to_string(i) + " pressure, Pa",true,false);
-    DefinitionTreePtr->InitMember(Path+"/Temperature_C",&SensorData_.Ams5915[i].Temperature_C,"AMS-5915_" + std::to_string(i) + " pressure transducer temperature, C",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Ams5915",i);
+    SensorNodes_.Ams5915[i].status = deftree.initElement(Path+"/Status", "AMS-5915_" + to_string(i) + " read status, positive if a good sensor read", true, false);
+    SensorNodes_.Ams5915[i].press = deftree.initElement(Path+"/Pressure_Pa", "AMS-5915_" + to_string(i) + " pressure, Pa", true, false);
+    SensorNodes_.Ams5915[i].temp = deftree.initElement(Path+"/Temperature_C", "AMS-5915_" + to_string(i) + " pressure transducer temperature, C", true, false);
   }
   for (size_t i=0; i < SensorData_.Sbus.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Sbus",i);
-    DefinitionTreePtr->InitMember(Path+"/FailSafe",(uint8_t*)&SensorData_.Sbus[i].FailSafe,"SBUS_" + std::to_string(i) + " fail safe status",true,false);
-    DefinitionTreePtr->InitMember(Path+"/LostFrames",&SensorData_.Sbus[i].LostFrames,"SBUS_" + std::to_string(i) + " number of lost frames",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Sbus",i);
+    SensorNodes_.Sbus[i].failsafe = deftree.initElement(Path+"/FailSafe", "SBUS_" + to_string(i) + " fail safe status", true, false);
+    SensorNodes_.Sbus[i].lost_frames = deftree.initElement(Path+"/LostFrames", "SBUS_" + to_string(i) + " number of lost frames", true, false);
     for (size_t j=0; j < 16; j++) {
-      DefinitionTreePtr->InitMember(Path+"/Channels/"+std::to_string(j),&SensorData_.Sbus[i].Channels[j],"SBUS_" + std::to_string(i) + " channel" + std::to_string(j) + " normalized value",true,false);
+      SensorNodes_.Sbus[i].ch[j] = deftree.initElement(Path+"/Channels/"+to_string(j), "SBUS_" + to_string(i) + " channel" + to_string(j) + " normalized value", true, false);
     }
   }
   for (size_t i=0; i < SensorData_.Analog.size(); i++) {
-    std::string Path = RootPath_+"/"+GetSensorOutputName(Config,"Analog",i);
-    DefinitionTreePtr->InitMember(Path+"/Voltage_V",&SensorData_.Analog[i].Voltage_V,"Analog_" + std::to_string(i) + " measured voltage, V",true,false);
-    DefinitionTreePtr->InitMember(Path+"/CalibratedValue",&SensorData_.Analog[i].CalibratedValue,"Analog_" + std::to_string(i) + " calibrated value",true,false);
+    string Path = RootPath_+"/"+GetSensorOutputName(Config,"Analog",i);
+    SensorNodes_.Analog[i].volt = deftree.initElement(Path+"/Voltage_V", "Analog_" + to_string(i) + " measured voltage, V", true, false);
+    SensorNodes_.Analog[i].val = deftree.initElement(Path+"/CalibratedValue", "Analog_" + to_string(i) + " calibrated value", true, false);
   }
 }
 
@@ -557,5 +578,105 @@ void FlightManagementUnit::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, ui
   for (size_t i = 0; i < ArraySize; i++) {
     Checksum[0] += ByteArray[i];
     Checksum[1] += Checksum[0];
+  }
+}
+
+void FlightManagementUnit::PublishSensors() {
+  for (size_t i=0; i < SensorData_.Time_us.size(); i++) {
+      // fixme: uint64_t
+      SensorNodes_.Time_us[i]->setLong(SensorData_.Time_us[i]);
+  }
+  for (size_t i=0; i < SensorData_.InternalMpu9250.size(); i++) {
+      SensorNodes_.InternalMpu9250[i].ax->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(0,0));
+      SensorNodes_.InternalMpu9250[i].ay->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(1,0));
+      SensorNodes_.InternalMpu9250[i].az->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(2,0));
+      SensorNodes_.InternalMpu9250[i].p->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(0,0));
+      SensorNodes_.InternalMpu9250[i].q->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(1,0));
+      SensorNodes_.InternalMpu9250[i].r->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(2,0));
+      SensorNodes_.InternalMpu9250[i].hx->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(0,0));
+      SensorNodes_.InternalMpu9250[i].hy->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(1,0));
+      SensorNodes_.InternalMpu9250[i].hz->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(2,0));
+      SensorNodes_.InternalMpu9250[i].temp->setFloat(SensorData_.InternalMpu9250[i].Temperature_C);
+  }
+  for (size_t i=0; i < SensorData_.InternalBme280.size(); i++) {
+      SensorNodes_.InternalBme280[i].press->setFloat(SensorData_.InternalBme280[i].Pressure_Pa);
+      SensorNodes_.InternalBme280[i].temp->setFloat(SensorData_.InternalBme280[i].Temperature_C);
+      SensorNodes_.InternalBme280[i].hum->setFloat(SensorData_.InternalBme280[i].Humidity_RH);
+  }
+  for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
+      SensorNodes_.input_volts[i]->setFloat(SensorData_.InputVoltage_V[i]);
+  }
+  for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
+      SensorNodes_.reg_volts[i]->setFloat(SensorData_.RegulatedVoltage_V[i]);
+  }
+  for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
+      SensorNodes_.pwm_volts[i]->setFloat(SensorData_.PwmVoltage_V[i]);
+  }
+  for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
+      SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
+  }
+  for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
+      SensorNodes_.Mpu9250[i].status->setInt(SensorData_.Mpu9250[i].status);
+      SensorNodes_.Mpu9250[i].ax->setFloat(SensorData_.Mpu9250[i].Accel_mss(0,0));
+      SensorNodes_.Mpu9250[i].ay->setFloat(SensorData_.Mpu9250[i].Accel_mss(1,0));
+      SensorNodes_.Mpu9250[i].az->setFloat(SensorData_.Mpu9250[i].Accel_mss(2,0));
+      SensorNodes_.Mpu9250[i].p->setFloat(SensorData_.Mpu9250[i].Gyro_rads(0,0));
+      SensorNodes_.Mpu9250[i].q->setFloat(SensorData_.Mpu9250[i].Gyro_rads(1,0));
+      SensorNodes_.Mpu9250[i].r->setFloat(SensorData_.Mpu9250[i].Gyro_rads(2,0));
+      SensorNodes_.Mpu9250[i].hx->setFloat(SensorData_.Mpu9250[i].Mag_uT(0,0));
+      SensorNodes_.Mpu9250[i].hy->setFloat(SensorData_.Mpu9250[i].Mag_uT(1,0));
+      SensorNodes_.Mpu9250[i].hz->setFloat(SensorData_.Mpu9250[i].Mag_uT(2,0));
+      SensorNodes_.Mpu9250[i].temp->setFloat(SensorData_.Mpu9250[i].Temperature_C);
+  }
+  for (size_t i=0; i < SensorData_.Bme280.size(); i++) {
+      SensorNodes_.Bme280[i].status->setInt(SensorData_.Bme280[i].status);
+      SensorNodes_.Bme280[i].press->setFloat(SensorData_.Bme280[i].Pressure_Pa);
+      SensorNodes_.Bme280[i].temp->setFloat(SensorData_.Bme280[i].Temperature_C);
+      SensorNodes_.Bme280[i].hum->setFloat(SensorData_.Bme280[i].Humidity_RH);
+  }
+  for (size_t i=0; i < SensorData_.uBlox.size(); i++) {
+      SensorNodes_.uBlox[i].fix->setInt(SensorData_.uBlox[i].Fix);
+      SensorNodes_.uBlox[i].sats->setInt(SensorData_.uBlox[i].NumberSatellites);
+      SensorNodes_.uBlox[i].tow->setInt(SensorData_.uBlox[i].TOW);
+      SensorNodes_.uBlox[i].year->setInt(SensorData_.uBlox[i].Year);
+      SensorNodes_.uBlox[i].month->setInt(SensorData_.uBlox[i].Month);
+      SensorNodes_.uBlox[i].day->setInt(SensorData_.uBlox[i].Day);
+      SensorNodes_.uBlox[i].hour->setInt(SensorData_.uBlox[i].Hour);
+      SensorNodes_.uBlox[i].min->setInt(SensorData_.uBlox[i].Min);
+      SensorNodes_.uBlox[i].sec->setInt(SensorData_.uBlox[i].Sec);
+      SensorNodes_.uBlox[i].lat->setDouble(SensorData_.uBlox[i].LLA(0,0));
+      SensorNodes_.uBlox[i].lon->setDouble(SensorData_.uBlox[i].LLA(1,0));
+      SensorNodes_.uBlox[i].alt->setFloat(SensorData_.uBlox[i].LLA(2,0));
+      SensorNodes_.uBlox[i].vn->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(0,0));
+      SensorNodes_.uBlox[i].ve->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(1,0));
+      SensorNodes_.uBlox[i].vd->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(2,0));
+      SensorNodes_.uBlox[i].horiz_acc->setFloat(SensorData_.uBlox[i].Accuracy(0,0));
+      SensorNodes_.uBlox[i].vert_acc->setFloat(SensorData_.uBlox[i].Accuracy(1,0));
+      SensorNodes_.uBlox[i].vel_acc->setFloat(SensorData_.uBlox[i].Accuracy(2,0));
+      SensorNodes_.uBlox[i].pdop->setFloat(SensorData_.uBlox[i].pDOP);
+  }
+  for (size_t i=0; i < SensorData_.Swift.size(); i++) {
+      SensorNodes_.Swift[i].Static.status->setInt(SensorData_.Swift[i].Static.status);
+      SensorNodes_.Swift[i].Static.press->setFloat(SensorData_.Swift[i].Static.Pressure_Pa);
+      SensorNodes_.Swift[i].Static.temp->setFloat(SensorData_.Swift[i].Static.Temperature_C);
+      SensorNodes_.Swift[i].Differential.status->setInt(SensorData_.Swift[i].Differential.status);
+      SensorNodes_.Swift[i].Differential.press->setFloat(SensorData_.Swift[i].Differential.Pressure_Pa);
+      SensorNodes_.Swift[i].Differential.temp->setFloat(SensorData_.Swift[i].Differential.Temperature_C);
+  }
+  for (size_t i=0; i < SensorData_.Ams5915.size(); i++) {
+      SensorNodes_.Ams5915[i].status->setInt(SensorData_.Ams5915[i].status);
+      SensorNodes_.Ams5915[i].press->setFloat(SensorData_.Ams5915[i].Pressure_Pa);
+      SensorNodes_.Ams5915[i].temp->setFloat(SensorData_.Ams5915[i].Temperature_C);
+  }
+  for (size_t i=0; i < SensorData_.Sbus.size(); i++) {
+      SensorNodes_.Sbus[i].failsafe->setInt(SensorData_.Sbus[i].FailSafe);
+      SensorNodes_.Sbus[i].lost_frames->setInt(SensorData_.Sbus[i].LostFrames);
+    for (size_t j=0; j < 16; j++) {
+        SensorNodes_.Sbus[i].ch[j]->setFloat(SensorData_.Sbus[i].Channels[j]);
+    }
+  }
+  for (size_t i=0; i < SensorData_.Analog.size(); i++) {
+      SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
+      SensorNodes_.Analog[i].val->setFloat(SensorData_.Analog[i].CalibratedValue);
   }
 }

@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
 
   std::cout << "\tConfiguring flight management unit..." << std::endl;
-  Fmu.Configure(AircraftConfiguration,&GlobalData);
+  Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
   GlobalData.PrettyPrint("/Sensors/");
   std::cout << std::endl;

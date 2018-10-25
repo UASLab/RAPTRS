@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define FMU_HXX_
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -38,6 +38,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <cstring>
 #include <Eigen/Dense>
 
+#include <vector>
+using std::vector;
+
 class FlightManagementUnit {
   public:
     enum Message {
@@ -51,7 +54,7 @@ class FlightManagementUnit {
       kRunMode
     };
     void Begin();
-    void Configure(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config);
     void SendModeCommand(Mode mode);
     bool ReceiveSensorData();
     void SendEffectorCommands(std::vector<float> Commands);
@@ -62,10 +65,21 @@ class FlightManagementUnit {
       Eigen::Matrix<float,3,1>Mag_uT;           // x,y,z magnetometers, uT
       float Temperature_C;                      // Temperature, C
     };
+    struct InternalMpu9250SensorNodes {
+        Element *ax{NULL}, *ay{NULL}, *az{NULL};
+        Element *p{NULL}, *q{NULL}, *r{NULL};
+        Element *hx{NULL}, *hy{NULL}, *hz{NULL};
+        Element *temp{NULL};
+    };
     struct InternalBme280SensorData {
       float Pressure_Pa;                        // Pressure, Pa
       float Temperature_C;                      // Temperature, C
       float Humidity_RH;                        // Relative humidity
+    };
+    struct InternalBme280SensorNodes {
+        Element *press{NULL};
+        Element *temp{NULL};
+        Element *hum{NULL};
     };
     struct Mpu9250SensorData {
       int status;
@@ -74,11 +88,24 @@ class FlightManagementUnit {
       Eigen::Matrix<float,3,1>Mag_uT;           // x,y,z magnetometers, uT
       float Temperature_C;                      // Temperature, C
     };
+    struct Mpu9250SensorNodes {
+        Element *status;
+        Element *ax{NULL}, *ay{NULL}, *az{NULL};
+        Element *p{NULL}, *q{NULL}, *r{NULL};
+        Element *hx{NULL}, *hy{NULL}, *hz{NULL};
+        Element *temp{NULL};
+    };
     struct Bme280SensorData {
       int status;
       float Pressure_Pa;                        // Pressure, Pa
       float Temperature_C;                      // Temperature, C
       float Humidity_RH;                        // Relative humidity
+    };
+    struct Bme280SensorNodes {
+        Element *status{NULL};
+        Element *press{NULL};
+        Element *temp{NULL};
+        Element *hum{NULL};
     };
     struct uBloxSensorData {
       bool Fix;                                 // True for 3D fix only
@@ -95,23 +122,56 @@ class FlightManagementUnit {
       Eigen::Matrix<double,3,1>Accuracy;        // Horizontal (m), vertical (m), and speed (m/s) accuracy estimates
       double pDOP;                              // Position DOP
     };
+    struct uBloxSensorNodes {
+        Element *fix{NULL};
+        Element *sats{NULL};
+        Element *tow{NULL};
+        Element *year{NULL};
+        Element *month{NULL};
+        Element *day{NULL};
+        Element *hour{NULL};
+        Element *min{NULL};
+        Element *sec{NULL};
+        Element *lat{NULL}, *lon{NULL}, *alt{NULL};
+        Element *vn{NULL}, *ve{NULL}, *vd{NULL};
+        Element *horiz_acc{NULL}, *vert_acc{NULL}, *vel_acc{NULL};
+        Element *pdop{NULL};
+    };
     struct Ams5915SensorData {
       int status;
       float Pressure_Pa;                        // Pressure, Pa
       float Temperature_C;                      // Temperature, C
     };
+    struct Ams5915SensorNodes {
+        Element *status{NULL};
+        Element *press{NULL};
+        Element *temp{NULL};
+    };
     struct SwiftSensorData {
       Ams5915SensorData Static;
       Ams5915SensorData Differential;
+    };
+    struct SwiftSensorNodes {
+      Ams5915SensorNodes Static;
+      Ams5915SensorNodes Differential;
     };
     struct SbusSensorData {
       float Channels[16];
       bool FailSafe;
       uint64_t LostFrames;
     };
+    struct SbusSensorNodes {
+        Element *ch[16];
+        Element *failsafe;
+        Element *lost_frames;
+    };
     struct AnalogSensorData {
       float Voltage_V;
       float CalibratedValue;
+    };
+    struct AnalogSensorNodes {
+        Element *volt;
+        Element *val;
     };
     struct SensorData {
       std::vector<uint64_t> Time_us;
@@ -129,6 +189,22 @@ class FlightManagementUnit {
       std::vector<SbusSensorData> Sbus;
       std::vector<AnalogSensorData> Analog;
     };
+    struct SensorNodes {
+        vector<Element *> Time_us;
+        vector<InternalMpu9250SensorNodes> InternalMpu9250;
+        vector<InternalBme280SensorNodes> InternalBme280;
+        vector<Element *> input_volts;
+        vector<Element *> reg_volts;
+        vector<Element *> pwm_volts;
+        vector<Element *> sbus_volts;
+        vector<Mpu9250SensorNodes> Mpu9250;
+        vector<Bme280SensorNodes> Bme280;
+        vector<uBloxSensorNodes> uBlox;
+        vector<SwiftSensorNodes> Swift;
+        vector<Ams5915SensorNodes> Ams5915;
+        vector<SbusSensorNodes> Sbus;
+        vector<AnalogSensorNodes> Analog;
+    };
     const std::string Port_ = FmuPort;
     const speed_t Baud_ = FmuBaud;
     int FmuFileDesc_;
@@ -142,17 +218,20 @@ class FlightManagementUnit {
     uint16_t Length_ = 0;
     uint8_t Checksum_[2];
     SensorData SensorData_;
+    SensorNodes SensorNodes_;
     std::string RootPath_ = "/Sensors";
     void ConfigureSensors(const rapidjson::Value& Config);
     void ConfigureMissionManager(const rapidjson::Value& Config);
     void ConfigureControlLaws(const rapidjson::Value& Config);
     void ConfigureEffectors(const rapidjson::Value& Config);
-    void RegisterSensors(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr);
+    void RegisterSensors(const rapidjson::Value& Config);
     std::string GetSensorOutputName(const rapidjson::Value& Config,std::string Key,size_t index);
     void SendMessage(Message message,std::vector<uint8_t> &Payload);
     bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
     void WritePort(uint8_t* Buffer,size_t BufferSize);
     void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
+    void PublishSensors();
+
 };
 
 #endif
