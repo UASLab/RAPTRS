@@ -40,10 +40,10 @@ void If::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
   // pointer to log run mode data
   ModeKey_ = OutputName+"/Mode";
-  data_.mode_node = deftree.initElement(ModeKey_, "Control law mode", true, false);
+  data_.mode_node = deftree.initElement(ModeKey_, "Control law mode", LOG_UINT8, LOG_NONE);
   // pointer to log command data
   OutputKey_ = OutputName+"/"+Config["Output"].GetString();
-  data_.mode_node = deftree.initElement(OutputKey_, "Control law output", true, false);
+  data_.mode_node = deftree.initElement(OutputKey_, "Control law output", LOG_UINT8, LOG_NONE);
 }
 
 void If::Initialize() {}

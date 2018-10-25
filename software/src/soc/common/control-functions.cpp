@@ -39,11 +39,11 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
     SystemName = RootPath;
 
     // pointer to log run mode data
-    data_.mode_node = deftree.initElement(RootPath + "/Mode", "Run mode", true, false);
+    data_.mode_node = deftree.initElement(RootPath + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
     data_.mode_node->setInt(kStandby);
 
     // pointer to log command data
-    data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", true, false);
+    data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
@@ -109,7 +109,7 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
   if (Config.HasMember("Limits")) {
     SaturateOutput = true;
     // pointer to log saturation data
-    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
 
     if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
       UpperLimit = Config["Limits"]["Upper"].GetFloat();
@@ -173,10 +173,10 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     SystemName = RootPath;
 
     // pointer to log run mode data
-    deftree.initElement(RootPath + "/Mode", "Run mode", true, false);
+    data_.mode_node = deftree.initElement(RootPath + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
 
     // pointer to log command data
-    deftree.initElement(RootPath + "/" + OutputName, "Control law output", true, false);
+    data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
@@ -225,7 +225,7 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   if (Config.HasMember("Limits")) {
     SaturateOutput = true;
     // pointer to log saturation data
-    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
 
     if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
       UpperLimit = Config["Limits"]["Upper"].GetFloat();
@@ -285,7 +285,7 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     SystemName = Config["Name"].GetString();
 
     // pointer to log run mode data
-    data_.mode_node = deftree.initElement(RootPath + SystemName + "/Mode", "Run mode", true, false);
+    data_.mode_node = deftree.initElement(RootPath + SystemName + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
     data_.mode_node->setInt(kStandby);
 
   } else {
@@ -320,10 +320,10 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
       OutputName = Output.GetString();
 
       // pointer to log output
-      data_.y_node[i] = deftree.initElement(RootPath + SystemName + "/" + OutputName, "SS output", true, false);
+      data_.y_node[i] = deftree.initElement(RootPath + SystemName + "/" + OutputName, "SS output", LOG_FLOAT, LOG_NONE);
 
       // pointer to log saturation data
-      data_.ySat_node[i] = deftree.initElement(RootPath + SystemName + "/Saturated" + "/" + OutputName, "Output saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
+      data_.ySat_node[i] = deftree.initElement(RootPath + SystemName + "/Saturated" + "/" + OutputName, "Output saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
 
     }
   } else {
@@ -485,7 +485,7 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     SystemName = Config["Name"].GetString();
 
     // pointer to log run mode data
-    mode_node = deftree.initElement(RootPath + "/" + SystemName + "/Mode", "Run mode", true, false);
+    mode_node = deftree.initElement(RootPath + "/" + SystemName + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
     mode_node->setInt(kStandby);
 
   } else {
@@ -552,7 +552,7 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     OutputName = Config["OutputTotal"].GetString();
 
     // pointer to log output
-    error_total_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Total Energy Error", true, false);
+    error_total_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Total Energy Error", LOG_FLOAT, LOG_NONE);
 
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": OutputTotal not specified in configuration."));
@@ -562,7 +562,7 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     OutputName = Config["OutputDiff"].GetString();
 
     // pointer to log output
-    error_diff_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Diff Energy Error ", true, false);
+    error_diff_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Diff Energy Error ", LOG_FLOAT, LOG_NONE);
 
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": OutputDiff not specified in configuration."));

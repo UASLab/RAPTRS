@@ -37,6 +37,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+using std::vector;
+using std::string;
+
 class DatalogClient {
   public:
     DatalogClient();
@@ -70,38 +73,28 @@ class DatalogClient {
     int DataLogSocket_;
     int DataLogPort_ = 8000;
     struct sockaddr_in DataLogServer_;
-    std::vector<std::string> SaveAsUint64Keys_;
-    std::vector<std::string> SaveAsUint64Description_;
-    std::vector<uint64_t*> SaveAsUint64Values_;
-    std::vector<std::string> SaveAsUint32Keys_;
-    std::vector<std::string> SaveAsUint32Description_;
-    std::vector<uint32_t*> SaveAsUint32Values_;
-    std::vector<std::string> SaveAsUint16Keys_;
-    std::vector<std::string> SaveAsUint16Description_;
-    std::vector<uint16_t*> SaveAsUint16Values_;
-    std::vector<std::string> SaveAsUint8Keys_;
-    std::vector<std::string> SaveAsUint8Description_;
-    std::vector<uint8_t*> SaveAsUint8Values_;
-    std::vector<std::string> SaveAsInt64Keys_;
-    std::vector<std::string> SaveAsInt64Description_;
-    std::vector<int64_t*> SaveAsInt64Values_;
-    std::vector<std::string> SaveAsInt32Keys_;
-    std::vector<std::string> SaveAsInt32Description_;
-    std::vector<int32_t*> SaveAsInt32Values_;
-    std::vector<std::string> SaveAsInt16Keys_;
-    std::vector<std::string> SaveAsInt16Description_;
-    std::vector<int16_t*> SaveAsInt16Values_;
-    std::vector<std::string> SaveAsInt8Keys_;
-    std::vector<std::string> SaveAsInt8Description_;
-    std::vector<int8_t*> SaveAsInt8Values_;
-    std::vector<std::string> SaveAsFloatKeys_;
-    std::vector<std::string> SaveAsFloatDescription_;
-    std::vector<float*> SaveAsFloatValues_;
-    std::vector<std::string> SaveAsDoubleKeys_;
-    std::vector<std::string> SaveAsDoubleDescription_;
-    std::vector<double*> SaveAsDoubleValues_;
-    std::vector<uint8_t> LogDataBuffer_;
-    std::vector<uint8_t> Buffer_;
+    vector<string> SaveAsUint64Keys_;
+    vector<Element *> SaveAsUint64Nodes_;
+    vector<string> SaveAsUint32Keys_;
+    vector<Element *> SaveAsUint32Nodes_;
+    vector<string> SaveAsUint16Keys_;
+    vector<Element *> SaveAsUint16Nodes_;
+    vector<string> SaveAsUint8Keys_;
+    vector<Element *> SaveAsUint8Nodes_;
+    vector<string> SaveAsInt64Keys_;
+    vector<Element *> SaveAsInt64Nodes_;
+    vector<string> SaveAsInt32Keys_;
+    vector<Element *> SaveAsInt32Nodes_;
+    vector<string> SaveAsInt16Keys_;
+    vector<Element *> SaveAsInt16Nodes_;
+    vector<string> SaveAsInt8Keys_;
+    vector<Element *> SaveAsInt8Nodes_;
+    vector<string> SaveAsFloatKeys_;
+    vector<Element *> SaveAsFloatNodes_;
+    vector<string> SaveAsDoubleKeys_;
+    vector<Element *> SaveAsDoubleNodes_;
+    vector<uint8_t> LogDataBuffer_;
+    vector<uint8_t> Buffer_;
     const uint8_t header_[2] = {0x42,0x46};
     const uint8_t headerLength_ = 5;
     const uint8_t checksumLength_ = 2;
@@ -109,7 +102,7 @@ class DatalogClient {
     uint16_t Length_ = 0;
     uint8_t Checksum_[2];
     uint16_t ParserState_ = 0;
-    void SendBinary(DataType_ Type, std::vector<uint8_t> &Buffer);
+    void SendBinary(DataType_ Type, vector<uint8_t> &Buffer);
     void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
 };
 
@@ -123,8 +116,8 @@ class DatalogServer {
     int DataLogSocket_;
     int DataLogPort_ = 8000;
     struct sockaddr_in DataLogServer_;
-    std::vector<uint8_t> Buffer_;
-    bool FileExists(const std::string &FileName);
+    vector<uint8_t> Buffer_;
+    bool FileExists(const string &FileName);
 };
 
 #endif
