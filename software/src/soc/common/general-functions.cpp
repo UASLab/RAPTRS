@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <iostream>
 
 /* Constant class methods, see general-functions.hxx for more information */
-void ConstantClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void ConstantClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
     OutputName = RootPath + "/" + Config["Output"].GetString();
@@ -39,7 +39,7 @@ void ConstantClass::Configure(const rapidjson::Value& Config,std::string RootPat
 
   // pointer to log command data
   OutputKey_ = OutputName;
-  DefinitionTreePtr->InitMember(OutputKey_,&data_.Output,"Control law output",true,false);
+  data_.output_node = deftree.initElement(OutputKey_,"Control law output", LOG_FLOAT, LOG_NONE);
 }
 
 void ConstantClass::Initialize() {}
@@ -48,19 +48,19 @@ bool ConstantClass::Initialized() {return true;}
 
 void ConstantClass::Run(Mode mode) {
   data_.Mode = (uint8_t) mode;
-  data_.Output = config_.Constant;
+  data_.output_node->setFloat(config_.Constant);
 }
 
-void ConstantClass::Clear(DefinitionTree *DefinitionTreePtr) {
+void ConstantClass::Clear() {
   config_.Constant = 0.0f;
   data_.Mode = kStandby;
-  data_.Output = 0.0f;
-  DefinitionTreePtr->Erase(OutputKey_);
+  data_.output_node->setFloat(0.0f);
+  deftree.Erase(OutputKey_);
   OutputKey_.clear();
 }
 
 /* Gain class methods, see general-functions.hxx for more information */
-void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
     OutputName = RootPath + "/" + Config["Output"].GetString();
@@ -76,9 +76,8 @@ void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
 
   if (Config.HasMember("Input")) {
     InputKey_ = Config["Input"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(InputKey_)) {
-      config_.Input = DefinitionTreePtr->GetValuePtr<float*>(InputKey_);
-    } else {
+    config_.input_node = deftree.getElement(InputKey_);
+    if ( !config_.input_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
     }
   } else {
@@ -90,7 +89,7 @@ void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
 
     // pointer to log saturation data
     SaturatedKey_ = RootPath+"/Saturated";
-    DefinitionTreePtr->InitMember(SaturatedKey_,&data_.Saturated,"Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit",true,false);
+    data_.saturated_node = deftree.initElement(SaturatedKey_, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
     if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
       config_.UpperLimit = Config["Limits"]["Upper"].GetFloat();
       config_.LowerLimit = Config["Limits"]["Lower"].GetFloat();
@@ -101,7 +100,7 @@ void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath,De
 
   // pointer to log command data
   OutputKey_ = RootPath+"/"+Config["Output"].GetString();
-  DefinitionTreePtr->InitMember(OutputKey_,&data_.Output,"Control law output",true,false);
+  data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
 }
 
 void GainClass::Initialize() {}
@@ -109,38 +108,38 @@ bool GainClass::Initialized() {return true;}
 
 void GainClass::Run(Mode mode) {
   data_.Mode = (uint8_t) mode;
-  data_.Output = *config_.Input*config_.Gain;
+  data_.output_node->setFloat( config_.input_node->getFloat()*config_.Gain );
   // saturate command
   if (config_.SaturateOutput) {
-    if (data_.Output <= config_.LowerLimit) {
-      data_.Output = config_.LowerLimit;
-      data_.Saturated = -1;
-    } else if (data_.Output >= config_.UpperLimit) {
-      data_.Output = config_.UpperLimit;
-      data_.Saturated = 1;
+    if (data_.output_node->getFloat() <= config_.LowerLimit) {
+        data_.output_node->setFloat(config_.LowerLimit);
+        data_.saturated_node->setInt(-1);
+    } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
+        data_.output_node->setFloat(config_.UpperLimit);
+        data_.saturated_node->setInt(1);
     } else {
-      data_.Saturated = 0;
+        data_.saturated_node->setInt(0);
     }
   }
 }
 
-void GainClass::Clear(DefinitionTree *DefinitionTreePtr) {
+void GainClass::Clear() {
   config_.Gain = 1.0f;
   config_.LowerLimit = 0.0f;
   config_.UpperLimit = 0.0f;
   config_.SaturateOutput = false;
   data_.Mode = kStandby;
-  data_.Output = 0.0f;
-  data_.Saturated = 0.0f;
-  DefinitionTreePtr->Erase(SaturatedKey_);
-  DefinitionTreePtr->Erase(OutputKey_);
+  data_.output_node->setFloat(0.0f);
+  data_.saturated_node->setFloat(0.0f);
+  deftree.Erase(SaturatedKey_);
+  deftree.Erase(OutputKey_);
   InputKey_.clear();
   SaturatedKey_.clear();
   OutputKey_.clear();
 }
 
 /* Sum class methods, see general-functions.hxx for more information */
-void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
     OutputName = RootPath + "/" + Config["Output"].GetString();
@@ -153,10 +152,11 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath,Def
       const rapidjson::Value& Input = Config["Inputs"][i];
       InputKeys_.push_back(Input.GetString());
 
-      if (DefinitionTreePtr->GetValuePtr<float*>(InputKeys_.back())) {
-        config_.Inputs.push_back(DefinitionTreePtr->GetValuePtr<float*>(InputKeys_.back()));
+      Element *ele = deftree.getElement(InputKeys_.back());
+      if ( ele ) {
+          config_.input_nodes.push_back(ele);
       } else {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
+          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
@@ -167,7 +167,7 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath,Def
     config_.SaturateOutput = true;
     // pointer to log saturation data
     SaturatedKey_ = RootPath+"/Saturated";
-    DefinitionTreePtr->InitMember(SaturatedKey_,&data_.Saturated,"Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit",true,false);
+    data_.saturated_node = deftree.initElement(SaturatedKey_, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
     if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
       config_.UpperLimit = Config["Limits"]["Upper"].GetFloat();
       config_.LowerLimit = Config["Limits"]["Lower"].GetFloat();
@@ -178,7 +178,7 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath,Def
 
   // pointer to log command data
   OutputKey_ = RootPath+"/"+Config["Output"].GetString();
-  DefinitionTreePtr->InitMember(OutputKey_,&data_.Output,"Control law output",true,false);
+  data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
 }
 
 void SumClass::Initialize() {}
@@ -187,35 +187,37 @@ bool SumClass::Initialized() {return true;}
 void SumClass::Run(Mode mode) {
   data_.Mode = (uint8_t) mode;
 
-  data_.Output = 0.0f;
-  for (size_t i=0; i < config_.Inputs.size(); i++) {
-    data_.Output += *config_.Inputs[i];
+  data_.output_node->setFloat(0.0f);
+  float sum = 0.0;
+  for (size_t i=0; i < config_.input_nodes.size(); i++) {
+      sum += config_.input_nodes[i]->getFloat();
   }
+  data_.output_node->setFloat(sum);
 
   // saturate command
   if (config_.SaturateOutput) {
-    if (data_.Output <= config_.LowerLimit) {
-      data_.Output = config_.LowerLimit;
-      data_.Saturated = -1;
-    } else if (data_.Output >= config_.UpperLimit) {
-      data_.Output = config_.UpperLimit;
-      data_.Saturated = 1;
+    if (data_.output_node->getFloat() <= config_.LowerLimit) {
+        data_.output_node->setFloat(config_.LowerLimit);
+        data_.saturated_node->setInt(-1);
+    } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
+        data_.output_node->setFloat(config_.UpperLimit);
+        data_.saturated_node->setInt(1);
     } else {
-      data_.Saturated = 0;
+        data_.saturated_node->setInt(0);
     }
   }
 }
 
-void SumClass::Clear(DefinitionTree *DefinitionTreePtr) {
-  config_.Inputs.clear();
+void SumClass::Clear() {
+  config_.input_nodes.clear();
   config_.LowerLimit = 0.0f;
   config_.UpperLimit = 0.0f;
   config_.SaturateOutput = false;
   data_.Mode = kStandby;
-  data_.Output = 0.0f;
-  data_.Saturated = 0.0f;
-  DefinitionTreePtr->Erase(SaturatedKey_);
-  DefinitionTreePtr->Erase(OutputKey_);
+  data_.output_node->setFloat(0.0f);
+  data_.saturated_node->setInt(0.0f);
+  deftree.Erase(SaturatedKey_);
+  deftree.Erase(OutputKey_);
   InputKeys_.clear();
   SaturatedKey_.clear();
   OutputKey_.clear();
@@ -223,7 +225,7 @@ void SumClass::Clear(DefinitionTree *DefinitionTreePtr) {
 
 
 /* Latch class methods, see general-functions.hxx for more information */
-void LatchClass::Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+void LatchClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
     OutputName = RootPath + "/" + Config["Output"].GetString();
@@ -233,9 +235,8 @@ void LatchClass::Configure(const rapidjson::Value& Config,std::string RootPath,D
 
   if (Config.HasMember("Input")) {
     InputKey_ = Config["Input"].GetString();
-    if (DefinitionTreePtr->GetValuePtr<float*>(InputKey_)) {
-      config_.Input = DefinitionTreePtr->GetValuePtr<float*>(InputKey_);
-    } else {
+    config_.input_node = deftree.getElement(InputKey_);
+    if ( !config_.input_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
     }
   } else {
@@ -244,7 +245,7 @@ void LatchClass::Configure(const rapidjson::Value& Config,std::string RootPath,D
 
   // pointer to log command data
   OutputKey_ = RootPath+"/"+Config["Output"].GetString();
-  DefinitionTreePtr->InitMember(OutputKey_,&data_.Output,"Control law output",true,false);
+  data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
 }
 
 void LatchClass::Initialize() {}
@@ -257,7 +258,7 @@ void LatchClass::Run(Mode mode) {
     case GenericFunction::Mode::kEngage: {
       if (initLatch_ == false) {
         initLatch_ = true;
-        data_.Output = *config_.Input;
+        data_.output_node->setFloat(config_.input_node->getFloat());
       }
       break;
     }
@@ -268,10 +269,10 @@ void LatchClass::Run(Mode mode) {
 
 }
 
-void LatchClass::Clear(DefinitionTree *DefinitionTreePtr) {
+void LatchClass::Clear() {
   data_.Mode = kStandby;
-  data_.Output = 0.0f;
-  DefinitionTreePtr->Erase(OutputKey_);
+  data_.output_node->setFloat(0.0f);
+  deftree.Erase(OutputKey_);
   InputKey_.clear();
   OutputKey_.clear();
 }
