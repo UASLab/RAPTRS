@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
   }
 
   std::cout << "\tConfiguring datalog..." << std::flush;
-  Datalog.RegisterGlobalData(GlobalData);
+  Datalog.RegisterGlobalData();
   std::cout << "done!" << std::endl;
   std::cout << "Entering main loop." << std::endl;
 

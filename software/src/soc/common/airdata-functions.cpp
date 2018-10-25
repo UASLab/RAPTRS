@@ -53,12 +53,12 @@ void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string Roo
   }
   // pointer to log run mode data
   ModeKey_ = OutputName+"/Mode";
-  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", true, false);
+  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
   
   // pointer to log ias data
   OutputKey_ = OutputName+"/"+Config["Output"].GetString();
-  data_.ias_ms_node = deftree.initElement(OutputKey_, "Indicated airspeed, m/s", true, false);
+  data_.ias_ms_node = deftree.initElement(OutputKey_, "Indicated airspeed, m/s", LOG_FLOAT, LOG_NONE);
 }
 
 void IndicatedAirspeed::Initialize() {
@@ -152,12 +152,12 @@ void AglAltitude::Configure(const rapidjson::Value& Config,std::string RootPath)
   }
   // pointer to log run mode data
   ModeKey_ = OutputName+"/Mode";
-  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", true, false);
+  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
   
   // pointer to log ias data
   OutputKey_ = OutputName+"/"+Config["Output"].GetString();
-  data_.agl_m_node = deftree.initElement(OutputKey_, "Altitude above ground, m", true, false);
+  data_.agl_m_node = deftree.initElement(OutputKey_, "Altitude above ground, m", LOG_FLOAT, LOG_NONE);
 }
 
 void AglAltitude::Initialize() {
@@ -281,14 +281,14 @@ void PitotStatic::Configure(const rapidjson::Value& Config,std::string RootPath)
 
   // pointer to log run mode data
   ModeKey_ = SysName+"/Mode";
-  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", true, false);
+  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
 
   // pointer to log ias data
   OutputIasKey_ = SysName+"/"+OutputIasName;
-  data_.ias_ms_node = deftree.initElement(OutputIasKey_, "Indicated airspeed, m/s", true, false);
+  data_.ias_ms_node = deftree.initElement(OutputIasKey_, "Indicated airspeed, m/s", LOG_FLOAT, LOG_NONE);
   OutputAglKey_ = SysName+"/"+OutputAglName;
-  data_.agl_m_node = deftree.initElement(OutputAglKey_, "Altitude above ground, m", true, false);
+  data_.agl_m_node = deftree.initElement(OutputAglKey_, "Altitude above ground, m", LOG_FLOAT, LOG_NONE);
 }
 
 void PitotStatic::Initialize() {
@@ -497,18 +497,18 @@ void FiveHole::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
   // pointer to log run mode data
   ModeKey_ = SysName+"/Mode";
-  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", true, false);
+  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
   
   // pointer to log ias data
   OutputAglKey_ = SysName+"/"+OutputAglName;
-  data_.agl_m_node = deftree.initElement(OutputAglKey_,"Altitude above ground, m",true,false);
+  data_.agl_m_node = deftree.initElement(OutputAglKey_,"Altitude above ground, m",LOG_FLOAT, LOG_NONE);
   OutputIasKey_ = SysName+"/"+OutputIasName;
-  data_.ias_ms_node = deftree.initElement(OutputIasKey_,"Indicated airspeed, m/s",true,false);
+  data_.ias_ms_node = deftree.initElement(OutputIasKey_,"Indicated airspeed, m/s",LOG_FLOAT, LOG_NONE);
   OutputAlphaKey_ = SysName+"/"+OutputAlphaName;
-  data_.Alpha_rad_node = deftree.initElement(OutputAlphaKey_,"Angle of attack, rad",true,false);
+  data_.Alpha_rad_node = deftree.initElement(OutputAlphaKey_,"Angle of attack, rad",LOG_FLOAT, LOG_NONE);
   OutputBetaKey_ = SysName+"/"+OutputBetaName;
-  data_.Beta_rad_node = deftree.initElement(OutputBetaKey_,"Sideslip angle, rad",true,false);
+  data_.Beta_rad_node = deftree.initElement(OutputBetaKey_,"Sideslip angle, rad",LOG_FLOAT, LOG_NONE);
 }
 
 void FiveHole::Initialize() {

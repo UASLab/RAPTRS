@@ -13,11 +13,24 @@ using std::map;
 using std::string;
 using std::vector;
 
+// minimal types for logging -- log as this type.  put these in the
+// global name space otherwise the notation becomes crushing.
+enum log_tag_t {
+    LOG_NONE,
+    LOG_BOOL, LOG_INT8, LOG_UINT8,
+    LOG_INT16, LOG_UINT16,
+    LOG_INT32, LOG_UINT32,
+    LOG_INT64, LOG_UINT64, LOG_LONG,
+    LOG_FLOAT, LOG_DOUBLE
+};
+    
 class Element {
-    
+
  private:
-    
+
+    // supported types
     enum { BOOL, INT, LONG, FLOAT, DOUBLE } tag;
+
     union {
         bool b;
         int i;
@@ -29,8 +42,8 @@ class Element {
  public:
     
     string description;
-    bool datalog;
-    bool telemetry;
+    log_tag_t datalog{LOG_NONE};
+    log_tag_t telemetry{LOG_NONE};
     
     Element() {}
     ~Element() {}
@@ -91,6 +104,14 @@ class Element {
             default: return 0.0;
         }
     }
+
+    log_tag_t getLoggingType() {
+        return datalog;
+    }
+
+    log_tag_t getTelemetryType() {
+        return telemetry;
+    }
 };
     
 typedef map<string, Element *> def_tree_t ;
@@ -99,11 +120,13 @@ class DefinitionTree2 {
     
  public:
     
+
     DefinitionTree2() {}
     ~DefinitionTree2() {}
 
     Element *initElement(string name, string desc,
-                         bool datalog, bool telemetry);
+                         log_tag_t datalog,
+                         log_tag_t telemetry);
     Element *makeAlias(string orig_name, string alias_name);
     Element *getElement(string name, bool create=true);
 

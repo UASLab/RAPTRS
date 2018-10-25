@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef DATALOG_HXX_
 #define DATALOG_HXX_
 
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "hardware-defs.h"
 #include <stdio.h>
 #include <fcntl.h>
@@ -40,7 +40,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 class DatalogClient {
   public:
     DatalogClient();
-    void RegisterGlobalData(DefinitionTree &DefinitionTreeRef);
+    void RegisterGlobalData();
     void LogBinaryData();
     void End();
   private:
