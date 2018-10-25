@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "generic-function.h"
 #include <Eigen/Dense>
 
@@ -60,11 +60,11 @@ Where:
 
 class PseudoInverseAllocation: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
-    void Clear(DefinitionTree *DefinitionTreePtr);
+    void Clear();
   private:
     struct Config {
       std::vector<float*> Inputs;

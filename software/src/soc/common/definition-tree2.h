@@ -11,6 +11,7 @@
 
 using std::map;
 using std::string;
+using std::to_string;
 using std::vector;
 
 // minimal types for logging -- log as this type.  put these in the
@@ -105,6 +106,28 @@ class Element {
         }
     }
 
+    string getType() {
+        switch(tag) {
+            case BOOL: return "bool";
+            case INT: return "int";
+            case LONG: return "long";
+            case FLOAT: return "float";
+            case DOUBLE: return "double";
+            default: return "undefined";
+        }
+    }
+    
+    string getValueAsString() {
+        switch(tag) {
+            case BOOL: return to_string(x.b);
+            case INT: return to_string(x.i);
+            case LONG: return to_string(x.l);
+            case FLOAT: return to_string(x.f);
+            case DOUBLE: return to_string(x.d);
+            default: return "value undefined";
+        }
+    }
+    
     log_tag_t getLoggingType() {
         return datalog;
     }
@@ -132,6 +155,7 @@ class DefinitionTree2 {
 
     void GetKeys(string Name, vector<string> *KeysPtr);
     size_t Size(std::string Name);
+    void PrettyPrint(std::string Prefix);
 
     void Erase(string name);
     
@@ -173,7 +197,6 @@ class DefinitionTreeOld {
     void GetMember(std::string Name,struct VariableDefinition *VariableDefinitionPtr);
     size_t Size(std::string Name);
     void GetKeys(std::string Name,std::vector<std::string> *KeysPtr);
-    void PrettyPrint(std::string Prefix);
     void Erase(std::string Name);
     void Clear();
   private:

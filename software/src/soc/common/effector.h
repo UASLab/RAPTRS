@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EFFECTOR_HXX_
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -41,7 +41,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 class AircraftEffectors {
   public:
-    void Configure(const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config);
     std::vector<float> Run();
     bool Configured();
   private:

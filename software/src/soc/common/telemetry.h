@@ -2,7 +2,7 @@
 #ifndef TELEMETRY_HXX_
 #define TELEMETRY_HXX_
 
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "hardware-defs.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -161,7 +161,7 @@ struct ap_status
 class TelemetryClient {
   public:
     TelemetryClient();
-    void Configure(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr);
+    void Configure(const rapidjson::Value& Config);
     void Send();
     void End();
   private:

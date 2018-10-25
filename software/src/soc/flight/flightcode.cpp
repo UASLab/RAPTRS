@@ -19,7 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "configuration.h"
 #include "fmu.h"
 #include "sensor-processing.h"
@@ -36,6 +36,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <iomanip>
 #include <stdint.h>
 
+using std::cout;
+using std::endl;
+
 int main(int argc, char* argv[]) {
   if (argc!=2) {
       std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
@@ -46,7 +49,6 @@ int main(int argc, char* argv[]) {
   std::cout << "Bolder Flight Systems" << std::endl;
   std::cout << "Flight Software Version " << SoftwareVersion << std::endl << std::endl;
   /* declare classes */
-  DefinitionTree GlobalData;
   Configuration Config;
   FlightManagementUnit Fmu;
   SensorProcessing SenProc;
@@ -73,40 +75,40 @@ int main(int argc, char* argv[]) {
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
-  GlobalData.PrettyPrint("/Sensors/");
+  deftree.PrettyPrint("/Sensors/");
   std::cout << std::endl;
 
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
     std::cout << "\tConfiguring sensor processing..." << std::flush;
     SenProc.Configure(AircraftConfiguration["Sensor-Processing"]);
     std::cout << "done!" << std::endl;
-    GlobalData.PrettyPrint("/Sensor-Processing/");
+    deftree.PrettyPrint("/Sensor-Processing/");
     std::cout << std::endl;
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring mission manager..." << std::flush;
-      Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
+      Mission.Configure(AircraftConfiguration["Mission-Manager"]);
       std::cout << "done!" << std::endl;
-      GlobalData.PrettyPrint("/Mission-Manager/");
+      deftree.PrettyPrint("/Mission-Manager/");
       std::cout << std::endl;
 
       std::cout << "\tConfiguring control laws..." << std::flush;
       Control.Configure(AircraftConfiguration["Control"]);
       std::cout << "done!" << std::endl;
-      GlobalData.PrettyPrint("/Control/");
+      deftree.PrettyPrint("/Control/");
       std::cout << std::endl;
 
       std::cout << "\tConfiguring effectors..." << std::flush;
-      Effectors.Configure(AircraftConfiguration["Effectors"],&GlobalData);
+      Effectors.Configure(AircraftConfiguration["Effectors"]);
       std::cout << "done!" << std::endl;
-      GlobalData.PrettyPrint("/Effectors/");
+      deftree.PrettyPrint("/Effectors/");
       std::cout << std::endl;
 
       if (AircraftConfiguration.HasMember("Excitation")) {
         std::cout << "\tConfiguring excitations..." << std::flush;
         Excitation.Configure(AircraftConfiguration["Excitation"]);
         std::cout << "done!" << std::endl;
-        GlobalData.PrettyPrint("/Excitation/");
+        deftree.PrettyPrint("/Excitation/");
         std::cout << std::endl;
       }
     }
@@ -114,7 +116,7 @@ int main(int argc, char* argv[]) {
 
   if (AircraftConfiguration.HasMember("Telemetry")) {
     std::cout << "\tConfiguring telemetry..." << std::flush;
-    Telemetry.Configure(AircraftConfiguration["Telemetry"],&GlobalData);
+    Telemetry.Configure(AircraftConfiguration["Telemetry"]);
     std::cout << "done!" << std::endl;
   }
 
@@ -154,12 +156,11 @@ int main(int argc, char* argv[]) {
         // run armed control laws
         Control.RunArmed();
 
-//
-std::string CtrlEngaged = Mission.GetEngagedController();
+        //
+        string CtrlEngaged = Mission.GetEngagedController();
 
-float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
-
-std::cout << CtrlEngaged << "\t" << vCellMin << std::endl;
+        Element *cell_min_node = deftree.getElement("/Sensor-Processing/MinCellVolt_V", true);
+        cout << CtrlEngaged << "\t" << cell_min_node->getFloat() << endl;
 
       }
       // run telemetry

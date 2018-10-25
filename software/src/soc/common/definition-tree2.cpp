@@ -69,13 +69,27 @@ void DefinitionTree2::GetKeys(string Name, vector<string> *KeysPtr) {
 
 /* Gets number of definition tree members at a given tree level */
 size_t DefinitionTree2::Size(std::string Name) {
-  size_t retval = 0;
-  for (auto const& element : data) {
-    if (element.first.find(Name) != std::string::npos) {
-      retval++;
+    size_t retval = 0;
+    for ( auto const& element : data ) {
+        if (element.first.find(Name) != std::string::npos) {
+            retval++;
+        }
     }
-  }
-  return retval;
+    return retval;
+}
+
+/* print definition tree member keys at a given tree level */
+void DefinitionTree2::PrettyPrint(std::string Prefix) {
+    std::cout << Prefix << std::endl;
+    for ( auto const& it : data ) {
+        std::size_t pos = it.first.find(Prefix);
+        if ( pos != string::npos) {
+            string tail = it.first.substr(pos + 1);
+            Element *ele = it.second;
+            cout << "  " << tail << " (" << ele->getType()
+                      << ") = " << ele->getValueAsString() << endl;
+        }
+    }
 }
 
 void DefinitionTree2::Erase(string name) {
@@ -180,58 +194,6 @@ void DefinitionTreeOld::PrettyPrint(std::string Prefix) {
             std::cout << "  " << tail << " (" << GetType(&element.second)
                       << ") = " << GetValue(&element.second) << std::endl;
         }
-    }
-}
-
-std::string DefinitionTreeOld::GetType(const struct VariableDefinition *VariableDefinitionPtr) {
-    if ( auto val = std::get_if<uint64_t*>(&VariableDefinitionPtr->Value) ) {
-        return "uint64_t";
-    } else if ( auto val = std::get_if<uint32_t*>(&VariableDefinitionPtr->Value) ) {
-        return "uint32_t";
-    } else if ( auto val = std::get_if<uint16_t*>(&VariableDefinitionPtr->Value) ) {
-        return "uint16_t";
-    } else if ( auto val = std::get_if<uint8_t*>(&VariableDefinitionPtr->Value) ) {
-        return "uint8_t";
-    } else if ( auto val = std::get_if<int64_t*>(&VariableDefinitionPtr->Value) ) {
-        return "int64_t";
-    } else if ( auto val = std::get_if<int32_t*>(&VariableDefinitionPtr->Value) ) {
-        return "int32_t";
-    } else if ( auto val = std::get_if<int16_t*>(&VariableDefinitionPtr->Value) ) {
-        return "int16_t";
-    } else if ( auto val = std::get_if<int8_t*>(&VariableDefinitionPtr->Value) ) {
-        return "int8_t";
-    } else if ( auto val = std::get_if<float*>(&VariableDefinitionPtr->Value) ) {
-        return "float";
-    } else if ( auto val = std::get_if<double*>(&VariableDefinitionPtr->Value) ) {
-        return "double";
-    } else {
-        return "unknown";
-    }
-}
-
-std::string DefinitionTreeOld::GetValue(const struct VariableDefinition *VariableDefinitionPtr) {
-    if ( auto val = std::get_if<uint64_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<uint32_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<uint16_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<uint8_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<int64_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<int32_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<int16_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<int8_t*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<float*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else if ( auto val = std::get_if<double*>(&VariableDefinitionPtr->Value) ) {
-        return std::to_string(**val);
-    } else {
-        return "";
     }
 }
 
