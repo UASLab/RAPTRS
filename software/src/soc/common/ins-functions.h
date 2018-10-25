@@ -57,24 +57,24 @@ class Ekf15StateIns: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      uint64_t *t;
-      uint32_t *GpsTow;
-      uint8_t *GpsFix;
-      double *GpsVn,*GpsVe,*GpsVd;
-      double *GpsLat, *GpsLon, *GpsAlt;
-      float *ImuGx, *ImuGy, *ImuGz;
-      float *ImuAx, *ImuAy, *ImuAz;
-      float *ImuHx, *ImuHy, *ImuHz;
+        Element *t{NULL};
+        Element *GpsTow{NULL};
+        Element *GpsFix{NULL};
+        Element *GpsVn{NULL}, *GpsVe{NULL}, *GpsVd{NULL};
+        Element *GpsLat{NULL}, *GpsLon{NULL}, *GpsAlt{NULL};
+        Element *ImuGx{NULL}, *ImuGy{NULL}, *ImuGz{NULL};
+        Element *ImuAx{NULL}, *ImuAy{NULL}, *ImuAz{NULL};
+        Element *ImuHx{NULL}, *ImuHy{NULL}, *ImuHz{NULL};
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      float Ax,Ay,Az = 0.0f;
-      float Gx,Gy,Gz = 0.0f;
-      float Axb,Ayb,Azb = 0.0f;
-      float Gxb,Gyb,Gzb = 0.0f;
-      float Pitch,Roll,Yaw,Heading,Track = 0.0f;
-      double Lat,Lon,Alt = 0;
-      float Vn,Ve,Vd = 0;
+        Element *Mode{NULL};
+        Element *Ax{NULL}, *Ay{NULL}, *Az{NULL};
+        Element *Gx{NULL}, *Gy{NULL}, *Gz{NULL};
+        Element *Axb{NULL}, *Ayb{NULL}, *Azb{NULL};
+        Element *Gxb{NULL}, *Gyb{NULL}, *Gzb{NULL};
+        Element *Pitch{NULL}, *Roll{NULL}, *Yaw{NULL}, *Heading{NULL}, *Track{NULL};
+        Element *Lat{NULL}, *Lon{NULL}, *Alt{NULL};
+        Element *Vn{NULL}, *Ve{NULL}, *Vd{NULL};
     };
     Config config_;
     Data data_;
