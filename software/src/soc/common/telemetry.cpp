@@ -12,7 +12,7 @@ TelemetryClient::TelemetryClient() {
   TelemetryServer_.sin_addr.s_addr = inet_addr("127.0.0.1");
 }
 
-void TelemetryClient::Configure(const rapidjson::Value& Config,DefinitionTree *DefinitionTreePtr) {
+void TelemetryClient::Configure(const rapidjson::Value& Config) {
   std::vector<uint8_t> Buffer;
   if (Config.HasMember("Uart")) {
     Uart = Config["Uart"].GetString();
@@ -31,96 +31,96 @@ void TelemetryClient::Configure(const rapidjson::Value& Config,DefinitionTree *D
     throw std::runtime_error(std::string("ERROR")+_RootPath+std::string(": Baud not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-    DataPtr_.Time.Time_us = DefinitionTreePtr->GetValuePtr<uint64_t*>(Config["Time"].GetString());
+    Nodes_.Time.Time_us = deftree.getElement(Config["Time"].GetString());
     useTime = true;
   }
   if (Config.HasMember("Static-Pressure")) {
     std::string Sensor = Config["Static-Pressure"].GetString();
-    DataPtr_.StaticPress.Pressure_Pa = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Pressure_Pa");
-    DataPtr_.StaticPress.Temperature_C = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Temperature_C");
+    Nodes_.StaticPress.Pressure_Pa = deftree.getElement(Sensor+"/Pressure_Pa");
+    Nodes_.StaticPress.Temperature_C = deftree.getElement(Sensor+"/Temperature_C");
     useStaticPressure = true;
   }
   if (Config.HasMember("Airspeed")) {
-    DataPtr_.Airspeed.Airspeed_ms = DefinitionTreePtr->GetValuePtr<float*>(Config["Airspeed"].GetString());
+    Nodes_.Airspeed.Airspeed_ms = deftree.getElement(Config["Airspeed"].GetString());
     useAirspeed = true;
   }
   if (Config.HasMember("Altitude")) {
-    DataPtr_.Alt.Alt_m = DefinitionTreePtr->GetValuePtr<float*>(Config["Altitude"].GetString());
+    Nodes_.Alt.Alt_m = deftree.getElement(Config["Altitude"].GetString());
     useAlt = true;
   }
   if (Config.HasMember("Filter")) {
     std::string Sensor = Config["Filter"].GetString();
-    DataPtr_.Attitude.Ax = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelX_mss");
-    DataPtr_.Attitude.Axb = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelXBias_mss");
-    DataPtr_.Attitude.Ay = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelY_mss");
-    DataPtr_.Attitude.Ayb = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelYBias_mss");
-    DataPtr_.Attitude.Az = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelZ_mss");
-    DataPtr_.Attitude.Azb = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelZBias_mss");
-    DataPtr_.Attitude.Gx = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroX_rads");
-    DataPtr_.Attitude.Gxb = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroXBias_rads");
-    DataPtr_.Attitude.Gy = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroY_rads");
-    DataPtr_.Attitude.Gyb = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroYBias_rads");
-    DataPtr_.Attitude.Gz = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroZ_rads");
-    DataPtr_.Attitude.Gzb = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroZBias_rads");
-    DataPtr_.Attitude.Pitch = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Pitch_rad");
-    DataPtr_.Attitude.Roll = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Roll_rad");
-    DataPtr_.Attitude.Yaw = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Yaw_rad");
-    DataPtr_.Attitude.Heading = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Heading_rad");
-    DataPtr_.Attitude.Track = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Track_rad");
-    DataPtr_.Attitude.Lon = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/Longitude_rad");
-    DataPtr_.Attitude.Lat = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/Latitude_rad");
-    DataPtr_.Attitude.Alt = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/Altitude_m");
-    DataPtr_.Attitude.Vn= DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/NorthVelocity_ms");
-    DataPtr_.Attitude.Ve = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/EastVelocity_ms");
-    DataPtr_.Attitude.Vd = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/DownVelocity_ms");
+    Nodes_.Attitude.Ax = deftree.getElement(Sensor+"/AccelX_mss");
+    Nodes_.Attitude.Axb = deftree.getElement(Sensor+"/AccelXBias_mss");
+    Nodes_.Attitude.Ay = deftree.getElement(Sensor+"/AccelY_mss");
+    Nodes_.Attitude.Ayb = deftree.getElement(Sensor+"/AccelYBias_mss");
+    Nodes_.Attitude.Az = deftree.getElement(Sensor+"/AccelZ_mss");
+    Nodes_.Attitude.Azb = deftree.getElement(Sensor+"/AccelZBias_mss");
+    Nodes_.Attitude.Gx = deftree.getElement(Sensor+"/GyroX_rads");
+    Nodes_.Attitude.Gxb = deftree.getElement(Sensor+"/GyroXBias_rads");
+    Nodes_.Attitude.Gy = deftree.getElement(Sensor+"/GyroY_rads");
+    Nodes_.Attitude.Gyb = deftree.getElement(Sensor+"/GyroYBias_rads");
+    Nodes_.Attitude.Gz = deftree.getElement(Sensor+"/GyroZ_rads");
+    Nodes_.Attitude.Gzb = deftree.getElement(Sensor+"/GyroZBias_rads");
+    Nodes_.Attitude.Pitch = deftree.getElement(Sensor+"/Pitch_rad");
+    Nodes_.Attitude.Roll = deftree.getElement(Sensor+"/Roll_rad");
+    Nodes_.Attitude.Yaw = deftree.getElement(Sensor+"/Yaw_rad");
+    Nodes_.Attitude.Heading = deftree.getElement(Sensor+"/Heading_rad");
+    Nodes_.Attitude.Track = deftree.getElement(Sensor+"/Track_rad");
+    Nodes_.Attitude.Lon = deftree.getElement(Sensor+"/Longitude_rad");
+    Nodes_.Attitude.Lat = deftree.getElement(Sensor+"/Latitude_rad");
+    Nodes_.Attitude.Alt = deftree.getElement(Sensor+"/Altitude_m");
+    Nodes_.Attitude.Vn= deftree.getElement(Sensor+"/NorthVelocity_ms");
+    Nodes_.Attitude.Ve = deftree.getElement(Sensor+"/EastVelocity_ms");
+    Nodes_.Attitude.Vd = deftree.getElement(Sensor+"/DownVelocity_ms");
     useAttitude = true;
   }
   if (Config.HasMember("Gps")) {
     std::string Sensor = Config["Gps"].GetString();
-    DataPtr_.Gps.Fix = (bool*)DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/Fix");
-    DataPtr_.Gps.NumberSatellites = DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/NumberSatellites");
-    DataPtr_.Gps.TOW = DefinitionTreePtr->GetValuePtr<uint32_t*>(Sensor+"/TOW");
-    DataPtr_.Gps.Year = DefinitionTreePtr->GetValuePtr<uint16_t*>(Sensor+"/Year");
-    DataPtr_.Gps.Month = DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/Month");
-    DataPtr_.Gps.Day = DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/Day");
-    DataPtr_.Gps.Hour = DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/Hour");
-    DataPtr_.Gps.Min = DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/Minute");
-    DataPtr_.Gps.Sec = DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/Second");
-    DataPtr_.Gps.Lat = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/Latitude_rad");
-    DataPtr_.Gps.Lon = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/Longitude_rad");
-    DataPtr_.Gps.Alt = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/Altitude_m");
-    DataPtr_.Gps.Vn = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/NorthVelocity_ms");
-    DataPtr_.Gps.Ve = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/EastVelocity_ms");
-    DataPtr_.Gps.Vd = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/DownVelocity_ms");
-    DataPtr_.Gps.HAcc = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/HorizontalAccuracy_m");
-    DataPtr_.Gps.VAcc = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/VerticalAccuracy_m");
-    DataPtr_.Gps.SAcc = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/VelocityAccuracy_ms");
-    DataPtr_.Gps.pDOP = DefinitionTreePtr->GetValuePtr<double*>(Sensor+"/pDOP");
+    Nodes_.Gps.Fix = deftree.getElement(Sensor+"/Fix");
+    Nodes_.Gps.NumberSatellites = deftree.getElement(Sensor+"/NumberSatellites");
+    Nodes_.Gps.TOW = deftree.getElement(Sensor+"/TOW");
+    Nodes_.Gps.Year = deftree.getElement(Sensor+"/Year");
+    Nodes_.Gps.Month = deftree.getElement(Sensor+"/Month");
+    Nodes_.Gps.Day = deftree.getElement(Sensor+"/Day");
+    Nodes_.Gps.Hour = deftree.getElement(Sensor+"/Hour");
+    Nodes_.Gps.Min = deftree.getElement(Sensor+"/Minute");
+    Nodes_.Gps.Sec = deftree.getElement(Sensor+"/Second");
+    Nodes_.Gps.Lat = deftree.getElement(Sensor+"/Latitude_rad");
+    Nodes_.Gps.Lon = deftree.getElement(Sensor+"/Longitude_rad");
+    Nodes_.Gps.Alt = deftree.getElement(Sensor+"/Altitude_m");
+    Nodes_.Gps.Vn = deftree.getElement(Sensor+"/NorthVelocity_ms");
+    Nodes_.Gps.Ve = deftree.getElement(Sensor+"/EastVelocity_ms");
+    Nodes_.Gps.Vd = deftree.getElement(Sensor+"/DownVelocity_ms");
+    Nodes_.Gps.HAcc = deftree.getElement(Sensor+"/HorizontalAccuracy_m");
+    Nodes_.Gps.VAcc = deftree.getElement(Sensor+"/VerticalAccuracy_m");
+    Nodes_.Gps.SAcc = deftree.getElement(Sensor+"/VelocityAccuracy_ms");
+    Nodes_.Gps.pDOP = deftree.getElement(Sensor+"/pDOP");
     useGps = true;
   }
   if (Config.HasMember("Imu")) {
     std::string Sensor = Config["Imu"].GetString();
-    DataPtr_.Imu.Ax = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelX_mss");
-    DataPtr_.Imu.Ay = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelY_mss");
-    DataPtr_.Imu.Az = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/AccelZ_mss");
-    DataPtr_.Imu.Gx = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroX_rads");
-    DataPtr_.Imu.Gy = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroY_rads");
-    DataPtr_.Imu.Gz = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/GyroZ_rads");
-    DataPtr_.Imu.Temperature_C = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Temperature_C");
+    Nodes_.Imu.Ax = deftree.getElement(Sensor+"/AccelX_mss");
+    Nodes_.Imu.Ay = deftree.getElement(Sensor+"/AccelY_mss");
+    Nodes_.Imu.Az = deftree.getElement(Sensor+"/AccelZ_mss");
+    Nodes_.Imu.Gx = deftree.getElement(Sensor+"/GyroX_rads");
+    Nodes_.Imu.Gy = deftree.getElement(Sensor+"/GyroY_rads");
+    Nodes_.Imu.Gz = deftree.getElement(Sensor+"/GyroZ_rads");
+    Nodes_.Imu.Temperature_C = deftree.getElement(Sensor+"/Temperature_C");
     useImu = true;
   }
   if (Config.HasMember("Sbus")) {
     std::string Sensor = Config["Sbus"].GetString();
-    DataPtr_.Sbus.FailSafe = (bool*) DefinitionTreePtr->GetValuePtr<uint8_t*>(Sensor+"/FailSafe");
-    DataPtr_.Sbus.LostFrames = DefinitionTreePtr->GetValuePtr<uint64_t*>(Sensor+"/LostFrames");
+    Nodes_.Sbus.FailSafe = deftree.getElement(Sensor+"/FailSafe");
+    Nodes_.Sbus.LostFrames = deftree.getElement(Sensor+"/LostFrames");
     for (size_t j=0; j < 16; j++) {
-      DataPtr_.Sbus.Channels[j] = DefinitionTreePtr->GetValuePtr<float*>(Sensor+"/Channels/"+std::to_string(j));
+      Nodes_.Sbus.Channels[j] = deftree.getElement(Sensor+"/Channels/"+std::to_string(j));
     }
     useSbus = true;
   }
   if (Config.HasMember("Power")) {
     std::string Power = Config["Power"].GetString();
-    DataPtr_.Power.MinCellVolt = (float*) DefinitionTreePtr->GetValuePtr<float*>(Power+"/MinCellVolt_V");
+    Nodes_.Power.MinCellVolt = deftree.getElement(Power+"/MinCellVolt_V");
     usePower = true;
   }
 }
@@ -128,82 +128,82 @@ void TelemetryClient::Configure(const rapidjson::Value& Config,DefinitionTree *D
 void TelemetryClient::Send() {
   std::vector<uint8_t> DataPayload;
   if (useTime) {
-    Data_.Time.Time_us = *DataPtr_.Time.Time_us;
+      Data_.Time.Time_us = Nodes_.Time.Time_us->getLong();
   }
   if (useStaticPressure) {
-    Data_.StaticPress.Pressure_Pa = *DataPtr_.StaticPress.Pressure_Pa;
-    Data_.StaticPress.Temperature_C = *DataPtr_.StaticPress.Temperature_C;
+      Data_.StaticPress.Pressure_Pa = Nodes_.StaticPress.Pressure_Pa->getFloat();
+    Data_.StaticPress.Temperature_C = Nodes_.StaticPress.Temperature_C->getFloat();
   }
   if (useAirspeed) {
-    Data_.Airspeed.Airspeed_ms = *DataPtr_.Airspeed.Airspeed_ms;
+    Data_.Airspeed.Airspeed_ms = Nodes_.Airspeed.Airspeed_ms->getFloat();
   }
   if (useAlt) {
-    Data_.Alt.Alt_m = *DataPtr_.Alt.Alt_m;
+    Data_.Alt.Alt_m = Nodes_.Alt.Alt_m->getFloat();
   }
   if (useAttitude) {
-    Data_.Attitude.Ax = *(DataPtr_.Attitude.Ax);
-    Data_.Attitude.Axb = *DataPtr_.Attitude.Axb;
-    Data_.Attitude.Ay = *DataPtr_.Attitude.Ay;
-    Data_.Attitude.Ayb = *DataPtr_.Attitude.Ayb;
-    Data_.Attitude.Az = *DataPtr_.Attitude.Az;
-    Data_.Attitude.Azb = *DataPtr_.Attitude.Azb;
-    Data_.Attitude.Gx = *DataPtr_.Attitude.Gx;
-    Data_.Attitude.Gxb = *DataPtr_.Attitude.Gxb;
-    Data_.Attitude.Gy = *DataPtr_.Attitude.Gy;
-    Data_.Attitude.Gyb = *DataPtr_.Attitude.Gyb;
-    Data_.Attitude.Gz = *DataPtr_.Attitude.Gz;
-    Data_.Attitude.Gzb = *DataPtr_.Attitude.Gzb;
-    Data_.Attitude.Pitch = *DataPtr_.Attitude.Pitch;
-    Data_.Attitude.Roll = *DataPtr_.Attitude.Roll;
-    Data_.Attitude.Yaw = *DataPtr_.Attitude.Yaw;
-    Data_.Attitude.Heading = *DataPtr_.Attitude.Heading;
-    Data_.Attitude.Track = *DataPtr_.Attitude.Track;
-    Data_.Attitude.Lon = *DataPtr_.Attitude.Lon;
-    Data_.Attitude.Lat = *DataPtr_.Attitude.Lat;
-    Data_.Attitude.Alt = *DataPtr_.Attitude.Alt;
-    Data_.Attitude.Vn= *DataPtr_.Attitude.Vn;
-    Data_.Attitude.Ve = *DataPtr_.Attitude.Ve;
-    Data_.Attitude.Vd = *DataPtr_.Attitude.Vd;
+    Data_.Attitude.Ax = Nodes_.Attitude.Ax->getFloat();
+    Data_.Attitude.Axb = Nodes_.Attitude.Axb->getFloat();
+    Data_.Attitude.Ay = Nodes_.Attitude.Ay->getFloat();
+    Data_.Attitude.Ayb = Nodes_.Attitude.Ayb->getFloat();
+    Data_.Attitude.Az = Nodes_.Attitude.Az->getFloat();
+    Data_.Attitude.Azb = Nodes_.Attitude.Azb->getFloat();
+    Data_.Attitude.Gx = Nodes_.Attitude.Gx->getFloat();
+    Data_.Attitude.Gxb = Nodes_.Attitude.Gxb->getFloat();
+    Data_.Attitude.Gy = Nodes_.Attitude.Gy->getFloat();
+    Data_.Attitude.Gyb = Nodes_.Attitude.Gyb->getFloat();
+    Data_.Attitude.Gz = Nodes_.Attitude.Gz->getFloat();
+    Data_.Attitude.Gzb = Nodes_.Attitude.Gzb->getFloat();
+    Data_.Attitude.Pitch = Nodes_.Attitude.Pitch->getFloat();
+    Data_.Attitude.Roll = Nodes_.Attitude.Roll->getFloat();
+    Data_.Attitude.Yaw = Nodes_.Attitude.Yaw->getFloat();
+    Data_.Attitude.Heading = Nodes_.Attitude.Heading->getFloat();
+    Data_.Attitude.Track = Nodes_.Attitude.Track->getFloat();
+    Data_.Attitude.Lon = Nodes_.Attitude.Lon->getDouble();
+    Data_.Attitude.Lat = Nodes_.Attitude.Lat->getDouble();
+    Data_.Attitude.Alt = Nodes_.Attitude.Alt->getFloat();
+    Data_.Attitude.Vn= Nodes_.Attitude.Vn->getFloat();
+    Data_.Attitude.Ve = Nodes_.Attitude.Ve->getFloat();
+    Data_.Attitude.Vd = Nodes_.Attitude.Vd->getFloat();
   }
   if (useGps) {
-    Data_.Gps.Fix = *DataPtr_.Gps.Fix;
-    Data_.Gps.NumberSatellites = *DataPtr_.Gps.NumberSatellites;
-    Data_.Gps.TOW = *DataPtr_.Gps.TOW;
-    Data_.Gps.Year = *DataPtr_.Gps.Year;
-    Data_.Gps.Month = *DataPtr_.Gps.Month;
-    Data_.Gps.Day = *DataPtr_.Gps.Day;
-    Data_.Gps.Hour = *DataPtr_.Gps.Hour;
-    Data_.Gps.Min = *DataPtr_.Gps.Min;
-    Data_.Gps.Sec = *DataPtr_.Gps.Sec;
-    Data_.Gps.Lat = *DataPtr_.Gps.Lat;
-    Data_.Gps.Lon = *DataPtr_.Gps.Lon;
-    Data_.Gps.Alt = *DataPtr_.Gps.Alt;
-    Data_.Gps.Vn = *DataPtr_.Gps.Vn;
-    Data_.Gps.Ve = *DataPtr_.Gps.Ve;
-    Data_.Gps.Vd = *DataPtr_.Gps.Vd;
-    Data_.Gps.HAcc = *DataPtr_.Gps.HAcc;
-    Data_.Gps.VAcc = *DataPtr_.Gps.VAcc;
-    Data_.Gps.SAcc = *DataPtr_.Gps.SAcc;
-    Data_.Gps.pDOP = *DataPtr_.Gps.pDOP;
+      Data_.Gps.Fix = Nodes_.Gps.Fix->getInt();
+    Data_.Gps.NumberSatellites = Nodes_.Gps.NumberSatellites->getInt();
+    Data_.Gps.TOW = Nodes_.Gps.TOW->getInt();
+    Data_.Gps.Year = Nodes_.Gps.Year->getInt();
+    Data_.Gps.Month = Nodes_.Gps.Month->getInt();
+    Data_.Gps.Day = Nodes_.Gps.Day->getInt();
+    Data_.Gps.Hour = Nodes_.Gps.Hour->getInt();
+    Data_.Gps.Min = Nodes_.Gps.Min->getInt();
+    Data_.Gps.Sec = Nodes_.Gps.Sec->getInt();
+    Data_.Gps.Lat = Nodes_.Gps.Lat->getDouble();
+    Data_.Gps.Lon = Nodes_.Gps.Lon->getDouble();
+    Data_.Gps.Alt = Nodes_.Gps.Alt->getFloat();
+    Data_.Gps.Vn = Nodes_.Gps.Vn->getFloat();
+    Data_.Gps.Ve = Nodes_.Gps.Ve->getFloat();
+    Data_.Gps.Vd = Nodes_.Gps.Vd->getFloat();
+    Data_.Gps.HAcc = Nodes_.Gps.HAcc->getFloat();
+    Data_.Gps.VAcc = Nodes_.Gps.VAcc->getFloat();
+    Data_.Gps.SAcc = Nodes_.Gps.SAcc->getFloat();
+    Data_.Gps.pDOP = Nodes_.Gps.pDOP->getFloat();
   }
   if (useImu) {
-    Data_.Imu.Ax = *DataPtr_.Imu.Ax;
-    Data_.Imu.Ay = *DataPtr_.Imu.Ay;
-    Data_.Imu.Az = *DataPtr_.Imu.Az;
-    Data_.Imu.Gx = *DataPtr_.Imu.Gx;
-    Data_.Imu.Gy = *DataPtr_.Imu.Gy;
-    Data_.Imu.Gz = *DataPtr_.Imu.Gz;
-    Data_.Imu.Temperature_C = *DataPtr_.Imu.Temperature_C;
+    Data_.Imu.Ax = Nodes_.Imu.Ax->getFloat();
+    Data_.Imu.Ay = Nodes_.Imu.Ay->getFloat();
+    Data_.Imu.Az = Nodes_.Imu.Az->getFloat();
+    Data_.Imu.Gx = Nodes_.Imu.Gx->getFloat();
+    Data_.Imu.Gy = Nodes_.Imu.Gy->getFloat();
+    Data_.Imu.Gz = Nodes_.Imu.Gz->getFloat();
+    Data_.Imu.Temperature_C = Nodes_.Imu.Temperature_C->getFloat();
   }
   if (useSbus) {
-    Data_.Sbus.FailSafe = *DataPtr_.Sbus.FailSafe;
-    Data_.Sbus.LostFrames = *DataPtr_.Sbus.LostFrames;
-    for (size_t j=0; j < 16; j++) {
-      Data_.Sbus.Channels[j] = *DataPtr_.Sbus.Channels[j];
-    }
+      Data_.Sbus.FailSafe = Nodes_.Sbus.FailSafe->getInt();
+      Data_.Sbus.LostFrames = Nodes_.Sbus.LostFrames->getLong();
+      for (size_t j=0; j < 16; j++) {
+          Data_.Sbus.Channels[j] = Nodes_.Sbus.Channels[j]->getFloat();
+      }
   }
   if (usePower) {
-    Data_.Power.MinCellVolt = *DataPtr_.Power.MinCellVolt;
+    Data_.Power.MinCellVolt = Nodes_.Power.MinCellVolt->getFloat();
   }
   DataPayload.resize(sizeof(Data));
   memcpy(DataPayload.data(),&Data_,DataPayload.size());

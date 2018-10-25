@@ -177,73 +177,73 @@ class TelemetryClient {
     int TelemetryPort_ = 8020;
     struct sockaddr_in TelemetryServer_;
   bool useTime, useStaticPressure, useAirspeed, useAlt, useGps, useSbus, useImu, useAttitude, usePower;
-    struct TimeDataPtr{
-      uint64_t* Time_us;
+    struct TimeNodes{
+      Element *Time_us;
     };
-    struct StaticPressDataPtr{
-      float *Pressure_Pa;
-      float *Temperature_C;
+    struct StaticPressNodes{
+      Element *Pressure_Pa;
+      Element *Temperature_C;
     };
-    struct AirspeedDataPtr{
-      float *Airspeed_ms;
+    struct AirspeedNodes{
+      Element *Airspeed_ms;
     };
-    struct AltDataPtr{
-      float *Alt_m;
+    struct AltNodes{
+      Element *Alt_m;
     };
-    struct GpsDataPtr{
-      bool *Fix;                                 // True for 3D fix only
-      uint8_t *NumberSatellites;                 // Number of satellites used in solution
-      uint32_t *TOW;                             // GPS time of the navigation epoch
-      uint16_t *Year;                            // UTC year
-      uint8_t *Month;                            // UTC month
-      uint8_t *Day;                              // UTC day
-      uint8_t *Hour;                             // UTC hour
-      uint8_t *Min;                              // UTC minute
-      uint8_t *Sec;                              // UTC second
-      double *Lat;
-      double *Lon;
-      double *Alt;
-      double *Vn;
-      double *Ve;
-      double *Vd;
-      double *HAcc;
-      double *VAcc;
-      double *SAcc;
-      double *pDOP;                              // Position DOP
+    struct GpsNodes{
+      Element *Fix;                                 // True for 3D fix only
+      Element *NumberSatellites;                 // Number of satellites used in solution
+      Element *TOW;                             // GPS time of the navigation epoch
+      Element *Year;                            // UTC year
+      Element *Month;                            // UTC month
+      Element *Day;                              // UTC day
+      Element *Hour;                             // UTC hour
+      Element *Min;                              // UTC minute
+      Element *Sec;                              // UTC second
+      Element *Lat;
+      Element *Lon;
+      Element *Alt;
+      Element *Vn;
+      Element *Ve;
+      Element *Vd;
+      Element *HAcc;
+      Element *VAcc;
+      Element *SAcc;
+      Element *pDOP;                              // Position DOP
     };
-    struct SbusDataPtr{
-      float *Channels[16];
-      bool *FailSafe;
-      uint64_t *LostFrames;
+    struct SbusNodes{
+      Element *Channels[16];
+      Element *FailSafe;
+      Element *LostFrames;
     };
-    struct ImuDataPtr{
-      float *Ax, *Ay, *Az;
-      float *Gx, *Gy, *Gz;
-      float *Hx, *Hy, *Hz;
-      float *Temperature_C;                      // Temperature, C
+    struct ImuNodes{
+      Element *Ax, *Ay, *Az;
+      Element *Gx, *Gy, *Gz;
+      Element *Hx, *Hy, *Hz;
+      Element *Temperature_C;                      // Temperature, C
     };
-    struct AttitudeDataPtr{
-      float *Ax,*Ay,*Az;
-      float *Gx,*Gy,*Gz;
-      float *Axb,*Ayb,*Azb;
-      float *Gxb,*Gyb,*Gzb;
-      float *Pitch,*Roll,*Yaw,*Heading,*Track;
-      double *Lat,*Lon,*Alt;
-      float *Vn,*Ve,*Vd;
+    struct AttitudeNodes{
+      Element *Ax,*Ay,*Az;
+      Element *Gx,*Gy,*Gz;
+      Element *Axb,*Ayb,*Azb;
+      Element *Gxb,*Gyb,*Gzb;
+      Element *Pitch,*Roll,*Yaw,*Heading,*Track;
+      Element *Lat,*Lon,*Alt;
+      Element *Vn,*Ve,*Vd;
     };
-  struct PowerDataPtr{
-    float *MinCellVolt;
+  struct PowerNodes{
+    Element *MinCellVolt;
   };
-    struct DataPtr{
-      TimeDataPtr Time;
-      StaticPressDataPtr StaticPress;
-      AirspeedDataPtr Airspeed;
-      AltDataPtr Alt;
-      GpsDataPtr Gps;
-      SbusDataPtr Sbus;
-      ImuDataPtr Imu;
-      AttitudeDataPtr Attitude;
-      PowerDataPtr Power;
+    struct DataNodes{
+      TimeNodes Time;
+      StaticPressNodes StaticPress;
+      AirspeedNodes Airspeed;
+      AltNodes Alt;
+      GpsNodes Gps;
+      SbusNodes Sbus;
+      ImuNodes Imu;
+      AttitudeNodes Attitude;
+      PowerNodes Power;
     };
     struct TimeData{
       uint64_t Time_us;
@@ -315,7 +315,7 @@ class TelemetryClient {
       AttitudeData Attitude;
       PowerData Power;
     };
-    DataPtr DataPtr_;
+    DataNodes Nodes_;
     Data Data_;
     const uint8_t header_[2] = {0x42,0x46};
     const uint8_t headerLength_ = 5;
