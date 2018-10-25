@@ -55,9 +55,9 @@ class MissionManager {
   private:
     struct Configuration {
       struct Switch {
-        float *SourcePtr;
-        float Threshold = 0.5;
-        float Gain = 1.0;
+          Element *source_node{NULL};
+          float Threshold = 0.5;
+          float Gain = 1.0;
       };
       Switch SocEngageSwitch, CtrlSelectSwitch, TestSelectIncrementSwitch, TestSelectDecrementSwitch, TriggerSwitch, LaunchSelectSwitch, LandSelectSwitch;
       std::string BaselineController, LaunchController, LandController;
@@ -68,10 +68,10 @@ class MissionManager {
     const size_t PersistenceThreshold_ = 5;
 
     size_t SocEngagePersistenceCounter_ = 0;
-    bool SocEngage_ = false;
+    Element *SocEngage_node{NULL};
 
     size_t CtrlSelectPersistenceCounter_ = 0;
-    bool CtrlSelect_ = false;
+    Element *CtrlSelect_node{NULL};
 
     size_t LaunchSelectPersistenceCounter_ = 0;
     size_t LandSelectPersistenceCounter_ = 0;
@@ -83,21 +83,21 @@ class MissionManager {
     size_t TestSelectIncrementPersistenceCounter_ = 0;
     size_t TestSelectDecrementPersistenceCounter_ = 0;
     size_t TestSelectExcitePersistenceCounter_ = 0;
-    int TestSelect_ = 0;
+    Element *TestSelect_node{NULL};
 
     size_t TriggerPersistenceCounter_ = 0;
     bool TriggerLatch_ = false;
     bool Trigger_ = false;
 
     size_t NumberOfTestPoints_ = 0;
-    size_t CurrentTestPointIndex_ = 0;
+    Element *CurrentTestPointIndex_node{NULL};
     size_t NextTestPointIndex_ = 0;
 
     std::string EngagedSensorProcessing_ = "Baseline";
     std::string EngagedController_ = "Fmu";
     std::string ArmedController_ = "Fmu";
     std::string EngagedExcitation_ = "None";
-    bool EngagedExcitationFlag_ = false;
+    Element *EngagedExcitationFlag_node{NULL};
 
     std::map<std::string,TestPointDefinition> TestPoints_;
 };
