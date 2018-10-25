@@ -43,7 +43,7 @@ Where:
      -1 instead of 1000 us).  
 */
 
-void AircraftEffectors::Configure(const rapidjson::Value& Config, DefinitionTree *DefinitionTreePtr) {
+void AircraftEffectors::Configure(const rapidjson::Value& Config) {
   assert(Config.IsArray());
   for (size_t i=0; i < Config.Size(); i++) {
     const rapidjson::Value& Effector = Config[i];
@@ -53,11 +53,12 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config, DefinitionTree
           assert(Effector["Effectors"].IsArray());
           for (auto &NodeEffector : Effector["Effectors"].GetArray()) {
             if (NodeEffector.HasMember("Input")) {
-              if (DefinitionTreePtr->GetValuePtr<float*>(NodeEffector["Input"].GetString())) {
-                Inputs_.push_back(DefinitionTreePtr->GetValuePtr<float*>(NodeEffector["Input"].GetString()));
-              } else {
-                throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+NodeEffector["Input"].GetString()+std::string(" not found in global data."));
-              }
+                Element *ele =  deftree.getElement(NodeEffector["Input"].GetString());
+                if ( ele  ) {
+                    input_nodes.push_back(ele);
+                } else {
+                    throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+NodeEffector["Input"].GetString()+std::string(" not found in global data."));
+                }
             } else {
               throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input not specified in configuration."));
             }
@@ -67,11 +68,12 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config, DefinitionTree
         }
       } else {
         if (Effector.HasMember("Input")) {
-          if (DefinitionTreePtr->GetValuePtr<float*>(Effector["Input"].GetString())) {
-            Inputs_.push_back(DefinitionTreePtr->GetValuePtr<float*>(Effector["Input"].GetString()));
-          } else {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+Effector["Input"].GetString()+std::string(" not found in global data."));
-          }
+            Element *ele = deftree.getElement(Effector["Input"].GetString());
+            if ( ele ) {
+                input_nodes.push_back(ele);
+            } else {
+                throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+Effector["Input"].GetString()+std::string(" not found in global data."));
+            }
         } else {
           throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input not specified in configuration."));
         }
@@ -86,9 +88,9 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config, DefinitionTree
 /* Run method for effectors, dereferences the inputs and returns a vector of effector commands to send to the FMU */
 std::vector<float> AircraftEffectors::Run() {
   std::vector<float> Commands;
-  Commands.resize(Inputs_.size());
-  for (size_t i=0; i < Inputs_.size(); i++) {
-    Commands[i] = *Inputs_[i];
+  Commands.resize(input_nodes.size());
+  for (size_t i=0; i < input_nodes.size(); i++) {
+      Commands[i] = input_nodes[i]->getFloat();
   }
   return Commands;
 }

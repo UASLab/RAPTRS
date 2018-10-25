@@ -47,7 +47,7 @@ class AircraftEffectors {
   private:
     std::string RootPath_ = "/Effectors";
     bool Configured_ = false;
-    std::vector<float*> Inputs_;
+    std::vector<Element *> input_nodes;
 };
 
 #endif
