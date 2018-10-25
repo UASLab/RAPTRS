@@ -50,11 +50,11 @@ class MinCellVolt: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      std::vector<float*> Inputs;
+      vector<Element *> input_nodes;
     };
     struct Data {
-      uint8_t Mode = kStandby;
-      float Output = 0.0f;
+        uint8_t Mode = kStandby;
+        Element *output_node{NULL};
     };
 
     std::vector<float> numCells;
