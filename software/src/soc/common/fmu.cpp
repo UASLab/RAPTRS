@@ -87,7 +87,7 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
   std::cout << "\t\tReading Sensors config back from FMU..." << std::flush;
   size_t i=0;
   while(i < 100) {
-    if (ReceiveSensorData()) {
+    if (ReceiveSensorData(false /*publish*/)) {
       i++;
     }
   }
@@ -109,7 +109,7 @@ void FlightManagementUnit::SendModeCommand(Mode mode) {
 }
 
 /* Receive sensor data from FMU */
-bool FlightManagementUnit::ReceiveSensorData() {
+bool FlightManagementUnit::ReceiveSensorData(bool publish) {
   Message message;
   std::vector<uint8_t> Payload;
   size_t PayloadLocation = 0;
@@ -207,8 +207,10 @@ bool FlightManagementUnit::ReceiveSensorData() {
       memcpy(SensorData_.Analog.data(),Payload.data()+PayloadLocation,SensorData_.Analog.size()*sizeof(AnalogSensorData));
       PayloadLocation += SensorData_.Analog.size()*sizeof(AnalogSensorData);
 
-      // copy the incoming sensor data into the definition tree
-      PublishSensors();
+      if ( publish ) {
+          // copy the incoming sensor data into the definition tree
+          PublishSensors();
+      }
       
       return true;
     } else {

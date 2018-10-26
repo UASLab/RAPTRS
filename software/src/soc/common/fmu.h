@@ -56,7 +56,7 @@ class FlightManagementUnit {
     void Begin();
     void Configure(const rapidjson::Value& Config);
     void SendModeCommand(Mode mode);
-    bool ReceiveSensorData();
+    bool ReceiveSensorData(bool publish=true);
     void SendEffectorCommands(std::vector<float> Commands);
   private:
     struct InternalMpu9250SensorData {

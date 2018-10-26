@@ -30,7 +30,7 @@ class Element {
  private:
 
   // supported types
-  enum { BOOL, INT, LONG, FLOAT, DOUBLE } tag;
+  enum { NONE, BOOL, INT, LONG, FLOAT, DOUBLE } tag;
 
   union {
     bool b;
@@ -113,7 +113,7 @@ class Element {
     case LONG: return "long";
     case FLOAT: return "float";
     case DOUBLE: return "double";
-    default: return "undefined";
+    default: return "no type";
     }
   }
     
@@ -124,7 +124,7 @@ class Element {
     case LONG: return to_string(x.l);
     case FLOAT: return to_string(x.f);
     case DOUBLE: return to_string(x.d);
-    default: return "value undefined";
+    default: return "no value";
     }
   }
     

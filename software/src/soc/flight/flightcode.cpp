@@ -156,12 +156,9 @@ int main(int argc, char* argv[]) {
         // run armed control laws
         Control.RunArmed();
 
-        //
-        string CtrlEngaged = Mission.GetEngagedController();
-
-        Element *cell_min_node = deftree.getElement("/Sensor-Processing/MinCellVolt_V", true);
-        cout << CtrlEngaged << "\t" << cell_min_node->getFloat() << endl;
-
+        //string CtrlEngaged = Mission.GetEngagedController();
+        //Element *cell_min_node = deftree.getElement("/Sensor-Processing/MinCellVolt_V", true);
+        //cout << CtrlEngaged << "\t" << cell_min_node->getFloat() << endl;
       }
       // run telemetry
       Telemetry.Send();
