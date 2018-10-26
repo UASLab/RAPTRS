@@ -94,15 +94,16 @@ class ControlLaws {
     void RunEngaged(size_t ControlLevel);
     void RunArmed();
   private:
-    std::string RootPath_ = "/Control";
-    std::string EngagedGroup_ = "Fmu";
-    std::string ArmedGroup_ = "Fmu";
+    string RootPath_ = "/Control";
+    string EngagedGroup_ = "Fmu";
+    string LastEngagedGroup = "";
+    string ArmedGroup_ = "Fmu";
     std::map<std::string,std::vector<std::vector<std::shared_ptr<GenericFunction>>>> SocControlGroups_;
     std::vector<std::string> SocGroupKeys_;
     std::map<std::string,std::vector<std::string>> SocLevelNames_;
     std::map<std::string,std::vector<std::vector<std::string>>> SocDataKeys_;
-    map<string, Element *> OutputData_;
-    map<string, map<string, Element *>> SocDataPtr_;
+    map<string, string> OutputData_;
+    map<string, map<string, string>> SocDataPtr_;
 };
 
 #endif

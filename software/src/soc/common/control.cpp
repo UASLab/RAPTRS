@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "control.h"
 
+using std::cout;
+using std::endl;
+
 /* see control.hxx for configuration details */
 
 /* configures control laws given a JSON value and registers data with global defs */
@@ -115,9 +118,9 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
                       std::string KeyName = SocKey.substr(SocKey.rfind("/"));
                       // setup Soc data pointer
                       Element *ele = deftree.getElement(SocKey);
-                      SocDataPtr_[GroupKey][KeyName] = ele;
+                      SocDataPtr_[GroupKey][KeyName] = SocKey;
                       if (ele) {
-                        OutputData_[KeyName] = ele;
+                        OutputData_[KeyName] = OutputKey;
                         deftree.makeAlias(SocKey, OutputKey);
                       }
                     }
@@ -141,6 +144,22 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
 /* sets the control law that is engaged and currently output */
 void ControlLaws::SetEngagedController(std::string ControlGroupName) {
   EngagedGroup_ = ControlGroupName;
+  if ( EngagedGroup_ != LastEngagedGroup ) {
+    // remake node aliases
+    cout << "remaking node aliases" << endl;
+    // iterate through all levels
+    for (auto Levels = SocLevelNames_[EngagedGroup_].begin(); Levels != SocLevelNames_[EngagedGroup_].end(); ++Levels) {
+      auto ControlLevel = std::distance(SocLevelNames_[EngagedGroup_].begin(),Levels);
+      for (auto Key : SocDataKeys_[EngagedGroup_][ControlLevel]) {
+        std::string KeyName = Key.substr(Key.rfind("/"));
+        if ((KeyName!="/Mode")&&(KeyName!="/Saturated")) {
+          deftree.makeAlias(SocDataPtr_[EngagedGroup_][KeyName], OutputData_[KeyName]);
+          cout << SocDataPtr_[EngagedGroup_][KeyName] << " -> " << OutputData_[KeyName] << endl;
+        }
+      }
+    }
+    LastEngagedGroup = EngagedGroup_;
+  }
 }
 
 /* sets the control law that is running and computing states to enable a transient free engage */
