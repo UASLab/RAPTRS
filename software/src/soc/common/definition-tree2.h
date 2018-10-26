@@ -154,8 +154,8 @@ class DefinitionTree2 {
   Element *getElement(string name, bool create=true);
 
   void GetKeys(string Name, vector<string> *KeysPtr);
-  size_t Size(std::string Name);
-  void PrettyPrint(std::string Prefix);
+  size_t Size(string Name);
+  void PrettyPrint(string Prefix);
 
   void Erase(string name);
     

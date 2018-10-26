@@ -29,7 +29,7 @@ using std::vector;
 
 #include "rapidjson/document.h"
 
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "route.hxx"
 
 
@@ -42,92 +42,93 @@ class FGRouteMgr {
 
 public:
 
-    enum StartMode {
-	FIRST_WPT = 0,		// Go to first waypoint
-	FIRST_LEG = 1,		// Go to 2nd waypoint along route leg
-    };
+  enum StartMode {
+    FIRST_WPT = 0,		// Go to first waypoint
+    FIRST_LEG = 1,		// Go to 2nd waypoint along route leg
+  };
 
-    enum CompletionMode {
-	LOOP = 0,		// loop the route when finished
-	EXTEND_LAST_LEG = 1	// track the last route leg indefinitely
-    };
+  enum CompletionMode {
+    LOOP = 0,		// loop the route when finished
+    EXTEND_LAST_LEG = 1	// track the last route leg indefinitely
+  };
 
 private:
 
-    SGRoute *active;
-    SGRoute *standby;
+  bool initialized{false};
+  
+  SGRoute *active;
+  SGRoute *standby;
 
-    double last_lon;
-    double last_lat;
-    double last_az;
-    bool pos_set;
+  double last_lon;
+  double last_lat;
+  double last_az;
+  bool pos_set;
     
-    // route behaviors
-    StartMode start_mode;
-    CompletionMode completion_mode;
+  // route behaviors
+  StartMode start_mode;
+  CompletionMode completion_mode;
 
-    // stats
-    double dist_remaining_m;
+  // stats
+  double dist_remaining_m;
 
-    // output signals
-    float leg_course;
-    float course_error_rad;
-    float xtrack_m;
-    float nav_dist_m;
+  // output signals
+  float leg_course;
+  float course_error_rad;
+  float xtrack_m;
+  float nav_dist_m;
     
-    SGWayPoint make_waypoint( const string& wpt_string );
+  SGWayPoint make_waypoint( const string& wpt_string );
 
-    // build a route from a property (sub) tree
-    bool build( const rapidjson::Value& Config );
+  // build a route from a property (sub) tree
+  bool build( const rapidjson::Value& Config );
     
 public:
 
-    FGRouteMgr();
-    ~FGRouteMgr();
+  FGRouteMgr();
+  ~FGRouteMgr();
 
-    void init( const rapidjson::Value& Config,
-               DefinitionTree *DefinitionTreePtr );
+  void init( const rapidjson::Value& Config );
 
-    // set route start mode
-    inline void set_start_mode( enum StartMode mode ) {
-	start_mode = mode;
-    }
+  // set route start mode
+  inline void set_start_mode( enum StartMode mode ) {
+    start_mode = mode;
+  }
 
-    // set route completion mode
-    inline void set_completion_mode( enum CompletionMode mode ) {
-	completion_mode = mode;
-    }
+  // set route completion mode
+  inline void set_completion_mode( enum CompletionMode mode ) {
+    completion_mode = mode;
+  }
 
-    void update();
+  void update();
 
-    // swap the "active" and the "standby" routes, but only if the
-    // "standby" route has some waypoints.
-    bool swap();
+  // swap the "active" and the "standby" routes, but only if the
+  // "standby" route has some waypoints.
+  bool swap();
 
-    // these modify the "standby" route
-    inline void clear_standby() {
-	standby->clear();
-    }
-    int new_waypoint( const double lon, const double lat,
-		      const int mode );
+  // these modify the "standby" route
+  inline void clear_standby() {
+    standby->clear();
+  }
+  int new_waypoint( const double lon, const double lat,
+                    const int mode );
 
-    // returns info on the "active" route
-    inline SGWayPoint get_waypoint( int i ) const {
-        return active->get_waypoint(i);
-    }
-    inline int get_waypoint_index() const {
-	return active->get_waypoint_index();
-    }
-    inline int size() const {
-        return active->size();
-    }
-    inline double get_dist_remaining_m() const {
-	return dist_remaining_m;
-    }
+  // returns info on the "active" route
+  inline SGWayPoint get_waypoint( int i ) const {
+    return active->get_waypoint(i);
+  }
+  inline int get_waypoint_index() const {
+    return active->get_waypoint_index();
+  }
+  inline int size() const {
+    return active->size();
+  }
+  inline double get_dist_remaining_m() const {
+    return dist_remaining_m;
+  }
 
-    // restart the route from the beginning
-    inline void restart() {
-	active->set_acquired( false );
-	active->set_current( 0 );
-    }
+  // restart the route from the beginning
+  inline void restart() {
+    active->set_acquired( false );
+    active->set_current( 0 );
+  }
 };

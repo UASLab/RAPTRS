@@ -28,45 +28,45 @@ class UGTelnet: netChannel
 
 private:
 
-    /**
-     * Server port to listen on.
-     */
-    int port;
-    bool enabled;
+  /**
+   * Server port to listen on.
+   */
+  int port;
+  bool enabled;
 
 public:
 
-    /**
-     * Create a new TCP server.
-     * 
-     * @param tokens Tokenized configuration parameters
-     */
-    UGTelnet( const int port_num, DefinitionTree *ptr );
+  /**
+   * Create a new TCP server.
+   * 
+   * @param tokens Tokenized configuration parameters
+   */
+  UGTelnet( const int port_num );
 
-    /**
-     * Destructor.
-     */
-    ~UGTelnet();
+  /**
+   * Destructor.
+   */
+  ~UGTelnet();
 
-    /**
-     * Start the telnet server.
-     */
-    bool open();
+  /**
+   * Start the telnet server.
+   */
+  bool open();
 
-    /**
-     * Process network activity.
-     */
-    bool process();
+  /**
+   * Process network activity.
+   */
+  bool process();
 
-    /**
-     * 
-     */
-    bool close();
+  /**
+   * 
+   */
+  bool close();
 
-    /**
-     * Accept a new client connection.
-     */
-    void handleAccept();
+  /**
+   * Accept a new client connection.
+   */
+  void handleAccept();
 
 };
 

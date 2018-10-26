@@ -62,17 +62,17 @@ Element *DefinitionTree2::getElement(string name, bool create) {
 void DefinitionTree2::GetKeys(string Name, vector<string> *KeysPtr) {
   KeysPtr->clear();
   for (auto const& element : data) {
-    if (element.first.find(Name) != std::string::npos) {
+    if (element.first.find(Name) != string::npos) {
       KeysPtr->push_back(element.first);
     }
   }
 }
 
 /* Gets number of definition tree members at a given tree level */
-size_t DefinitionTree2::Size(std::string Name) {
+size_t DefinitionTree2::Size(string Name) {
   size_t retval = 0;
   for ( auto const& element : data ) {
-    if (element.first.find(Name) != std::string::npos) {
+    if (element.first.find(Name) != string::npos) {
       retval++;
     }
   }
@@ -80,14 +80,14 @@ size_t DefinitionTree2::Size(std::string Name) {
 }
 
 /* print definition tree member keys at a given tree level */
-void DefinitionTree2::PrettyPrint(std::string Prefix) {
-  std::cout << Prefix << std::endl;
+void DefinitionTree2::PrettyPrint(string Prefix) {
+  cout << "Base path: " << Prefix << endl;
   for ( auto const& it : data ) {
-    std::size_t pos = it.first.find(Prefix);
+    size_t pos = it.first.find(Prefix);
     if ( pos != string::npos) {
       string tail = it.first.substr(pos + 1);
       Element *ele = it.second;
-      cout << "  " << tail << " (" << ele->getType()
+      cout << "    " << tail << " (" << ele->getType()
            << ") = " << ele->getValueAsString() << endl;
     }
   }

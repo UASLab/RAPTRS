@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
 
     if (AircraftConfiguration.HasMember("Route")) {
       std::cout << "\tConfiguring route following..." << std::endl;
-      route_mgr.init(AircraftConfiguration["Route"],&GlobalData);
+      route_mgr.init(AircraftConfiguration["Route"]);
     }
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
@@ -135,19 +135,19 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
   std::cout << "Entering main loop." << std::endl;
 
-  GlobalData.PrettyPrint("/");
+  deftree.PrettyPrint("/");
 
   netInit();                    // do this before creating telnet instance
-  UGTelnet telnet( 6500, &GlobalData );
+  UGTelnet telnet( 6500 );
   telnet.open();
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
   // hack in an interface to flightgear to overwrite imu/gps/airdata
   // with simulated values
-  fgfs_imu_init(&GlobalData);
-  fgfs_gps_init(&GlobalData);
-  fgfs_airdata_init(&GlobalData);
-  fgfs_act_init(&GlobalData);
+  fgfs_imu_init();
+  fgfs_gps_init();
+  fgfs_airdata_init();
+  fgfs_act_init();
   
   /* main loop */
   while(1) {
