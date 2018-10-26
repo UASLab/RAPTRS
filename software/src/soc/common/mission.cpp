@@ -26,10 +26,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Fmu-Soc-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Fmu-Soc-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.SocEngageSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.SocEngageSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Fmu-Soc-Switch source not found in global data."));
-        }
+      config_.SocEngageSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.SocEngageSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Fmu-Soc-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Fmu-Soc-Switch configuration does not define a source."));
     }
@@ -45,10 +45,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Control-Select-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Control-Select-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.CtrlSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.CtrlSelectSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Control-Select-Switch source not found in global data."));
-        }
+      config_.CtrlSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.CtrlSelectSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Control-Select-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Control-Select-Switch configuration does not define a source."));
     }
@@ -64,10 +64,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Trigger-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Trigger-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.TriggerSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.TriggerSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Trigger-Switch source not found in global data."));
-        }
+      config_.TriggerSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.TriggerSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Trigger-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Trigger-Switch configuration does not define a source."));
     }
@@ -83,10 +83,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Test-Increment-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Test-Increment-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.TestSelectIncrementSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.TestSelectIncrementSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Increment-Switch source not found in global data."));
-        }
+      config_.TestSelectIncrementSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.TestSelectIncrementSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Increment-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Increment-Switch configuration does not define a source."));
     }
@@ -101,10 +101,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Test-Decrement-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Test-Decrement-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.TestSelectDecrementSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.TestSelectDecrementSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Decrement-Switch source not found in global data."));
-        }
+      config_.TestSelectDecrementSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.TestSelectDecrementSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Decrement-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Decrement-Switch configuration does not define a source."));
     }
@@ -119,10 +119,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Launch-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Launch-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.LaunchSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.LaunchSelectSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Launch-Switch source not found in global data."));
-        }
+      config_.LaunchSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.LaunchSelectSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Launch-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Launch-Switch configuration does not define a source."));
     }
@@ -137,10 +137,10 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
   if (Config.HasMember("Land-Switch")) {
     const rapidjson::Value& TempSwitch = Config["Land-Switch"];
     if (TempSwitch.HasMember("Source")) {
-        config_.LandSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-        if ( !config_.LandSelectSwitch.source_node ) {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Land-Switch source not found in global data."));
-        }
+      config_.LandSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
+      if ( !config_.LandSelectSwitch.source_node ) {
+        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Land-Switch source not found in global data."));
+      }
     } else {
       throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Land-Switch configuration does not define a source."));
     }
@@ -202,48 +202,48 @@ void MissionManager::Run() {
   // Switch processing
 
   // FMU / SOC switch logic
-    float SocEngageSwitchVal = (config_.SocEngageSwitch.source_node->getFloat()) * config_.SocEngageSwitch.Gain;
-    bool SocEngageCheck = (SocEngageSwitchVal > config_.SocEngageSwitch.Threshold);
+  float SocEngageSwitchVal = (config_.SocEngageSwitch.source_node->getFloat()) * config_.SocEngageSwitch.Gain;
+  bool SocEngageCheck = (SocEngageSwitchVal > config_.SocEngageSwitch.Threshold);
 
-    if ((SocEngage_node->getBool() != true) && (SocEngageCheck == true)) {
-        SocEngagePersistenceCounter_++;
-        if (SocEngagePersistenceCounter_ > PersistenceThreshold_) {
-            SocEngage_node->setBool(true);
-            SocEngagePersistenceCounter_ = 0;
-        }
-    } else if ((SocEngage_node->getBool() != false) && (SocEngageCheck == false)) {
-        SocEngagePersistenceCounter_++;
-        if (SocEngagePersistenceCounter_ > PersistenceThreshold_) {
-            SocEngage_node->setBool(false);
-            SocEngagePersistenceCounter_ = 0;
-        }
-    } else {
-        SocEngagePersistenceCounter_ = 0;
+  if ((SocEngage_node->getBool() != true) && (SocEngageCheck == true)) {
+    SocEngagePersistenceCounter_++;
+    if (SocEngagePersistenceCounter_ > PersistenceThreshold_) {
+      SocEngage_node->setBool(true);
+      SocEngagePersistenceCounter_ = 0;
     }
+  } else if ((SocEngage_node->getBool() != false) && (SocEngageCheck == false)) {
+    SocEngagePersistenceCounter_++;
+    if (SocEngagePersistenceCounter_ > PersistenceThreshold_) {
+      SocEngage_node->setBool(false);
+      SocEngagePersistenceCounter_ = 0;
+    }
+  } else {
+    SocEngagePersistenceCounter_ = 0;
+  }
 
   // Control law select switch logic
   float CtrlSelectSwitchVal = (config_.CtrlSelectSwitch.source_node->getFloat()) * config_.CtrlSelectSwitch.Gain;
   bool CtrlSelectCheck = CtrlSelectSwitchVal > config_.CtrlSelectSwitch.Threshold;
 
   if (SocEngage_node->getBool() == true) {
-      if ((CtrlSelect_node->getBool() != true) && (CtrlSelectCheck == true)) {
-          CtrlSelectPersistenceCounter_++;
-          if (CtrlSelectPersistenceCounter_ > PersistenceThreshold_) {
-              CtrlSelect_node->setBool(true);
-              CtrlSelectPersistenceCounter_ = 0;
-          }
-      } else if ((CtrlSelect_node->getBool() != false) && (CtrlSelectCheck == false)) {
-          CtrlSelectPersistenceCounter_++;
-          if (CtrlSelectPersistenceCounter_ > PersistenceThreshold_) {
-              CtrlSelect_node->setBool(false);
-              CtrlSelectPersistenceCounter_ = 0;
-          }
-      } else {
-          CtrlSelectPersistenceCounter_ = 0;
+    if ((CtrlSelect_node->getBool() != true) && (CtrlSelectCheck == true)) {
+      CtrlSelectPersistenceCounter_++;
+      if (CtrlSelectPersistenceCounter_ > PersistenceThreshold_) {
+        CtrlSelect_node->setBool(true);
+        CtrlSelectPersistenceCounter_ = 0;
       }
-  } else {
-      CtrlSelect_node->setBool(false);
+    } else if ((CtrlSelect_node->getBool() != false) && (CtrlSelectCheck == false)) {
+      CtrlSelectPersistenceCounter_++;
+      if (CtrlSelectPersistenceCounter_ > PersistenceThreshold_) {
+        CtrlSelect_node->setBool(false);
+        CtrlSelectPersistenceCounter_ = 0;
+      }
+    } else {
       CtrlSelectPersistenceCounter_ = 0;
+    }
+  } else {
+    CtrlSelect_node->setBool(false);
+    CtrlSelectPersistenceCounter_ = 0;
   }
 
   // Launch and Landing switch Logic
@@ -310,20 +310,20 @@ void MissionManager::Run() {
   if ((TestSelect_node->getInt() != 1) && (TestSelectIncrementCheck == true)) {
     TestSelectIncrementPersistenceCounter_++;
     if (TestSelectIncrementPersistenceCounter_ > PersistenceThreshold_) {
-        TestSelect_node->setInt(1);
-        TestSelectIncrementPersistenceCounter_ = 0;
+      TestSelect_node->setInt(1);
+      TestSelectIncrementPersistenceCounter_ = 0;
     }
   } else if ((TestSelect_node->getInt() != -1) && (TestSelectDecrementCheck == true)) {
     TestSelectDecrementPersistenceCounter_++;
     if (TestSelectDecrementPersistenceCounter_ > PersistenceThreshold_) {
-        TestSelect_node->setInt(-1);
-        TestSelectDecrementPersistenceCounter_ = 0;
+      TestSelect_node->setInt(-1);
+      TestSelectDecrementPersistenceCounter_ = 0;
     }
   } else if ((TestSelect_node->getInt() != 0) && (TestSelectExciteCheck == true)) {
     TestSelectExcitePersistenceCounter_++;
     if (TestSelectExcitePersistenceCounter_ > PersistenceThreshold_) {
-        TestSelect_node->setInt(0);
-        TestSelectExcitePersistenceCounter_ = 0;
+      TestSelect_node->setInt(0);
+      TestSelectExcitePersistenceCounter_ = 0;
     }
   } else {
     TestSelectIncrementPersistenceCounter_ = 0;
@@ -359,7 +359,7 @@ void MissionManager::Run() {
   if (TestSelect_node->getInt() == 0) { // Excitation selected
     if (Trigger_ == true) {
       if (EngagedExcitation_ == "None") { // Engage the Excitation
-          EngagedExcitation_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Excitation;
+        EngagedExcitation_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Excitation;
       } else { // Dis-Engage the Excitation
         EngagedExcitation_ = "None";
       }
@@ -369,31 +369,31 @@ void MissionManager::Run() {
     EngagedExcitation_ = "None";
 
     if (Trigger_ == true) { // Increment the Test Point, switches engaged controller
-        CurrentTestPointIndex_node->setInt(NextTestPointIndex_);
-        NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
+      CurrentTestPointIndex_node->setInt(NextTestPointIndex_);
+      NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
 
-        if (NextTestPointIndex_ >= NumberOfTestPoints_) {
-            NextTestPointIndex_ = 0;
-        }
-        Trigger_ = false;
+      if (NextTestPointIndex_ >= NumberOfTestPoints_) {
+        NextTestPointIndex_ = 0;
+      }
+      Trigger_ = false;
     }
   } else if (TestSelect_node->getInt() == -1) { // Decrement selected
     EngagedExcitation_ = "None";
 
     if (Trigger_ == true) { // Decrement the Test Point to 0, switches engaged controller
-        CurrentTestPointIndex_node->setInt(0);
-        NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
-        Trigger_ = false;
+      CurrentTestPointIndex_node->setInt(0);
+      NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
+      Trigger_ = false;
     }
   }
 
   // SOC Controller and SensorProcessing Mode Switching
   if (SocEngage_node->getBool() == true) {
-      if (CtrlSelect_node->getBool() == true) { // SOC Research
-          EngagedSensorProcessing_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].SensorProcessing;
-          EngagedController_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Control;
-          ArmedController_ = TestPoints_[std::to_string(NextTestPointIndex_)].Control;
-          // EngagedExcitation_ = "None";
+    if (CtrlSelect_node->getBool() == true) { // SOC Research
+      EngagedSensorProcessing_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].SensorProcessing;
+      EngagedController_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Control;
+      ArmedController_ = TestPoints_[std::to_string(NextTestPointIndex_)].Control;
+      // EngagedExcitation_ = "None";
 
     } else { // In SOC Baseline, arm the next controller, no excitation
       EngagedSensorProcessing_ = "Baseline";
@@ -417,11 +417,10 @@ void MissionManager::Run() {
   }
 
   if (EngagedExcitation_ == "None") {
-      EngagedExcitationFlag_node->setBool(false);
+    EngagedExcitationFlag_node->setBool(false);
   } else {
-      EngagedExcitationFlag_node->setBool(true);
+    EngagedExcitationFlag_node->setBool(true);
   }
-
 }
 
 /* returns the string of the sensor processing group that is engaged */

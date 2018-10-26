@@ -66,10 +66,10 @@ class FlightManagementUnit {
       float Temperature_C;                      // Temperature, C
     };
     struct InternalMpu9250SensorNodes {
-        Element *ax{NULL}, *ay{NULL}, *az{NULL};
-        Element *p{NULL}, *q{NULL}, *r{NULL};
-        Element *hx{NULL}, *hy{NULL}, *hz{NULL};
-        Element *temp{NULL};
+      Element *ax{NULL}, *ay{NULL}, *az{NULL};
+      Element *p{NULL}, *q{NULL}, *r{NULL};
+      Element *hx{NULL}, *hy{NULL}, *hz{NULL};
+      Element *temp{NULL};
     };
     struct InternalBme280SensorData {
       float Pressure_Pa;                        // Pressure, Pa
@@ -77,9 +77,9 @@ class FlightManagementUnit {
       float Humidity_RH;                        // Relative humidity
     };
     struct InternalBme280SensorNodes {
-        Element *press{NULL};
-        Element *temp{NULL};
-        Element *hum{NULL};
+      Element *press{NULL};
+      Element *temp{NULL};
+      Element *hum{NULL};
     };
     struct Mpu9250SensorData {
       int status;
@@ -89,11 +89,11 @@ class FlightManagementUnit {
       float Temperature_C;                      // Temperature, C
     };
     struct Mpu9250SensorNodes {
-        Element *status;
-        Element *ax{NULL}, *ay{NULL}, *az{NULL};
-        Element *p{NULL}, *q{NULL}, *r{NULL};
-        Element *hx{NULL}, *hy{NULL}, *hz{NULL};
-        Element *temp{NULL};
+      Element *status;
+      Element *ax{NULL}, *ay{NULL}, *az{NULL};
+      Element *p{NULL}, *q{NULL}, *r{NULL};
+      Element *hx{NULL}, *hy{NULL}, *hz{NULL};
+      Element *temp{NULL};
     };
     struct Bme280SensorData {
       int status;
@@ -102,10 +102,10 @@ class FlightManagementUnit {
       float Humidity_RH;                        // Relative humidity
     };
     struct Bme280SensorNodes {
-        Element *status{NULL};
-        Element *press{NULL};
-        Element *temp{NULL};
-        Element *hum{NULL};
+      Element *status{NULL};
+      Element *press{NULL};
+      Element *temp{NULL};
+      Element *hum{NULL};
     };
     struct uBloxSensorData {
       bool Fix;                                 // True for 3D fix only
@@ -123,19 +123,19 @@ class FlightManagementUnit {
       double pDOP;                              // Position DOP
     };
     struct uBloxSensorNodes {
-        Element *fix{NULL};
-        Element *sats{NULL};
-        Element *tow{NULL};
-        Element *year{NULL};
-        Element *month{NULL};
-        Element *day{NULL};
-        Element *hour{NULL};
-        Element *min{NULL};
-        Element *sec{NULL};
-        Element *lat{NULL}, *lon{NULL}, *alt{NULL};
-        Element *vn{NULL}, *ve{NULL}, *vd{NULL};
-        Element *horiz_acc{NULL}, *vert_acc{NULL}, *vel_acc{NULL};
-        Element *pdop{NULL};
+      Element *fix{NULL};
+      Element *sats{NULL};
+      Element *tow{NULL};
+      Element *year{NULL};
+      Element *month{NULL};
+      Element *day{NULL};
+      Element *hour{NULL};
+      Element *min{NULL};
+      Element *sec{NULL};
+      Element *lat{NULL}, *lon{NULL}, *alt{NULL};
+      Element *vn{NULL}, *ve{NULL}, *vd{NULL};
+      Element *horiz_acc{NULL}, *vert_acc{NULL}, *vel_acc{NULL};
+      Element *pdop{NULL};
     };
     struct Ams5915SensorData {
       int status;
@@ -143,9 +143,9 @@ class FlightManagementUnit {
       float Temperature_C;                      // Temperature, C
     };
     struct Ams5915SensorNodes {
-        Element *status{NULL};
-        Element *press{NULL};
-        Element *temp{NULL};
+      Element *status{NULL};
+      Element *press{NULL};
+      Element *temp{NULL};
     };
     struct SwiftSensorData {
       Ams5915SensorData Static;
@@ -161,17 +161,17 @@ class FlightManagementUnit {
       uint64_t LostFrames;
     };
     struct SbusSensorNodes {
-        Element *ch[16];
-        Element *failsafe;
-        Element *lost_frames;
+      Element *ch[16];
+      Element *failsafe;
+      Element *lost_frames;
     };
     struct AnalogSensorData {
       float Voltage_V;
       float CalibratedValue;
     };
     struct AnalogSensorNodes {
-        Element *volt;
-        Element *val;
+      Element *volt;
+      Element *val;
     };
     struct SensorData {
       std::vector<uint64_t> Time_us;
@@ -190,20 +190,20 @@ class FlightManagementUnit {
       std::vector<AnalogSensorData> Analog;
     };
     struct SensorNodes {
-        vector<Element *> Time_us;
-        vector<InternalMpu9250SensorNodes> InternalMpu9250;
-        vector<InternalBme280SensorNodes> InternalBme280;
-        vector<Element *> input_volts;
-        vector<Element *> reg_volts;
-        vector<Element *> pwm_volts;
-        vector<Element *> sbus_volts;
-        vector<Mpu9250SensorNodes> Mpu9250;
-        vector<Bme280SensorNodes> Bme280;
-        vector<uBloxSensorNodes> uBlox;
-        vector<SwiftSensorNodes> Swift;
-        vector<Ams5915SensorNodes> Ams5915;
-        vector<SbusSensorNodes> Sbus;
-        vector<AnalogSensorNodes> Analog;
+      vector<Element *> Time_us;
+      vector<InternalMpu9250SensorNodes> InternalMpu9250;
+      vector<InternalBme280SensorNodes> InternalBme280;
+      vector<Element *> input_volts;
+      vector<Element *> reg_volts;
+      vector<Element *> pwm_volts;
+      vector<Element *> sbus_volts;
+      vector<Mpu9250SensorNodes> Mpu9250;
+      vector<Bme280SensorNodes> Bme280;
+      vector<uBloxSensorNodes> uBlox;
+      vector<SwiftSensorNodes> Swift;
+      vector<Ams5915SensorNodes> Ams5915;
+      vector<SbusSensorNodes> Sbus;
+      vector<AnalogSensorNodes> Analog;
     };
     const std::string Port_ = FmuPort;
     const speed_t Baud_ = FmuBaud;
@@ -231,7 +231,6 @@ class FlightManagementUnit {
     void WritePort(uint8_t* Buffer,size_t BufferSize);
     void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
     void PublishSensors();
-
 };
 
 #endif

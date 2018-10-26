@@ -127,23 +127,23 @@ void PID2Class::Initialize() {}
 bool PID2Class::Initialized() {return true;}
 
 void PID2Class::Run(Mode mode) {
-    // mode
-    data_.mode_node->setInt(mode);
+  // mode
+  data_.mode_node->setInt(mode);
 
-    // sample time
-    if(!config_.UseFixedTimeSample) {
-        config_.SampleTime = config_.dt_node->getFloat();
-    }
+  // sample time
+  if(!config_.UseFixedTimeSample) {
+    config_.SampleTime = config_.dt_node->getFloat();
+  }
 
-    // Run
-    float Output = 0.0f;
-    int8_t Saturated = 0;
-    PID2Class_.Run(mode,
-                   config_.reference_node->getFloat(),
-                   config_.feedback_node->getFloat(),
-                   config_.SampleTime, &Output, &Saturated);
-    data_.output_node->setFloat(Output);
-    data_.saturated_node->setInt(Saturated);
+  // Run
+  float Output = 0.0f;
+  int8_t Saturated = 0;
+  PID2Class_.Run(mode,
+                 config_.reference_node->getFloat(),
+                 config_.feedback_node->getFloat(),
+                 config_.SampleTime, &Output, &Saturated);
+  data_.output_node->setFloat(Output);
+  data_.saturated_node->setInt(Saturated);
 }
 
 void PID2Class::Clear() {
@@ -243,20 +243,20 @@ void PIDClass::Initialize() {}
 bool PIDClass::Initialized() {return true;}
 
 void PIDClass::Run(Mode mode) {
-    // mode
-    data_.mode_node->setInt( mode );
+  // mode
+  data_.mode_node->setInt( mode );
 
-    // sample time
-    if(!config_.UseFixedTimeSample) {
-        config_.SampleTime = config_.dt_node->getFloat();
-    }
+  // sample time
+  if(!config_.UseFixedTimeSample) {
+    config_.SampleTime = config_.dt_node->getFloat();
+  }
 
-    // Run
-    float Output = 0.0f;
-    int8_t Saturated = 0;
-    PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.SampleTime, &Output, &Saturated);
-    data_.output_node->setFloat(Output);
-    data_.saturated_node->setInt(Saturated);
+  // Run
+  float Output = 0.0f;
+  int8_t Saturated = 0;
+  PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.SampleTime, &Output, &Saturated);
+  data_.output_node->setFloat(Output);
+  data_.saturated_node->setInt(Saturated);
 }
 
 void PIDClass::Clear() {
@@ -299,7 +299,7 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
       InputKeys_.push_back(Input.GetString());
       Element *ele = deftree.getElement(InputKeys_.back());
       if (ele) {
-          config_.Inputs.push_back(ele);
+        config_.Inputs.push_back(ele);
       } else {
         throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
@@ -436,31 +436,31 @@ void SSClass::Initialize() {}
 bool SSClass::Initialized() {return true;}
 
 void SSClass::Run(Mode mode) {
-    // mode
-    data_.mode_node->setInt(mode);
+  // mode
+  data_.mode_node->setInt(mode);
 
-    // sample time computation
-    float dt = 0;
-    if (config_.UseFixedTimeSample == false) {
-        dt = *config_.TimeSource - config_.timePrev;
-        config_.timePrev = *config_.TimeSource;
-        if (dt > 2*config_.dt) {dt = config_.dt;} // Catch large dt
-        if (dt <= 0) {dt = config_.dt;} // Catch negative and zero dt
-    } else {
-        dt = config_.dt;
-    }
+  // sample time computation
+  float dt = 0;
+  if (config_.UseFixedTimeSample == false) {
+    dt = *config_.TimeSource - config_.timePrev;
+    config_.timePrev = *config_.TimeSource;
+    if (dt > 2*config_.dt) {dt = config_.dt;} // Catch large dt
+    if (dt <= 0) {dt = config_.dt;} // Catch negative and zero dt
+  } else {
+    dt = config_.dt;
+  }
 
-    // inputs to Eigen3 vector
-    for (size_t i=0; i < config_.Inputs.size(); i++) {
-        config_.u(i) = config_.Inputs[i]->getFloat();
-    }
+  // inputs to Eigen3 vector
+  for (size_t i=0; i < config_.Inputs.size(); i++) {
+    config_.u(i) = config_.Inputs[i]->getFloat();
+  }
 
-    // Call Algorithm
-    SSClass_.Run(mode, config_.u, dt, &data_.y, &data_.ySat);
-    for (size_t i=0; i < data_.y_node.size(); i++) {
-        data_.y_node[i]->setFloat(data_.y(i));
-        data_.ySat_node[i]->setInt(data_.ySat(i));
-    }
+  // Call Algorithm
+  SSClass_.Run(mode, config_.u, dt, &data_.y, &data_.ySat);
+  for (size_t i=0; i < data_.y_node.size(); i++) {
+    data_.y_node[i]->setFloat(data_.y(i));
+    data_.ySat_node[i]->setInt(data_.ySat(i));
+  }
 }
 
 void SSClass::Clear() {

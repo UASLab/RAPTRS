@@ -80,16 +80,16 @@ class PID2Class: public GenericFunction {
     void Clear();
   private:
     struct Config {
-        float SampleTime;
-        bool UseFixedTimeSample = false;
-        Element *reference_node{NULL};
-        Element *feedback_node{NULL};
-        Element *dt_node{NULL};
+      float SampleTime;
+      bool UseFixedTimeSample = false;
+      Element *reference_node{NULL};
+      Element *feedback_node{NULL};
+      Element *dt_node{NULL};
     };
     struct Data {
-        Element *mode_node{NULL};
-        Element *output_node{NULL};
-        Element *saturated_node{NULL};
+      Element *mode_node{NULL};
+      Element *output_node{NULL};
+      Element *saturated_node{NULL};
     };
     __PID2Class PID2Class_;
     Config config_;

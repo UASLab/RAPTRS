@@ -26,9 +26,9 @@ void MinCellVolt::Configure(const rapidjson::Value& Config,std::string RootPath)
       InputKeys_.push_back(Input.GetString());
       Element *ele = deftree.getElement(InputKeys_.back());
       if ( ele ) {
-          config_.input_nodes.push_back(ele);
+        config_.input_nodes.push_back(ele);
       } else {
-          throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
+        throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
@@ -64,7 +64,7 @@ void MinCellVolt::Run(Mode mode) {
   // Compute the Minimum Voltage per Cell
   MinVoltPerCell = 4.3;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
-      VoltPerCell = config_.input_nodes[i]->getFloat() / numCells[i];
+    VoltPerCell = config_.input_nodes[i]->getFloat() / numCells[i];
 
     if (VoltPerCell < MinVoltPerCell) {
       MinVoltPerCell = VoltPerCell;

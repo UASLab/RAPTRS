@@ -25,136 +25,136 @@
 #pragma pack(push, 1)
 struct pilotPacket
 {
-   uint8_t index;
-   double time;
-   int16_t chan[8];
-   int8_t status;
+  uint8_t index;
+  double time;
+  int16_t chan[8];
+  int8_t status;
 };
 
 struct airPacket //BdHhhffhHBBB
 {
-   uint8_t index;
-   double timestamp;
-   uint16_t pressure_mbar;
-   int16_t temp_degC;
-   int16_t airspeed_smoothed_kt;
-   float altitude_smoothed_m;
-   float altitude_true_m;
-   int16_t pressure_vertical_speed_fps;
-   uint16_t wind_dir_deg;
-   uint8_t wind_speed_kt;
-   uint8_t pitot_scale_factor;
-   uint8_t status;
+  uint8_t index;
+  double timestamp;
+  uint16_t pressure_mbar;
+  int16_t temp_degC;
+  int16_t airspeed_smoothed_kt;
+  float altitude_smoothed_m;
+  float altitude_true_m;
+  int16_t pressure_vertical_speed_fps;
+  uint16_t wind_dir_deg;
+  uint8_t wind_speed_kt;
+  uint8_t pitot_scale_factor;
+  uint8_t status;
 };
 
 struct filterPacket //BdddfhhhhhhhhhhhhBB
 {
-   uint8_t index;
-   double timestamp;
-   double latitude_deg;
-   double longitude_deg;
-   float altitude_m;
-   int16_t vn_ms;
-   int16_t ve_ms;
-   int16_t vd_ms;
-   int16_t roll_deg;
-   int16_t pitch_deg;
-   int16_t heading_deg;
-   int16_t p_bias;
-   int16_t q_bias;
-   int16_t r_bias;
-   int16_t ax_bias;
-   int16_t ay_bias;
-   int16_t az_bias;
-   uint8_t sequence_num;
-   uint8_t status; //always 0
+  uint8_t index;
+  double timestamp;
+  double latitude_deg;
+  double longitude_deg;
+  float altitude_m;
+  int16_t vn_ms;
+  int16_t ve_ms;
+  int16_t vd_ms;
+  int16_t roll_deg;
+  int16_t pitch_deg;
+  int16_t heading_deg;
+  int16_t p_bias;
+  int16_t q_bias;
+  int16_t r_bias;
+  int16_t ax_bias;
+  int16_t ay_bias;
+  int16_t az_bias;
+  uint8_t sequence_num;
+  uint8_t status; //always 0
 };
 
 struct ImunodePacket //BdfffffffffhB
 {
-   uint8_t index;
-   double imu_timestamp;
-   float p_rad_sec;
-   float q_rad_sec;
-   float r_rad_sec;
-   float ax_mps_sec;
-   float ay_mps_sec;
-   float az_mps_sec;
-   float hx;
-   float hy;
-   float hz;
-   int16_t temp_C;
-   uint8_t status;
+  uint8_t index;
+  double imu_timestamp;
+  float p_rad_sec;
+  float q_rad_sec;
+  float r_rad_sec;
+  float ax_mps_sec;
+  float ay_mps_sec;
+  float az_mps_sec;
+  float hx;
+  float hy;
+  float hz;
+  int16_t temp_C;
+  uint8_t status;
 };
 
 struct numactPacket //BdhhHhhhhhB
 {
-   uint8_t index; //always 0
-   double timestamp;
-   int16_t aileron;
-   int16_t elevator;
-   uint16_t throttle;
-   int16_t rudder;
-   int16_t channel5;
-   int16_t flaps;
-   int16_t channel7;
-   int16_t channel8;
-   uint8_t status; //always 0
+  uint8_t index; //always 0
+  double timestamp;
+  int16_t aileron;
+  int16_t elevator;
+  uint16_t throttle;
+  int16_t rudder;
+  int16_t channel5;
+  int16_t flaps;
+  int16_t channel7;
+  int16_t channel8;
+  uint8_t status; //always 0
 };
 
 struct healthPacket //BfHHHHHH
 {
-   uint8_t index;
-   float frame_time;
-   uint16_t system_load_avg;
-   uint16_t board_vcc;
-   uint16_t extern_volts;
-   uint16_t extern_cell_volts;
-   uint16_t extern_amps;
-   uint16_t dekamah;
+  uint8_t index;
+  float frame_time;
+  uint16_t system_load_avg;
+  uint16_t board_vcc;
+  uint16_t extern_volts;
+  uint16_t extern_cell_volts;
+  uint16_t extern_amps;
+  uint16_t dekamah;
 };
 
 struct payloadPacket //BdH
 {
-   uint8_t index;
-   double timestamp;
-   uint16_t trigger_num;
+  uint8_t index;
+  double timestamp;
+  uint16_t trigger_num;
 };
 
 struct gpsPacket
 {
-   uint8_t index;
-   double timestamp, lat_deg, long_deg;
-   float alt_m;
-   int16_t vn_ms;
-   int16_t ve_ms;
-   int16_t vd_ms;
-   double unix_time_sec;
-   uint8_t satellites;
-   uint16_t horiz_accuracy_m;
-   uint16_t vert_accuracy_m;
-   uint16_t pdop;
-   uint8_t fixType;
+  uint8_t index;
+  double timestamp, lat_deg, long_deg;
+  float alt_m;
+  int16_t vn_ms;
+  int16_t ve_ms;
+  int16_t vd_ms;
+  double unix_time_sec;
+  uint8_t satellites;
+  uint16_t horiz_accuracy_m;
+  uint16_t vert_accuracy_m;
+  uint16_t pdop;
+  uint8_t fixType;
 };
 
 struct ap_status
 {
-   uint8_t index;
-   double frame_time;
-   uint8_t flags; //?
-   int16_t groundtrack_deg;
-   int16_t roll_deg;
-   uint16_t Target_msl_ft;
-   int16_t ground_m;
-   int16_t pitch_deg;
-   int16_t airspeed_kt;
-   uint16_t flight_timer;
-   uint16_t target_waypoint_idx;
-   double wp_lon;
-   double wp_lat;
-   uint16_t wp_index;
-   uint16_t routesize;
-   uint8_t sequence_num;
+  uint8_t index;
+  double frame_time;
+  uint8_t flags; //?
+  int16_t groundtrack_deg;
+  int16_t roll_deg;
+  uint16_t Target_msl_ft;
+  int16_t ground_m;
+  int16_t pitch_deg;
+  int16_t airspeed_kt;
+  uint16_t flight_timer;
+  uint16_t target_waypoint_idx;
+  double wp_lon;
+  double wp_lat;
+  uint16_t wp_index;
+  uint16_t routesize;
+  uint8_t sequence_num;
 };
 #pragma pack(pop)
 
@@ -436,8 +436,8 @@ class TelemetryServer {
    void generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, uint8_t & cksum0, uint8_t &cksum1);
    void send_packet(uint8_t * package, uint8_t IDnum, uint8_t size);
 
-    bool ParseMessage(uint8_t byte,PacketType_ *message,std::vector<uint8_t> *Payload);
-    void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
+   bool ParseMessage(uint8_t byte,PacketType_ *message,std::vector<uint8_t> *Payload);
+   void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
 };
 
 #endif

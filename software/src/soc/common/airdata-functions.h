@@ -59,12 +59,12 @@ class IndicatedAirspeed: public GenericFunction {
       float InitTime = 0.0f;
     };
     struct Data {
-        std::vector<float> DifferentialPressureBias;
-        float AvgDifferentialPressure = 0.0f;
-        //uint8_t Mode = kStandby;
-        //float Ias_ms = 0.0f;
-        Element *mode_node{NULL};
-        Element *ias_ms_node{NULL};
+      std::vector<float> DifferentialPressureBias;
+      float AvgDifferentialPressure = 0.0f;
+      //uint8_t Mode = kStandby;
+      //float Ias_ms = 0.0f;
+      Element *mode_node{NULL};
+      Element *ias_ms_node{NULL};
     };
     Config config_;
     Data data_;
@@ -108,12 +108,12 @@ class AglAltitude: public GenericFunction {
       float InitTime = 0.0f;
     };
     struct Data {
-        float PressAlt0 = 0.0f;
-        float AvgStaticPressure = 0.0f;
-        //uint8_t Mode = kStandby;
-        //float Agl_m = 0.0f;
-        Element *mode_node{NULL};
-        Element *agl_m_node{NULL};
+      float PressAlt0 = 0.0f;
+      float AvgStaticPressure = 0.0f;
+      //uint8_t Mode = kStandby;
+      //float Agl_m = 0.0f;
+      Element *mode_node{NULL};
+      Element *agl_m_node{NULL};
     };
     Config config_;
     Data data_;
@@ -156,20 +156,20 @@ class PitotStatic: public GenericFunction {
     void Clear();
   private:
     struct Config {
-        //float* StaticPressure;
-        //float* DifferentialPressure;
-        float InitTime = 0.0f;
-        Element *static_press_node{NULL};
-        Element *diff_press_node{NULL};
+      //float* StaticPressure;
+      //float* DifferentialPressure;
+      float InitTime = 0.0f;
+      Element *static_press_node{NULL};
+      Element *diff_press_node{NULL};
     };
     struct Data {
-        Element *mode_node{NULL};
+      Element *mode_node{NULL};
 
-        float DifferentialPressureBias = 0.0f;
-        Element *ias_ms_node{NULL};
+      float DifferentialPressureBias = 0.0f;
+      Element *ias_ms_node{NULL};
 
-        float PressAlt0 = 0.0f;
-        Element *agl_m_node{NULL};
+      float PressAlt0 = 0.0f;
+      Element *agl_m_node{NULL};
     };
 
     Config config_;
@@ -231,21 +231,21 @@ class FiveHole: public GenericFunction {
       float kBeta = 0.0f;
     };
     struct Data {
-        Element *mode_node{NULL};
+      Element *mode_node{NULL};
 
-        float PressAlt0 = 0.0f;
-        Element *agl_m_node{NULL};
+      float PressAlt0 = 0.0f;
+      Element *agl_m_node{NULL};
 
-        float TipPressureBias = 0.0f;
-        Element *ias_ms_node{NULL};
+      float TipPressureBias = 0.0f;
+      Element *ias_ms_node{NULL};
 
-        float Alpha1PressureBias = 0.0f;
-        float Alpha2PressureBias = 0.0f;
-        Element *Alpha_rad_node{NULL};
+      float Alpha1PressureBias = 0.0f;
+      float Alpha2PressureBias = 0.0f;
+      Element *Alpha_rad_node{NULL};
 
-        float Beta1PressureBias = 0.0f;
-        float Beta2PressureBias = 0.0f;
-        Element *Beta_rad_node{NULL};
+      float Beta1PressureBias = 0.0f;
+      float Beta2PressureBias = 0.0f;
+      Element *Beta_rad_node{NULL};
     };
 
     Config config_;

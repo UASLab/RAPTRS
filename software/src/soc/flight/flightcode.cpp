@@ -41,9 +41,9 @@ using std::endl;
 
 int main(int argc, char* argv[]) {
   if (argc!=2) {
-      std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
-      std::cerr << "Configuration file name needed." << std::endl;
-      return -1;
+    std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
+    std::cerr << "Configuration file name needed." << std::endl;
+    return -1;
   }
   /* displaying software version information */
   std::cout << "Bolder Flight Systems" << std::endl;
@@ -169,5 +169,6 @@ int main(int argc, char* argv[]) {
       Datalog.LogBinaryData();
     }
   }
-	return 0;
+  
+  return 0;
 }

@@ -28,9 +28,9 @@ void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::stri
       InputKeys_.push_back(Input.GetString());
       Element *ele = deftree.getElement(InputKeys_.back());
       if ( ele ) {
-          config_.input_nodes.push_back(ele);
+        config_.input_nodes.push_back(ele);
       } else {
-          throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
+        throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
@@ -102,7 +102,7 @@ void PseudoInverseAllocation::Run(Mode mode) {
   data_.Mode->setInt(mode);
   // grab inputs
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
-      config_.Objectives(i) = config_.input_nodes[i]->getFloat();
+    config_.Objectives(i) = config_.input_nodes[i]->getFloat();
   }
 
   // Pseduo-Inverse solver using singular value decomposition

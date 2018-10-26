@@ -65,16 +65,16 @@ public:
   void Clear();
 private:
   struct Config {
-      Element *time_node{NULL};
-      Element *signal_node{NULL};
-      float Amplitude = 0.0f;
-      float StartTime_s = 0.0f;
-      float Duration_s = 0.0f;
-      float Scale = 1.0f;
+    Element *time_node{NULL};
+    Element *signal_node{NULL};
+    float Amplitude = 0.0f;
+    float StartTime_s = 0.0f;
+    float Duration_s = 0.0f;
+    float Scale = 1.0f;
   };
   struct Data {
-      uint8_t Mode = kStandby;
-      Element *excitation_node{NULL};
+    uint8_t Mode = kStandby;
+    Element *excitation_node{NULL};
   };
   Config config_;
   Data data_;

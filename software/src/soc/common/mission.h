@@ -55,9 +55,9 @@ class MissionManager {
   private:
     struct Configuration {
       struct Switch {
-          Element *source_node{NULL};
-          float Threshold = 0.5;
-          float Gain = 1.0;
+        Element *source_node{NULL};
+        float Threshold = 0.5;
+        float Gain = 1.0;
       };
       Switch SocEngageSwitch, CtrlSelectSwitch, TestSelectIncrementSwitch, TestSelectDecrementSwitch, TriggerSwitch, LaunchSelectSwitch, LandSelectSwitch;
       std::string BaselineController, LaunchController, LandController;

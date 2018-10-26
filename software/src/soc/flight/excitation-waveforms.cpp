@@ -35,16 +35,16 @@ void Pulse::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -72,21 +72,21 @@ void Pulse::Run(Mode mode) {
   if (mode == kEngage) {
     // initialize the time when first called
     if (!TimeLatch) {
-        Time0_us = config_.time_node->getLong();
-        TimeLatch = true;
+      Time0_us = config_.time_node->getLong();
+      TimeLatch = true;
     }
     ExciteTime_s = (float)(config_.time_node->getLong()-Time0_us)/1e6 - config_.StartTime_s;
 
     // pulse logic
     if (ExciteTime_s < 0){
-        // do nothing
-        data_.excitation_node->setFloat(0.0);
+      // do nothing
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-        // add the pulse to the signal
-        data_.excitation_node->setFloat(config_.Amplitude);
+      // add the pulse to the signal
+      data_.excitation_node->setFloat(config_.Amplitude);
     } else {
-        // do nothing
-        data_.excitation_node->setFloat(0.0);
+      // do nothing
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
@@ -127,16 +127,16 @@ void Doublet::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -171,17 +171,17 @@ void Doublet::Run(Mode mode) {
 
     // doublet logic
     if (ExciteTime_s < 0){
-        // do nothing
-        data_.excitation_node->setFloat(0.0);
+      // do nothing
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-        // add the doublet to the signal
-        data_.excitation_node->setFloat(config_.Amplitude);
+      // add the doublet to the signal
+      data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < 2.0f*config_.Duration_s) {
-        // add the doublet to the signal
-        data_.excitation_node->setFloat(-1*config_.Amplitude);
+      // add the doublet to the signal
+      data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else {
-        // do nothing
-        data_.excitation_node->setFloat(0.0);
+      // do nothing
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
@@ -222,16 +222,16 @@ void Doublet121::Configure(const rapidjson::Value& Config,std::string RootPath) 
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -266,20 +266,20 @@ void Doublet121::Run(Mode mode) {
 
     // doublet logic, 1-2-1
     if (ExciteTime_s < 0){
-        // do nothing
-        data_.excitation_node->setFloat(0.0);
+      // do nothing
+      data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-        // add the doublet to the signal
-        data_.excitation_node->setFloat(config_.Amplitude);
+      // add the doublet to the signal
+      data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < 3.0f*config_.Duration_s) {
-        // add the doublet to the signal
-        data_.excitation_node->setFloat(-1*config_.Amplitude);
+      // add the doublet to the signal
+      data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else if (ExciteTime_s < 4.0f*config_.Duration_s) {
-        // add the doublet to the signal
-        data_.excitation_node->setFloat(config_.Amplitude);
+      // add the doublet to the signal
+      data_.excitation_node->setFloat(config_.Amplitude);
     } else {
-        // do nothing
-        data_.excitation_node->setFloat(0.0);
+      // do nothing
+      data_.excitation_node->setFloat(0.0);
     }
   } else {
     // reset the time latch
@@ -320,16 +320,16 @@ void Doublet3211::Configure(const rapidjson::Value& Config,std::string RootPath)
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -368,16 +368,16 @@ void Doublet3211::Run(Mode mode) {
       data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < (3.0f*config_.Duration_s)) {
       // add the doublet to the signal
-        data_.excitation_node->setFloat(config_.Amplitude);
+      data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < (5.0f*config_.Duration_s)) {
       // add the doublet to the signal
-        data_.excitation_node->setFloat(-1*config_.Amplitude);
+      data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else if (ExciteTime_s < (6.0f*config_.Duration_s)) {
       // add the doublet to the signal
-        data_.excitation_node->setFloat(config_.Amplitude);
+      data_.excitation_node->setFloat(config_.Amplitude);
     } else if (ExciteTime_s < (7.0f*config_.Duration_s)) {
       // add the doublet to the signal
-        data_.excitation_node->setFloat(-1*config_.Amplitude);
+      data_.excitation_node->setFloat(-1*config_.Amplitude);
     } else {
       // do nothing
       data_.excitation_node->setFloat(0.0);
@@ -421,16 +421,16 @@ void LinearChirp::Configure(const rapidjson::Value& Config,std::string RootPath)
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -536,16 +536,16 @@ void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath)
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -591,11 +591,11 @@ void Pulse_1_Cos::Run(Mode mode) {
     } else if (ExciteTime_s < (config_.Duration_s + config_.Pause_s)) {
       // 1-Cos excitation_node->setFloat(
       if (ExciteTime_s < (0.5*config_.Duration_s)) {
-          data_.excitation_node->setFloat( config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * ExciteTime_s)) );
+        data_.excitation_node->setFloat( config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * ExciteTime_s)) );
       } else if (ExciteTime_s < (0.5*config_.Duration_s + config_.Pause_s)) {
-          data_.excitation_node->setFloat(config_.Amplitude);
+        data_.excitation_node->setFloat(config_.Amplitude);
       } else {
-          data_.excitation_node->setFloat( config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * (ExciteTime_s - config_.Pause_s))) );
+        data_.excitation_node->setFloat( config_.Amplitude * 0.5 * (1 - cosf(config_.Frequency * (ExciteTime_s - config_.Pause_s))) );
       }
     } else {
       // do nothing
@@ -642,16 +642,16 @@ void MultiSine::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
     config_.signal_node = deftree.getElement(SignalName);
     if ( !config_.signal_node ) {
-        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Signal ")+SignalName+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Signal not specified in configuration."));
   }
   if (Config.HasMember("Time")) {
-      config_.time_node = deftree.getElement(Config["Time"].GetString());
-      if ( config_.time_node ) {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
-      }
+    config_.time_node = deftree.getElement(Config["Time"].GetString());
+    if ( config_.time_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
+    }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time not specified in configuration."));
   }
@@ -725,7 +725,7 @@ void MultiSine::Run(Mode mode) {
     // do nothing
     data_.excitation_node->setFloat(0.0);
   }
-    data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
+  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }

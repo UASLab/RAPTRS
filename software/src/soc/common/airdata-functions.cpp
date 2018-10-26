@@ -35,9 +35,9 @@ void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string Roo
       DifferentialPressureKeys_.push_back(PressureSource.GetString());
       Element *ele = deftree.getElement(DifferentialPressureKeys_.back());
       if (ele) {
-          config_.DifferentialPressure.push_back(ele);
+        config_.DifferentialPressure.push_back(ele);
       } else {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Differential pressure source ")+DifferentialPressureKeys_.back()+std::string(" not found in global data."));
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Differential pressure source ")+DifferentialPressureKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
@@ -72,7 +72,7 @@ void IndicatedAirspeed::Initialize() {
   // if less than init time, compute bias
   if (ElapsedTime < config_.InitTime) {
     for (size_t i=0; i < config_.DifferentialPressure.size(); i++) {
-        data_.DifferentialPressureBias[i] = data_.DifferentialPressureBias[i] + (config_.DifferentialPressure[i]->getFloat()-data_.DifferentialPressureBias[i])/((float)NumberSamples_);
+      data_.DifferentialPressureBias[i] = data_.DifferentialPressureBias[i] + (config_.DifferentialPressure[i]->getFloat()-data_.DifferentialPressureBias[i])/((float)NumberSamples_);
     }
     NumberSamples_++;
   } else {
@@ -85,16 +85,16 @@ bool IndicatedAirspeed::Initialized() {
 }
 
 void IndicatedAirspeed::Run(Mode mode) {
-    data_.mode_node->setInt(mode);
-    if (mode!=kStandby) {
-        // compute average differential pressure
-        data_.AvgDifferentialPressure = 0.0f;
-        for (size_t i=0; i < config_.DifferentialPressure.size(); i++) {
-            data_.AvgDifferentialPressure += (config_.DifferentialPressure[i]->getFloat()-data_.DifferentialPressureBias[i])/config_.DifferentialPressure.size();
-        }
-        // compute indicated airspeed
-        data_.ias_ms_node->setFloat( AirData_.getIAS(data_.AvgDifferentialPressure) );
+  data_.mode_node->setInt(mode);
+  if (mode!=kStandby) {
+    // compute average differential pressure
+    data_.AvgDifferentialPressure = 0.0f;
+    for (size_t i=0; i < config_.DifferentialPressure.size(); i++) {
+      data_.AvgDifferentialPressure += (config_.DifferentialPressure[i]->getFloat()-data_.DifferentialPressureBias[i])/config_.DifferentialPressure.size();
     }
+    // compute indicated airspeed
+    data_.ias_ms_node->setFloat( AirData_.getIAS(data_.AvgDifferentialPressure) );
+  }
 }
 
 void IndicatedAirspeed::Clear() {
@@ -136,9 +136,9 @@ void AglAltitude::Configure(const rapidjson::Value& Config,std::string RootPath)
       StaticPressureKeys_.push_back(PressureSource.GetString());
       Element *ele = deftree.getElement(StaticPressureKeys_.back());
       if ( ele ) {
-          config_.StaticPressure.push_back(ele);
+        config_.StaticPressure.push_back(ele);
       } else {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Static pressure source ")+StaticPressureKeys_.back()+std::string(" not found in global data."));
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Static pressure source ")+StaticPressureKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
@@ -173,7 +173,7 @@ void AglAltitude::Initialize() {
     // average static pressure sources
     data_.AvgStaticPressure = 0.0f;
     for (size_t i=0; i < config_.StaticPressure.size(); i++) {
-        data_.AvgStaticPressure += (config_.StaticPressure[i]->getFloat())/config_.StaticPressure.size();
+      data_.AvgStaticPressure += (config_.StaticPressure[i]->getFloat())/config_.StaticPressure.size();
     }
     // compute pressure altitude
     data_.PressAlt0 = data_.PressAlt0 + (AirData_.getPressureAltitude(data_.AvgStaticPressure)-data_.PressAlt0)/((float)NumberSamples_);
@@ -188,16 +188,16 @@ bool AglAltitude::Initialized() {
 }
 
 void AglAltitude::Run(Mode mode) {
-    data_.mode_node->setInt(mode);
-    if (mode!=kStandby) {
-        // compute average static pressure
-        data_.AvgStaticPressure = 0.0f;
-        for (size_t i=0; i < config_.StaticPressure.size(); i++) {
-            data_.AvgStaticPressure += (config_.StaticPressure[i]->getFloat())/config_.StaticPressure.size();
-        }
-        // compute altitude above ground level
-        data_.agl_m_node->setFloat( AirData_.getAGL(data_.AvgStaticPressure,data_.PressAlt0) );
+  data_.mode_node->setInt(mode);
+  if (mode!=kStandby) {
+    // compute average static pressure
+    data_.AvgStaticPressure = 0.0f;
+    for (size_t i=0; i < config_.StaticPressure.size(); i++) {
+      data_.AvgStaticPressure += (config_.StaticPressure[i]->getFloat())/config_.StaticPressure.size();
     }
+    // compute altitude above ground level
+    data_.agl_m_node->setFloat( AirData_.getAGL(data_.AvgStaticPressure,data_.PressAlt0) );
+  }
 }
 
 void AglAltitude::Clear() {
@@ -255,7 +255,7 @@ void PitotStatic::Configure(const rapidjson::Value& Config,std::string RootPath)
     DifferentialPressureKey_ = Config["Differential-Pressure"].GetString();
     config_.diff_press_node = deftree.getElement(DifferentialPressureKey_);
     if ( !config_.diff_press_node ) {
-        throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Differential-Pressure ")+DifferentialPressureKey_+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Differential-Pressure ")+DifferentialPressureKey_+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Differential-Pressure not specified in configuration."));
@@ -304,10 +304,10 @@ void PitotStatic::Initialize() {
   // if less than init time, compute bias
   if (ElapsedTime < config_.InitTime) {
     // compute differential pressure bias, using Welford's algorithm
-      data_.DifferentialPressureBias += (config_.diff_press_node->getFloat() - data_.DifferentialPressureBias) / (float)NumberSamples_;
+    data_.DifferentialPressureBias += (config_.diff_press_node->getFloat() - data_.DifferentialPressureBias) / (float)NumberSamples_;
 
     // compute static pressure bias, using Welford's algorithm
-      data_.PressAlt0 += (AirData_.getPressureAltitude(config_.static_press_node->getFloat()) - data_.PressAlt0) / (float)NumberSamples_;
+    data_.PressAlt0 += (AirData_.getPressureAltitude(config_.static_press_node->getFloat()) - data_.PressAlt0) / (float)NumberSamples_;
 
     NumberSamples_++;
   } else {
@@ -320,14 +320,14 @@ bool PitotStatic::Initialized() {
 }
 
 void PitotStatic::Run(Mode mode) {
-    data_.mode_node->setInt(mode);
-    if (mode!=kStandby) {
-        // compute indicated airspeed
-        data_.ias_ms_node->setFloat( AirData_.getIAS(config_.diff_press_node->getFloat() - data_.DifferentialPressureBias) );
+  data_.mode_node->setInt(mode);
+  if (mode!=kStandby) {
+    // compute indicated airspeed
+    data_.ias_ms_node->setFloat( AirData_.getIAS(config_.diff_press_node->getFloat() - data_.DifferentialPressureBias) );
 
-        // compute altitude above ground level
-        data_.agl_m_node->setFloat( AirData_.getAGL(config_.static_press_node->getFloat(), data_.PressAlt0) );
-    }
+    // compute altitude above ground level
+    data_.agl_m_node->setFloat( AirData_.getAGL(config_.static_press_node->getFloat(), data_.PressAlt0) );
+  }
 }
 
 void PitotStatic::Clear() {
@@ -413,7 +413,7 @@ void FiveHole::Configure(const rapidjson::Value& Config,std::string RootPath) {
     TipPressureKey_ = Config["Tip-Pressure"].GetString();
     config_.TipPressure_node = deftree.getElement(TipPressureKey_);
     if ( !config_.TipPressure_node ) {
-        throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Tip-Pressure ")+TipPressureKey_+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Tip-Pressure ")+TipPressureKey_+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Tip-Pressure not specified in configuration."));
@@ -524,60 +524,60 @@ void FiveHole::Initialize() {
   // if less than init time, compute bias
   if (ElapsedTime < config_.InitTime) {
     // compute pressure biases, using Welford's algorithm
-      data_.PressAlt0 += (AirData_.getPressureAltitude(config_.StaticPressure_node->getFloat()) - data_.PressAlt0) / (float)NumberSamples_;
-      data_.TipPressureBias += (config_.TipPressure_node->getFloat() - data_.TipPressureBias) / (float)NumberSamples_;
-      data_.Alpha1PressureBias += (config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias) / (float)NumberSamples_;
-      data_.Alpha2PressureBias += (config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias) / (float)NumberSamples_;
-      data_.Beta1PressureBias += (config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias) / (float)NumberSamples_;
-      data_.Beta2PressureBias += (config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias) / (float)NumberSamples_;
+    data_.PressAlt0 += (AirData_.getPressureAltitude(config_.StaticPressure_node->getFloat()) - data_.PressAlt0) / (float)NumberSamples_;
+    data_.TipPressureBias += (config_.TipPressure_node->getFloat() - data_.TipPressureBias) / (float)NumberSamples_;
+    data_.Alpha1PressureBias += (config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias) / (float)NumberSamples_;
+    data_.Alpha2PressureBias += (config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias) / (float)NumberSamples_;
+    data_.Beta1PressureBias += (config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias) / (float)NumberSamples_;
+    data_.Beta2PressureBias += (config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias) / (float)NumberSamples_;
 
-      NumberSamples_++;
+    NumberSamples_++;
   } else {
-      Initialized_ = true;
+    Initialized_ = true;
   }
 }
 
 bool FiveHole::Initialized() {
-    return Initialized_;
+  return Initialized_;
 }
 
 void FiveHole::Run(Mode mode) {
-    data_.mode_node->setInt(mode);
-    if (mode!=kStandby) {
-        // compute indicated airspeed
-        data_.ias_ms_node->setFloat( AirData_.getIAS(config_.TipPressure_node->getFloat() - data_.TipPressureBias) );
+  data_.mode_node->setInt(mode);
+  if (mode!=kStandby) {
+    // compute indicated airspeed
+    data_.ias_ms_node->setFloat( AirData_.getIAS(config_.TipPressure_node->getFloat() - data_.TipPressureBias) );
 
-        // compute altitude above ground level
-        data_.agl_m_node->setFloat( AirData_.getAGL(config_.StaticPressure_node->getFloat(), data_.PressAlt0) );
+    // compute altitude above ground level
+    data_.agl_m_node->setFloat( AirData_.getAGL(config_.StaticPressure_node->getFloat(), data_.PressAlt0) );
 
-        // compute Alpha and Beta
-        // if the airspeed is low, the non-dimensionalizing pressures on the side port will be very small and result in huge angles
-        if (data_.ias_ms_node->getFloat() > 2.0f) {
-            // compute alpha
-            data_.Alpha_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.kAlpha) );
+    // compute Alpha and Beta
+    // if the airspeed is low, the non-dimensionalizing pressures on the side port will be very small and result in huge angles
+    if (data_.ias_ms_node->getFloat() > 2.0f) {
+      // compute alpha
+      data_.Alpha_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.kAlpha) );
 
-            // limit alpha to +/-45 deg
-            if (data_.Alpha_rad_node->getFloat() > 0.7854f) {
-                data_.Alpha_rad_node->setFloat( 0.7854f );
-            } else if (data_.Alpha_rad_node->getFloat() < -0.7854f) {
-                data_.Alpha_rad_node->setFloat( -0.7854f );
-            }
+      // limit alpha to +/-45 deg
+      if (data_.Alpha_rad_node->getFloat() > 0.7854f) {
+        data_.Alpha_rad_node->setFloat( 0.7854f );
+      } else if (data_.Alpha_rad_node->getFloat() < -0.7854f) {
+        data_.Alpha_rad_node->setFloat( -0.7854f );
+      }
 
-            // compute beta
-            data_.Beta_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.kBeta) );
+      // compute beta
+      data_.Beta_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.kBeta) );
 
-            // limit beta to +/-45 deg
-            if (data_.Beta_rad_node->getFloat() > 0.7854f) {
-                data_.Beta_rad_node->setFloat( 0.7854f );
-            } else if (data_.Beta_rad_node->getFloat() < -0.7854f) {
-                data_.Beta_rad_node->setFloat( -0.7854f );
-            }
+      // limit beta to +/-45 deg
+      if (data_.Beta_rad_node->getFloat() > 0.7854f) {
+        data_.Beta_rad_node->setFloat( 0.7854f );
+      } else if (data_.Beta_rad_node->getFloat() < -0.7854f) {
+        data_.Beta_rad_node->setFloat( -0.7854f );
+      }
 
-        } else { // airspeed < theshold
-            data_.Alpha_rad_node->setFloat( 0.0f );
-            data_.Beta_rad_node->setFloat( 0.0f );
-        }
+    } else { // airspeed < theshold
+      data_.Alpha_rad_node->setFloat( 0.0f );
+      data_.Beta_rad_node->setFloat( 0.0f );
     }
+  }
 }
 
 void FiveHole::Clear() {

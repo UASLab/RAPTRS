@@ -151,8 +151,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         Element *ele = deftree.getElement(BaselineKey);
         BaselineDataPtr_[KeyName] = ele;
         if (ele) {
-            OutputData_[KeyName] = ele;
-            deftree.makeAlias(BaselineKey, OutputKey);
+          OutputData_[KeyName] = ele;
+          deftree.makeAlias(BaselineKey, OutputKey);
         }
       }
     }
@@ -166,8 +166,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           Element *ele = deftree.getElement(ResearchKey);
           ResearchDataPtr_[GroupKey][KeyName] = ele;
           if (ele) {
-              OutputData_[KeyName] = ele;
-              deftree.makeAlias(ResearchKey, OutputKey);
+            OutputData_[KeyName] = ele;
+            deftree.makeAlias(ResearchKey, OutputKey);
           }
         }
       }

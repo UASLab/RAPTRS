@@ -50,12 +50,12 @@ void If::Initialize() {}
 bool If::Initialized() {return true;}
 
 void If::Run(Mode mode) {
-    data_.mode_node->setInt( mode );
-    if (config_.input_node->getFloat() > config_.Threshold) {
-        data_.output_node->setInt(1);
-    } else {
-        data_.output_node->setInt(0);
-    }
+  data_.mode_node->setInt( mode );
+  if (config_.input_node->getFloat() > config_.Threshold) {
+    data_.output_node->setInt(1);
+  } else {
+    data_.output_node->setInt(0);
+  }
 }
 
 void If::Clear() {

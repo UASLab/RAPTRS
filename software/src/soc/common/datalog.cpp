@@ -39,58 +39,58 @@ void DatalogClient::RegisterGlobalData() {
   deftree.GetKeys("/",&Keys);
   // Find keys that are marked to be datalogged
   for (auto const & key: Keys) {
-      // store keys, description, and value pointers
-      Element *ele = deftree.getElement(key);
-      log_tag_t log_tag = ele->getLoggingType();
-      if ( log_tag == LOG_UINT64 ) {
-          SaveAsUint64Keys_.push_back(key);
-          SaveAsUint64Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_UINT32 ) {
-          SaveAsUint32Keys_.push_back(key);
-          SaveAsUint32Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_UINT16 ) {
-          SaveAsUint16Keys_.push_back(key);
-          SaveAsUint16Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_UINT8 ) {
-          SaveAsUint8Keys_.push_back(key);
-          SaveAsUint8Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_INT64 ) {
-          SaveAsInt64Keys_.push_back(key);
-          SaveAsInt64Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_INT32 ) {
-          SaveAsInt32Keys_.push_back(key);
-          SaveAsInt32Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_INT16 ) {
-          SaveAsInt16Keys_.push_back(key);
-          SaveAsInt16Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_INT8 ) {
-          SaveAsInt8Keys_.push_back(key);
-          SaveAsInt8Nodes_.push_back(ele);
-      } else if ( log_tag == LOG_FLOAT ) {
-          SaveAsFloatKeys_.push_back(key);
-          SaveAsFloatNodes_.push_back(ele);
-      } else if ( log_tag == LOG_DOUBLE ) {
-          SaveAsDoubleKeys_.push_back(key);
-          SaveAsDoubleNodes_.push_back(ele);
-      } else if ( log_tag == LOG_NONE ) {
-          // skip
-      } else {
-          cout << "NOTICE: no valid log tag defined for: " << key << endl;
-      }
+    // store keys, description, and value pointers
+    Element *ele = deftree.getElement(key);
+    log_tag_t log_tag = ele->getLoggingType();
+    if ( log_tag == LOG_UINT64 ) {
+      SaveAsUint64Keys_.push_back(key);
+      SaveAsUint64Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_UINT32 ) {
+      SaveAsUint32Keys_.push_back(key);
+      SaveAsUint32Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_UINT16 ) {
+      SaveAsUint16Keys_.push_back(key);
+      SaveAsUint16Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_UINT8 ) {
+      SaveAsUint8Keys_.push_back(key);
+      SaveAsUint8Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_INT64 ) {
+      SaveAsInt64Keys_.push_back(key);
+      SaveAsInt64Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_INT32 ) {
+      SaveAsInt32Keys_.push_back(key);
+      SaveAsInt32Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_INT16 ) {
+      SaveAsInt16Keys_.push_back(key);
+      SaveAsInt16Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_INT8 ) {
+      SaveAsInt8Keys_.push_back(key);
+      SaveAsInt8Nodes_.push_back(ele);
+    } else if ( log_tag == LOG_FLOAT ) {
+      SaveAsFloatKeys_.push_back(key);
+      SaveAsFloatNodes_.push_back(ele);
+    } else if ( log_tag == LOG_DOUBLE ) {
+      SaveAsDoubleKeys_.push_back(key);
+      SaveAsDoubleNodes_.push_back(ele);
+    } else if ( log_tag == LOG_NONE ) {
+      // skip
+    } else {
+      cout << "NOTICE: no valid log tag defined for: " << key << endl;
+    }
   }
   // define the data buffer size
   LogDataBuffer_.resize(
-    SaveAsUint64Nodes_.size()*sizeof(uint64_t) +
-    SaveAsUint32Nodes_.size()*sizeof(uint32_t) +
-    SaveAsUint16Nodes_.size()*sizeof(uint16_t) +
-    SaveAsUint8Nodes_.size()*sizeof(uint8_t) +
-    SaveAsInt64Nodes_.size()*sizeof(int64_t) +
-    SaveAsInt32Nodes_.size()*sizeof(int32_t) +
-    SaveAsInt16Nodes_.size()*sizeof(int16_t) +
-    SaveAsInt8Nodes_.size()*sizeof(int8_t) +
-    SaveAsFloatNodes_.size()*sizeof(float) +
-    SaveAsDoubleNodes_.size()*sizeof(double)
-  );
+                        SaveAsUint64Nodes_.size()*sizeof(uint64_t) +
+                        SaveAsUint32Nodes_.size()*sizeof(uint32_t) +
+                        SaveAsUint16Nodes_.size()*sizeof(uint16_t) +
+                        SaveAsUint8Nodes_.size()*sizeof(uint8_t) +
+                        SaveAsInt64Nodes_.size()*sizeof(int64_t) +
+                        SaveAsInt32Nodes_.size()*sizeof(int32_t) +
+                        SaveAsInt16Nodes_.size()*sizeof(int16_t) +
+                        SaveAsInt8Nodes_.size()*sizeof(int8_t) +
+                        SaveAsFloatNodes_.size()*sizeof(float) +
+                        SaveAsDoubleNodes_.size()*sizeof(double)
+                        );
   // send meta data to disk
   for (size_t i=0; i < SaveAsUint64Nodes_.size();i++) {
     std::vector<uint8_t> Buffer;
@@ -219,54 +219,54 @@ void DatalogClient::LogBinaryData() {
   size_t BufferLocation = 0;
   // payload
   for (size_t i=0; i < SaveAsUint64Nodes_.size(); i++) {
-      uint64_t tmp = SaveAsUint64Nodes_[i]->getLong();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint64_t));
-      BufferLocation += sizeof(uint64_t);
+    uint64_t tmp = SaveAsUint64Nodes_[i]->getLong();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint64_t));
+    BufferLocation += sizeof(uint64_t);
   }
   for (size_t i=0; i < SaveAsUint32Nodes_.size(); i++) {
-      uint32_t tmp = SaveAsUint32Nodes_[i]->getInt();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint32_t));
-      BufferLocation += sizeof(uint32_t);
+    uint32_t tmp = SaveAsUint32Nodes_[i]->getInt();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint32_t));
+    BufferLocation += sizeof(uint32_t);
   }
   for (size_t i=0; i < SaveAsUint16Nodes_.size(); i++) {
-      uint16_t tmp = SaveAsUint16Nodes_[i]->getInt();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint16_t));
-      BufferLocation += sizeof(uint16_t);
+    uint16_t tmp = SaveAsUint16Nodes_[i]->getInt();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint16_t));
+    BufferLocation += sizeof(uint16_t);
   }
   for (size_t i=0; i < SaveAsUint8Nodes_.size(); i++) {
-      uint8_t tmp = SaveAsUint8Nodes_[i]->getInt();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint8_t));
-      BufferLocation += sizeof(uint8_t);
+    uint8_t tmp = SaveAsUint8Nodes_[i]->getInt();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(uint8_t));
+    BufferLocation += sizeof(uint8_t);
   }
   for (size_t i=0; i < SaveAsInt64Nodes_.size(); i++) {
-      int64_t tmp = SaveAsInt64Nodes_[i]->getLong();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int64_t));
-      BufferLocation += sizeof(int64_t);
+    int64_t tmp = SaveAsInt64Nodes_[i]->getLong();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int64_t));
+    BufferLocation += sizeof(int64_t);
   }
   for (size_t i=0; i < SaveAsInt32Nodes_.size(); i++) {
-      int32_t tmp = SaveAsInt32Nodes_[i]->getInt();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int32_t));
-      BufferLocation += sizeof(int32_t);
+    int32_t tmp = SaveAsInt32Nodes_[i]->getInt();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int32_t));
+    BufferLocation += sizeof(int32_t);
   }
   for (size_t i=0; i < SaveAsInt16Nodes_.size(); i++) {
-      int16_t tmp = SaveAsInt16Nodes_[i]->getInt();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int16_t));
-      BufferLocation += sizeof(int16_t);
+    int16_t tmp = SaveAsInt16Nodes_[i]->getInt();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int16_t));
+    BufferLocation += sizeof(int16_t);
   }
   for (size_t i=0; i < SaveAsInt8Nodes_.size(); i++) {
-      int8_t tmp = SaveAsInt8Nodes_[i]->getInt();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int8_t));
-      BufferLocation += sizeof(int8_t);
+    int8_t tmp = SaveAsInt8Nodes_[i]->getInt();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(int8_t));
+    BufferLocation += sizeof(int8_t);
   }
   for (size_t i=0; i < SaveAsFloatNodes_.size(); i++) {
-      float tmp = SaveAsFloatNodes_[i]->getFloat();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(float));
-      BufferLocation += sizeof(float);
+    float tmp = SaveAsFloatNodes_[i]->getFloat();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(float));
+    BufferLocation += sizeof(float);
   }
   for (size_t i=0; i < SaveAsDoubleNodes_.size(); i++) {
-      double tmp = SaveAsDoubleNodes_[i]->getDouble();
-      memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(double));
-      BufferLocation += sizeof(double);
+    double tmp = SaveAsDoubleNodes_[i]->getDouble();
+    memcpy(LogDataBuffer_.data()+BufferLocation,&tmp,sizeof(double));
+    BufferLocation += sizeof(double);
   }
   // send data
   SendBinary(DataType_::Data,LogDataBuffer_);

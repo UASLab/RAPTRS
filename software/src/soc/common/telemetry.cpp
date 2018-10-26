@@ -128,10 +128,10 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
 void TelemetryClient::Send() {
   std::vector<uint8_t> DataPayload;
   if (useTime) {
-      Data_.Time.Time_us = Nodes_.Time.Time_us->getLong();
+    Data_.Time.Time_us = Nodes_.Time.Time_us->getLong();
   }
   if (useStaticPressure) {
-      Data_.StaticPress.Pressure_Pa = Nodes_.StaticPress.Pressure_Pa->getFloat();
+    Data_.StaticPress.Pressure_Pa = Nodes_.StaticPress.Pressure_Pa->getFloat();
     Data_.StaticPress.Temperature_C = Nodes_.StaticPress.Temperature_C->getFloat();
   }
   if (useAirspeed) {
@@ -166,7 +166,7 @@ void TelemetryClient::Send() {
     Data_.Attitude.Vd = Nodes_.Attitude.Vd->getFloat();
   }
   if (useGps) {
-      Data_.Gps.Fix = Nodes_.Gps.Fix->getInt();
+    Data_.Gps.Fix = Nodes_.Gps.Fix->getInt();
     Data_.Gps.NumberSatellites = Nodes_.Gps.NumberSatellites->getInt();
     Data_.Gps.TOW = Nodes_.Gps.TOW->getInt();
     Data_.Gps.Year = Nodes_.Gps.Year->getInt();
@@ -196,11 +196,11 @@ void TelemetryClient::Send() {
     Data_.Imu.Temperature_C = Nodes_.Imu.Temperature_C->getFloat();
   }
   if (useSbus) {
-      Data_.Sbus.FailSafe = Nodes_.Sbus.FailSafe->getInt();
-      Data_.Sbus.LostFrames = Nodes_.Sbus.LostFrames->getLong();
-      for (size_t j=0; j < 16; j++) {
-          Data_.Sbus.Channels[j] = Nodes_.Sbus.Channels[j]->getFloat();
-      }
+    Data_.Sbus.FailSafe = Nodes_.Sbus.FailSafe->getInt();
+    Data_.Sbus.LostFrames = Nodes_.Sbus.LostFrames->getLong();
+    for (size_t j=0; j < 16; j++) {
+      Data_.Sbus.Channels[j] = Nodes_.Sbus.Channels[j]->getFloat();
+    }
   }
   if (usePower) {
     Data_.Power.MinCellVolt = Nodes_.Power.MinCellVolt->getFloat();
@@ -290,9 +290,9 @@ void TelemetryServer::ReceivePacket() {
     tcgetattr(FileDesc_,&Options);
     // Options.c_cflag = (speed_t)Baud | CS8 | CREAD | CLOCAL;// WRONG WAY TO DO BAUD!!!!
     if ( Baud == 115200 ) {
-        Options.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
+      Options.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
     } else {
-        printf("FIXME: bauds other than 115200 not supported in code\n");
+      printf("FIXME: bauds other than 115200 not supported in code\n");
     }
     Options.c_iflag = IGNPAR;
     Options.c_oflag = 0;
@@ -392,162 +392,153 @@ void TelemetryServer::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t
 
 void TelemetryServer :: generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, uint8_t & cksum0, uint8_t & cksum1)
 {
-   cksum0 = 0;
-   cksum1 = 0;
+  cksum0 = 0;
+  cksum1 = 0;
 
-   cksum0 += id;
-   cksum1 += cksum0;
+  cksum0 += id;
+  cksum1 += cksum0;
 
-   cksum0 += size;
-   cksum1 += cksum0;
+  cksum0 += size;
+  cksum1 += cksum0;
 
-   for (int i = 0; i < size; i++)
-   {
-      cksum0 += buf[i];
-      cksum1 += cksum0;
-   }
-
+  for (int i = 0; i < size; i++) {
+    cksum0 += buf[i];
+    cksum1 += cksum0;
+  }
 }
+
 void TelemetryServer :: send_packet(uint8_t * package, uint8_t IDnum, uint8_t size)
 {
-   uint8_t buf[4];
-   uint8_t checksum0;
-   uint8_t checksum1;
+  uint8_t buf[4];
+  uint8_t checksum0;
+  uint8_t checksum1;
 
-   generate_cksum(IDnum, size, package, checksum0, checksum1);
+  generate_cksum(IDnum, size, package, checksum0, checksum1);
 
-   buf[0] = 147;
-   buf[1] = 224;
-   buf[2] = IDnum;
-   buf[3] = size;
+  buf[0] = 147;
+  buf[1] = 224;
+  buf[2] = IDnum;
+  buf[3] = size;
 
-   write(FileDesc_, buf, 4);
-   write(FileDesc_, package, size);
+  write(FileDesc_, buf, 4);
+  write(FileDesc_, package, size);
 
-   buf[0] = checksum0;
-   buf[1] = checksum1;
+  buf[0] = checksum0;
+  buf[1] = checksum1;
 
-   write(FileDesc_, buf, 2);
+  write(FileDesc_, buf, 2);
 }
 
-   void TelemetryServer :: update(const Data &DataRef)
-   {
+void TelemetryServer :: update(const Data &DataRef) {
 
-   count = count+1;
+  count = count+1;
 
-   if (count < 10) {
-      return;
-   }
+  if (count < 10) {
+    return;
+  }
 
-   count = 0;
+  count = 0;
 
-   gpsPacket gps;
-   gps.index = 0;
-   gps.timestamp = DataRef.Time.Time_us/1000000.0;
-   gps.lat_deg = DataRef.Gps.Lat*(180/M_PI);//pi?
-   gps.long_deg = DataRef.Gps.Lon*(180/M_PI);
-   gps.alt_m = DataRef.Gps.Alt;
-   gps.vn_ms = DataRef.Gps.Vn*100;
-   gps.ve_ms = DataRef.Gps.Ve*100;
-   gps.vd_ms = DataRef.Gps.Vd*100;
-   gps.unix_time_sec = DataRef.Time.Time_us/1000000.0;
-   gps.satellites = DataRef.Gps.NumberSatellites;
-   gps.horiz_accuracy_m = DataRef.Gps.HAcc*100;
-   gps.vert_accuracy_m = DataRef.Gps.VAcc*100;
-   gps.pdop = DataRef.Gps.pDOP*100;
-   gps.fixType = DataRef.Gps.Fix;
+  gpsPacket gps;
+  gps.index = 0;
+  gps.timestamp = DataRef.Time.Time_us/1000000.0;
+  gps.lat_deg = DataRef.Gps.Lat*(180/M_PI);//pi?
+  gps.long_deg = DataRef.Gps.Lon*(180/M_PI);
+  gps.alt_m = DataRef.Gps.Alt;
+  gps.vn_ms = DataRef.Gps.Vn*100;
+  gps.ve_ms = DataRef.Gps.Ve*100;
+  gps.vd_ms = DataRef.Gps.Vd*100;
+  gps.unix_time_sec = DataRef.Time.Time_us/1000000.0;
+  gps.satellites = DataRef.Gps.NumberSatellites;
+  gps.horiz_accuracy_m = DataRef.Gps.HAcc*100;
+  gps.vert_accuracy_m = DataRef.Gps.VAcc*100;
+  gps.pdop = DataRef.Gps.pDOP*100;
+  gps.fixType = DataRef.Gps.Fix;
 
+  airPacket air;
+  air.index = 0;
+  air.timestamp = DataRef.Time.Time_us/1000000.0;
+  air.pressure_mbar = DataRef.StaticPress.Pressure_Pa/10.0;
+  air.temp_degC = DataRef.StaticPress.Temperature_C*100;
+  const double mps2kt = 1.9438444924406046432;
+  air.airspeed_smoothed_kt = DataRef.Airspeed.Airspeed_ms * mps2kt * 100;
+  air.altitude_smoothed_m = DataRef.Alt.Alt_m;
+  air.altitude_true_m = DataRef.Alt.Alt_m;
+  air.pressure_vertical_speed_fps=1;//maybe find?
+  air.wind_dir_deg=1;//no
+  air.wind_speed_kt=1;//no
+  air.pitot_scale_factor=1;//no
+  air.status = 0;
 
-   airPacket air;
-   air.index = 0;
-   air.timestamp = DataRef.Time.Time_us/1000000.0;
-   air.pressure_mbar = DataRef.StaticPress.Pressure_Pa/10.0;
-   air.temp_degC = DataRef.StaticPress.Temperature_C*100;
-   const double mps2kt = 1.9438444924406046432;
-   air.airspeed_smoothed_kt = DataRef.Airspeed.Airspeed_ms * mps2kt * 100;
-   air.altitude_smoothed_m = DataRef.Alt.Alt_m;
-   air.altitude_true_m = DataRef.Alt.Alt_m;
-   air.pressure_vertical_speed_fps=1;//maybe find?
-   air.wind_dir_deg=1;//no
-   air.wind_speed_kt=1;//no
-   air.pitot_scale_factor=1;//no
-   air.status = 0;
+  pilotPacket pilot;
+  pilot.index = 0;
+  pilot.time = DataRef.Time.Time_us/1000000.0;
+  pilot.chan[0] = DataRef.Sbus.Channels[0]*20000;
+  pilot.chan[1] = DataRef.Sbus.Channels[1]*20000;
+  pilot.chan[2] = DataRef.Sbus.Channels[2]*20000;
+  pilot.chan[3] = DataRef.Sbus.Channels[3]*20000;
+  pilot.chan[4] = DataRef.Sbus.Channels[4]*20000;
+  pilot.chan[5] = DataRef.Sbus.Channels[5]*20000;
+  pilot.chan[6] = DataRef.Sbus.Channels[6]*20000;
+  pilot.chan[7] = 0;
+  pilot.status = 0;
 
-   pilotPacket pilot;
-   pilot.index = 0;
-   pilot.time = DataRef.Time.Time_us/1000000.0;
-   pilot.chan[0] = DataRef.Sbus.Channels[0]*20000;
-   pilot.chan[1] = DataRef.Sbus.Channels[1]*20000;
-   pilot.chan[2] = DataRef.Sbus.Channels[2]*20000;
-   pilot.chan[3] = DataRef.Sbus.Channels[3]*20000;
-   pilot.chan[4] = DataRef.Sbus.Channels[4]*20000;
-   pilot.chan[5] = DataRef.Sbus.Channels[5]*20000;
-   pilot.chan[6] = DataRef.Sbus.Channels[6]*20000;
-   pilot.chan[7] = 0;
-   pilot.status = 0;
+  ImunodePacket imu;
+  imu.index = 0;
+  imu.imu_timestamp = DataRef.Time.Time_us/1000000.0;
+  imu.p_rad_sec = DataRef.Imu.Gx;
+  imu.q_rad_sec = DataRef.Imu.Gy;
+  imu.r_rad_sec = DataRef.Imu.Gz;
+  imu.ax_mps_sec = DataRef.Imu.Ax;
+  imu.ay_mps_sec = DataRef.Imu.Ay;
+  imu.az_mps_sec = DataRef.Imu.Az;
+  imu.hx = DataRef.Imu.Hx;
+  imu.hy = DataRef.Imu.Hy;
+  imu.hz = DataRef.Imu.Hz;
+  imu.temp_C = DataRef.Imu.Temperature_C;
+  imu.status = 0;
 
+  filterPacket filter;
+  filter.index = 0;
+  filter.timestamp = DataRef.Time.Time_us/1000000.0;
+  filter.latitude_deg = DataRef.Attitude.Lat*(180/M_PI);
+  filter.longitude_deg = DataRef.Attitude.Lon*(180/M_PI);
+  filter.altitude_m = DataRef.Attitude.Alt;
+  filter.vn_ms = DataRef.Attitude.Vn*100;
+  filter.ve_ms = DataRef.Attitude.Ve*100;
+  filter.vd_ms = DataRef.Attitude.Vd*100;
+  filter.roll_deg = DataRef.Attitude.Roll*10*(180/M_PI);
+  filter.pitch_deg = DataRef.Attitude.Pitch*10*(180/M_PI);
+  filter.heading_deg = DataRef.Attitude.Heading*10*(180/M_PI);
+  filter.p_bias = DataRef.Attitude.Gxb*1000;
+  filter.q_bias = DataRef.Attitude.Gyb*1000;
+  filter.r_bias = DataRef.Attitude.Gzb*1000;
+  filter.ax_bias = DataRef.Attitude.Axb*1000;
+  filter.ay_bias = DataRef.Attitude.Ayb*1000;
+  filter.az_bias = DataRef.Attitude.Azb*1000;
+  filter.sequence_num = 1;
+  filter.status = 0;
 
-   ImunodePacket imu;
-   imu.index = 0;
-   imu.imu_timestamp = DataRef.Time.Time_us/1000000.0;
-   imu.p_rad_sec = DataRef.Imu.Gx;
-   imu.q_rad_sec = DataRef.Imu.Gy;
-   imu.r_rad_sec = DataRef.Imu.Gz;
-   imu.ax_mps_sec = DataRef.Imu.Ax;
-   imu.ay_mps_sec = DataRef.Imu.Ay;
-   imu.az_mps_sec = DataRef.Imu.Az;
-   imu.hx = DataRef.Imu.Hx;
-   imu.hy = DataRef.Imu.Hy;
-   imu.hz = DataRef.Imu.Hz;
-   imu.temp_C = DataRef.Imu.Temperature_C;
-   imu.status = 0;
-
-
-   filterPacket filter;
-   filter.index = 0;
-   filter.timestamp = DataRef.Time.Time_us/1000000.0;
-   filter.latitude_deg = DataRef.Attitude.Lat*(180/M_PI);
-   filter.longitude_deg = DataRef.Attitude.Lon*(180/M_PI);
-   filter.altitude_m = DataRef.Attitude.Alt;
-   filter.vn_ms = DataRef.Attitude.Vn*100;
-   filter.ve_ms = DataRef.Attitude.Ve*100;
-   filter.vd_ms = DataRef.Attitude.Vd*100;
-   filter.roll_deg = DataRef.Attitude.Roll*10*(180/M_PI);
-   filter.pitch_deg = DataRef.Attitude.Pitch*10*(180/M_PI);
-   filter.heading_deg = DataRef.Attitude.Heading*10*(180/M_PI);
-   filter.p_bias = DataRef.Attitude.Gxb*1000;
-   filter.q_bias = DataRef.Attitude.Gyb*1000;
-   filter.r_bias = DataRef.Attitude.Gzb*1000;
-   filter.ax_bias = DataRef.Attitude.Axb*1000;
-   filter.ay_bias = DataRef.Attitude.Ayb*1000;
-   filter.az_bias = DataRef.Attitude.Azb*1000;
-   filter.sequence_num = 1;
-   filter.status = 0;
-
-
-   ap_status ap;
-   ap.index;
-   ap.frame_time;
-   ap.flags; //?
-   ap.groundtrack_deg;
-   ap.roll_deg;
-   ap.Target_msl_ft;
-   ap.ground_m;
-   ap.pitch_deg;
-   ap.airspeed_kt;
-   ap.flight_timer;
-   ap.target_waypoint_idx;
-   if( sizeof(filter.latitude_deg) != 0 && num2 !=0) {
-       ap.wp_lon = DataRef.Attitude.Lon*(180/M_PI);
-       ap.wp_lat = DataRef.Attitude.Lat*(180/M_PI);;
-       num2 = 0;
-   }
-   ap.wp_index;
-   ap.routesize = 1;
-   ap.sequence_num;
-
-
-
+  ap_status ap;
+  ap.index;
+  ap.frame_time;
+  ap.flags; //?
+  ap.groundtrack_deg;
+  ap.roll_deg;
+  ap.Target_msl_ft;
+  ap.ground_m;
+  ap.pitch_deg;
+  ap.airspeed_kt;
+  ap.flight_timer;
+  ap.target_waypoint_idx;
+  if( sizeof(filter.latitude_deg) != 0 && num2 !=0) {
+    ap.wp_lon = DataRef.Attitude.Lon*(180/M_PI);
+    ap.wp_lat = DataRef.Attitude.Lat*(180/M_PI);;
+    num2 = 0;
+  }
+  ap.wp_index;
+  ap.routesize = 1;
+  ap.sequence_num;
 
  /*  ap.timestamp = fmuData.Time_us/1000000.0;
    ap.master_switch;
@@ -584,42 +575,42 @@ if (filter.latitude_deg != 0 && num2 != 0) {
    numact1.status;
  */
    
-   healthPacket health;
-   health.index;
-   health.frame_time = DataRef.Time.Time_us/1000000.0;
-   health.system_load_avg;
-   health.board_vcc;
-   health.extern_volts;
-   health.extern_cell_volts = (int)(DataRef.Power.MinCellVolt * 1000.0);
-   health.extern_amps;
-   health.dekamah;
+  healthPacket health;
+  health.index;
+  health.frame_time = DataRef.Time.Time_us/1000000.0;
+  health.system_load_avg;
+  health.board_vcc;
+  health.extern_volts;
+  health.extern_cell_volts = (int)(DataRef.Power.MinCellVolt * 1000.0);
+  health.extern_amps;
+  health.dekamah;
 
-   uint8_t IDnum;
-   uint8_t size;
+  uint8_t IDnum;
+  uint8_t size;
 //ap
-   IDnum = 32;
-   size = sizeof(ap);
-   send_packet((uint8_t *)(&ap), IDnum, size);
+  IDnum = 32;
+  size = sizeof(ap);
+  send_packet((uint8_t *)(&ap), IDnum, size);
 //GPS BdddfhhhdBHHHB
-   IDnum = 26;
-   size = sizeof(gps);
-   send_packet((uint8_t *)(&gps), IDnum, size);
+  IDnum = 26;
+  size = sizeof(gps);
+  send_packet((uint8_t *)(&gps), IDnum, size);
 //airdata BdHhhffhHBBB
-   IDnum = 18;
-   size = sizeof(air);
-   send_packet((uint8_t *)(&air), IDnum, size);
+  IDnum = 18;
+  size = sizeof(air);
+  send_packet((uint8_t *)(&air), IDnum, size);
 //pilotcontrol BdhhhhhhhhB
-   IDnum = 20;
-   size = sizeof(pilot);
-   send_packet((uint8_t *)(&pilot), IDnum, size);
+  IDnum = 20;
+  size = sizeof(pilot);
+  send_packet((uint8_t *)(&pilot), IDnum, size);
 //imudata BdfffffffffhB
-   IDnum = 17;
-   size = sizeof(imu);
-   send_packet((uint8_t *)(&imu), IDnum, size);
+  IDnum = 17;
+  size = sizeof(imu);
+  send_packet((uint8_t *)(&imu), IDnum, size);
 //filterdata BdddfhhhhhhhhhhhhBB
-   IDnum = 31;
-   size = sizeof(filter);
-   send_packet((uint8_t *)(&filter), IDnum, size);
+  IDnum = 31;
+  size = sizeof(filter);
+  send_packet((uint8_t *)(&filter), IDnum, size);
 /*
 //actdata BdhhHhhhhhB
    size = sizeof(numact1);
@@ -627,7 +618,7 @@ if (filter.latitude_deg != 0 && num2 != 0) {
    send_packet((uint8_t *)(&numact1), IDnum, size);
 */
 //health BfHHHHHH
-   size = sizeof(health);
-   IDnum = 41;
-   send_packet((uint8_t *)(&health), IDnum, size);
-   };
+  size = sizeof(health);
+  IDnum = 41;
+  send_packet((uint8_t *)(&health), IDnum, size);
+};

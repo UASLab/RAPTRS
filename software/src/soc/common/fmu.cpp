@@ -583,100 +583,100 @@ void FlightManagementUnit::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, ui
 
 void FlightManagementUnit::PublishSensors() {
   for (size_t i=0; i < SensorData_.Time_us.size(); i++) {
-      // fixme: uint64_t
-      SensorNodes_.Time_us[i]->setLong(SensorData_.Time_us[i]);
+    // fixme: uint64_t
+    SensorNodes_.Time_us[i]->setLong(SensorData_.Time_us[i]);
   }
   for (size_t i=0; i < SensorData_.InternalMpu9250.size(); i++) {
-      SensorNodes_.InternalMpu9250[i].ax->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(0,0));
-      SensorNodes_.InternalMpu9250[i].ay->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(1,0));
-      SensorNodes_.InternalMpu9250[i].az->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(2,0));
-      SensorNodes_.InternalMpu9250[i].p->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(0,0));
-      SensorNodes_.InternalMpu9250[i].q->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(1,0));
-      SensorNodes_.InternalMpu9250[i].r->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(2,0));
-      SensorNodes_.InternalMpu9250[i].hx->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(0,0));
-      SensorNodes_.InternalMpu9250[i].hy->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(1,0));
-      SensorNodes_.InternalMpu9250[i].hz->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(2,0));
-      SensorNodes_.InternalMpu9250[i].temp->setFloat(SensorData_.InternalMpu9250[i].Temperature_C);
+    SensorNodes_.InternalMpu9250[i].ax->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(0,0));
+    SensorNodes_.InternalMpu9250[i].ay->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(1,0));
+    SensorNodes_.InternalMpu9250[i].az->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(2,0));
+    SensorNodes_.InternalMpu9250[i].p->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(0,0));
+    SensorNodes_.InternalMpu9250[i].q->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(1,0));
+    SensorNodes_.InternalMpu9250[i].r->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(2,0));
+    SensorNodes_.InternalMpu9250[i].hx->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(0,0));
+    SensorNodes_.InternalMpu9250[i].hy->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(1,0));
+    SensorNodes_.InternalMpu9250[i].hz->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(2,0));
+    SensorNodes_.InternalMpu9250[i].temp->setFloat(SensorData_.InternalMpu9250[i].Temperature_C);
   }
   for (size_t i=0; i < SensorData_.InternalBme280.size(); i++) {
-      SensorNodes_.InternalBme280[i].press->setFloat(SensorData_.InternalBme280[i].Pressure_Pa);
-      SensorNodes_.InternalBme280[i].temp->setFloat(SensorData_.InternalBme280[i].Temperature_C);
-      SensorNodes_.InternalBme280[i].hum->setFloat(SensorData_.InternalBme280[i].Humidity_RH);
+    SensorNodes_.InternalBme280[i].press->setFloat(SensorData_.InternalBme280[i].Pressure_Pa);
+    SensorNodes_.InternalBme280[i].temp->setFloat(SensorData_.InternalBme280[i].Temperature_C);
+    SensorNodes_.InternalBme280[i].hum->setFloat(SensorData_.InternalBme280[i].Humidity_RH);
   }
   for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
-      SensorNodes_.input_volts[i]->setFloat(SensorData_.InputVoltage_V[i]);
+    SensorNodes_.input_volts[i]->setFloat(SensorData_.InputVoltage_V[i]);
   }
   for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
-      SensorNodes_.reg_volts[i]->setFloat(SensorData_.RegulatedVoltage_V[i]);
+    SensorNodes_.reg_volts[i]->setFloat(SensorData_.RegulatedVoltage_V[i]);
   }
   for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
-      SensorNodes_.pwm_volts[i]->setFloat(SensorData_.PwmVoltage_V[i]);
+    SensorNodes_.pwm_volts[i]->setFloat(SensorData_.PwmVoltage_V[i]);
   }
   for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
-      SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
+    SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
   }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
-      SensorNodes_.Mpu9250[i].status->setInt(SensorData_.Mpu9250[i].status);
-      SensorNodes_.Mpu9250[i].ax->setFloat(SensorData_.Mpu9250[i].Accel_mss(0,0));
-      SensorNodes_.Mpu9250[i].ay->setFloat(SensorData_.Mpu9250[i].Accel_mss(1,0));
-      SensorNodes_.Mpu9250[i].az->setFloat(SensorData_.Mpu9250[i].Accel_mss(2,0));
-      SensorNodes_.Mpu9250[i].p->setFloat(SensorData_.Mpu9250[i].Gyro_rads(0,0));
-      SensorNodes_.Mpu9250[i].q->setFloat(SensorData_.Mpu9250[i].Gyro_rads(1,0));
-      SensorNodes_.Mpu9250[i].r->setFloat(SensorData_.Mpu9250[i].Gyro_rads(2,0));
-      SensorNodes_.Mpu9250[i].hx->setFloat(SensorData_.Mpu9250[i].Mag_uT(0,0));
-      SensorNodes_.Mpu9250[i].hy->setFloat(SensorData_.Mpu9250[i].Mag_uT(1,0));
-      SensorNodes_.Mpu9250[i].hz->setFloat(SensorData_.Mpu9250[i].Mag_uT(2,0));
-      SensorNodes_.Mpu9250[i].temp->setFloat(SensorData_.Mpu9250[i].Temperature_C);
+    SensorNodes_.Mpu9250[i].status->setInt(SensorData_.Mpu9250[i].status);
+    SensorNodes_.Mpu9250[i].ax->setFloat(SensorData_.Mpu9250[i].Accel_mss(0,0));
+    SensorNodes_.Mpu9250[i].ay->setFloat(SensorData_.Mpu9250[i].Accel_mss(1,0));
+    SensorNodes_.Mpu9250[i].az->setFloat(SensorData_.Mpu9250[i].Accel_mss(2,0));
+    SensorNodes_.Mpu9250[i].p->setFloat(SensorData_.Mpu9250[i].Gyro_rads(0,0));
+    SensorNodes_.Mpu9250[i].q->setFloat(SensorData_.Mpu9250[i].Gyro_rads(1,0));
+    SensorNodes_.Mpu9250[i].r->setFloat(SensorData_.Mpu9250[i].Gyro_rads(2,0));
+    SensorNodes_.Mpu9250[i].hx->setFloat(SensorData_.Mpu9250[i].Mag_uT(0,0));
+    SensorNodes_.Mpu9250[i].hy->setFloat(SensorData_.Mpu9250[i].Mag_uT(1,0));
+    SensorNodes_.Mpu9250[i].hz->setFloat(SensorData_.Mpu9250[i].Mag_uT(2,0));
+    SensorNodes_.Mpu9250[i].temp->setFloat(SensorData_.Mpu9250[i].Temperature_C);
   }
   for (size_t i=0; i < SensorData_.Bme280.size(); i++) {
-      SensorNodes_.Bme280[i].status->setInt(SensorData_.Bme280[i].status);
-      SensorNodes_.Bme280[i].press->setFloat(SensorData_.Bme280[i].Pressure_Pa);
-      SensorNodes_.Bme280[i].temp->setFloat(SensorData_.Bme280[i].Temperature_C);
-      SensorNodes_.Bme280[i].hum->setFloat(SensorData_.Bme280[i].Humidity_RH);
+    SensorNodes_.Bme280[i].status->setInt(SensorData_.Bme280[i].status);
+    SensorNodes_.Bme280[i].press->setFloat(SensorData_.Bme280[i].Pressure_Pa);
+    SensorNodes_.Bme280[i].temp->setFloat(SensorData_.Bme280[i].Temperature_C);
+    SensorNodes_.Bme280[i].hum->setFloat(SensorData_.Bme280[i].Humidity_RH);
   }
   for (size_t i=0; i < SensorData_.uBlox.size(); i++) {
-      SensorNodes_.uBlox[i].fix->setInt(SensorData_.uBlox[i].Fix);
-      SensorNodes_.uBlox[i].sats->setInt(SensorData_.uBlox[i].NumberSatellites);
-      SensorNodes_.uBlox[i].tow->setInt(SensorData_.uBlox[i].TOW);
-      SensorNodes_.uBlox[i].year->setInt(SensorData_.uBlox[i].Year);
-      SensorNodes_.uBlox[i].month->setInt(SensorData_.uBlox[i].Month);
-      SensorNodes_.uBlox[i].day->setInt(SensorData_.uBlox[i].Day);
-      SensorNodes_.uBlox[i].hour->setInt(SensorData_.uBlox[i].Hour);
-      SensorNodes_.uBlox[i].min->setInt(SensorData_.uBlox[i].Min);
-      SensorNodes_.uBlox[i].sec->setInt(SensorData_.uBlox[i].Sec);
-      SensorNodes_.uBlox[i].lat->setDouble(SensorData_.uBlox[i].LLA(0,0));
-      SensorNodes_.uBlox[i].lon->setDouble(SensorData_.uBlox[i].LLA(1,0));
-      SensorNodes_.uBlox[i].alt->setFloat(SensorData_.uBlox[i].LLA(2,0));
-      SensorNodes_.uBlox[i].vn->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(0,0));
-      SensorNodes_.uBlox[i].ve->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(1,0));
-      SensorNodes_.uBlox[i].vd->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(2,0));
-      SensorNodes_.uBlox[i].horiz_acc->setFloat(SensorData_.uBlox[i].Accuracy(0,0));
-      SensorNodes_.uBlox[i].vert_acc->setFloat(SensorData_.uBlox[i].Accuracy(1,0));
-      SensorNodes_.uBlox[i].vel_acc->setFloat(SensorData_.uBlox[i].Accuracy(2,0));
-      SensorNodes_.uBlox[i].pdop->setFloat(SensorData_.uBlox[i].pDOP);
+    SensorNodes_.uBlox[i].fix->setInt(SensorData_.uBlox[i].Fix);
+    SensorNodes_.uBlox[i].sats->setInt(SensorData_.uBlox[i].NumberSatellites);
+    SensorNodes_.uBlox[i].tow->setInt(SensorData_.uBlox[i].TOW);
+    SensorNodes_.uBlox[i].year->setInt(SensorData_.uBlox[i].Year);
+    SensorNodes_.uBlox[i].month->setInt(SensorData_.uBlox[i].Month);
+    SensorNodes_.uBlox[i].day->setInt(SensorData_.uBlox[i].Day);
+    SensorNodes_.uBlox[i].hour->setInt(SensorData_.uBlox[i].Hour);
+    SensorNodes_.uBlox[i].min->setInt(SensorData_.uBlox[i].Min);
+    SensorNodes_.uBlox[i].sec->setInt(SensorData_.uBlox[i].Sec);
+    SensorNodes_.uBlox[i].lat->setDouble(SensorData_.uBlox[i].LLA(0,0));
+    SensorNodes_.uBlox[i].lon->setDouble(SensorData_.uBlox[i].LLA(1,0));
+    SensorNodes_.uBlox[i].alt->setFloat(SensorData_.uBlox[i].LLA(2,0));
+    SensorNodes_.uBlox[i].vn->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(0,0));
+    SensorNodes_.uBlox[i].ve->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(1,0));
+    SensorNodes_.uBlox[i].vd->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(2,0));
+    SensorNodes_.uBlox[i].horiz_acc->setFloat(SensorData_.uBlox[i].Accuracy(0,0));
+    SensorNodes_.uBlox[i].vert_acc->setFloat(SensorData_.uBlox[i].Accuracy(1,0));
+    SensorNodes_.uBlox[i].vel_acc->setFloat(SensorData_.uBlox[i].Accuracy(2,0));
+    SensorNodes_.uBlox[i].pdop->setFloat(SensorData_.uBlox[i].pDOP);
   }
   for (size_t i=0; i < SensorData_.Swift.size(); i++) {
-      SensorNodes_.Swift[i].Static.status->setInt(SensorData_.Swift[i].Static.status);
-      SensorNodes_.Swift[i].Static.press->setFloat(SensorData_.Swift[i].Static.Pressure_Pa);
-      SensorNodes_.Swift[i].Static.temp->setFloat(SensorData_.Swift[i].Static.Temperature_C);
-      SensorNodes_.Swift[i].Differential.status->setInt(SensorData_.Swift[i].Differential.status);
-      SensorNodes_.Swift[i].Differential.press->setFloat(SensorData_.Swift[i].Differential.Pressure_Pa);
-      SensorNodes_.Swift[i].Differential.temp->setFloat(SensorData_.Swift[i].Differential.Temperature_C);
+    SensorNodes_.Swift[i].Static.status->setInt(SensorData_.Swift[i].Static.status);
+    SensorNodes_.Swift[i].Static.press->setFloat(SensorData_.Swift[i].Static.Pressure_Pa);
+    SensorNodes_.Swift[i].Static.temp->setFloat(SensorData_.Swift[i].Static.Temperature_C);
+    SensorNodes_.Swift[i].Differential.status->setInt(SensorData_.Swift[i].Differential.status);
+    SensorNodes_.Swift[i].Differential.press->setFloat(SensorData_.Swift[i].Differential.Pressure_Pa);
+    SensorNodes_.Swift[i].Differential.temp->setFloat(SensorData_.Swift[i].Differential.Temperature_C);
   }
   for (size_t i=0; i < SensorData_.Ams5915.size(); i++) {
-      SensorNodes_.Ams5915[i].status->setInt(SensorData_.Ams5915[i].status);
-      SensorNodes_.Ams5915[i].press->setFloat(SensorData_.Ams5915[i].Pressure_Pa);
-      SensorNodes_.Ams5915[i].temp->setFloat(SensorData_.Ams5915[i].Temperature_C);
+    SensorNodes_.Ams5915[i].status->setInt(SensorData_.Ams5915[i].status);
+    SensorNodes_.Ams5915[i].press->setFloat(SensorData_.Ams5915[i].Pressure_Pa);
+    SensorNodes_.Ams5915[i].temp->setFloat(SensorData_.Ams5915[i].Temperature_C);
   }
   for (size_t i=0; i < SensorData_.Sbus.size(); i++) {
-      SensorNodes_.Sbus[i].failsafe->setInt(SensorData_.Sbus[i].FailSafe);
-      SensorNodes_.Sbus[i].lost_frames->setInt(SensorData_.Sbus[i].LostFrames);
+    SensorNodes_.Sbus[i].failsafe->setInt(SensorData_.Sbus[i].FailSafe);
+    SensorNodes_.Sbus[i].lost_frames->setInt(SensorData_.Sbus[i].LostFrames);
     for (size_t j=0; j < 16; j++) {
-        SensorNodes_.Sbus[i].ch[j]->setFloat(SensorData_.Sbus[i].Channels[j]);
+      SensorNodes_.Sbus[i].ch[j]->setFloat(SensorData_.Sbus[i].Channels[j]);
     }
   }
   for (size_t i=0; i < SensorData_.Analog.size(); i++) {
-      SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
-      SensorNodes_.Analog[i].val->setFloat(SensorData_.Analog[i].CalibratedValue);
+    SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
+    SensorNodes_.Analog[i].val->setFloat(SensorData_.Analog[i].CalibratedValue);
   }
 }

@@ -117,8 +117,8 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
                       Element *ele = deftree.getElement(SocKey);
                       SocDataPtr_[GroupKey][KeyName] = ele;
                       if (ele) {
-                          OutputData_[KeyName] = ele;
-                          deftree.makeAlias(SocKey, OutputKey);
+                        OutputData_[KeyName] = ele;
+                        deftree.makeAlias(SocKey, OutputKey);
                       }
                     }
                   }

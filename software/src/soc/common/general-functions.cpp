@@ -112,13 +112,13 @@ void GainClass::Run(Mode mode) {
   // saturate command
   if (config_.SaturateOutput) {
     if (data_.output_node->getFloat() <= config_.LowerLimit) {
-        data_.output_node->setFloat(config_.LowerLimit);
-        data_.saturated_node->setInt(-1);
+      data_.output_node->setFloat(config_.LowerLimit);
+      data_.saturated_node->setInt(-1);
     } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
-        data_.output_node->setFloat(config_.UpperLimit);
-        data_.saturated_node->setInt(1);
+      data_.output_node->setFloat(config_.UpperLimit);
+      data_.saturated_node->setInt(1);
     } else {
-        data_.saturated_node->setInt(0);
+      data_.saturated_node->setInt(0);
     }
   }
 }
@@ -154,9 +154,9 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
       Element *ele = deftree.getElement(InputKeys_.back());
       if ( ele ) {
-          config_.input_nodes.push_back(ele);
+        config_.input_nodes.push_back(ele);
       } else {
-          throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
       }
     }
   } else {
@@ -190,20 +190,20 @@ void SumClass::Run(Mode mode) {
   data_.output_node->setFloat(0.0f);
   float sum = 0.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
-      sum += config_.input_nodes[i]->getFloat();
+    sum += config_.input_nodes[i]->getFloat();
   }
   data_.output_node->setFloat(sum);
 
   // saturate command
   if (config_.SaturateOutput) {
     if (data_.output_node->getFloat() <= config_.LowerLimit) {
-        data_.output_node->setFloat(config_.LowerLimit);
-        data_.saturated_node->setInt(-1);
+      data_.output_node->setFloat(config_.LowerLimit);
+      data_.saturated_node->setInt(-1);
     } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
-        data_.output_node->setFloat(config_.UpperLimit);
-        data_.saturated_node->setInt(1);
+      data_.output_node->setFloat(config_.UpperLimit);
+      data_.saturated_node->setInt(1);
     } else {
-        data_.saturated_node->setInt(0);
+      data_.saturated_node->setInt(0);
     }
   }
 }

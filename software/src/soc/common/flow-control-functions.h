@@ -47,15 +47,15 @@ class If: public GenericFunction {
     void Clear();
   private:
     struct Config {
-        Element *input_node{NULL};
-        // float *Input;
-        float Threshold = 0.0f;
+      Element *input_node{NULL};
+      // float *Input;
+      float Threshold = 0.0f;
     };
     struct Data {
-        // uint8_t Mode = kStandby;
-        // uint8_t Output = 0;
-        Element *mode_node{NULL};
-        Element *output_node{NULL};
+      // uint8_t Mode = kStandby;
+      // uint8_t Output = 0;
+      Element *mode_node{NULL};
+      Element *output_node{NULL};
     };
     Config config_;
     Data data_;

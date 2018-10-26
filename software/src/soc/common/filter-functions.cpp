@@ -74,8 +74,8 @@ bool GeneralFilter::Initialized() {
 }
 
 void GeneralFilter::Run(Mode mode) {
-    data_.Mode->setInt(mode);
-    data_.output_node->setFloat( filter_.Run(config_.input_node->getFloat()) );
+  data_.Mode->setInt(mode);
+  data_.output_node->setFloat( filter_.Run(config_.input_node->getFloat()) );
 }
 
 void GeneralFilter::Clear() {

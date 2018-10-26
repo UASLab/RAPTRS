@@ -53,12 +53,12 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
           assert(Effector["Effectors"].IsArray());
           for (auto &NodeEffector : Effector["Effectors"].GetArray()) {
             if (NodeEffector.HasMember("Input")) {
-                Element *ele =  deftree.getElement(NodeEffector["Input"].GetString());
-                if ( ele  ) {
-                    input_nodes.push_back(ele);
-                } else {
-                    throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+NodeEffector["Input"].GetString()+std::string(" not found in global data."));
-                }
+              Element *ele =  deftree.getElement(NodeEffector["Input"].GetString());
+              if ( ele  ) {
+                input_nodes.push_back(ele);
+              } else {
+                throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+NodeEffector["Input"].GetString()+std::string(" not found in global data."));
+              }
             } else {
               throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input not specified in configuration."));
             }
@@ -68,12 +68,12 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
         }
       } else {
         if (Effector.HasMember("Input")) {
-            Element *ele = deftree.getElement(Effector["Input"].GetString());
-            if ( ele ) {
-                input_nodes.push_back(ele);
-            } else {
-                throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+Effector["Input"].GetString()+std::string(" not found in global data."));
-            }
+          Element *ele = deftree.getElement(Effector["Input"].GetString());
+          if ( ele ) {
+            input_nodes.push_back(ele);
+          } else {
+            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+Effector["Input"].GetString()+std::string(" not found in global data."));
+          }
         } else {
           throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input not specified in configuration."));
         }
@@ -90,7 +90,7 @@ std::vector<float> AircraftEffectors::Run() {
   std::vector<float> Commands;
   Commands.resize(input_nodes.size());
   for (size_t i=0; i < input_nodes.size(); i++) {
-      Commands[i] = input_nodes[i]->getFloat();
+    Commands[i] = input_nodes[i]->getFloat();
   }
   return Commands;
 }
