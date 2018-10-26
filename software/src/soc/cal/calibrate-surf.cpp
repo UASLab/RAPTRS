@@ -3,7 +3,7 @@
 */
 
 #include "hardware-defs.h"
-#include "definition-tree.h"
+#include "definition-tree2.h"
 #include "configuration.h"
 #include "fmu.h"
 #include "mission.h"
@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
   std::cout << "Surface Calibration Version " << SoftwareVersion << std::endl << std::endl;
 
   /* declare classes */
-  DefinitionTree GlobalData;
   Configuration Config;
   FlightManagementUnit Fmu;
   MissionManager Mission;
@@ -67,18 +66,18 @@ int main(int argc, char* argv[]) {
   Config.LoadConfiguration(argv[1], &AircraftConfiguration);
   std::cout << "done!" << std::endl;
   std::cout << "\tConfiguring flight management unit..." << std::endl;
-  Fmu.Configure(AircraftConfiguration,&GlobalData);
+  Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring mission manager..." << std::flush;
-      Mission.Configure(AircraftConfiguration["Mission-Manager"],&GlobalData);
+      Mission.Configure(AircraftConfiguration["Mission-Manager"]);
       std::cout << "done!" << std::endl;
       std::cout << "\tConfiguring control laws..." << std::flush;
-      Control.Configure(AircraftConfiguration["Control"],&GlobalData);
+      Control.Configure(AircraftConfiguration["Control"]);
       std::cout << "done!" << std::endl;
       std::cout << "\tConfiguring effectors..." << std::flush;
-      Effectors.Configure(AircraftConfiguration["Effectors"],&GlobalData);
+      Effectors.Configure(AircraftConfiguration["Effectors"]);
       std::cout << "done!" << std::endl;
     }
   }
@@ -213,6 +212,7 @@ int main(int argc, char* argv[]) {
       // Read the Inclinometer and pot data
       potValSum_V = 0.0;
 
+      Element *pot_node = deftree.getElement(AnalogPath); // /Sensors/Surf/posLTE1/Voltage_V
       for (int iRead = 0; iRead < NumRead; ++iRead) {
         while (!Fmu.ReceiveSensorData()) // Wait for new FMU data
 
@@ -230,9 +230,7 @@ int main(int argc, char* argv[]) {
 
         // Read Pot fmu
         // if(AnalogString != ""){
-          potValTemp_V = GlobalData.GetValuePtr<float*>(AnalogPath); // /Sensors/Surf/posLTE1/Voltage_V
-
-          potValSum_V += *potValTemp_V;
+        potValSum_V += pot_node->getFloat();
         // }
       }
 
