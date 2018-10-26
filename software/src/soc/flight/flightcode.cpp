@@ -29,6 +29,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "effector.h"
 #include "telemetry.h"
 #include "datalog.h"
+#include "netSocket.h"
+#include "telnet.hxx"
+#include "FGFS.h"
+#include "route_mgr.hxx"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -58,7 +62,8 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-
+  FGRouteMgr route_mgr;
+  
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
   std::cout << "\tInitializing FMU..." << std::flush;
@@ -84,6 +89,11 @@ int main(int argc, char* argv[]) {
     std::cout << "done!" << std::endl;
     deftree.PrettyPrint("/Sensor-Processing/");
     std::cout << std::endl;
+
+    if (AircraftConfiguration.HasMember("Route")) {
+      std::cout << "\tConfiguring route following..." << std::endl;
+      route_mgr.init(AircraftConfiguration["Route"],&GlobalData);
+    }
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring mission manager..." << std::flush;
@@ -125,9 +135,26 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
   std::cout << "Entering main loop." << std::endl;
 
+  GlobalData.PrettyPrint("/");
+
+  netInit();                    // do this before creating telnet instance
+  UGTelnet telnet( 6500, &GlobalData );
+  telnet.open();
+  std::cout << "Telnet interface opened on port 6500" << std::endl;
+
+  // hack in an interface to flightgear to overwrite imu/gps/airdata
+  // with simulated values
+  fgfs_imu_init(&GlobalData);
+  fgfs_gps_init(&GlobalData);
+  fgfs_airdata_init(&GlobalData);
+  fgfs_act_init(&GlobalData);
+  
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
+      // insert flightgear sim data calls
+      fgfs_imu_update();
+      fgfs_gps_update();
       if (SenProc.Configured()&&SenProc.Initialized()) {
         // run mission
         Mission.Run();
@@ -135,6 +162,8 @@ int main(int argc, char* argv[]) {
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
         SenProc.Run();
+        fgfs_airdata_update(); // overwrite processed air data
+        route_mgr.update();
         // get and set engaged and armed controllers
         Control.SetEngagedController(Mission.GetEngagedController());
         Control.SetArmedController(Mission.GetArmedController());
@@ -151,6 +180,7 @@ int main(int argc, char* argv[]) {
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
+        fgfs_act_update();
         // run armed excitations
         Excitation.RunArmed();
         // run armed control laws
@@ -164,8 +194,14 @@ int main(int argc, char* argv[]) {
       Telemetry.Send();
       // run datalog
       Datalog.LogBinaryData();
+      telnet.process();
     }
+
+    // run telemetry
+    Telemetry.Send();
+    // run datalog
+    Datalog.LogBinaryData();
   }
-  
+
   return 0;
 }

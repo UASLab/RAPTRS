@@ -147,7 +147,7 @@ NODE_CXX = $(NODE_COMPILER)/arm-none-eabi-g++
 NODE_OBJCOPY = $(NODE_COMPILER)/arm-none-eabi-objcopy
 NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 # compiler options
-SOC_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
+SOC_CPPFLAGS = -g -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SOC_CXXFLAGS = -std=c++17
 FMU_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(FMU_CORE)
 FMU_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti
@@ -212,7 +212,7 @@ $(BUILD)/$(SOC_ARCH)/%.o: %.c
 $(BUILD)/$(SOC_ARCH)/%.o: %.cpp
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" -c "$<"
+	$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" -c "$<"
 
 $(BUILD)/$(FMU_ARCH)/%.o: %.c
 	@echo -e "[CC]\t$<"
@@ -237,7 +237,7 @@ $(BUILD)/$(NODE_ARCH)/%.o: %.cpp
 $(BIN)/flight: $(soc_flight_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_flight_obj)
+	$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_flight_obj)
 
 $(BIN)/datalog-server: $(soc_datalog_obj)
 	@echo -e "[CXX]\t$<"

@@ -34,9 +34,14 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 #include "uNavINS.h"
 
 void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double vd,double lat,double lon,double alt,float p,float q,float r,float ax,float ay,float az,float hx,float hy, float hz) {
+    // cout << "ins: " << time << " " << TOW << " vel: " << vn << " " << ve << " " << vd << " pos: " << lat << " " << lon << " " << alt << " imu: " << p << " " << q << " " << r << " " << ax << " " << ay << " " << az << " " << hx << " " << hy << " " << hz << endl;
   if (!initialized_) {
     // initial attitude and heading
     theta = asinf(ax/G);

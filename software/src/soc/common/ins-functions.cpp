@@ -18,6 +18,10 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 #include "ins-functions.h"
 
 void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPath) {
@@ -194,6 +198,7 @@ void Ekf15StateIns::Initialize() {
     uNavINS_.update(config_.t->getLong(),config_.GpsTow->getInt(),config_.GpsVn->getFloat(),config_.GpsVe->getFloat(),config_.GpsVd->getFloat(),config_.GpsLat->getDouble(),config_.GpsLon->getDouble(),config_.GpsAlt->getFloat(),config_.ImuGx->getFloat(),config_.ImuGy->getFloat(),config_.ImuGz->getFloat(),config_.ImuAx->getFloat(),config_.ImuAy->getFloat(),config_.ImuAz->getFloat(),config_.ImuHx->getFloat(),config_.ImuHy->getFloat(),config_.ImuHz->getFloat());
     if (uNavINS_.initialized()) {
       Initialized_ = true;
+      cout << "EKF INITIALIZED" << endl;
     }
   }
 }
