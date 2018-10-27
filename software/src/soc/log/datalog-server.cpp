@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <iostream>
 #include <iomanip>
 #include <stdint.h>
-#include <variant>
 
 int main(int argc, char* argv[]) {
   std::cout << "Bolder Flight Systems" << std::endl;

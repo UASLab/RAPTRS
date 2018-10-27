@@ -43,6 +43,18 @@ Where:
      -1 instead of 1000 us).  
 */
 
+/*
+   Note: effector.cpp needs to know about physical hardware layout
+   (i.e. where actuators are connected down stream and to which nodes.
+   Preferably this knowledge should live inside fmu.cpp.  The flight
+   code shouldn't need to care about the physical layout of the
+   effectors.
+
+   This code does definition tree map lookups every frame.  This way
+   when the /Control/ aliases get remade, this module isn't left
+   pointing to the old Element records.
+*/
+
 void AircraftEffectors::Configure(const rapidjson::Value& Config) {
   assert(Config.IsArray());
   for (size_t i=0; i < Config.Size(); i++) {
