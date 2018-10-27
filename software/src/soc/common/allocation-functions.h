@@ -67,16 +67,16 @@ class PseudoInverseAllocation: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      vector<Element *> input_nodes;
+      vector<ElementPtr> input_nodes;
       Eigen::VectorXf Objectives;
       Eigen::MatrixXf Effectiveness;
       Eigen::VectorXf LowerLimit;
       Eigen::VectorXf UpperLimit;
     };
     struct Data {
-      Element *Mode{NULL};
+      ElementPtr Mode;
       Eigen::VectorXf uCmd;
-      vector<Element *> uCmd_nodes;
+      vector<ElementPtr> uCmd_nodes;
       Eigen::VectorXi uSat;
     };
     Config config_;

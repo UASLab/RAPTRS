@@ -65,7 +65,7 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
           assert(Effector["Effectors"].IsArray());
           for (auto &NodeEffector : Effector["Effectors"].GetArray()) {
             if (NodeEffector.HasMember("Input")) {
-              Element *ele =  deftree.getElement(NodeEffector["Input"].GetString());
+              ElementPtr ele =  deftree.getElement(NodeEffector["Input"].GetString());
               if ( ele  ) {
                 input_names.push_back(NodeEffector["Input"].GetString());
               } else {
@@ -80,7 +80,7 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
         }
       } else {
         if (Effector.HasMember("Input")) {
-          Element *ele = deftree.getElement(Effector["Input"].GetString());
+          ElementPtr ele = deftree.getElement(Effector["Input"].GetString());
           if ( ele ) {
             input_names.push_back(Effector["Input"].GetString());
           } else {
@@ -102,7 +102,7 @@ std::vector<float> AircraftEffectors::Run() {
   std::vector<float> Commands;
   Commands.resize(input_names.size());
   for (size_t i=0; i < input_names.size(); i++) {
-    Element *ele = deftree.getElement(input_names[i]);
+    ElementPtr ele = deftree.getElement(input_names[i]);
     Commands[i] = ele->getFloat();
   }
   return Commands;

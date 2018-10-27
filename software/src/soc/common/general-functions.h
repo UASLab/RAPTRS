@@ -53,7 +53,7 @@ class ConstantClass: public GenericFunction {
     };
     struct Data {
       uint8_t Mode = kStandby;
-      Element *output_node{NULL};
+      ElementPtr output_node;
     };
     Config config_;
     Data data_;
@@ -89,15 +89,15 @@ class GainClass: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      Element *input_node;
+      ElementPtr input_node;
       float Gain = 1.0f;
       bool SaturateOutput = false;
       float UpperLimit, LowerLimit = 0.0f;
     };
     struct Data {
       uint8_t Mode = kStandby;
-      Element *output_node{NULL};
-      Element *saturated_node{NULL};
+      ElementPtr output_node;
+      ElementPtr saturated_node;
     };
     Config config_;
     Data data_;
@@ -132,14 +132,14 @@ class SumClass: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      std::vector<Element *> input_nodes;
+      std::vector<ElementPtr > input_nodes;
       bool SaturateOutput = false;
       float UpperLimit, LowerLimit = 0.0f;
     };
     struct Data {
       uint8_t Mode = kStandby;
-      Element *output_node{NULL};
-      Element *saturated_node{NULL};
+      ElementPtr output_node;
+      ElementPtr saturated_node;
     };
     Config config_;
     Data data_;
@@ -170,11 +170,11 @@ class LatchClass: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      Element *input_node;
+      ElementPtr input_node;
     };
     struct Data {
       uint8_t Mode = kStandby;
-      Element *output_node{NULL};
+      ElementPtr output_node;
     };
     bool initLatch_ = false;
     Config config_;

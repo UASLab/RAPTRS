@@ -65,8 +65,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node{NULL};
-    Element *signal_node{NULL};
+    ElementPtr time_node;
+    ElementPtr signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -74,7 +74,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;
@@ -113,8 +113,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node;
-    Element *signal_node;
+    ElementPtr time_node;
+    ElementPtr signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -122,7 +122,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;
@@ -161,8 +161,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node;
-    Element *signal_node;
+    ElementPtr time_node;
+    ElementPtr signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -170,7 +170,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;
@@ -209,8 +209,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node;
-    Element *signal_node;
+    ElementPtr time_node;
+    ElementPtr signal_node;
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
@@ -218,7 +218,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;
@@ -258,8 +258,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node;
-    Element *signal_node;
+    ElementPtr time_node;
+    ElementPtr signal_node;
     float Amplitude[2] = {0.0f};
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
@@ -268,7 +268,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;
@@ -307,8 +307,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node;
-    Element *signal_node;
+    ElementPtr time_node;
+    ElementPtr signal_node;
     float Amplitude = 0.0f;
     float Frequency = 0.0f;
     float StartTime_s = 0.0f;
@@ -318,7 +318,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;
@@ -359,8 +359,8 @@ public:
   void Clear();
 private:
   struct Config {
-    Element *time_node;
-    Element *signal_node;
+    ElementPtr time_node;
+    ElementPtr signal_node;
     Eigen::Array<float,Eigen::Dynamic,1> Amplitude;
     Eigen::Array<float,Eigen::Dynamic,1> Frequency;
     Eigen::Array<float,Eigen::Dynamic,1> Phase;
@@ -370,7 +370,7 @@ private:
   };
   struct Data {
     uint8_t Mode = kStandby;
-    Element *excitation_node{NULL};
+    ElementPtr excitation_node;
   };
   Config config_;
   Data data_;

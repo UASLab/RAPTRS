@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
       // Read the Inclinometer and pot data
       potValSum_V = 0.0;
 
-      Element *pot_node = deftree.getElement(AnalogPath); // /Sensors/Surf/posLTE1/Voltage_V
+      ElementPtr pot_node = deftree.getElement(AnalogPath); // /Sensors/Surf/posLTE1/Voltage_V
       for (int iRead = 0; iRead < NumRead; ++iRead) {
         while (!Fmu.ReceiveSensorData()) // Wait for new FMU data
 

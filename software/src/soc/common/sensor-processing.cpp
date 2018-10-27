@@ -148,7 +148,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
       if (BaselineKey.substr(BaselineKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
         std::string KeyName = BaselineKey.substr(BaselineKey.rfind("/"));
         // setup baseline data pointer
-        Element *ele = deftree.getElement(BaselineKey);
+        ElementPtr ele = deftree.getElement(BaselineKey);
         BaselineDataPtr_[KeyName] = ele;
         if (ele) {
           OutputData_[KeyName] = ele;
@@ -163,7 +163,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         if (ResearchKey.substr(ResearchKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
           std::string KeyName = ResearchKey.substr(ResearchKey.rfind("/"));
           // setup research data pointer
-          Element *ele = deftree.getElement(ResearchKey);
+          ElementPtr ele = deftree.getElement(ResearchKey);
           ResearchDataPtr_[GroupKey][KeyName] = ele;
           if (ele) {
             OutputData_[KeyName] = ele;

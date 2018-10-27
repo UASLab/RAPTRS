@@ -74,32 +74,32 @@ static float wp_dist = 0.0;
 static float wp_eta = 0.0;
 
 // pointers to def tree
-static Element *p_node = NULL;
-static Element *q_node = NULL;
-static Element *r_node = NULL;
-static Element *ax_node = NULL;
-static Element *ay_node = NULL;
-static Element *az_node = NULL;
-static Element *hx_node = NULL;
-static Element *hy_node = NULL;
-static Element *hz_node = NULL;
+static ElementPtr p_node;
+static ElementPtr q_node;
+static ElementPtr r_node;
+static ElementPtr ax_node;
+static ElementPtr ay_node;
+static ElementPtr az_node;
+static ElementPtr hx_node;
+static ElementPtr hy_node;
+static ElementPtr hz_node;
 
-static Element *lat_node = NULL;
-static Element *lon_node = NULL;
-static Element *alt_node = NULL;
-static Element *vn_node = NULL;
-static Element *ve_node = NULL;
-static Element *vd_node = NULL;
-static Element *sats_node = NULL;
-static Element *fix_node = NULL;
+static ElementPtr lat_node;
+static ElementPtr lon_node;
+static ElementPtr alt_node;
+static ElementPtr vn_node;
+static ElementPtr ve_node;
+static ElementPtr vd_node;
+static ElementPtr sats_node;
+static ElementPtr fix_node;
 
-static Element *ias_node = NULL;
+static ElementPtr ias_node;
 
-static Element *cmd_left_ail_node = NULL;
-static Element *cmd_right_ail_node = NULL;
-static Element *cmd_ele_node = NULL;
-static Element *cmd_thr_node = NULL;
-static Element *cmd_rud_node = NULL;
+static ElementPtr cmd_left_ail_node;
+static ElementPtr cmd_right_ail_node;
+static ElementPtr cmd_ele_node;
+static ElementPtr cmd_thr_node;
+static ElementPtr cmd_rud_node;
 
 static const float D2R = M_PI / 180.0;
 static const float SG_METER_TO_FEET = 1.0 / 0.3048;

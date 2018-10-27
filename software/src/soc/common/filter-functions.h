@@ -59,11 +59,11 @@ class GeneralFilter: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      Element *input_node{NULL};
+      ElementPtr input_node;
     };
     struct Data {
-      Element *Mode{NULL};
-      Element *output_node{NULL};
+      ElementPtr Mode;
+      ElementPtr output_node;
     };
     __GeneralFilter filter_;
     Config config_;

@@ -55,7 +55,7 @@ class MissionManager {
   private:
     struct Configuration {
       struct Switch {
-        Element *source_node{NULL};
+        ElementPtr source_node;
         float Threshold = 0.5;
         float Gain = 1.0;
       };
@@ -68,10 +68,10 @@ class MissionManager {
     const size_t PersistenceThreshold_ = 5;
 
     size_t SocEngagePersistenceCounter_ = 0;
-    Element *SocEngage_node{NULL};
+    ElementPtr SocEngage_node;
 
     size_t CtrlSelectPersistenceCounter_ = 0;
-    Element *CtrlSelect_node{NULL};
+    ElementPtr CtrlSelect_node;
 
     size_t LaunchSelectPersistenceCounter_ = 0;
     size_t LandSelectPersistenceCounter_ = 0;
@@ -83,21 +83,21 @@ class MissionManager {
     size_t TestSelectIncrementPersistenceCounter_ = 0;
     size_t TestSelectDecrementPersistenceCounter_ = 0;
     size_t TestSelectExcitePersistenceCounter_ = 0;
-    Element *TestSelect_node{NULL};
+    ElementPtr TestSelect_node;
 
     size_t TriggerPersistenceCounter_ = 0;
     bool TriggerLatch_ = false;
     bool Trigger_ = false;
 
     size_t NumberOfTestPoints_ = 0;
-    Element *CurrentTestPointIndex_node{NULL};
+    ElementPtr CurrentTestPointIndex_node;
     size_t NextTestPointIndex_ = 0;
 
     std::string EngagedSensorProcessing_ = "Baseline";
     std::string EngagedController_ = "Fmu";
     std::string ArmedController_ = "Fmu";
     std::string EngagedExcitation_ = "None";
-    Element *EngagedExcitationFlag_node{NULL};
+    ElementPtr EngagedExcitationFlag_node;
 
     std::map<std::string,TestPointDefinition> TestPoints_;
 };

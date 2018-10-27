@@ -66,10 +66,10 @@ class FlightManagementUnit {
       float Temperature_C;                      // Temperature, C
     };
     struct InternalMpu9250SensorNodes {
-      Element *ax{NULL}, *ay{NULL}, *az{NULL};
-      Element *p{NULL}, *q{NULL}, *r{NULL};
-      Element *hx{NULL}, *hy{NULL}, *hz{NULL};
-      Element *temp{NULL};
+      ElementPtr ax, ay, az;
+      ElementPtr p, q, r;
+      ElementPtr hx, hy, hz;
+      ElementPtr temp;
     };
     struct InternalBme280SensorData {
       float Pressure_Pa;                        // Pressure, Pa
@@ -77,9 +77,9 @@ class FlightManagementUnit {
       float Humidity_RH;                        // Relative humidity
     };
     struct InternalBme280SensorNodes {
-      Element *press{NULL};
-      Element *temp{NULL};
-      Element *hum{NULL};
+      ElementPtr press;
+      ElementPtr temp;
+      ElementPtr hum;
     };
     struct Mpu9250SensorData {
       int status;
@@ -89,11 +89,11 @@ class FlightManagementUnit {
       float Temperature_C;                      // Temperature, C
     };
     struct Mpu9250SensorNodes {
-      Element *status;
-      Element *ax{NULL}, *ay{NULL}, *az{NULL};
-      Element *p{NULL}, *q{NULL}, *r{NULL};
-      Element *hx{NULL}, *hy{NULL}, *hz{NULL};
-      Element *temp{NULL};
+      ElementPtr status;
+      ElementPtr ax, ay, az;
+      ElementPtr p, q, r;
+      ElementPtr hx, hy, hz;
+      ElementPtr temp;
     };
     struct Bme280SensorData {
       int status;
@@ -102,10 +102,10 @@ class FlightManagementUnit {
       float Humidity_RH;                        // Relative humidity
     };
     struct Bme280SensorNodes {
-      Element *status{NULL};
-      Element *press{NULL};
-      Element *temp{NULL};
-      Element *hum{NULL};
+      ElementPtr status;
+      ElementPtr press;
+      ElementPtr temp;
+      ElementPtr hum;
     };
     struct uBloxSensorData {
       bool Fix;                                 // True for 3D fix only
@@ -123,19 +123,19 @@ class FlightManagementUnit {
       double pDOP;                              // Position DOP
     };
     struct uBloxSensorNodes {
-      Element *fix{NULL};
-      Element *sats{NULL};
-      Element *tow{NULL};
-      Element *year{NULL};
-      Element *month{NULL};
-      Element *day{NULL};
-      Element *hour{NULL};
-      Element *min{NULL};
-      Element *sec{NULL};
-      Element *lat{NULL}, *lon{NULL}, *alt{NULL};
-      Element *vn{NULL}, *ve{NULL}, *vd{NULL};
-      Element *horiz_acc{NULL}, *vert_acc{NULL}, *vel_acc{NULL};
-      Element *pdop{NULL};
+      ElementPtr fix;
+      ElementPtr sats;
+      ElementPtr tow;
+      ElementPtr year;
+      ElementPtr month;
+      ElementPtr day;
+      ElementPtr hour;
+      ElementPtr min;
+      ElementPtr sec;
+      ElementPtr lat, lon, alt;
+      ElementPtr vn, ve, vd;
+      ElementPtr horiz_acc, vert_acc, vel_acc;
+      ElementPtr pdop;
     };
     struct Ams5915SensorData {
       int status;
@@ -143,9 +143,9 @@ class FlightManagementUnit {
       float Temperature_C;                      // Temperature, C
     };
     struct Ams5915SensorNodes {
-      Element *status{NULL};
-      Element *press{NULL};
-      Element *temp{NULL};
+      ElementPtr status;
+      ElementPtr press;
+      ElementPtr temp;
     };
     struct SwiftSensorData {
       Ams5915SensorData Static;
@@ -161,17 +161,17 @@ class FlightManagementUnit {
       uint64_t LostFrames;
     };
     struct SbusSensorNodes {
-      Element *ch[16];
-      Element *failsafe;
-      Element *lost_frames;
+      ElementPtr ch[16];
+      ElementPtr failsafe;
+      ElementPtr lost_frames;
     };
     struct AnalogSensorData {
       float Voltage_V;
       float CalibratedValue;
     };
     struct AnalogSensorNodes {
-      Element *volt;
-      Element *val;
+      ElementPtr volt;
+      ElementPtr val;
     };
     struct SensorData {
       std::vector<uint64_t> Time_us;
@@ -190,13 +190,13 @@ class FlightManagementUnit {
       std::vector<AnalogSensorData> Analog;
     };
     struct SensorNodes {
-      vector<Element *> Time_us;
+      vector<ElementPtr> Time_us;
       vector<InternalMpu9250SensorNodes> InternalMpu9250;
       vector<InternalBme280SensorNodes> InternalBme280;
-      vector<Element *> input_volts;
-      vector<Element *> reg_volts;
-      vector<Element *> pwm_volts;
-      vector<Element *> sbus_volts;
+      vector<ElementPtr> input_volts;
+      vector<ElementPtr> reg_volts;
+      vector<ElementPtr> pwm_volts;
+      vector<ElementPtr> sbus_volts;
       vector<Mpu9250SensorNodes> Mpu9250;
       vector<Bme280SensorNodes> Bme280;
       vector<uBloxSensorNodes> uBlox;

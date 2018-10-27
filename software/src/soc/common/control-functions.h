@@ -82,14 +82,14 @@ class PID2Class: public GenericFunction {
     struct Config {
       float SampleTime;
       bool UseFixedTimeSample = false;
-      Element *reference_node{NULL};
-      Element *feedback_node{NULL};
-      Element *dt_node{NULL};
+      ElementPtr reference_node;
+      ElementPtr feedback_node;
+      ElementPtr dt_node;
     };
     struct Data {
-      Element *mode_node{NULL};
-      Element *output_node{NULL};
-      Element *saturated_node{NULL};
+      ElementPtr mode_node;
+      ElementPtr output_node;
+      ElementPtr saturated_node;
     };
     __PID2Class PID2Class_;
     Config config_;
@@ -139,13 +139,13 @@ class PIDClass: public GenericFunction {
     struct Config {
         float SampleTime;
         bool UseFixedTimeSample = false;
-        Element *reference_node{NULL};
-        Element *dt_node{NULL};
+        ElementPtr reference_node;
+        ElementPtr dt_node;
     };
     struct Data {
-        Element *mode_node{NULL};
-        Element *output_node{NULL};
-        Element *saturated_node{NULL};
+        ElementPtr mode_node;
+        ElementPtr output_node;
+        ElementPtr saturated_node;
     };
     __PID2Class PID2Class_;
     Config config_;
@@ -200,7 +200,7 @@ class SSClass: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      std::vector<Element *> Inputs;
+      std::vector<ElementPtr> Inputs;
       Eigen::VectorXf u;
       Eigen::VectorXf x;
       Eigen::MatrixXf A;
@@ -213,14 +213,14 @@ class SSClass: public GenericFunction {
       float* TimeSource = 0;
       float timePrev = 0;
       bool UseFixedTimeSample = false;
-        Element *time_source_node{NULL};
+        ElementPtr time_source_node;
     };
     struct Data {
         Eigen::VectorXf y;
         Eigen::VectorXi ySat;
-        Element *mode_node{NULL};
-        vector<Element *>y_node;
-        vector<Element *>ySat_node;
+        ElementPtr mode_node;
+        vector<ElementPtr>y_node;
+        vector<ElementPtr>ySat_node;
     };
     __SSClass SSClass_;
     Config config_;
@@ -272,14 +272,14 @@ class TecsClass: public GenericFunction {
     //float *ref_agl_m;
     //float *vel_mps;
     //float *agl_m;
-    Element *ref_vel_node{NULL};
-    Element *ref_agl_node{NULL};
-    Element *vel_node{NULL};
-    Element *agl_node{NULL};
+    ElementPtr ref_vel_node;
+    ElementPtr ref_agl_node;
+    ElementPtr vel_node;
+    ElementPtr agl_node;
     //float error_total;
     //float error_diff;
-    Element *error_total_node;
-    Element *error_diff_node;
+    ElementPtr error_total_node;
+    ElementPtr error_diff_node;
 
     bool initFlag = false;
     float mass_kg = 0.0;
@@ -287,7 +287,7 @@ class TecsClass: public GenericFunction {
     float min_mps = 0.0;
     float max_mps;
     //uint8_t mode = kStandby;
-    Element *mode_node{NULL};
+    ElementPtr mode_node;
     int8_t error_totalSat = 0;
     int8_t error_diffSat = 0;
 };

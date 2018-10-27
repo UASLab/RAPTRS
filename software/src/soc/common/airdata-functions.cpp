@@ -33,7 +33,7 @@ void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string Roo
     const rapidjson::Value& PressureSources = Config["Differential-Pressure"];
     for (auto &PressureSource : PressureSources.GetArray()) {
       DifferentialPressureKeys_.push_back(PressureSource.GetString());
-      Element *ele = deftree.getElement(DifferentialPressureKeys_.back());
+      ElementPtr ele = deftree.getElement(DifferentialPressureKeys_.back());
       if (ele) {
         config_.DifferentialPressure.push_back(ele);
       } else {
@@ -134,7 +134,7 @@ void AglAltitude::Configure(const rapidjson::Value& Config,std::string RootPath)
     const rapidjson::Value& PressureSources = Config["Static-Pressure"];
     for (auto &PressureSource : PressureSources.GetArray()) {
       StaticPressureKeys_.push_back(PressureSource.GetString());
-      Element *ele = deftree.getElement(StaticPressureKeys_.back());
+      ElementPtr ele = deftree.getElement(StaticPressureKeys_.back());
       if ( ele ) {
         config_.StaticPressure.push_back(ele);
       } else {

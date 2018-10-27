@@ -178,61 +178,61 @@ class TelemetryClient {
     struct sockaddr_in TelemetryServer_;
   bool useTime, useStaticPressure, useAirspeed, useAlt, useGps, useSbus, useImu, useAttitude, usePower;
     struct TimeNodes{
-      Element *Time_us;
+      ElementPtr Time_us;
     };
     struct StaticPressNodes{
-      Element *Pressure_Pa;
-      Element *Temperature_C;
+      ElementPtr Pressure_Pa;
+      ElementPtr Temperature_C;
     };
     struct AirspeedNodes{
-      Element *Airspeed_ms;
+      ElementPtr Airspeed_ms;
     };
     struct AltNodes{
-      Element *Alt_m;
+      ElementPtr Alt_m;
     };
     struct GpsNodes{
-      Element *Fix;                                 // True for 3D fix only
-      Element *NumberSatellites;                 // Number of satellites used in solution
-      Element *TOW;                             // GPS time of the navigation epoch
-      Element *Year;                            // UTC year
-      Element *Month;                            // UTC month
-      Element *Day;                              // UTC day
-      Element *Hour;                             // UTC hour
-      Element *Min;                              // UTC minute
-      Element *Sec;                              // UTC second
-      Element *Lat;
-      Element *Lon;
-      Element *Alt;
-      Element *Vn;
-      Element *Ve;
-      Element *Vd;
-      Element *HAcc;
-      Element *VAcc;
-      Element *SAcc;
-      Element *pDOP;                              // Position DOP
+      ElementPtr Fix;                                 // True for 3D fix only
+      ElementPtr NumberSatellites;                 // Number of satellites used in solution
+      ElementPtr TOW;                             // GPS time of the navigation epoch
+      ElementPtr Year;                            // UTC year
+      ElementPtr Month;                            // UTC month
+      ElementPtr Day;                              // UTC day
+      ElementPtr Hour;                             // UTC hour
+      ElementPtr Min;                              // UTC minute
+      ElementPtr Sec;                              // UTC second
+      ElementPtr Lat;
+      ElementPtr Lon;
+      ElementPtr Alt;
+      ElementPtr Vn;
+      ElementPtr Ve;
+      ElementPtr Vd;
+      ElementPtr HAcc;
+      ElementPtr VAcc;
+      ElementPtr SAcc;
+      ElementPtr pDOP;                              // Position DOP
     };
     struct SbusNodes{
-      Element *Channels[16];
-      Element *FailSafe;
-      Element *LostFrames;
+      ElementPtr Channels[16];
+      ElementPtr FailSafe;
+      ElementPtr LostFrames;
     };
     struct ImuNodes{
-      Element *Ax, *Ay, *Az;
-      Element *Gx, *Gy, *Gz;
-      Element *Hx, *Hy, *Hz;
-      Element *Temperature_C;                      // Temperature, C
+      ElementPtr Ax, Ay, Az;
+      ElementPtr Gx, Gy, Gz;
+      ElementPtr Hx, Hy, Hz;
+      ElementPtr Temperature_C;                      // Temperature, C
     };
     struct AttitudeNodes{
-      Element *Ax,*Ay,*Az;
-      Element *Gx,*Gy,*Gz;
-      Element *Axb,*Ayb,*Azb;
-      Element *Gxb,*Gyb,*Gzb;
-      Element *Pitch,*Roll,*Yaw,*Heading,*Track;
-      Element *Lat,*Lon,*Alt;
-      Element *Vn,*Ve,*Vd;
+      ElementPtr Ax, Ay, Az;
+      ElementPtr Gx, Gy, Gz;
+      ElementPtr Axb, Ayb, Azb;
+      ElementPtr Gxb, Gyb, Gzb;
+      ElementPtr Pitch, Roll, Yaw, Heading, Track;
+      ElementPtr Lat, Lon, Alt;
+      ElementPtr Vn, Ve, Vd;
     };
   struct PowerNodes{
-    Element *MinCellVolt;
+    ElementPtr MinCellVolt;
   };
     struct DataNodes{
       TimeNodes Time;

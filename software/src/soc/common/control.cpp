@@ -117,7 +117,7 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
                     if (SocKey.substr(SocKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
                       std::string KeyName = SocKey.substr(SocKey.rfind("/"));
                       // setup Soc data pointer
-                      Element *ele = deftree.getElement(SocKey);
+                      ElementPtr ele = deftree.getElement(SocKey);
                       SocDataPtr_[GroupKey][KeyName] = SocKey;
                       if (ele) {
                         OutputData_[KeyName] = OutputKey;

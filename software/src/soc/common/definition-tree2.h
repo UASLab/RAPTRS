@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <vector>
 #include <map>
+#include <memory>
 #include <iostream>
 #include <string>
 
@@ -12,6 +13,8 @@ using std::map;
 using std::string;
 using std::to_string;
 using std::vector;
+using std::shared_ptr;
+
 
 // minimal types for logging -- log as this type.  put these in the
 // global name space otherwise the notation becomes crushing.
@@ -135,8 +138,9 @@ class Element {
     return telemetry;
   }
 };
-    
-typedef map<string, Element *> def_tree_t ;
+
+typedef shared_ptr<Element> ElementPtr;
+typedef map<string, ElementPtr> def_tree_t ;
 
 class DefinitionTree2 {
     
@@ -146,11 +150,11 @@ class DefinitionTree2 {
   DefinitionTree2() {}
   ~DefinitionTree2() {}
 
-  Element *initElement(string name, string desc,
+  ElementPtr initElement(string name, string desc,
                        log_tag_t datalog,
                        log_tag_t telemetry);
-  Element *makeAlias(string orig_name, string alias_name);
-  Element *getElement(string name, bool create=true);
+  ElementPtr makeAlias(string orig_name, string alias_name);
+  ElementPtr getElement(string name, bool create=true);
 
   void GetKeys(string Name, vector<string> *KeysPtr);
   size_t Size(string Name);

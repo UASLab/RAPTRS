@@ -1,15 +1,19 @@
 // definition-tree2.hxx - Curtis Olson
 
+// Todo: use shared_ptr for safe memeory management of Elements in the
+// definition tree.
+
 #include <iostream>
 #include "definition-tree2.h"
 
 using std::cout;
 using std::endl;
+using std::make_shared;
 
 // create a global instance of the deftree
 DefinitionTree2 deftree;
 
-Element *DefinitionTree2::initElement(string name, string desc,
+ElementPtr DefinitionTree2::initElement(string name, string desc,
                                       log_tag_t datalog,
                                       log_tag_t telemetry)
 {
@@ -22,7 +26,7 @@ Element *DefinitionTree2::initElement(string name, string desc,
     it->second->telemetry = telemetry;
     return it->second;
   } else {
-    Element *ele = new Element;
+    ElementPtr ele = make_shared<Element>();
     ele->description = desc;
     ele->datalog = datalog;
     ele->telemetry = telemetry;
@@ -31,7 +35,7 @@ Element *DefinitionTree2::initElement(string name, string desc,
   }
 }
 
-Element *DefinitionTree2::makeAlias(string orig_name, string alias_name) {
+ElementPtr DefinitionTree2::makeAlias(string orig_name, string alias_name) {
   def_tree_t::iterator it;
   it = data.find(orig_name);
   if ( it != data.end() ) {
@@ -43,14 +47,14 @@ Element *DefinitionTree2::makeAlias(string orig_name, string alias_name) {
   }
 }
 
-Element *DefinitionTree2::getElement(string name, bool create) {
+ElementPtr DefinitionTree2::getElement(string name, bool create) {
   def_tree_t::iterator it;
   it = data.find(name);
   if ( it != data.end() ) {
     return it->second;
   } else if ( create ) {
     cout << "NOTICE: subscriber created def-tree element: " << name << endl;
-    Element *ele = new Element;
+    ElementPtr ele = make_shared<Element>();
     data[name] = ele;
     return ele;
   } else {
@@ -86,7 +90,7 @@ void DefinitionTree2::PrettyPrint(string Prefix) {
     size_t pos = it.first.find(Prefix);
     if ( pos != string::npos) {
       string tail = it.first.substr(pos + 1);
-      Element *ele = it.second;
+      ElementPtr ele = it.second;
       cout << "    " << tail << " (" << ele->getType()
            << ") = " << ele->getValueAsString() << endl;
     }

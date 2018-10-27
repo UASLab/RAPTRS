@@ -10,15 +10,15 @@
 static const double r2d = 180.0 / M_PI;
 static const double d2r = M_PI / 180.0;
 
-static Element *vn_node = NULL;
-static Element *ve_node = NULL;
-static Element *track_node = NULL;
-static Element *lat_rad_node = NULL;
-static Element *lon_rad_node = NULL;
-static Element *gps_fix_node = NULL;
-static Element *course_error_node = NULL;
-static Element *xtrack_node = NULL;
-static Element *nav_dist_node = NULL;
+static ElementPtr vn_node;
+static ElementPtr ve_node;
+static ElementPtr track_node;
+static ElementPtr lat_rad_node;
+static ElementPtr lon_rad_node;
+static ElementPtr gps_fix_node;
+static ElementPtr course_error_node;
+static ElementPtr xtrack_node;
+static ElementPtr nav_dist_node;
 
 FGRouteMgr::FGRouteMgr() :
   active( new SGRoute ),

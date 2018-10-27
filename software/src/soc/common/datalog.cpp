@@ -40,7 +40,7 @@ void DatalogClient::RegisterGlobalData() {
   // Find keys that are marked to be datalogged
   for (auto const & key: Keys) {
     // store keys, description, and value pointers
-    Element *ele = deftree.getElement(key);
+    ElementPtr ele = deftree.getElement(key);
     log_tag_t log_tag = ele->getLoggingType();
     if ( log_tag == LOG_UINT64 ) {
       SaveAsUint64Keys_.push_back(key);

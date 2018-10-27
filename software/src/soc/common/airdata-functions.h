@@ -55,7 +55,7 @@ class IndicatedAirspeed: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      std::vector<Element *> DifferentialPressure;
+      std::vector<ElementPtr> DifferentialPressure;
       float InitTime = 0.0f;
     };
     struct Data {
@@ -63,8 +63,8 @@ class IndicatedAirspeed: public GenericFunction {
       float AvgDifferentialPressure = 0.0f;
       //uint8_t Mode = kStandby;
       //float Ias_ms = 0.0f;
-      Element *mode_node{NULL};
-      Element *ias_ms_node{NULL};
+      ElementPtr mode_node;
+      ElementPtr ias_ms_node;
     };
     Config config_;
     Data data_;
@@ -104,7 +104,7 @@ class AglAltitude: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      std::vector<Element *> StaticPressure;
+      std::vector<ElementPtr> StaticPressure;
       float InitTime = 0.0f;
     };
     struct Data {
@@ -112,8 +112,8 @@ class AglAltitude: public GenericFunction {
       float AvgStaticPressure = 0.0f;
       //uint8_t Mode = kStandby;
       //float Agl_m = 0.0f;
-      Element *mode_node{NULL};
-      Element *agl_m_node{NULL};
+      ElementPtr mode_node;
+      ElementPtr agl_m_node;
     };
     Config config_;
     Data data_;
@@ -159,17 +159,17 @@ class PitotStatic: public GenericFunction {
       //float* StaticPressure;
       //float* DifferentialPressure;
       float InitTime = 0.0f;
-      Element *static_press_node{NULL};
-      Element *diff_press_node{NULL};
+      ElementPtr static_press_node;
+      ElementPtr diff_press_node;
     };
     struct Data {
-      Element *mode_node{NULL};
+      ElementPtr mode_node;
 
       float DifferentialPressureBias = 0.0f;
-      Element *ias_ms_node{NULL};
+      ElementPtr ias_ms_node;
 
       float PressAlt0 = 0.0f;
-      Element *agl_m_node{NULL};
+      ElementPtr agl_m_node;
     };
 
     Config config_;
@@ -220,32 +220,32 @@ class FiveHole: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      Element *StaticPressure_node;
-      Element *TipPressure_node;
-      Element *Alpha1Pressure_node;
-      Element *Alpha2Pressure_node;
-      Element *Beta1Pressure_node;
-      Element *Beta2Pressure_node;
+      ElementPtr StaticPressure_node;
+      ElementPtr TipPressure_node;
+      ElementPtr Alpha1Pressure_node;
+      ElementPtr Alpha2Pressure_node;
+      ElementPtr Beta1Pressure_node;
+      ElementPtr Beta2Pressure_node;
       float InitTime = 0.0f;
       float kAlpha = 0.0f;
       float kBeta = 0.0f;
     };
     struct Data {
-      Element *mode_node{NULL};
+      ElementPtr mode_node;
 
       float PressAlt0 = 0.0f;
-      Element *agl_m_node{NULL};
+      ElementPtr agl_m_node;
 
       float TipPressureBias = 0.0f;
-      Element *ias_ms_node{NULL};
+      ElementPtr ias_ms_node;
 
       float Alpha1PressureBias = 0.0f;
       float Alpha2PressureBias = 0.0f;
-      Element *Alpha_rad_node{NULL};
+      ElementPtr Alpha_rad_node;
 
       float Beta1PressureBias = 0.0f;
       float Beta2PressureBias = 0.0f;
-      Element *Beta_rad_node{NULL};
+      ElementPtr Beta_rad_node;
     };
 
     Config config_;

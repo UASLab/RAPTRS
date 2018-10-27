@@ -177,7 +177,7 @@ PropsChannel::foundTerminator()
         deftree.GetKeys(dir, &children);
         for ( unsigned int i = 0; i < children.size(); i++ ) {
           string line = children[i];
-          Element *ele = deftree.getElement(children[i]);
+          ElementPtr ele = deftree.getElement(children[i]);
           string type = ele->getType();
           string value = ele->getValueAsString();
           if ( type == "node" ) {
@@ -215,7 +215,7 @@ PropsChannel::foundTerminator()
         // validate path
         vector<string> tmp_children;
         deftree.GetKeys(newpath, &tmp_children);
-        Element *tmp_ele = deftree.getElement(newpath, false);
+        ElementPtr tmp_ele = deftree.getElement(newpath, false);
         if ( tmp_children.size() > 0 && tmp_ele == NULL ) {
           // path matches stuff, but not an element
           printf("path ok = %s\n", newpath.c_str());
@@ -243,7 +243,7 @@ PropsChannel::foundTerminator()
         }
                 
         string tmp;
-        Element *ele = deftree.getElement(newpath);
+        ElementPtr ele = deftree.getElement(newpath);
         string type = ele->getType();
         string value = ele->getValueAsString();
         if ( mode == PROMPT ) {

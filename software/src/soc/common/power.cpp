@@ -24,7 +24,7 @@ void MinCellVolt::Configure(const rapidjson::Value& Config,std::string RootPath)
     for (size_t i=0; i < Config["Inputs"].Size(); i++) {
       const rapidjson::Value& Input = Config["Inputs"][i];
       InputKeys_.push_back(Input.GetString());
-      Element *ele = deftree.getElement(InputKeys_.back());
+      ElementPtr ele = deftree.getElement(InputKeys_.back());
       if ( ele ) {
         config_.input_nodes.push_back(ele);
       } else {
