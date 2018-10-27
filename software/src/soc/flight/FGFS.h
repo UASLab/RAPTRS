@@ -5,6 +5,11 @@
 
 #pragma once
 
+#include "rapidjson/document.h"
+
+// init everything
+bool fgfs_init( const rapidjson::Value& Config );
+
 // function prototypes
 bool fgfs_imu_init();
 bool fgfs_imu_update();

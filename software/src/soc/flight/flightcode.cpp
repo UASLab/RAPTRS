@@ -142,23 +142,16 @@ int main(int argc, char* argv[]) {
   telnet.open();
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
-#if 0
-  // hack in an interface to flightgear to overwrite imu/gps/airdata
-  // with simulated values
-  fgfs_imu_init();
-  fgfs_gps_init();
-  fgfs_airdata_init();
-  fgfs_act_init();
-#endif
+  bool fgfs = fgfs_init(AircraftConfiguration);
   
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
-#if 0
-      // insert flightgear sim data calls
-      fgfs_imu_update();
-      fgfs_gps_update();
-#endif
+      if ( fgfs ) {
+        // insert flightgear sim data calls
+        fgfs_imu_update();
+        fgfs_gps_update();
+      }
       if (SenProc.Configured()&&SenProc.Initialized()) {
         // run mission
         Mission.Run();
@@ -166,9 +159,9 @@ int main(int argc, char* argv[]) {
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
         SenProc.Run();
-#if 0
-        fgfs_airdata_update(); // overwrite processed air data
-#endif
+        if ( fgfs ) {
+          fgfs_airdata_update(); // overwrite processed air data
+        }
         route_mgr.update();
         // get and set engaged and armed controllers
         Control.SetEngagedController(Mission.GetEngagedController());
@@ -186,9 +179,9 @@ int main(int argc, char* argv[]) {
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
-#if 0
-        fgfs_act_update();
-#endif
+        if ( fgfs ) {
+          fgfs_act_update();
+        }
         // run armed excitations
         Excitation.RunArmed();
         // run armed control laws

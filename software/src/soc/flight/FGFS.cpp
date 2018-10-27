@@ -110,6 +110,24 @@ Vector3f mag_body;
 Quaternionf q_N2B;
 Matrix3f C_N2B;
 
+static bool fgfs_interface_active = false;
+
+// Todo: make flightgear ports and host configurable
+bool fgfs_init( const rapidjson::Value& Config ) {
+  if ( Config.HasMember("FlightGear") ) {
+    fgfs_imu_init();
+    fgfs_gps_init();
+    fgfs_airdata_init();
+    fgfs_act_init();
+
+    printf("FlightGear interface initialized\n");
+    fgfs_interface_active = true;
+
+    return true;
+  } else {
+    return false;
+  }  
+}
 
 bool fgfs_imu_init() {
   printf("fgfs_imu_init()\n");
