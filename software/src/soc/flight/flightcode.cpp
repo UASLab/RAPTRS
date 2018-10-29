@@ -157,9 +157,7 @@ int main(int argc, char* argv[]) {
 //
 std::string CtrlEngaged = Mission.GetEngagedController();
 
-float vCellMin = *GlobalData.GetValuePtr<float*>("/Sensor-Processing/MinCellVolt_V");
-
-std::cout << CtrlEngaged << "\t" << vCellMin << std::endl;
+std::cout << CtrlEngaged << std::endl;
 
       }
       // run telemetry

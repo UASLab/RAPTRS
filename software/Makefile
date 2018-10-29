@@ -66,7 +66,7 @@ SOC_DATALOG = src/soc/log
 SOC_TELEM = src/soc/telem
 # soc surface cal code
 SOC_SURF_CAL = src/soc/cal
-#soc common code 
+#soc common code
 SOC_COMMON = src/soc/common
 # fmu
 FMU = src/fmu
@@ -76,6 +76,7 @@ NODE = src/node
 FMU_ARCH = MK66FX1M0V
 NODE_ARCH = MK66FX1M0V
 SOC_ARCH = AM335X
+SIM_ARCH = AMD64
 # common
 COMMON = src/common
 # arduino libs
@@ -88,6 +89,8 @@ NODE_CORE = src/includes/mk66fx1m0v_core
 TOOLS = tools
 # soc compiler
 SOC_COMPILER = /usr/bin
+# sim compiler
+SIM_COMPILER = /usr/bin
 # fmu compiler
 FMU_COMPILER = tools/arm/bin
 # node compiler
@@ -124,12 +127,13 @@ soc_surf_cal_src = $(soc_surf_cal_c_files:.c=.o) $(soc_surf_cal_cpp_files:.cpp=.
 soc_common_src = $(soc_common_c_files:.c=.o) $(soc_common_cpp_files:.cpp=.o)
 fmu_src = $(fmu_c_files:.c=.o) $(fmu_cpp_files:.cpp=.o) $(common_src) $(arduino_src) $(fmu_core_src)
 node_src = $(node_c_files:.c=.o) $(node_cpp_files:.cpp=.o) $(common_src) $(arduino_src) $(node_core_src)
-common_src = $(common_c_files:.c=.o) $(common_cpp_files:.cpp=.o) 
-arduino_src = $(arduino_c_files:.c=.o) $(arduino_cpp_files:.cpp=.o) 
-fmu_core_src = $(fmu_core_c_files:.c=.o) $(fmu_core_cpp_files:.cpp=.o) 
-node_core_src = $(node_core_c_files:.c=.o) $(node_core_cpp_files:.cpp=.o) 
+common_src = $(common_c_files:.c=.o) $(common_cpp_files:.cpp=.o)
+arduino_src = $(arduino_c_files:.c=.o) $(arduino_cpp_files:.cpp=.o)
+fmu_core_src = $(fmu_core_c_files:.c=.o) $(fmu_core_cpp_files:.cpp=.o)
+node_core_src = $(node_core_c_files:.c=.o) $(node_core_cpp_files:.cpp=.o)
 # objects
 soc_flight_obj = $(foreach src,$(soc_flight_src), $(BUILD)/$(SOC_ARCH)/$(src))
+sim_flight_obj = $(foreach src,$(soc_flight_src), $(BUILD)/$(SIM_ARCH)/$(src))
 soc_datalog_obj = $(foreach src,$(soc_datalog_src), $(BUILD)/$(SOC_ARCH)/$(src))
 soc_telem_obj = $(foreach src,$(soc_telem_src), $(BUILD)/$(SOC_ARCH)/$(src))
 soc_surf_cal_obj = $(foreach src,$(soc_surf_cal_src), $(BUILD)/$(SOC_ARCH)/$(src))
@@ -138,6 +142,8 @@ node_obj = $(foreach src,$(node_src), $(BUILD)/$(NODE_ARCH)/$(src))
 # --- Compiler ---
 SOC_CC = $(SOC_COMPILER)/arm-linux-gnueabihf-gcc-7
 SOC_CXX = $(SOC_COMPILER)/arm-linux-gnueabihf-g++-7
+SIM_CC = $(SIM_COMPILER)/gcc-7
+SIM_CXX = $(SIM_COMPILER)/g++-7
 FMU_CC = $(FMU_COMPILER)/arm-none-eabi-gcc
 FMU_CXX = $(FMU_COMPILER)/arm-none-eabi-g++
 FMU_OBJCOPY = $(FMU_COMPILER)/arm-none-eabi-objcopy
@@ -150,20 +156,24 @@ NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 SOC_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SOC_CXXFLAGS = -std=c++17
 FMU_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(FMU_CORE)
+SIM_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
+SIM_CXXFLAGS = -std=c++17
 FMU_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti
 FMU_LDSCRIPT = $(FMU_CORE)/mk66fx1m0.ld
-FMU_LDFLAGS =  -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(FMU_LDSCRIPT)  
+FMU_LDFLAGS =  -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(FMU_LDSCRIPT)
 FMU_LIBS = -larm_cortexM4lf_math -lm -lstdc++ -L$(TOOLS)
 NODE_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(NODE_CORE)
 NODE_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti
 NODE_LDSCRIPT = $(NODE_CORE)/mk66fx1m0.ld
-NODE_LDFLAGS =  -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(NODE_LDSCRIPT)  
+NODE_LDFLAGS =  -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T$(NODE_LDSCRIPT)
 NODE_LIBS = -larm_cortexM4lf_math -lm -lstdc++ -L$(TOOLS)
 # --- Rules ---
 .PHONY: all flight datalog telem surf_cal fmu node fmu_build node_build soc_flight soc_datalog soc_telem fmu_hex node_hex post_compile_fmu post_compile_node reboot upload_fmu upload_node display clean
 all: soc_flight soc_datalog soc_telem soc_surf_cal fmu_hex node_hex display
 
 flight: soc_flight display
+
+flight_amd64: sim_flight display
 
 datalog: soc_datalog display
 
@@ -180,6 +190,8 @@ fmu_build: $(BIN)/fmu.elf
 node_build: $(BIN)/node.elf
 
 soc_flight: $(BIN)/flight
+
+sim_flight: $(BIN)/flight_amd64
 
 soc_datalog: $(BIN)/datalog-server
 
@@ -214,6 +226,16 @@ $(BUILD)/$(SOC_ARCH)/%.o: %.cpp
 	@mkdir -p "$(dir $@)"
 	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" -c "$<"
 
+$(BUILD)/$(SIM_ARCH)/%.o: %.c
+	@echo -e "[CC]\t$<"
+	@mkdir -p "$(dir $@)"
+	@$(SIM_CC) $(SIM_CPPFLAGS) -o "$@" -c "$<"
+
+$(BUILD)/$(SIM_ARCH)/%.o: %.cpp
+	@echo -e "[CXX]\t$<"
+	@mkdir -p "$(dir $@)"
+	$(SIM_CXX) $(SIM_CPPFLAGS) $(SIM_CXXFLAGS) -o "$@" -c "$<"
+
 $(BUILD)/$(FMU_ARCH)/%.o: %.c
 	@echo -e "[CC]\t$<"
 	@mkdir -p "$(dir $@)"
@@ -238,6 +260,11 @@ $(BIN)/flight: $(soc_flight_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
 	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_flight_obj)
+
+$(BIN)/flight_amd64: $(sim_flight_obj)
+	@echo -e "[CXX]\t$<"
+	@mkdir -p "$(dir $@)"
+	$(SIM_CXX) $(SIM_CPPFLAGS) $(SIM_CXXFLAGS) -o "$@" $(sim_flight_obj)
 
 $(BIN)/datalog-server: $(soc_datalog_obj)
 	@echo -e "[CXX]\t$<"
