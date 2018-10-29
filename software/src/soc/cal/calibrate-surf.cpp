@@ -204,7 +204,6 @@ int main(int argc, char* argv[]) {
       usleep(DelayMove); // delay
 
       IncAngleSum_deg = 0.0;
-      float* potValTemp_V;
       float potValSum_V;
 
       Fmu.ReceiveSensorData(); // Attempt to flush the old pot data
