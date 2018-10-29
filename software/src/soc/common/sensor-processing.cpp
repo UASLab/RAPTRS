@@ -150,7 +150,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         // setup baseline data pointer
         ElementPtr base_ele = deftree.getElement(BaselineKey);
         BaselineDataPtr_[KeyName] = base_ele;
-        if (base_ele) {
+        // check to see if output key has already been registered
+        if ( deftree.Size(OutputKey) == 0 ) {
           ElementPtr out_ele = deftree.initElement(OutputKey, base_ele->description, LOG_FLOAT, LOG_NONE);
           OutputDataPtr_[KeyName] = out_ele;
         }
@@ -165,7 +166,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           // setup research data pointer
           ElementPtr research_ele = deftree.getElement(ResearchKey);
           ResearchDataPtr_[GroupKey][KeyName] = research_ele;
-          if (research_ele) {
+          // check to see if output key has already been registered
+          if (deftree.Size(OutputKey) == 0 ) {
             ElementPtr out_ele = deftree.initElement(OutputKey, research_ele->description, LOG_FLOAT, LOG_NONE);
             OutputDataPtr_[KeyName] = out_ele;
           }
@@ -228,6 +230,14 @@ void SensorProcessing::Run() {
         Func->Run(GenericFunction::kArm);
       }
     }
+    // setting the output
+    for (auto Key : BaselineDataKeys_) {
+      std::string KeyName = Key.substr(Key.rfind("/"));
+      if (KeyName!="/Mode") {
+        float val = BaselineDataPtr_[KeyName]->getFloat();
+        OutputDataPtr_[KeyName]->setFloat( val );
+      }
+    }
   } else {
     // running baseline sensor processing
     for (auto Func : BaselineSensorProcessing_) {
@@ -244,10 +254,10 @@ void SensorProcessing::Run() {
       }
     }
     // setting the output
-    for (auto Key : BaselineDataKeys_) {
+    for (auto Key : ResearchDataKeys_[EngagedGroup_]) {
       std::string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
-        float val = BaselineDataPtr_[KeyName]->getFloat();
+        float val = ResearchDataPtr_[EngagedGroup_][KeyName]->getFloat();
         OutputDataPtr_[KeyName]->setFloat( val );
       }
     }
