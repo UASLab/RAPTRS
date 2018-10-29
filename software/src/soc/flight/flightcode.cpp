@@ -197,11 +197,6 @@ int main(int argc, char* argv[]) {
       Datalog.LogBinaryData();
       telnet.process();
     }
-
-    // run telemetry
-    Telemetry.Send();
-    // run datalog
-    Datalog.LogBinaryData();
   }
 
   return 0;
