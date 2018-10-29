@@ -120,7 +120,7 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
                       ElementPtr soc_ele = deftree.getElement(SocKey);
                       if (soc_ele) {
                         SocDataPtr_[GroupKey][KeyName] = soc_ele;
-                        ElementPtr out_ele = deftree.initElement(OutputKey,soc_ele->description, LOG_FLOAT, LOG_NONE);
+                        ElementPtr out_ele = deftree.initElement(OutputKey,soc_ele->description, soc_ele->datalog, soc_ele->telemetry);
                         if ( out_ele ) {
                           OutputDataPtr_[KeyName] = out_ele;
                         }

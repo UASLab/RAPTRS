@@ -152,7 +152,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         BaselineDataPtr_[KeyName] = base_ele;
         // check to see if output key has already been registered
         if ( deftree.Size(OutputKey) == 0 ) {
-          ElementPtr out_ele = deftree.initElement(OutputKey, base_ele->description, LOG_FLOAT, LOG_NONE);
+          ElementPtr out_ele = deftree.initElement(OutputKey, base_ele->description, base_ele->datalog, base_ele->telemetry);
           OutputDataPtr_[KeyName] = out_ele;
         }
       }
@@ -168,7 +168,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           ResearchDataPtr_[GroupKey][KeyName] = research_ele;
           // check to see if output key has already been registered
           if (deftree.Size(OutputKey) == 0 ) {
-            ElementPtr out_ele = deftree.initElement(OutputKey, research_ele->description, LOG_FLOAT, LOG_NONE);
+            ElementPtr out_ele = deftree.initElement(OutputKey, research_ele->description, research_ele->datalog, research_ele->telemetry);
             OutputDataPtr_[KeyName] = out_ele;
           }
         }
