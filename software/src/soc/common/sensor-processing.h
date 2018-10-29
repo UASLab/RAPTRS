@@ -64,7 +64,7 @@ class SensorProcessing {
     std::vector<std::string> BaselineDataKeys_;
     std::vector<std::string> ResearchGroupKeys_;
     std::map<std::string,std::vector<std::string>> ResearchDataKeys_;
-    map<string, ElementPtr> OutputData_;
+    map<string, ElementPtr> OutputDataPtr_;
     map<string, ElementPtr> BaselineDataPtr_;
     map<string, map<string, ElementPtr> > ResearchDataPtr_;
 };

@@ -117,11 +117,13 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
                     if (SocKey.substr(SocKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
                       std::string KeyName = SocKey.substr(SocKey.rfind("/"));
                       // setup Soc data pointer
-                      ElementPtr ele = deftree.getElement(SocKey);
-                      SocDataPtr_[GroupKey][KeyName] = SocKey;
-                      if (ele) {
-                        OutputData_[KeyName] = OutputKey;
-                        deftree.makeAlias(SocKey, OutputKey);
+                      ElementPtr soc_ele = deftree.getElement(SocKey);
+                      if (soc_ele) {
+                        SocDataPtr_[GroupKey][KeyName] = soc_ele;
+                        ElementPtr out_ele = deftree.initElement(OutputKey,soc_ele->description, LOG_FLOAT, LOG_NONE);
+                        if ( out_ele ) {
+                          OutputDataPtr_[KeyName] = out_ele;
+                        }
                       }
                     }
                   }
@@ -144,22 +146,6 @@ void ControlLaws::Configure(const rapidjson::Value& Config) {
 /* sets the control law that is engaged and currently output */
 void ControlLaws::SetEngagedController(std::string ControlGroupName) {
   EngagedGroup_ = ControlGroupName;
-  if ( EngagedGroup_ != LastEngagedGroup ) {
-    // remake node aliases
-    cout << "remaking node aliases" << endl;
-    // iterate through all levels
-    for (auto Levels = SocLevelNames_[EngagedGroup_].begin(); Levels != SocLevelNames_[EngagedGroup_].end(); ++Levels) {
-      auto ControlLevel = std::distance(SocLevelNames_[EngagedGroup_].begin(),Levels);
-      for (auto Key : SocDataKeys_[EngagedGroup_][ControlLevel]) {
-        std::string KeyName = Key.substr(Key.rfind("/"));
-        if ((KeyName!="/Mode")&&(KeyName!="/Saturated")) {
-          deftree.makeAlias(SocDataPtr_[EngagedGroup_][KeyName], OutputData_[KeyName]);
-          cout << SocDataPtr_[EngagedGroup_][KeyName] << " -> " << OutputData_[KeyName] << endl;
-        }
-      }
-    }
-    LastEngagedGroup = EngagedGroup_;
-  }
 }
 
 /* sets the control law that is running and computing states to enable a transient free engage */
@@ -191,6 +177,14 @@ void ControlLaws::RunEngaged(size_t ControlLevel) {
     // running engaged Soc control laws
     for (auto Func : SocControlGroups_[EngagedGroup_][ControlLevel]) {
       Func->Run(GenericFunction::kEngage);
+    }
+    // output Soc control laws
+    for (auto Key : SocDataKeys_[EngagedGroup_][ControlLevel]) {
+      std::string KeyName = Key.substr(Key.rfind("/"));
+      if ((KeyName!="/Mode")&&(KeyName!="/Saturated")) {
+        float val = SocDataPtr_[EngagedGroup_][KeyName]->getFloat();
+        OutputDataPtr_[KeyName]->setFloat( val );
+      }
     }
   }
 }

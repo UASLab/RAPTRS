@@ -35,17 +35,18 @@ ElementPtr DefinitionTree2::initElement(string name, string desc,
   }
 }
 
-ElementPtr DefinitionTree2::makeAlias(string orig_name, string alias_name) {
-  def_tree_t::iterator it;
-  it = data.find(orig_name);
-  if ( it != data.end() ) {
-    data[alias_name] = it->second;
-    return it->second;
-  } else {
-    cout << "Notice: attempt to alias to non-existent entry" << endl;
-    return NULL;
-  }
-}
+// depricated ...
+// ElementPtr DefinitionTree2::makeAlias(string orig_name, string alias_name) {
+//   def_tree_t::iterator it;
+//   it = data.find(orig_name);
+//   if ( it != data.end() ) {
+//     data[alias_name] = it->second;
+//     return it->second;
+//   } else {
+//     cout << "Notice: attempt to alias to non-existent entry" << endl;
+//     return NULL;
+//   }
+// }
 
 ElementPtr DefinitionTree2::getElement(string name, bool create) {
   def_tree_t::iterator it;

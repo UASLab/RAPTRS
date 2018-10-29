@@ -67,7 +67,7 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
             if (NodeEffector.HasMember("Input")) {
               ElementPtr ele =  deftree.getElement(NodeEffector["Input"].GetString());
               if ( ele  ) {
-                input_names.push_back(NodeEffector["Input"].GetString());
+                input_nodes.push_back(ele);
               } else {
                 throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+NodeEffector["Input"].GetString()+std::string(" not found in global data."));
               }
@@ -82,7 +82,7 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
         if (Effector.HasMember("Input")) {
           ElementPtr ele = deftree.getElement(Effector["Input"].GetString());
           if ( ele ) {
-            input_names.push_back(Effector["Input"].GetString());
+            input_nodes.push_back(ele);
           } else {
             throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Input ")+Effector["Input"].GetString()+std::string(" not found in global data."));
           }
@@ -100,10 +100,9 @@ void AircraftEffectors::Configure(const rapidjson::Value& Config) {
 /* Run method for effectors, dereferences the inputs and returns a vector of effector commands to send to the FMU */
 std::vector<float> AircraftEffectors::Run() {
   std::vector<float> Commands;
-  Commands.resize(input_names.size());
-  for (size_t i=0; i < input_names.size(); i++) {
-    ElementPtr ele = deftree.getElement(input_names[i]);
-    Commands[i] = ele->getFloat();
+  Commands.resize(input_nodes.size());
+  for (size_t i=0; i < input_nodes.size(); i++) {
+    Commands[i] = input_nodes[i]->getFloat();
   }
   return Commands;
 }

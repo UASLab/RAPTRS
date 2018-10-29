@@ -148,11 +148,11 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
       if (BaselineKey.substr(BaselineKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
         std::string KeyName = BaselineKey.substr(BaselineKey.rfind("/"));
         // setup baseline data pointer
-        ElementPtr ele = deftree.getElement(BaselineKey);
-        BaselineDataPtr_[KeyName] = ele;
-        if (ele) {
-          OutputData_[KeyName] = ele;
-          deftree.makeAlias(BaselineKey, OutputKey);
+        ElementPtr base_ele = deftree.getElement(BaselineKey);
+        BaselineDataPtr_[KeyName] = base_ele;
+        if (base_ele) {
+          ElementPtr out_ele = deftree.initElement(OutputKey, base_ele->description, LOG_FLOAT, LOG_NONE);
+          OutputDataPtr_[KeyName] = out_ele;
         }
       }
     }
@@ -163,11 +163,11 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         if (ResearchKey.substr(ResearchKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
           std::string KeyName = ResearchKey.substr(ResearchKey.rfind("/"));
           // setup research data pointer
-          ElementPtr ele = deftree.getElement(ResearchKey);
-          ResearchDataPtr_[GroupKey][KeyName] = ele;
-          if (ele) {
-            OutputData_[KeyName] = ele;
-            deftree.makeAlias(ResearchKey, OutputKey);
+          ElementPtr research_ele = deftree.getElement(ResearchKey);
+          ResearchDataPtr_[GroupKey][KeyName] = research_ele;
+          if (research_ele) {
+            ElementPtr out_ele = deftree.initElement(OutputKey, research_ele->description, LOG_FLOAT, LOG_NONE);
+            OutputDataPtr_[KeyName] = out_ele;
           }
         }
       }
@@ -241,6 +241,14 @@ void SensorProcessing::Run() {
         } else {
           Func->Run(GenericFunction::kArm);
         }
+      }
+    }
+    // setting the output
+    for (auto Key : BaselineDataKeys_) {
+      std::string KeyName = Key.substr(Key.rfind("/"));
+      if (KeyName!="/Mode") {
+        float val = BaselineDataPtr_[KeyName]->getFloat();
+        OutputDataPtr_[KeyName]->setFloat( val );
       }
     }
   }
