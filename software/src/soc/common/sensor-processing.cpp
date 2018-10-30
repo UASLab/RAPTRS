@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "sensor-processing.h"
 
+using std::cout;
+using std::endl;
+
 /* configures sensor processing given a JSON value and registers data with global defs */
 void SensorProcessing::Configure(const rapidjson::Value& Config) {
   std::map<std::string,std::string> OutputKeysMap;
@@ -68,10 +71,18 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
     // modify the key to remove the intermediate path
     // (i.e. /Sensor-Processing/Baseline/Ias --> /Sensor-Processing/Ias)
     deftree.GetKeys(PathName,&BaselineDataKeys_);
-    for (auto Key : BaselineDataKeys_) {
-      std::string MemberName = RootPath_+Key.substr(Key.rfind("/"));
-      if (Key.substr(Key.rfind("/"))!="/Mode") {
-        OutputKeysMap[MemberName] = MemberName;
+    for (auto FullKey : BaselineDataKeys_) {
+      if (FullKey.substr(FullKey.rfind("/"))!="/Mode") {
+        std::string KeyName = FullKey.substr(FullKey.rfind("/"));
+        ElementPtr base_ele = deftree.getElement(FullKey);
+        BaselineDataPtr_[KeyName] = base_ele;
+        std::string RootName = RootPath_+KeyName;
+        cout << "baseline adding: " << RootName << endl;
+        ElementPtr root_ele = deftree.getElement(RootName);
+        root_ele->description = base_ele->description;
+        root_ele->datalog = base_ele->datalog;
+        root_ele->telemetry = base_ele->telemetry;        
+        OutputDataPtr_[KeyName] = root_ele;
       }
     }
   } else {
@@ -126,52 +137,22 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         // modify the key to remove the intermediate path
         // (i.e. /Sensor-Processing/GroupName/Ias --> /Sensor-Processing/Ias)
         deftree.GetKeys(PathName,&ResearchDataKeys_[ResearchGroupKeys_.back()]);
-        for (auto Key : ResearchDataKeys_[ResearchGroupKeys_.back()]) {
-          std::string MemberName = RootPath_+Key.substr(Key.rfind("/"));
-          if (Key.substr(Key.rfind("/"))!="/Mode") {
-            OutputKeysMap[MemberName] = MemberName;
+        for (auto FullKey : ResearchDataKeys_[ResearchGroupKeys_.back()]) {
+          if (FullKey.substr(FullKey.rfind("/"))!="/Mode") {
+            std::string KeyName = FullKey.substr(FullKey.rfind("/"));
+            ElementPtr research_ele = deftree.getElement(FullKey);
+            ResearchDataPtr_[ResearchGroupKeys_.back()][KeyName] = research_ele;
+            std::string RootName = RootPath_+KeyName;
+            cout << "research adding: " << RootName << endl;
+            ElementPtr root_ele = deftree.getElement(RootName);
+            root_ele->description = research_ele->description;
+            root_ele->datalog = research_ele->datalog;
+            root_ele->telemetry = research_ele->telemetry;        
+            OutputDataPtr_[KeyName] = root_ele;
           }
         }
       } else {
         throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Group name or components not specified in configuration."));
-      }
-    }
-  }
-  /* map baseline and research outputs to superset of outputs */
-  // iterate through output keys and check for matching keys in baseline or research
-  for (auto OutputElem : OutputKeysMap) {
-    // current output key
-    std::string OutputKey = OutputElem.second;
-    // iterate through baseline keys
-    for (auto BaselineKey : BaselineDataKeys_) {
-      // check for a match with output keys
-      if (BaselineKey.substr(BaselineKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
-        std::string KeyName = BaselineKey.substr(BaselineKey.rfind("/"));
-        // setup baseline data pointer
-        ElementPtr base_ele = deftree.getElement(BaselineKey);
-        BaselineDataPtr_[KeyName] = base_ele;
-        // check to see if output key has already been registered
-        if ( deftree.Size(OutputKey) == 0 ) {
-          ElementPtr out_ele = deftree.initElement(OutputKey, base_ele->description, base_ele->datalog, base_ele->telemetry);
-          OutputDataPtr_[KeyName] = out_ele;
-        }
-      }
-    }
-    // iterate through research keys
-    for (auto GroupKey : ResearchGroupKeys_) {
-      for (auto ResearchKey : ResearchDataKeys_[GroupKey]) {
-        // check for a match with output keys
-        if (ResearchKey.substr(ResearchKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
-          std::string KeyName = ResearchKey.substr(ResearchKey.rfind("/"));
-          // setup research data pointer
-          ElementPtr research_ele = deftree.getElement(ResearchKey);
-          ResearchDataPtr_[GroupKey][KeyName] = research_ele;
-          // check to see if output key has already been registered
-          if (deftree.Size(OutputKey) == 0 ) {
-            ElementPtr out_ele = deftree.initElement(OutputKey, research_ele->description, research_ele->datalog, research_ele->telemetry);
-            OutputDataPtr_[KeyName] = out_ele;
-          }
-        }
       }
     }
   }
