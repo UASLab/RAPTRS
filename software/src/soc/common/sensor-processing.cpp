@@ -234,8 +234,7 @@ void SensorProcessing::Run() {
     for (auto Key : BaselineDataKeys_) {
       std::string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
-        float val = BaselineDataPtr_[KeyName]->getFloat();
-        OutputDataPtr_[KeyName]->setFloat( val );
+        OutputDataPtr_[KeyName]->copyFrom( BaselineDataPtr_[KeyName] );
       }
     }
   } else {
@@ -257,8 +256,7 @@ void SensorProcessing::Run() {
     for (auto Key : ResearchDataKeys_[EngagedGroup_]) {
       std::string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
-        float val = ResearchDataPtr_[EngagedGroup_][KeyName]->getFloat();
-        OutputDataPtr_[KeyName]->setFloat( val );
+        OutputDataPtr_[KeyName]->copyFrom( ResearchDataPtr_[EngagedGroup_][KeyName] );
       }
     }
   }

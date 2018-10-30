@@ -15,6 +15,8 @@ using std::to_string;
 using std::vector;
 using std::shared_ptr;
 
+class Element;
+typedef shared_ptr<Element> ElementPtr;
 
 // minimal types for logging -- log as this type.  put these in the
 // global name space otherwise the notation becomes crushing.
@@ -51,6 +53,11 @@ class Element {
   Element() {}
   ~Element() {}
 
+  void copyFrom( ElementPtr src ) {
+    this->x = src->x;
+    this->tag = src->tag;
+  }
+  
   void setBool( bool val ) { x.b = val; tag = BOOL; }
   void setInt( int val ) { x.i = val; tag = INT; }
   void setLong( long val ) { x.l = val; tag = LONG; }
@@ -139,7 +146,6 @@ class Element {
   }
 };
 
-typedef shared_ptr<Element> ElementPtr;
 typedef map<string, ElementPtr> def_tree_t ;
 
 class DefinitionTree2 {
