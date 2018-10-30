@@ -70,19 +70,18 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
     // getting a list of all baseline keys and adding to superset of output keys
     // modify the key to remove the intermediate path
     // (i.e. /Sensor-Processing/Baseline/Ias --> /Sensor-Processing/Ias)
-    deftree.GetKeys(PathName,&BaselineDataKeys_);
-    for (auto FullKey : BaselineDataKeys_) {
+    deftree.GetKeys(PathName,&BaselineKeys);
+    for (auto FullKey : BaselineKeys) {
       if (FullKey.substr(FullKey.rfind("/"))!="/Mode") {
         std::string KeyName = FullKey.substr(FullKey.rfind("/"));
         ElementPtr base_ele = deftree.getElement(FullKey);
-        BaselineDataPtr_[KeyName] = base_ele;
+        BaselineNodes[KeyName] = base_ele;
         std::string RootName = RootPath_+KeyName;
-        cout << "baseline adding: " << RootName << endl;
         ElementPtr root_ele = deftree.getElement(RootName);
         root_ele->description = base_ele->description;
         root_ele->datalog = base_ele->datalog;
         root_ele->telemetry = base_ele->telemetry;        
-        OutputDataPtr_[KeyName] = root_ele;
+        OutputNodes[KeyName] = root_ele;
       }
     }
   } else {
@@ -136,19 +135,18 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         // getting a list of all research keys and adding to superset of output keys
         // modify the key to remove the intermediate path
         // (i.e. /Sensor-Processing/GroupName/Ias --> /Sensor-Processing/Ias)
-        deftree.GetKeys(PathName,&ResearchDataKeys_[ResearchGroupKeys_.back()]);
-        for (auto FullKey : ResearchDataKeys_[ResearchGroupKeys_.back()]) {
+        deftree.GetKeys(PathName,&ResearchNodes[ResearchGroupKeys_.back()]);
+        for (auto FullKey : ResearchNodes[ResearchGroupKeys_.back()]) {
           if (FullKey.substr(FullKey.rfind("/"))!="/Mode") {
             std::string KeyName = FullKey.substr(FullKey.rfind("/"));
             ElementPtr research_ele = deftree.getElement(FullKey);
             ResearchDataPtr_[ResearchGroupKeys_.back()][KeyName] = research_ele;
             std::string RootName = RootPath_+KeyName;
-            cout << "research adding: " << RootName << endl;
             ElementPtr root_ele = deftree.getElement(RootName);
             root_ele->description = research_ele->description;
             root_ele->datalog = research_ele->datalog;
             root_ele->telemetry = research_ele->telemetry;        
-            OutputDataPtr_[KeyName] = root_ele;
+            OutputNodes[KeyName] = root_ele;
           }
         }
       } else {
@@ -212,10 +210,10 @@ void SensorProcessing::Run() {
       }
     }
     // setting the output
-    for (auto Key : BaselineDataKeys_) {
+    for (auto Key : BaselineKeys) {
       std::string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
-        OutputDataPtr_[KeyName]->copyFrom( BaselineDataPtr_[KeyName] );
+        OutputNodes[KeyName]->copyFrom( BaselineNodes[KeyName] );
       }
     }
   } else {
@@ -234,10 +232,10 @@ void SensorProcessing::Run() {
       }
     }
     // setting the output
-    for (auto Key : ResearchDataKeys_[EngagedGroup_]) {
+    for (auto Key : ResearchNodes[EngagedGroup_]) {
       std::string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
-        OutputDataPtr_[KeyName]->copyFrom( ResearchDataPtr_[EngagedGroup_][KeyName] );
+        OutputNodes[KeyName]->copyFrom( ResearchDataPtr_[EngagedGroup_][KeyName] );
       }
     }
   }
