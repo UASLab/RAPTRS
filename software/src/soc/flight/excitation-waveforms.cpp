@@ -42,7 +42,7 @@ void Pulse::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
   if (Config.HasMember("Time")) {
     config_.time_node = deftree.getElement(Config["Time"].GetString());
-    if ( config_.time_node ) {
+    if ( !config_.time_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
     }
   } else {
@@ -134,7 +134,7 @@ void Doublet::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
   if (Config.HasMember("Time")) {
     config_.time_node = deftree.getElement(Config["Time"].GetString());
-    if ( config_.time_node ) {
+    if ( !config_.time_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
     }
   } else {
@@ -229,7 +229,7 @@ void Doublet121::Configure(const rapidjson::Value& Config,std::string RootPath) 
   }
   if (Config.HasMember("Time")) {
     config_.time_node = deftree.getElement(Config["Time"].GetString());
-    if ( config_.time_node ) {
+    if ( !config_.time_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
     }
   } else {
@@ -327,7 +327,7 @@ void Doublet3211::Configure(const rapidjson::Value& Config,std::string RootPath)
   }
   if (Config.HasMember("Time")) {
     config_.time_node = deftree.getElement(Config["Time"].GetString());
-    if ( config_.time_node ) {
+    if ( !config_.time_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
     }
   } else {
@@ -428,7 +428,7 @@ void LinearChirp::Configure(const rapidjson::Value& Config,std::string RootPath)
   }
   if (Config.HasMember("Time")) {
     config_.time_node = deftree.getElement(Config["Time"].GetString());
-    if ( config_.time_node ) {
+    if ( !config_.time_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
     }
   } else {
@@ -543,7 +543,7 @@ void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath)
   }
   if (Config.HasMember("Time")) {
     config_.time_node = deftree.getElement(Config["Time"].GetString());
-    if ( config_.time_node ) {
+    if ( !config_.time_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time ")+Config["Time"].GetString()+std::string(" not found in global data."));
     }
   } else {
