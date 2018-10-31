@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
   DatalogClient Datalog;
   TelemetryClient Telemetry;
   FGRouteMgr route_mgr;
-  
+
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
   std::cout << "\tInitializing FMU..." << std::flush;
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
   bool fgfs = fgfs_init(AircraftConfiguration);
-  
+
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
@@ -187,9 +187,10 @@ int main(int argc, char* argv[]) {
         // run armed control laws
         Control.RunArmed();
 
-        //string CtrlEngaged = Mission.GetEngagedController();
-        //ElementPtr cell_min_node = deftree.getElement("/Sensor-Processing/MinCellVolt_V", true);
-        //cout << CtrlEngaged << "\t" << cell_min_node->getFloat() << endl;
+//
+std::string CtrlEngaged = Mission.GetEngagedController();
+std::cout << CtrlEngaged << std::endl;
+
       }
       // run telemetry
       Telemetry.Send();
