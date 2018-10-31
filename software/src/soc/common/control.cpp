@@ -182,7 +182,6 @@ void ControlLaws::RunEngaged(size_t ControlLevel) {
     for (auto Key : SocDataKeys_[EngagedGroup_][ControlLevel]) {
       std::string KeyName = Key.substr(Key.rfind("/"));
       if ((KeyName!="/Mode")&&(KeyName!="/Saturated")) {
-        float val = SocDataPtr_[EngagedGroup_][KeyName]->getFloat();
         OutputDataPtr_[KeyName]->copyFrom(SocDataPtr_[EngagedGroup_][KeyName]);
       }
     }

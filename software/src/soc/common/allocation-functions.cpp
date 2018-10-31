@@ -110,7 +110,7 @@ void PseudoInverseAllocation::Run(Mode mode) {
   data_.uCmd = config_.Effectiveness.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(config_.Objectives); // Jacobi SVD solver
 
   // saturate output
-  for (size_t i=0; i < data_.uCmd.rows(); i++) {
+  for (int i=0; i < data_.uCmd.rows(); i++) {
     if (data_.uCmd(i) <= config_.LowerLimit(i)) {
       data_.uCmd(i) = config_.LowerLimit(i);
       data_.uSat(i) = -1;

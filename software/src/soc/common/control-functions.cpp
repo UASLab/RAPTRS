@@ -271,10 +271,6 @@ void PIDClass::Clear() {
 
 /* SS class methods, see control-functions.hxx for more information */
 void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  float mass_kg;
-  float weight_bal;
-  float max_mps;
-  float min_mps;
   bool SatFlag = false;
   std::string OutputName;
   std::string SystemName;

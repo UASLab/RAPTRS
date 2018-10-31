@@ -242,7 +242,7 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
 
   // saturate output
   if (SatFlag_ == true){
-    for (size_t i=0; i < y_.size(); i++) {
+    for (int i=0; i < y_.size(); i++) {
       if (y_(i) <= yMin_(i)) {
         y_(i) = yMin_(i);
         ySat_(i) = -1;
