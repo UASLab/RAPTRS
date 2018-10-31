@@ -108,19 +108,20 @@ bool GainClass::Initialized() {return true;}
 
 void GainClass::Run(Mode mode) {
   data_.Mode = (uint8_t) mode;
-  data_.output_node->setFloat( config_.input_node->getFloat()*config_.Gain );
+  float val = config_.input_node->getFloat()*config_.Gain;
   // saturate command
   if (config_.SaturateOutput) {
-    if (data_.output_node->getFloat() <= config_.LowerLimit) {
-      data_.output_node->setFloat(config_.LowerLimit);
+    if (val <= config_.LowerLimit) {
+      val = config_.LowerLimit;
       data_.saturated_node->setInt(-1);
-    } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
-      data_.output_node->setFloat(config_.UpperLimit);
+    } else if (val >= config_.UpperLimit) {
+      val = config_.UpperLimit;
       data_.saturated_node->setInt(1);
     } else {
       data_.saturated_node->setInt(0);
     }
   }
+  data_.output_node->setFloat( val );
 }
 
 void GainClass::Clear() {
@@ -177,7 +178,13 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
 
   // pointer to log command data
-  OutputKey_ = RootPath+"/"+Config["Output"].GetString();
+  string path = Config["Output"].GetString();
+  if ( path.size() && path[0] == '/' ) {
+    // absolution path
+    OutputKey_ = Config["Output"].GetString();
+  } else {
+    OutputKey_ = RootPath+"/"+Config["Output"].GetString();
+  }
   data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
 }
 
@@ -187,25 +194,25 @@ bool SumClass::Initialized() {return true;}
 void SumClass::Run(Mode mode) {
   data_.Mode = (uint8_t) mode;
 
-  data_.output_node->setFloat(0.0f);
-  float sum = 0.0;
+  float val = 0.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
-    sum += config_.input_nodes[i]->getFloat();
+    val += config_.input_nodes[i]->getFloat();
   }
-  data_.output_node->setFloat(sum);
 
   // saturate command
   if (config_.SaturateOutput) {
-    if (data_.output_node->getFloat() <= config_.LowerLimit) {
-      data_.output_node->setFloat(config_.LowerLimit);
+    if (val <= config_.LowerLimit) {
+      val = config_.LowerLimit;
       data_.saturated_node->setInt(-1);
-    } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
-      data_.output_node->setFloat(config_.UpperLimit);
+    } else if (val >= config_.UpperLimit) {
+      val = config_.UpperLimit;
       data_.saturated_node->setInt(1);
     } else {
       data_.saturated_node->setInt(0);
     }
   }
+  
+  data_.output_node->setFloat(val);
 }
 
 void SumClass::Clear() {
@@ -266,7 +273,6 @@ void LatchClass::Run(Mode mode) {
       initLatch_ = false;
     }
   }
-
 }
 
 void LatchClass::Clear() {
