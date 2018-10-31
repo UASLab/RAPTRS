@@ -52,21 +52,21 @@ class SensorProcessing {
     void Configure(const rapidjson::Value& Config);
     bool Configured();
     bool Initialized();
-    void SetEngagedSensorProcessing(std::string EngagedSensorProcessing);
+    void SetEngagedSensorProcessing(string EngagedSensorProcessing);
     void Run();
   private:
-    std::string RootPath_ = "/Sensor-Processing";
+    string RootPath_ = "/Sensor-Processing";
     bool Configured_ = false;
     bool InitializedLatch_ = false;
-    std::string EngagedGroup_ = "Baseline";
+    string EngagedGroup = "Baseline";
     std::vector<std::shared_ptr<GenericFunction>> BaselineSensorProcessing_;
-    std::map<std::string,std::vector<std::shared_ptr<GenericFunction>>> ResearchSensorProcessingGroups_;
+    std::map<string, std::vector<std::shared_ptr<GenericFunction>>> ResearchSensorProcessingGroups_;
     vector<string> BaselineKeys;
-    vector<string> ResearchGroupKeys_;
-    map<string, vector<string>> ResearchNodes;
+    vector<string> ResearchGroupKeys;
+    map<string, vector<string>> ResearchKeys;
     map<string, ElementPtr> OutputNodes;
     map<string, ElementPtr> BaselineNodes;
-    map<string, map<string, ElementPtr> > ResearchDataPtr_;
+    map<string, map<string, ElementPtr> > ResearchNodes;
 };
 
 #endif

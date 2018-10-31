@@ -25,11 +25,11 @@ using std::endl;
 
 /* configures sensor processing given a JSON value and registers data with global defs */
 void SensorProcessing::Configure(const rapidjson::Value& Config) {
-  std::map<std::string,std::string> OutputKeysMap;
+  std::map<string, string> OutputKeysMap;
   // configuring baseline sensor processing
   if (Config.HasMember("Baseline")) {
     // path for the baseline functions /Sensor-Processing/Baseline
-    std::string PathName = RootPath_+"/"+"Baseline";
+    string PathName = RootPath_+"/"+"Baseline";
     // iterate over each and check the "Type" key to make the correct function pointer
     const rapidjson::Value& BaselineConfig = Config["Baseline"];
     for (auto &Func : BaselineConfig.GetArray()) {
@@ -57,14 +57,14 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         } else if (Func["Type"] == "MinCellVolt") {
           BaselineSensorProcessing_.push_back(std::make_shared<MinCellVolt>());
         } else {
-          throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type specified is not a defined type"));
+          throw std::runtime_error(string("ERROR")+PathName+string(": Type specified is not a defined type"));
         }
 
         // configure the function
         BaselineSensorProcessing_.back()->Configure(Func,PathName);
 
       } else {
-        throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type not specified in configuration."));
+        throw std::runtime_error(string("ERROR")+PathName+string(": Type not specified in configuration."));
       }
     }
     // getting a list of all baseline keys and adding to superset of output keys
@@ -73,10 +73,10 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
     deftree.GetKeys(PathName,&BaselineKeys);
     for (auto FullKey : BaselineKeys) {
       if (FullKey.substr(FullKey.rfind("/"))!="/Mode") {
-        std::string KeyName = FullKey.substr(FullKey.rfind("/"));
+        string KeyName = FullKey.substr(FullKey.rfind("/"));
         ElementPtr base_ele = deftree.getElement(FullKey);
         BaselineNodes[KeyName] = base_ele;
-        std::string RootName = RootPath_+KeyName;
+        string RootName = RootPath_+KeyName;
         ElementPtr root_ele = deftree.getElement(RootName);
         root_ele->description = base_ele->description;
         root_ele->datalog = base_ele->datalog;
@@ -85,7 +85,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
       }
     }
   } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Baseline not specified in configuration."));
+    throw std::runtime_error(string("ERROR")+RootPath_+string(": Baseline not specified in configuration."));
   }
 
   // configuring research sensor processing groups
@@ -94,54 +94,54 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
     for (auto &Group : ResearchConfig.GetArray()) {
       if (Group.HasMember("Group-Name")&&Group.HasMember("Components")) {
         // vector of group names
-        ResearchGroupKeys_.push_back(Group["Group-Name"].GetString());
+        ResearchGroupKeys.push_back(Group["Group-Name"].GetString());
         // path for the research functions /Sensor-Processing/"Group-Name"
-        std::string PathName = RootPath_+"/"+Group["Group-Name"].GetString();
+        string PathName = RootPath_+"/"+Group["Group-Name"].GetString();
         for (auto &Func : Group["Components"].GetArray()) {
           if (Func.HasMember("Type")) {
             if (Func["Type"] == "Constant") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<ConstantClass>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<ConstantClass>());
             } else if (Func["Type"] == "Gain") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<GainClass>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<GainClass>());
             } else if (Func["Type"] == "Sum") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<SumClass>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<SumClass>());
             } else if (Func["Type"] == "IAS") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<IndicatedAirspeed>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<IndicatedAirspeed>());
             } else if (Func["Type"] == "AGL") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<AglAltitude>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<AglAltitude>());
             } else if (Func["Type"] == "PitotStatic") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<PitotStatic>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<PitotStatic>());
             } else if (Func["Type"] == "FiveHole") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<FiveHole>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<FiveHole>());
             } else if (Func["Type"] == "EKF15StateINS") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<Ekf15StateIns>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<Ekf15StateIns>());
             } else if (Func["Type"] == "Filter") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<GeneralFilter>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<GeneralFilter>());
             } else if (Func["Type"] == "If") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<If>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<If>());
             } else if (Func["Type"] == "MinCellVolt") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].push_back(std::make_shared<MinCellVolt>());
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<MinCellVolt>());
             } else {
-              throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type specified is not a defined type"));
+              throw std::runtime_error(string("ERROR")+PathName+string(": Type specified is not a defined type"));
             }
 
             // configure the function
-            ResearchSensorProcessingGroups_[ResearchGroupKeys_.back()].back()->Configure(Func,PathName);
+            ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].back()->Configure(Func,PathName);
 
           } else {
-            throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type not specified in configuration."));
+            throw std::runtime_error(string("ERROR")+PathName+string(": Type not specified in configuration."));
           }
         }
         // getting a list of all research keys and adding to superset of output keys
         // modify the key to remove the intermediate path
         // (i.e. /Sensor-Processing/GroupName/Ias --> /Sensor-Processing/Ias)
-        deftree.GetKeys(PathName,&ResearchNodes[ResearchGroupKeys_.back()]);
-        for (auto FullKey : ResearchNodes[ResearchGroupKeys_.back()]) {
+        deftree.GetKeys(PathName,&ResearchKeys[ResearchGroupKeys.back()]);
+        for (auto FullKey : ResearchKeys[ResearchGroupKeys.back()]) {
           if (FullKey.substr(FullKey.rfind("/"))!="/Mode") {
-            std::string KeyName = FullKey.substr(FullKey.rfind("/"));
+            string KeyName = FullKey.substr(FullKey.rfind("/"));
             ElementPtr research_ele = deftree.getElement(FullKey);
-            ResearchDataPtr_[ResearchGroupKeys_.back()][KeyName] = research_ele;
-            std::string RootName = RootPath_+KeyName;
+            ResearchNodes[ResearchGroupKeys.back()][KeyName] = research_ele;
+            string RootName = RootPath_+KeyName;
             ElementPtr root_ele = deftree.getElement(RootName);
             root_ele->description = research_ele->description;
             root_ele->datalog = research_ele->datalog;
@@ -150,7 +150,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           }
         }
       } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Group name or components not specified in configuration."));
+        throw std::runtime_error(string("ERROR")+RootPath_+string(": Group name or components not specified in configuration."));
       }
     }
   }
@@ -176,7 +176,7 @@ bool SensorProcessing::Initialized() {
       }
     }
     // initializing research sensor processing
-    for (auto Group : ResearchGroupKeys_) {
+    for (auto Group : ResearchGroupKeys) {
       for (auto Func : ResearchSensorProcessingGroups_[Group]) {
         Func->Initialize();
         if (!Func->Initialized()) {
@@ -192,26 +192,26 @@ bool SensorProcessing::Initialized() {
 }
 
 /* sets the sensor processing group to output */
-void SensorProcessing::SetEngagedSensorProcessing(std::string EngagedSensorProcessing) {
-  EngagedGroup_ = EngagedSensorProcessing;
+void SensorProcessing::SetEngagedSensorProcessing(string EngagedSensorProcessing) {
+  EngagedGroup = EngagedSensorProcessing;
 }
 
 /* computes sensor processing data */
 void SensorProcessing::Run() {
-  if (EngagedGroup_ == "Baseline") {
+  if (EngagedGroup == "Baseline") {
     // running baseline sensor processing
     for (auto Func : BaselineSensorProcessing_) {
       Func->Run(GenericFunction::kEngage);
     }
     // running research sensor processing
-    for (auto Group : ResearchGroupKeys_) {
+    for (auto Group : ResearchGroupKeys) {
       for (auto Func : ResearchSensorProcessingGroups_[Group]) {
         Func->Run(GenericFunction::kArm);
       }
     }
     // setting the output
     for (auto Key : BaselineKeys) {
-      std::string KeyName = Key.substr(Key.rfind("/"));
+      string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
         OutputNodes[KeyName]->copyFrom( BaselineNodes[KeyName] );
       }
@@ -222,9 +222,9 @@ void SensorProcessing::Run() {
       Func->Run(GenericFunction::kArm);
     }
     // running research sensor processing
-    for (auto Group : ResearchGroupKeys_) {
+    for (auto Group : ResearchGroupKeys) {
       for (auto Func : ResearchSensorProcessingGroups_[Group]) {
-        if (Group == EngagedGroup_) {
+        if (Group == EngagedGroup) {
           Func->Run(GenericFunction::kEngage);
         } else {
           Func->Run(GenericFunction::kArm);
@@ -232,10 +232,10 @@ void SensorProcessing::Run() {
       }
     }
     // setting the output
-    for (auto Key : ResearchNodes[EngagedGroup_]) {
-      std::string KeyName = Key.substr(Key.rfind("/"));
+    for (auto Key : ResearchKeys[EngagedGroup]) {
+      string KeyName = Key.substr(Key.rfind("/"));
       if (KeyName!="/Mode") {
-        OutputNodes[KeyName]->copyFrom( ResearchDataPtr_[EngagedGroup_][KeyName] );
+        OutputNodes[KeyName]->copyFrom( ResearchNodes[EngagedGroup][KeyName] );
       }
     }
   }
