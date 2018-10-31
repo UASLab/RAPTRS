@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include <string>
 using std::to_string;
+using std::cout;
+using std::endl;
 
 /* Opens port to communicate with FMU. */
 void FlightManagementUnit::Begin() {
@@ -167,16 +169,43 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
       SensorData_.Ams5915.resize(NumberAms5915Sensor);
       SensorData_.Sbus.resize(NumberSbusSensor);
       SensorData_.Analog.resize(NumberAnalogSensor);
-      SensorNodes_.pwm_volts.resize(NumberPwmVoltageSensor);
-      SensorNodes_.sbus_volts.resize(NumberSbusVoltageSensor);
-      SensorNodes_.Mpu9250.resize(NumberMpu9250Sensor);
-      SensorNodes_.Bme280.resize(NumberBme280Sensor);
-      SensorNodes_.uBlox.resize(NumberuBloxSensor);
-      SensorNodes_.Swift.resize(NumberSwiftSensor);
-      SensorNodes_.Ams5915.resize(NumberAms5915Sensor);
-      SensorNodes_.Sbus.resize(NumberSbusSensor);
-      SensorNodes_.Analog.resize(NumberAnalogSensor);
-
+      if ( SensorNodes_.pwm_volts.size() < NumberPwmVoltageSensor ) {
+        cout << "WARNING: RESIZING pwm_volts size to: "<< (int)NumberPwmVoltageSensor << endl;
+        SensorNodes_.pwm_volts.resize(NumberPwmVoltageSensor);
+      }
+      if ( SensorNodes_.sbus_volts.size() < NumberSbusVoltageSensor ) {
+        cout << "WARNING: RESIZING sbus_volts size to: "<< (int)NumberSbusVoltageSensor << endl;
+        SensorNodes_.sbus_volts.resize(NumberSbusVoltageSensor);
+      }
+      if ( SensorNodes_.Mpu9250.size() < NumberMpu9250Sensor ) {
+        cout << "WARNING: RESIZING Mpu9250 size to: "<< (int)NumberMpu9250Sensor << endl;
+        SensorNodes_.Mpu9250.resize(NumberMpu9250Sensor);
+      }
+      if ( SensorNodes_.Bme280.size() < NumberBme280Sensor ) {
+        cout << "WARNING: RESIZING Bme280 size to: "<< (int)NumberBme280Sensor << endl;
+        SensorNodes_.Bme280.resize(NumberBme280Sensor);
+      }
+      if ( SensorNodes_.uBlox.size() < NumberuBloxSensor ) {
+        cout << "WARNING: RESIZING uBlox size to: "<< (int)NumberuBloxSensor << endl;
+        SensorNodes_.uBlox.resize(NumberuBloxSensor);
+      }
+      if ( SensorNodes_.Swift.size() < NumberSwiftSensor ) {
+        cout << "WARNING: RESIZING Swift size to: "<< (int)NumberSwiftSensor << endl;
+        SensorNodes_.Swift.resize(NumberSwiftSensor);
+      }
+      if ( SensorNodes_.Ams5915.size() < NumberAms5915Sensor ) {
+        cout << "WARNING: RESIZING Ams5915 size to: "<< (int)NumberAms5915Sensor << endl;
+        SensorNodes_.Ams5915.resize(NumberAms5915Sensor);
+      }
+      if ( SensorNodes_.Sbus.size() < NumberSbusSensor ) {
+        cout << "WARNING: RESIZING Sbus size to: "<< (int)NumberSbusSensor << endl;
+        SensorNodes_.Sbus.resize(NumberSbusSensor);
+      }
+      if ( SensorNodes_.Analog.size() < NumberAnalogSensor ) {
+        cout << "WARNING: RESIZING Analog size to: "<< (int)NumberAnalogSensor << endl;
+        SensorNodes_.Analog.resize(NumberAnalogSensor);
+      }
+      
       // sensor data
       memcpy(SensorData_.Time_us.data(),Payload.data()+PayloadLocation,SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]));
       PayloadLocation += SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]);
