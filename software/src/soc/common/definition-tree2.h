@@ -159,7 +159,6 @@ class DefinitionTree2 {
   ElementPtr initElement(string name, string desc,
                        log_tag_t datalog,
                        log_tag_t telemetry);
-  // (depricate) ElementPtr makeAlias(string orig_name, string alias_name);
   ElementPtr getElement(string name, bool create=true);
 
   void GetKeys(string Name, vector<string> *KeysPtr);
