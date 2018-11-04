@@ -223,6 +223,91 @@ void SumClass::Clear() {
   OutputKey_.clear();
 }
 
+/* Product class methods, see general-functions.hxx for more information */
+void ProductClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
+  std::string OutputName;
+  if (Config.HasMember("Output")) {
+    OutputName = RootPath + "/" + Config["Output"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
+  }
+
+  if (Config.HasMember("Inputs")) {
+    for (size_t i=0; i < Config["Inputs"].Size(); i++) {
+      const rapidjson::Value& Input = Config["Inputs"][i];
+      InputKeys_.push_back(Input.GetString());
+
+      ElementPtr ele = deftree.getElement(InputKeys_.back());
+      if ( ele ) {
+        config_.input_nodes.push_back(ele);
+      } else {
+        throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
+      }
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Inputs not specified in configuration."));
+  }
+
+  if (Config.HasMember("Limits")) {
+    config_.SaturateOutput = true;
+    // pointer to log saturation data
+    SaturatedKey_ = RootPath+"/Saturated";
+    data_.saturated_node = deftree.initElement(SaturatedKey_, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
+    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
+      config_.UpperLimit = Config["Limits"]["Upper"].GetFloat();
+      config_.LowerLimit = Config["Limits"]["Lower"].GetFloat();
+    } else {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Either upper or lower limit not specified in configuration."));
+    }
+  }
+
+  // pointer to log command data
+  OutputKey_ = RootPath+"/"+Config["Output"].GetString();
+  data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
+}
+
+void ProductClass::Initialize() {}
+bool ProductClass::Initialized() {return true;}
+
+void ProductClass::Run(Mode mode) {
+  data_.Mode = (uint8_t) mode;
+
+  data_.output_node->setFloat(0.0f);
+  float product = 1.0;
+  for (size_t i=0; i < config_.input_nodes.size(); i++) {
+    product *= config_.input_nodes[i]->getFloat();
+  }
+  data_.output_node->setFloat(product);
+
+  // saturate command
+  if (config_.SaturateOutput) {
+    if (data_.output_node->getFloat() <= config_.LowerLimit) {
+      data_.output_node->setFloat(config_.LowerLimit);
+      data_.saturated_node->setInt(-1);
+    } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
+      data_.output_node->setFloat(config_.UpperLimit);
+      data_.saturated_node->setInt(1);
+    } else {
+      data_.saturated_node->setInt(0);
+    }
+  }
+}
+
+void ProductClass::Clear() {
+  config_.input_nodes.clear();
+  config_.LowerLimit = 0.0f;
+  config_.UpperLimit = 0.0f;
+  config_.SaturateOutput = false;
+  data_.Mode = kStandby;
+  data_.output_node->setFloat(0.0f);
+  data_.saturated_node->setInt(0.0f);
+  deftree.Erase(SaturatedKey_);
+  deftree.Erase(OutputKey_);
+  InputKeys_.clear();
+  SaturatedKey_.clear();
+  OutputKey_.clear();
+}
+
 
 /* Latch class methods, see general-functions.hxx for more information */
 void LatchClass::Configure(const rapidjson::Value& Config,std::string RootPath) {

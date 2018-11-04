@@ -148,6 +148,49 @@ class SumClass: public GenericFunction {
 };
 
 /*
+Product Class - Multiplies all inputs
+Example JSON configuration:
+{
+  "Type": "Product",
+  "Output": "OutputName",
+  "Inputs": ["InputName1","InputName2",...],
+  "Limits": {
+    "Upper": X,
+    "Lower": X
+  }
+}
+Where:
+   * Output gives a convenient name for the block (i.e. SpeedReference).
+   * Inputs is a vector of full path names of the input signals. All inputs
+     will be multiplied.
+   * Limits are optional and saturate the output if defined.
+Data types for the input and output are both float.
+*/
+class ProductClass: public GenericFunction {
+  public:
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Initialize();
+    bool Initialized();
+    void Run(Mode mode);
+    void Clear();
+  private:
+    struct Config {
+      std::vector<ElementPtr > input_nodes;
+      bool SaturateOutput = false;
+      float UpperLimit, LowerLimit = 0.0f;
+    };
+    struct Data {
+      uint8_t Mode = kStandby;
+      ElementPtr output_node;
+      ElementPtr saturated_node;
+    };
+    Config config_;
+    Data data_;
+    std::vector<std::string> InputKeys_;
+    std::string SaturatedKey_,OutputKey_;
+};
+
+/*
 Latch Class - Latches the Output to the initial input
 Example JSON configuration:
 {

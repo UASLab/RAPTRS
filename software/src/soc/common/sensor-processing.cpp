@@ -40,6 +40,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           BaselineSensorProcessing_.push_back(std::make_shared<GainClass>());
         } else if (Func["Type"] == "Sum") {
           BaselineSensorProcessing_.push_back(std::make_shared<SumClass>());
+        } else if (Func["Type"] == "Product") {
+          BaselineSensorProcessing_.push_back(std::make_shared<ProductClass>());
         } else if (Func["Type"] == "IAS") {
           BaselineSensorProcessing_.push_back(std::make_shared<IndicatedAirspeed>());
         } else if (Func["Type"] == "AGL") {
@@ -105,6 +107,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<GainClass>());
             } else if (Func["Type"] == "Sum") {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<SumClass>());
+            } else if (Func["Type"] == "Product") {
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<ProductClass>());
             } else if (Func["Type"] == "IAS") {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<IndicatedAirspeed>());
             } else if (Func["Type"] == "AGL") {
