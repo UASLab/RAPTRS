@@ -146,7 +146,7 @@ PropsChannel::foundTerminator()
 
   if ( debug_on ) {
     printf( "processing command: " );
-    for ( int i = 0; i < tokens.size(); i++ ) {
+    for ( size_t i = 0; i < tokens.size(); i++ ) {
       printf("%s ", tokens[i].c_str());
     }
     printf("\n");

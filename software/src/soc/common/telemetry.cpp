@@ -258,7 +258,7 @@ void TelemetryServer::ReceivePacket() {
   std::vector<uint8_t> Payload;
   ssize_t MessageSize = recv(TelemetrySocket_,Buffer.data(),Buffer.size(),0);
   if (MessageSize > 0) {
-    for (size_t i=0; i < MessageSize; i++) {
+    for (ssize_t i=0; i < MessageSize; i++) {
       if (ParseMessage(Buffer[i],&Type,&Payload)) {
         if (Type == UartPacket) {
           Uart.resize(Payload.size());

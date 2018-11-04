@@ -34,12 +34,12 @@ class Element {
  private:
 
   // supported types
-  enum { NONE, BOOL, INT, LONG, FLOAT, DOUBLE } tag;
+  enum { NONE, BOOL, INT, LONGLONG, FLOAT, DOUBLE } tag;
 
   union {
     bool b;
     int i;
-    long l;
+    long long ll;
     float f;
     double d;
   } x = {0};
@@ -60,7 +60,7 @@ class Element {
   
   void setBool( bool val ) { x.b = val; tag = BOOL; }
   void setInt( int val ) { x.i = val; tag = INT; }
-  void setLong( long val ) { x.l = val; tag = LONG; }
+  void setLong( long long val ) { x.ll = val; tag = LONGLONG; }
   void setFloat( float val ) { x.f = val; tag = FLOAT; }
   void setDouble( double val ) { x.d = val; tag = DOUBLE; }
 
@@ -68,7 +68,7 @@ class Element {
     switch(tag) {
     case BOOL: return x.b;
     case INT: return x.i;
-    case LONG: return x.l;
+    case LONGLONG: return x.ll;
     case FLOAT: return x.f;
     case DOUBLE: return x.d;
     default: return false;
@@ -78,17 +78,17 @@ class Element {
     switch(tag) {
     case BOOL: return x.b;
     case INT: return x.i;
-    case LONG: return x.l;
+    case LONGLONG: return x.ll;
     case FLOAT: return x.f;
     case DOUBLE: return x.d;
     default: return 0;
     }
   }
-  long getLong() {
+  long long getLong() {
     switch(tag) {
     case BOOL: return x.b;
     case INT: return x.i;
-    case LONG: return x.l;
+    case LONGLONG: return x.ll;
     case FLOAT: return x.f;
     case DOUBLE: return x.d;
     default: return 0;
@@ -98,7 +98,7 @@ class Element {
     switch(tag) {
     case BOOL: return x.b;
     case INT: return x.i;
-    case LONG: return x.l;
+    case LONGLONG: return x.ll;
     case FLOAT: return x.f;
     case DOUBLE: return x.d;
     default: return 0.0;
@@ -108,7 +108,7 @@ class Element {
     switch(tag) {
     case BOOL: return x.b;
     case INT: return x.i;
-    case LONG: return x.l;
+    case LONGLONG: return x.ll;
     case FLOAT: return x.f;
     case DOUBLE: return x.d;
     default: return 0.0;
@@ -119,7 +119,7 @@ class Element {
     switch(tag) {
     case BOOL: return "bool";
     case INT: return "int";
-    case LONG: return "long";
+    case LONGLONG: return "long";
     case FLOAT: return "float";
     case DOUBLE: return "double";
     default: return "no type";
@@ -130,7 +130,7 @@ class Element {
     switch(tag) {
     case BOOL: return to_string(x.b);
     case INT: return to_string(x.i);
-    case LONG: return to_string(x.l);
+    case LONGLONG: return to_string(x.ll);
     case FLOAT: return to_string(x.f);
     case DOUBLE: return to_string(x.d);
     default: return "no value";
@@ -159,7 +159,6 @@ class DefinitionTree2 {
   ElementPtr initElement(string name, string desc,
                        log_tag_t datalog,
                        log_tag_t telemetry);
-  // (depricate) ElementPtr makeAlias(string orig_name, string alias_name);
   ElementPtr getElement(string name, bool create=true);
 
   void GetKeys(string Name, vector<string> *KeysPtr);

@@ -104,10 +104,10 @@ void IndicatedAirspeed::Clear() {
   data_.mode_node->setFloat(kStandby);
   data_.ias_ms_node->setFloat(0.0f);
   data_.AvgDifferentialPressure = 0.0f;
-  bool TimeLatch_ = false;
-  bool Initialized_ = false;
-  uint64_t T0_us_ = 0;
-  size_t NumberSamples_ = 1;
+  TimeLatch_ = false;
+  Initialized_ = false;
+  T0_us_ = 0;
+  NumberSamples_ = 1;
   deftree.Erase(ModeKey_);
   deftree.Erase(OutputKey_);
   DifferentialPressureKeys_.clear();
@@ -207,10 +207,10 @@ void AglAltitude::Clear() {
   data_.agl_m_node->setFloat( 0.0f );
   data_.PressAlt0 = 0.0f;
   data_.AvgStaticPressure = 0.0f;
-  bool TimeLatch_ = false;
-  bool Initialized_ = false;
-  uint64_t T0_us_ = 0;
-  size_t NumberSamples_ = 1;
+  TimeLatch_ = false;
+  Initialized_ = false;
+  T0_us_ = 0;
+  NumberSamples_ = 1;
   deftree.Erase(ModeKey_);
   deftree.Erase(OutputKey_);
   StaticPressureKeys_.clear();
@@ -341,10 +341,10 @@ void PitotStatic::Clear() {
   data_.agl_m_node->setFloat(0.0f);
   data_.PressAlt0 = 0.0f;
 
-  bool TimeLatch_ = false;
-  bool Initialized_ = false;
-  uint64_t T0_us_ = 0;
-  size_t NumberSamples_ = 1;
+  TimeLatch_ = false;
+  Initialized_ = false;
+  T0_us_ = 0;
+  NumberSamples_ = 1;
   deftree.Erase(ModeKey_);
   deftree.Erase(OutputIasKey_);
   deftree.Erase(OutputAglKey_);
@@ -599,10 +599,10 @@ void FiveHole::Clear() {
   data_.Beta2PressureBias = 0.0f;
   data_.Beta_rad_node->setFloat( 0.0f );
 
-  bool TimeLatch_ = false;
-  bool Initialized_ = false;
-  uint64_t T0_us_ = 0;
-  size_t NumberSamples_ = 1;
+  TimeLatch_ = false;
+  Initialized_ = false;
+  T0_us_ = 0;
+  NumberSamples_ = 1;
   deftree.Erase(ModeKey_);
   deftree.Erase(OutputIasKey_);
   deftree.Erase(OutputAglKey_);

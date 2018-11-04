@@ -85,9 +85,6 @@ void FGRouteMgr::update() {
   float direct_course, direct_distance;
   float leg_distance;
 
-  double wp_agl_m = 0.0;
-  double wp_msl_m = 0.0;
-
   double gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
                        + ve_node->getFloat() * ve_node->getFloat());
   double track_deg = track_node->getFloat() * r2d;
