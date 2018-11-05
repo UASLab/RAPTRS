@@ -27,6 +27,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "definition-tree2.h"
 #include "generic-function.h"
 
+#include <deque>
+using std::deque;
+
 /*
 Constant Class - Outputs a constant value.
 Example JSON configuration:
@@ -188,6 +191,44 @@ class ProductClass: public GenericFunction {
     Data data_;
     std::vector<std::string> InputKeys_;
     std::string SaturatedKey_,OutputKey_;
+};
+
+/*
+Delay Class - Delay a signal by 'n' frames
+Example JSON configuration:
+{
+  "Type": "Delay",
+  "Output": "OutputName",
+  "Input": "InputName",
+  "Delay_frames": n
+}
+Where:
+   * Output gives a convenient name for the block (i.e. SpeedReference).
+   * Input is the full path name of the input signal.
+   * Output is the input signal delayed by n frames
+Data types for the input and output are both float.
+*/
+class DelayClass: public GenericFunction {
+  public:
+    void Configure(const rapidjson::Value& Config, std::string RootPath);
+    void Initialize();
+    bool Initialized();
+    void Run(Mode mode);
+    void Clear();
+  private:
+    struct Config {
+      ElementPtr input_node;
+      int delay_frames = 0;
+    };
+    struct Data {
+      uint8_t Mode = kStandby;
+      ElementPtr output_node;
+      deque<float> buffer;
+    };
+    Config config_;
+    Data data_;
+    std::string InputKey_;
+    std::string OutputKey_;
 };
 
 /*

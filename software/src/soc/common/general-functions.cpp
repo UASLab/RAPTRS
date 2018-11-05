@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <stdio.h>
 #include <iostream>
 
-/* Constant class methods, see general-functions.hxx for more information */
+/* Constant class methods, see general-functions.h for more information */
 void ConstantClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
@@ -59,7 +59,7 @@ void ConstantClass::Clear() {
   OutputKey_.clear();
 }
 
-/* Gain class methods, see general-functions.hxx for more information */
+/* Gain class methods, see general-functions.h for more information */
 void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
@@ -139,7 +139,7 @@ void GainClass::Clear() {
   OutputKey_.clear();
 }
 
-/* Sum class methods, see general-functions.hxx for more information */
+/* Sum class methods, see general-functions.h for more information */
 void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
@@ -230,7 +230,7 @@ void SumClass::Clear() {
   OutputKey_.clear();
 }
 
-/* Product class methods, see general-functions.hxx for more information */
+/* Product class methods, see general-functions.h for more information */
 void ProductClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
@@ -316,7 +316,66 @@ void ProductClass::Clear() {
 }
 
 
-/* Latch class methods, see general-functions.hxx for more information */
+/* Delay class methods, see general-functions.h for more information */
+void DelayClass::Configure(const rapidjson::Value& Config, std::string RootPath) {
+  std::string OutputName;
+  if (Config.HasMember("Output")) {
+    OutputName = RootPath + "/" + Config["Output"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
+  }
+
+  if (Config.HasMember("Input")) {
+    InputKey_ = Config["Input"].GetString();
+    ElementPtr input_node = deftree.getElement(InputKey_);
+    if ( !input_node ) {
+      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input not specified in configuration."));
+  }
+
+  if (Config.HasMember("Delay_frames")) {
+    config_.delay_frames = Config["Delay_frames"].GetInt();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Delay_frames not specified in configuration."));
+  }
+
+  // pointer to log command data
+  OutputKey_ = RootPath+"/"+Config["Output"].GetString();
+  data_.output_node = deftree.initElement(OutputKey_, "Control law (Delay) output", LOG_FLOAT, LOG_NONE);
+}
+
+void DelayClass::Initialize() {
+  data_.buffer.clear();
+}
+
+bool DelayClass::Initialized() { return true; }
+
+void DelayClass::Run(Mode mode) {
+  data_.Mode = (uint8_t) mode;
+
+  data_.buffer.push_back( config_.input_node->getFloat() );
+  float val = 0.0;
+  while ( data_.buffer.size() > 0 && data_.buffer.size() > config_.delay_frames ) {
+    val = data_.buffer.front();
+    data_.buffer.pop_front();
+  }
+  data_.output_node->setFloat(val);
+}
+
+void DelayClass::Clear() {
+  config_.delay_frames = 0;
+  data_.Mode = kStandby;
+  data_.buffer.clear();
+  data_.output_node->setFloat(0.0f);
+  deftree.Erase(OutputKey_);
+  InputKey_.clear();
+  OutputKey_.clear();
+}
+
+
+/* Latch class methods, see general-functions.h for more information */
 void LatchClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string OutputName;
   if (Config.HasMember("Output")) {
