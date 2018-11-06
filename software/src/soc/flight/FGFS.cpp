@@ -54,6 +54,7 @@ static uint8_t sats = 0;
 static uint8_t fix = 0;
 
 static float ias_kt = 0.0;
+static float press_pa = 0.0;
 
 static float cmd_ail = 0.0;
 static float cmd_ele = 0.0;
@@ -94,6 +95,7 @@ static ElementPtr sats_node;
 static ElementPtr fix_node;
 
 static ElementPtr ias_node;
+static ElementPtr press_node;
 
 static ElementPtr cmd_left_ail_node;
 static ElementPtr cmd_right_ail_node;
@@ -227,6 +229,7 @@ bool fgfs_act_init() {
 bool fgfs_airdata_init() {
   printf("fgfs_airdata_init()\n");
   ias_node = deftree.getElement("/Sensor-Processing/vIAS_ms");
+  press_node = deftree.getElement("/Sensors/Pitot/Static/Pressure_Pa");
   return true;
 }
 
@@ -250,66 +253,50 @@ bool fgfs_imu_update() {
   bool fresh_data = false;
 
   int result;
-  if ( (result = sock_imu.recv(packet_buf, fgfs_imu_size, 0))
-       == fgfs_imu_size )
-    {
-      fresh_data = true;
+  if ( (result = sock_imu.recv(packet_buf, fgfs_imu_size, 0)) == fgfs_imu_size ) {
+    fresh_data = true;
 
-      if ( ulIsLittleEndian ) {
-        my_swap( packet_buf, 0, 8 );
-        my_swap( packet_buf, 8, 4 );
-        my_swap( packet_buf, 12, 4 );
-        my_swap( packet_buf, 16, 4 );
-        my_swap( packet_buf, 20, 4 );
-        my_swap( packet_buf, 24, 4 );
-        my_swap( packet_buf, 28, 4 );
-        my_swap( packet_buf, 32, 4 );
-        my_swap( packet_buf, 36, 4 );
-        my_swap( packet_buf, 40, 4 );
-        my_swap( packet_buf, 44, 4 );
-        my_swap( packet_buf, 48, 4 );
-      }
-
-      uint8_t *buf = packet_buf;
-      imu_time = *(double *)buf; buf += 8;
-      p = *(float *)buf; buf += 4;
-      q = *(float *)buf; buf += 4;
-      r = *(float *)buf; buf += 4;
-      ax = *(float *)buf; buf += 4;
-      ay = *(float *)buf; buf += 4;
-      az = *(float *)buf; buf += 4;
-      ias_kt = *(float *)buf; buf += 4;
-      float pressure = *(float *)buf; buf += 4;
-      float roll_truth = *(float *)buf; buf += 4;
-      float pitch_truth = *(float *)buf; buf += 4;
-      float yaw_truth = *(float *)buf; buf += 4;
-
-      // generate fake magnetometer readings
-      q_N2B = eul2quat(roll_truth * D2R, pitch_truth * D2R, yaw_truth * D2R);
-      // rotate ideal mag vector into body frame (then normalized)
-      mag_body = q_N2B.inverse() * mag_ned;
-      mag_body.normalize();
-      // cout << "mag vector (body): " << mag_body(0) << " " << mag_body(1) << " " << mag_body(2) << endl;
-
-      //airdata_node.setDouble( "timestamp", cur_time );
-      //airdata_node.setDouble( "airspeed_kt", airspeed );
-      const double inhg2mbar = 33.8638866667;
-      //airdata_node.setDouble( "pressure_mbar", pressure * inhg2mbar );
-
-      // fake volt/amp values here for no better place to do it
-      // fixme: static double last_time = cur_time;
-      static double mah = 0.0;
-      //double thr = act_node.getDouble("throttle");
-      //power_node.setDouble("main_vcc", 16.0 - thr);
-      //int cells = config_specs_node.getLong("battery_cells");
-      //if ( cells < 1 ) { cells = 4; }
-      //power_node.setDouble("cell_vcc", (16.0 - thr) / cells);
-      //power_node.setDouble("main_amps", thr * 12.0);
-      //double dt = cur_time - last_time;
-      //mah += thr*75.0 * (1000.0/3600.0) * dt;
-      // fixme: last_time = cur_time;
-      //power_node.setDouble( "total_mah", mah );
+    if ( ulIsLittleEndian ) {
+      my_swap( packet_buf, 0, 8 );
+      my_swap( packet_buf, 8, 4 );
+      my_swap( packet_buf, 12, 4 );
+      my_swap( packet_buf, 16, 4 );
+      my_swap( packet_buf, 20, 4 );
+      my_swap( packet_buf, 24, 4 );
+      my_swap( packet_buf, 28, 4 );
+      my_swap( packet_buf, 32, 4 );
+      my_swap( packet_buf, 36, 4 );
+      my_swap( packet_buf, 40, 4 );
+      my_swap( packet_buf, 44, 4 );
+      my_swap( packet_buf, 48, 4 );
     }
+
+    uint8_t *buf = packet_buf;
+    imu_time = *(double *)buf; buf += 8;
+    p = *(float *)buf; buf += 4;
+    q = *(float *)buf; buf += 4;
+    r = *(float *)buf; buf += 4;
+    ax = *(float *)buf; buf += 4;
+    ay = *(float *)buf; buf += 4;
+    az = *(float *)buf; buf += 4;
+    ias_kt = *(float *)buf; buf += 4;
+    float pressure = *(float *)buf; buf += 4;
+    float roll_truth = *(float *)buf; buf += 4;
+    float pitch_truth = *(float *)buf; buf += 4;
+    float yaw_truth = *(float *)buf; buf += 4;
+
+    // generate fake magnetometer readings
+    q_N2B = eul2quat(roll_truth * D2R, pitch_truth * D2R, yaw_truth * D2R);
+    // rotate ideal mag vector into body frame (then normalized)
+    mag_body = q_N2B.inverse() * mag_ned;
+    mag_body.normalize();
+    // cout << "mag vector (body): " << mag_body(0) << " " << mag_body(1) << " " << mag_body(2) << endl;
+
+    //airdata_node.setDouble( "timestamp", cur_time );
+    //airdata_node.setDouble( "airspeed_kt", airspeed );
+    const double inhg2pa = 3386.38866667;
+    press_pa = pressure * inhg2pa;
+  }
 
   p_node->setFloat(p);
   q_node->setFloat(q);
@@ -488,6 +475,7 @@ bool fgfs_act_update() {
 
 bool fgfs_airdata_update() {
   ias_node->setFloat( ias_kt * KTS_TO_MPS );
+  press_node->setFloat( press_pa );
   return true;
 }
 
