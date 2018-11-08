@@ -211,7 +211,7 @@ void SumClass::Run(Mode mode) {
       data_.saturated_node->setInt(0);
     }
   }
-  
+
   data_.output_node->setFloat(val);
 }
 
@@ -279,25 +279,25 @@ bool ProductClass::Initialized() {return true;}
 void ProductClass::Run(Mode mode) {
   data_.Mode = (uint8_t) mode;
 
-  data_.output_node->setFloat(0.0f);
-  float product = 1.0;
+  float val = 1.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
-    product *= config_.input_nodes[i]->getFloat();
+    val *= config_.input_nodes[i]->getFloat();
   }
-  data_.output_node->setFloat(product);
 
   // saturate command
   if (config_.SaturateOutput) {
-    if (data_.output_node->getFloat() <= config_.LowerLimit) {
-      data_.output_node->setFloat(config_.LowerLimit);
+    if (val <= config_.LowerLimit) {
+      val = config_.LowerLimit;
       data_.saturated_node->setInt(-1);
-    } else if (data_.output_node->getFloat() >= config_.UpperLimit) {
-      data_.output_node->setFloat(config_.UpperLimit);
+    } else if (val >= config_.UpperLimit) {
+      val = config_.UpperLimit;
       data_.saturated_node->setInt(1);
     } else {
       data_.saturated_node->setInt(0);
     }
   }
+
+  data_.output_node->setFloat(val);
 }
 
 void ProductClass::Clear() {

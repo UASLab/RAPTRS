@@ -183,13 +183,14 @@ int main(int argc, char* argv[]) {
           fgfs_act_update();
         }
         // run armed excitations
-        Excitation.RunArmed();
+        // Excitation.RunArmed();
         // run armed control laws
         Control.RunArmed();
 
 //
 std::string CtrlEngaged = Mission.GetEngagedController();
-std::cout << CtrlEngaged << std::endl;
+std::string ExcitEngaged = Mission.GetEngagedExcitation();
+std::cout << CtrlEngaged << "\t" << ExcitEngaged << std::endl;
 
       }
       // run telemetry
