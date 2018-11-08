@@ -307,6 +307,7 @@ bool fgfs_imu_update() {
   hx_node->setFloat(mag_body(0));
   hy_node->setFloat(mag_body(1));
   hz_node->setFloat(mag_body(2));
+  press_node->setFloat( press_pa );
   // cout << "imu: " << *p_node << " " << *q_node << " " << *r_node << " " << *ax_node << " " << *ay_node << " " << *az_node << " " << *hx_node << " " << *hy_node << " " << *hz_node << endl;
 
   return fresh_data;
@@ -475,7 +476,6 @@ bool fgfs_act_update() {
 
 bool fgfs_airdata_update() {
   ias_node->setFloat( ias_kt * KTS_TO_MPS );
-  press_node->setFloat( press_pa );
   return true;
 }
 
