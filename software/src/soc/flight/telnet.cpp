@@ -175,22 +175,50 @@ PropsChannel::foundTerminator()
         push( line.c_str() );
         vector<string> children;
         deftree.GetKeys(dir, &children);
+        string last_child = "";
         for ( unsigned int i = 0; i < children.size(); i++ ) {
-          string line = children[i];
-          ElementPtr ele = deftree.getElement(children[i]);
-          string type = ele->getType();
-          string value = ele->getValueAsString();
-          if ( type == "node" ) {
-            line += "/";
+          string tail = "";
+          if ( dir.length() == 1 ) {
+            // special case root node for now
+            tail = children[i].substr(1);
           } else {
-            if (mode == PROMPT) {
+            tail = children[i].substr(dir.length()+1);
+          }
+          string child = "";
+          bool is_leaf = true;
+          size_t pos = tail.find("/");
+          if ( pos != string::npos ) {
+            child = tail.substr(0, pos);
+            is_leaf = false;
+          } else {
+            child = tail;
+            is_leaf = true;
+          }
+          string line = "";
+          if ( is_leaf ) {
+            ElementPtr ele = deftree.getElement(children[i]);
+            string type = ele->getType();
+            string value = ele->getValueAsString();
+            if ( mode == PROMPT ) {
               // string value = dir.getString(children[i].c_str());
-              line += "(" + type + ")" + " = " + value;
+              line += "  " + child + " (" + type + ") = " + value;
+            } else {
+              line += children[i];
+            }
+          } else {              // !is_leaf
+            if ( child != last_child ) {
+              if ( mode == PROMPT ) {
+                line += "  " + child + "/";
+              } else {
+                line += dir + child;
+              }
+              last_child = child;
             }
           }
-
-          line += getTerminator();
-          push( line.c_str() );
+          if ( line.length() ) {
+            line += getTerminator();
+            push( line.c_str() );
+          }
         }
       } else {
         node_not_found_error( tokens[1] );
