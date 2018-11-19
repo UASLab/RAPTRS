@@ -61,22 +61,17 @@ private:
 
   double last_lon;
   double last_lat;
-  double last_az;
+  float last_az;
   bool pos_set;
     
   // route behaviors
   StartMode start_mode;
   CompletionMode completion_mode;
+  float xtrack_gain;
 
   // stats
-  double dist_remaining_m;
+  float dist_remaining_m;
 
-  // output signals
-  float leg_course;
-  float course_error_rad;
-  float xtrack_m;
-  float nav_dist_m;
-    
   SGWayPoint make_waypoint( const string& wpt_string );
 
   // build a route from a property (sub) tree
@@ -122,7 +117,7 @@ public:
   inline int size() const {
     return active->size();
   }
-  inline double get_dist_remaining_m() const {
+  inline float get_dist_remaining_m() const {
     return dist_remaining_m;
   }
 

@@ -1,8 +1,5 @@
 // definition-tree2.hxx - Curtis Olson
 
-// Todo: use shared_ptr for safe memeory management of Elements in the
-// definition tree.
-
 #include <iostream>
 #include "definition-tree2.h"
 
@@ -14,8 +11,8 @@ using std::make_shared;
 DefinitionTree2 deftree;
 
 ElementPtr DefinitionTree2::initElement(string name, string desc,
-                                      log_tag_t datalog,
-                                      log_tag_t telemetry)
+                                        log_tag_t datalog,
+                                        log_tag_t telemetry)
 {
   def_tree_t::iterator it;
   it = data.find(name);

@@ -17,6 +17,7 @@ static ElementPtr lat_rad_node;
 static ElementPtr lon_rad_node;
 static ElementPtr gps_fix_node;
 static ElementPtr course_error_node;
+static ElementPtr nav_course_error_node;
 static ElementPtr xtrack_node;
 static ElementPtr nav_dist_node;
 
@@ -29,10 +30,8 @@ FGRouteMgr::FGRouteMgr() :
   pos_set( false ),
   start_mode( FIRST_WPT ),
   completion_mode( LOOP ),
-  dist_remaining_m( 0.0 ),
-  leg_course( 0.0 ),
-  xtrack_m( 0.0 ),
-  nav_dist_m( 0.0 )
+  xtrack_gain( 0.0 ),
+  dist_remaining_m( 0.0 )
 {
 }
 
@@ -46,6 +45,13 @@ FGRouteMgr::~FGRouteMgr() {
 void FGRouteMgr::init( const rapidjson::Value& Config ) {
   printf("Initializing Route Manager...\n");
 
+  // configuration
+  if ( Config.HasMember("XtrackGain") ) {
+    xtrack_gain = Config["XtrackGain"].GetFloat();
+  } else {
+    xtrack_gain = 1.0;
+  }
+  
   // input signals
   vn_node = deftree.getElement("/Sensor-Processing/NorthVelocity_ms", true);
   ve_node = deftree.getElement("/Sensor-Processing/EastVelocity_ms", true);
@@ -56,6 +62,7 @@ void FGRouteMgr::init( const rapidjson::Value& Config ) {
 
   // output signals
   course_error_node = deftree.initElement("/Route/course_error_rad", "Route manager course error", LOG_NONE, LOG_NONE);
+  nav_course_error_node = deftree.initElement("/Route/nav_course_error_rad", "Route manager course (corrected for xtrack) error", LOG_NONE, LOG_NONE);
   xtrack_node = deftree.initElement("/Route/xtrack_m", "Route manager cross track error", LOG_NONE, LOG_NONE);
   nav_dist_node = deftree.initElement("/Route/dist_m", "Route manager distance remaining on leg", LOG_NONE, LOG_NONE);
     
@@ -85,12 +92,11 @@ void FGRouteMgr::update() {
   float direct_course, direct_distance;
   float leg_distance;
 
-  double gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
-                       + ve_node->getFloat() * ve_node->getFloat());
-  double track_deg = track_node->getFloat() * r2d;
+  float gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
+                      + ve_node->getFloat() * ve_node->getFloat());
+  float track_deg = track_node->getFloat() * r2d;
   double lat_deg = lat_rad_node->getDouble() * r2d;
   double lon_deg = lon_rad_node->getDouble() * r2d;
-    
 
   if ( !pos_set && gps_fix_node->getInt() == 1 ) {
     printf("Positioning relative waypoints...\n");
@@ -126,10 +132,11 @@ void FGRouteMgr::update() {
                           &direct_course, &direct_distance );
 
     // compute leg course and distance
+    float leg_course;
     wp.CourseAndDistance( prev, &leg_course, &leg_distance );
 
     // difference between ideal (leg) course and direct course
-    double angle = leg_course - direct_course;
+    float angle = leg_course - direct_course;
     if ( angle < -180.0 ) {
       angle += 360.0;
     } else if ( angle > 180.0 ) {
@@ -137,7 +144,7 @@ void FGRouteMgr::update() {
     }
 
     // compute course error
-    double course_error = leg_course - track_deg;
+    float course_error = leg_course - track_deg;
     if ( course_error < -180.0 ) {
       course_error += 360.0;
     } else if ( course_error > 180.0 ) {
@@ -146,20 +153,37 @@ void FGRouteMgr::update() {
     course_error_node->setFloat(course_error * d2r);
         
     // compute cross-track error
-    double angle_rad = angle * d2r;
-    xtrack_m = sin( angle_rad ) * direct_distance;
-    double dist_m = cos( angle_rad ) * direct_distance;
+    float angle_rad = angle * d2r;
+    float xtrack_m = sin( angle_rad ) * direct_distance;
+    float dist_m = cos( angle_rad ) * direct_distance;
     /* printf("direct_dist = %.1f angle = %.1f dist_m = %.1f\n",
        direct_distance, angle, dist_m); */
-    //route_node.setDouble( "xtrack_dist_m", xtrack_m );
-    //route_node.setDouble( "projected_dist_m", dist_m );
 
+    // compute navigation course with xtrack correction
+    float xtrack_comp = xtrack_m * xtrack_gain;
+    if ( xtrack_comp < -45.0 ) { xtrack_comp = -45.0; }
+    if ( xtrack_comp > 45.0 ) { xtrack_comp = 45.0; }
+    float nav_course = leg_course - xtrack_comp;
+    if ( nav_course < 0.0 ) {
+      nav_course += 360.0;
+    } else if ( nav_course > 360.0 ) {
+      nav_course -= 360.0;
+    }
+    // compute navigation course error
+    float nav_course_error = nav_course - track_deg;
+    if ( nav_course_error < -180.0 ) {
+      nav_course_error += 360.0;
+    } else if ( nav_course_error > 180.0 ) {
+      nav_course_error -= 360.0;
+    }
+    nav_course_error_node->setFloat(nav_course_error * d2r);
+    
     // default distance for waypoint acquisition = direct
     // distance to the target waypoint.  This can be
     // overridden later by leg following and replaced with
     // distance remaining along the leg.
     //nav_dist_m = direct_distance;
-    nav_dist_m = dist_m;
+    float nav_dist_m = dist_m;
 
     static int count = 0;
     if ( count++ > 10 ) {
@@ -170,7 +194,6 @@ void FGRouteMgr::update() {
     // estimate distance remaining to completion of route
     dist_remaining_m = nav_dist_m
       + active->get_remaining_distance_from_current_waypoint();
-    // route_node.setDouble("dist_remaining_m", dist_remaining_m);
 
     // logic to mark completion of leg and move to next leg.
     if ( completion_mode == LOOP ) {
@@ -197,8 +220,6 @@ void FGRouteMgr::update() {
     // FIXME: we've been commanded to follow a route, but no route
     // has been defined.  Assert something?  Print a warning message?
   }
-
-  // route_node.setDouble( "wp_dist_m", direct_distance );
 
   if ( gs_mps > 0.1 ) {
     // route_node.setDouble( "wp_eta_sec", direct_distance / gs_mps );
