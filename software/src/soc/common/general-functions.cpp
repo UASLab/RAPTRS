@@ -281,7 +281,7 @@ void ProductClass::Run(Mode mode) {
 
   float product = 1.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
-    val *= config_.input_nodes[i]->getFloat();
+    product *= config_.input_nodes[i]->getFloat();
   }
 
   // saturate command
@@ -326,8 +326,8 @@ void DelayClass::Configure(const rapidjson::Value& Config, std::string RootPath)
 
   if (Config.HasMember("Input")) {
     InputKey_ = Config["Input"].GetString();
-    ElementPtr input_node = deftree.getElement(InputKey_);
-    if ( !input_node ) {
+    config_.input_node = deftree.getElement(InputKey_);
+    if ( !config_.input_node ) {
       throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
     }
   } else {

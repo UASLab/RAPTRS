@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
           fgfs_act_update();
         }
         // run armed excitations
-        // Excitation.RunArmed();
+        Excitation.RunArmed();
         // run armed control laws
         Control.RunArmed();
 

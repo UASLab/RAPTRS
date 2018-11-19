@@ -42,6 +42,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           BaselineSensorProcessing_.push_back(std::make_shared<SumClass>());
         } else if (Func["Type"] == "Product") {
           BaselineSensorProcessing_.push_back(std::make_shared<ProductClass>());
+        } else if (Func["Type"] == "Delay") {
+          BaselineSensorProcessing_.push_back(std::make_shared<DelayClass>());
         } else if (Func["Type"] == "IAS") {
           BaselineSensorProcessing_.push_back(std::make_shared<IndicatedAirspeed>());
         } else if (Func["Type"] == "AGL") {
@@ -82,7 +84,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
         ElementPtr root_ele = deftree.getElement(RootName);
         root_ele->description = base_ele->description;
         root_ele->datalog = base_ele->datalog;
-        root_ele->telemetry = base_ele->telemetry;        
+        root_ele->telemetry = base_ele->telemetry;
         OutputNodes[KeyName] = root_ele;
       }
     }
@@ -109,6 +111,8 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<SumClass>());
             } else if (Func["Type"] == "Product") {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<ProductClass>());
+            } else if (Func["Type"] == "Delay") {
+              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<DelayClass>());
             } else if (Func["Type"] == "IAS") {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<IndicatedAirspeed>());
             } else if (Func["Type"] == "AGL") {
@@ -149,7 +153,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
             ElementPtr root_ele = deftree.getElement(RootName);
             root_ele->description = research_ele->description;
             root_ele->datalog = research_ele->datalog;
-            root_ele->telemetry = research_ele->telemetry;        
+            root_ele->telemetry = research_ele->telemetry;
             OutputNodes[KeyName] = root_ele;
           }
         }
