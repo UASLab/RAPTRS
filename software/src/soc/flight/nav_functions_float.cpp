@@ -26,8 +26,8 @@
 /*     Include Pertinent Header Files */
 
 #include <math.h>
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 using namespace Eigen;
 
 #include "nav_functions_float.hxx"

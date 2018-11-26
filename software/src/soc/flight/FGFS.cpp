@@ -9,8 +9,8 @@ using std::string;
 #include <stdlib.h>		// drand48()
 #include <sys/ioctl.h>
 
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 using namespace Eigen;
 #include <iostream>
 using std::cout;
