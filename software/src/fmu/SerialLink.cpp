@@ -89,7 +89,7 @@ void SerialLink::beginTransmission()
   _send_buf[_send_fpos++] = _frame_byte;
   /* control byte */
   _send_buf[_send_fpos++] = MsgType::COMMAND;
-  _send_crc = _send_crc_16.x25(&_send_buf[1],_send_fpos - 1);
+  _send_crc = _send_crc_16.xmodem(&_send_buf[1],_send_fpos - 1);
 }
 /*
 * Add a byte to the send buffer.
@@ -97,7 +97,7 @@ void SerialLink::beginTransmission()
 unsigned int SerialLink::write(unsigned char data)
 {
   if (_payload_len < _max_payload_len) {
-    _send_crc = _send_crc_16.x25_upd(&data,1);   
+    _send_crc = _send_crc_16.xmodem_upd(&data,1);   
     if ((data == _frame_byte) || (data == _esc_byte)) {
       _send_buf[_send_fpos++] = _esc_byte;
       _send_buf[_send_fpos++] = data ^ _invert_byte;
@@ -120,7 +120,7 @@ unsigned int SerialLink::write(unsigned char *data, unsigned int len)
     len = avail;
   }
   for (unsigned int i = 0; i < len; i++) {
-    _send_crc = _send_crc_16.x25_upd(&data[i],1);
+    _send_crc = _send_crc_16.xmodem_upd(&data[i],1);
     if ((data[i] == _frame_byte) || (data[i] == _esc_byte)) {
       _send_buf[_send_fpos++] = _esc_byte;
       _send_buf[_send_fpos++] = data[i] ^ _invert_byte;
@@ -237,7 +237,7 @@ bool SerialLink::checkReceived()
         /* frame end */
         if (_recv_fpos >= _header_len + _footer_len - 1) {
           /* passed crc check, good packet */
-          crc = _recv_crc_16.x25(&_recv_buf[1],_recv_fpos - 3);
+          crc = _recv_crc_16.xmodem(&_recv_buf[1],_recv_fpos - 3);
           if (crc == (((unsigned short)_recv_buf[_recv_fpos-1] << 8) | _recv_buf[_recv_fpos - 2])) {
             _msg_len = _recv_fpos - _header_len - _footer_len + 1; // +1 because we didn't step fpos
             _read_pos = _header_len;
@@ -334,7 +334,7 @@ void SerialLink::_sendStatus(bool ack)
   type = ack ? ACK : NACK;
   buf[pos++] = type;
   /* compute crc */
-  crc = _recv_crc_16.x25(&buf[1],pos - 1);
+  crc = _recv_crc_16.xmodem(&buf[1],pos - 1);
   /* crc */
   crc_bytes[0] = crc & 0xFF;
   crc_bytes[1] = (crc >> 8) & 0xFF;
