@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "hardware-defs.h"
 #include "definition-tree2.h"
+#include "SerialLink.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -206,17 +207,8 @@ class FlightManagementUnit {
       vector<AnalogSensorNodes> Analog;
     };
     const std::string Port_ = FmuPort;
-    const speed_t Baud_ = FmuBaud;
-    int FmuFileDesc_;
-    uint8_t Buffer_[kUartBufferMaxSize];
-    const uint8_t header_[2] = {0x42,0x46};
-    const uint8_t headerLength_ = 5;
-    const uint8_t checksumLength_ = 2;
-    uint8_t RxByte_;
-    uint16_t ParserState_ = 0;
-    uint8_t LengthBuffer_[2];
-    uint16_t Length_ = 0;
-    uint8_t Checksum_[2];
+    const uint32_t Baud_ = FmuBaud;
+    SerialLink *_bus;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     std::string RootPath_ = "/Sensors";
@@ -228,8 +220,6 @@ class FlightManagementUnit {
     std::string GetSensorOutputName(const rapidjson::Value& Config,std::string Key,size_t index);
     void SendMessage(Message message,std::vector<uint8_t> &Payload);
     bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
-    void WritePort(uint8_t* Buffer,size_t BufferSize);
-    void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
     void PublishSensors();
 };
 
