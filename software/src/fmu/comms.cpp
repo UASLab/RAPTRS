@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 /* class declaration, hardware serial bus and baudrate */
 AircraftSocComms::AircraftSocComms(HardwareSerial& bus,uint32_t baud) {
-  bus_ = &bus;
+  bus_ = new SerialLink(bus);
   baud_ =  baud;
 }
 
@@ -96,106 +96,21 @@ void AircraftSocComms::CheckMessages() {
 
 /* builds and sends a BFS message given a message ID and payload */
 void AircraftSocComms::SendMessage(Message message,std::vector<uint8_t> &Payload) {
-  if (Payload.size() < (kUartBufferMaxSize-headerLength_-checksumLength_)) {
-    // header
-    Buffer_[0] = header_[0];
-    Buffer_[1] = header_[1];
-    // message ID
-    Buffer_[2] = (uint8_t)message;
-    // payload length
-    Buffer_[3] = Payload.size() & 0xff;
-    Buffer_[4] = Payload.size() >> 8;
-    // payload
-    memcpy(Buffer_+headerLength_,Payload.data(),Payload.size());
-    // checksum
-    CalcChecksum((size_t)(Payload.size()+headerLength_),Buffer_,Checksum_);
-    Buffer_[Payload.size()+headerLength_] = Checksum_[0];
-    Buffer_[Payload.size()+headerLength_+1] = Checksum_[1];
-    // transmit
-    bus_->write(Buffer_,Payload.size()+headerLength_+checksumLength_);
-  }
+  bus_->beginTransmission();
+  bus_->write((uint8_t) message);
+  bus_->write(Payload.data(),Payload.size());
+  bus_->sendTransmission();
 }
 
 /* parses BFS messages returning message ID and payload on success */
 bool AircraftSocComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
-  while(bus_->available()) {
-    RxByte_ = bus_->read();
-    // header
-    if (ParserState_ < 2) {
-      if (RxByte_ == header_[ParserState_]) {
-        Buffer_[ParserState_] = RxByte_;
-        ParserState_++;
-      }
-    } else if (ParserState_ == 3) {
-      LengthBuffer_[0] = RxByte_;
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ == 4) {
-      LengthBuffer_[1] = RxByte_;
-      Length_ = ((uint16_t)LengthBuffer_[1] << 8) | LengthBuffer_[0];
-      if (Length_ > (kUartBufferMaxSize-headerLength_-checksumLength_)) {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ < (Length_ + headerLength_)) {
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ == (Length_ + headerLength_)) {
-      CalcChecksum(Length_ + headerLength_,Buffer_,Checksum_);
-      if (RxByte_ == Checksum_[0]) {
-        ParserState_++;
-      } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-    // checksum 1
-    } else if (ParserState_ == (Length_ + headerLength_ + 1)) {
-      if (RxByte_ == Checksum_[1]) {
-        // message ID
-        *message = (Message) Buffer_[2];
-        // payload size
-        Payload->resize(Length_);
-        // payload
-        memcpy(Payload->data(),Buffer_+headerLength_,Length_);
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return true;
-      } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-    }
-  }
-  return false;
-}
-
-/* computes a two byte checksum */
-void AircraftSocComms::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum) {
-  Checksum[0] = 0;
-  Checksum[1] = 0;
-  for (size_t i = 0; i < ArraySize; i++) {
-    Checksum[0] += ByteArray[i];
-    Checksum[1] += Checksum[0];
+  if (bus_->checkReceived()) {
+    *message = (Message) bus_->read();
+    Payload->resize(bus_->available());
+    bus_->read(Payload->data(),Payload->size());
+    bus_->sendStatus(true);
+    return true;
+  } else {
+    return false;
   }
 }

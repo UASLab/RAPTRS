@@ -51,7 +51,6 @@ class SerialLink {
 	private:
 		HardwareSerial* _bus;
 		CRC16 _send_crc_16, _recv_crc_16;
-		void (*_onReceive)(unsigned int len);
 		enum MsgType {
 			COMMAND,
 			ACK,

@@ -303,5 +303,3 @@ bool SerialLink::getTransmissionStatus()
 {
   return (_status == ACK) ? true : false;
 }
-
-SerialLink Serial1Link = SerialLink(Serial1);
