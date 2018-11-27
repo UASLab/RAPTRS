@@ -75,9 +75,9 @@ int HardwareSerial::available()
   return bytes_avail;
 }
 
-int HardwareSerial::read()
+unsigned char HardwareSerial::read()
 {
-  int buf;
+  unsigned char buf;
   ::read(_fd,&buf,1);
   return buf;
 }

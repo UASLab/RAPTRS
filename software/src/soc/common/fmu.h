@@ -208,6 +208,7 @@ class FlightManagementUnit {
     };
     const std::string Port_ = FmuPort;
     const uint32_t Baud_ = FmuBaud;
+    HardwareSerial *_serial;
     SerialLink *_bus;
     SensorData SensorData_;
     SensorNodes SensorNodes_;

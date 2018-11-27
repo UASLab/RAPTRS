@@ -27,8 +27,8 @@ using std::endl;
 
 /* Opens port to communicate with FMU. */
 void FlightManagementUnit::Begin() {
-  HardwareSerial Serial(Port_);
-  _bus = new SerialLink(Serial);
+  _serial = new HardwareSerial(Port_);
+  _bus = new SerialLink(*_serial);
   _bus->begin(Baud_);
 }
 
@@ -76,7 +76,6 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
 
   // switch FMU to run mode
   SendModeCommand(kRunMode);
-  sleep(2);
 
   // get the updated configuration from the sensor meta data
   std::cout << "\t\tReading Sensors config back from FMU..." << std::flush;
@@ -268,7 +267,6 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config) {
         Payload.push_back((uint8_t)ConfigString[j]);
       }
       SendMessage(Message::kConfigMesg,Payload);
-      sleep(6);
     }
   }
 }
@@ -285,7 +283,6 @@ void FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
     Payload.push_back((uint8_t)ConfigString[j]);
   }
   SendMessage(Message::kConfigMesg,Payload);
-  sleep(6);
 }
 
 /* Configures the FMU control laws */
@@ -309,7 +306,6 @@ void FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
         Payload.push_back((uint8_t)ConfigString[j]);
       }
       SendMessage(Message::kConfigMesg,Payload);
-      sleep(6);
     }
   }
 }
@@ -330,7 +326,6 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config) {
       Payload.push_back((uint8_t)ConfigString[j]);
     }
     SendMessage(Message::kConfigMesg,Payload);
-    sleep(4);
   }
 }
 

@@ -36,7 +36,7 @@ class HardwareSerial {
     unsigned int write(unsigned char data);
     unsigned int write(unsigned char *data, unsigned int len);
     int available();
-    int read();
+    unsigned char read();
     int read(unsigned char *data, unsigned int len);
     void end();
   private:
