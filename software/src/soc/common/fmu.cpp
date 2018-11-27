@@ -27,20 +27,9 @@ using std::endl;
 
 /* Opens port to communicate with FMU. */
 void FlightManagementUnit::Begin() {
-  if ((FmuFileDesc_=open(Port_.c_str(),O_RDWR|O_NOCTTY|O_NONBLOCK))<0) {
-    throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": UART failed to open."));
-  }
-  struct termios Options;
-  tcgetattr(FmuFileDesc_,&Options);
-  Options.c_cflag = Baud_ | CS8 | CREAD | CLOCAL;
-  Options.c_iflag = IGNPAR;
-  Options.c_oflag = 0;
-  Options.c_lflag = 0;
-  Options.c_cc[VTIME] = 0;
-  Options.c_cc[VMIN] = 0;
-  tcflush(FmuFileDesc_,TCIFLUSH);
-  tcsetattr(FmuFileDesc_,TCSANOW,&Options);
-  fcntl(FmuFileDesc_,F_SETFL,O_NONBLOCK);
+  HardwareSerial Serial(Port_);
+  _bus = new SerialLink(Serial);
+  _bus->begin(Baud_);
 }
 
 /* Updates FMU configuration given a JSON value and registers data with global defs */
@@ -51,7 +40,11 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
   SendModeCommand(kConfigMode);
 
   // clear the serial buffer
-  while ((read(FmuFileDesc_,&RxByte_,sizeof(RxByte_)))>0) {}
+  _bus->checkReceived();
+  while (_bus->available()>0) {
+    _bus->read();
+    _bus->checkReceived();
+  }
 
   // configure FMU sensors
   if (Config.HasMember("Sensors")) {
@@ -493,122 +486,22 @@ std::string FlightManagementUnit::GetSensorOutputName(const rapidjson::Value& Co
 
 /* Send a BFS Bus message. */
 void FlightManagementUnit::SendMessage(Message message,std::vector<uint8_t> &Payload) {
-  // check that the payload length is within the maximum buffer size
-  if (Payload.size() < (kUartBufferMaxSize-headerLength_-checksumLength_)) {
-    // header
-    Buffer_[0] = header_[0];
-    Buffer_[1] = header_[1];
-    // message ID
-    Buffer_[2] = (uint8_t)message;
-    // payload length
-    Buffer_[3] = Payload.size() & 0xff;
-    Buffer_[4] = Payload.size() >> 8;
-    // payload
-    std::memcpy(Buffer_+headerLength_,Payload.data(),Payload.size());
-    // checksum
-    CalcChecksum((size_t)(Payload.size()+headerLength_),Buffer_,Checksum_);
-    Buffer_[Payload.size()+headerLength_] = Checksum_[0];
-    Buffer_[Payload.size()+headerLength_+1] = Checksum_[1];
-    // transmit
-    WritePort(Buffer_,Payload.size()+headerLength_+checksumLength_);
-  }
+  _bus->beginTransmission();
+  _bus->write((uint8_t) message);
+  _bus->write(Payload.data(),Payload.size());
+  _bus->sendTransmission();
 }
 
 /* Receive a BFS Bus message. */
 bool FlightManagementUnit::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
-  int count;
-  while ((count=read(FmuFileDesc_,&RxByte_,sizeof(RxByte_)))>0) {
-    // header
-    if (ParserState_ < 2) {
-      if (RxByte_ == header_[ParserState_]) {
-        Buffer_[ParserState_] = RxByte_;
-        ParserState_++;
-      }
-    // length
-    } else if (ParserState_ == 3) {
-      LengthBuffer_[0] = RxByte_;
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ == 4) {
-      LengthBuffer_[1] = RxByte_;
-      Length_ = ((uint16_t)LengthBuffer_[1] << 8) | LengthBuffer_[0];
-      if (Length_ > (kUartBufferMaxSize-headerLength_-checksumLength_)) {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    // message ID and payload
-    } else if (ParserState_ < (Length_ + headerLength_)) {
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    // checksum 0
-    } else if (ParserState_ == (Length_ + headerLength_)) {
-      CalcChecksum(Length_ + headerLength_,Buffer_,Checksum_);
-      if (RxByte_ == Checksum_[0]) {
-        ParserState_++;
-      } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-    // checksum 1
-    } else if (ParserState_ == (Length_ + headerLength_ + 1)) {
-      if (RxByte_ == Checksum_[1]) {
-        // message ID
-        *message = (Message) Buffer_[2];
-        // payload size
-        Payload->resize(Length_);
-        // payload
-        std::memcpy(Payload->data(),Buffer_+headerLength_,Length_);
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return true;
-      } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-    }
-  }
-  return false;
-}
-
-/* Writes data to serial port. */
-void FlightManagementUnit::WritePort(uint8_t* Buffer,size_t BufferSize) {
-  int count;
-  if ((count=write(FmuFileDesc_,Buffer,BufferSize))<0) {
-    do {
-      count=write(FmuFileDesc_,Buffer,BufferSize);
-      usleep(10);
-    } while (count < 0);
-  }
-}
-
-/* Computes a two byte checksum. */
-void FlightManagementUnit::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum) {
-  Checksum[0] = 0;
-  Checksum[1] = 0;
-  for (size_t i = 0; i < ArraySize; i++) {
-    Checksum[0] += ByteArray[i];
-    Checksum[1] += Checksum[0];
+  if (_bus->checkReceived()) {
+    *message = (Message) _bus->read();
+    Payload->resize(_bus->available());
+    _bus->read(Payload->data(),Payload->size());
+    _bus->sendStatus(true);
+    return true;
+  } else {
+    return false;
   }
 }
 
