@@ -33,7 +33,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "FastCRC.h"
 #include "Arduino.h"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 4096
 #define RETX_DELAY_US 500
 
 class SerialLink {
