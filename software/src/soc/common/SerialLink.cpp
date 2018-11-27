@@ -114,10 +114,7 @@ void SerialLink::endTransmission()
   elapsedMicros sendTime = 0;
   /* wait for ACK */
   while (_status != ACK) {
-    if (sendTime > RETX_DELAY_US) {
-      sendTime -= RETX_DELAY_US;
-      _bus->write(_send_buf,_send_fpos);
-    } 
+    checkReceived();
   }
 }
 /*
@@ -146,10 +143,7 @@ void SerialLink::endTransmission(unsigned int timeout)
   /* wait for ACK */
   elapsedMicros t = 0, sendTime = 0;
   while ((_status != ACK) && (t < timeout)) {
-    if (sendTime > RETX_DELAY_US) {
-      sendTime -= RETX_DELAY_US;
-      _bus->write(_send_buf,_send_fpos);
-    } 
+    checkReceived();
   }
 }
 /*
@@ -205,18 +199,11 @@ bool SerialLink::checkReceived()
             if ((_recv_type == ACK) || (_recv_type == NACK)) {
               _status = _recv_type;
             }
-            if (((MsgType)_recv_buf[1]) == COMMAND) {
-              _onReceive(_msg_len);
-              _sendStatus(true);
-            }
             return true;
           /* did not pass crc, bad packet */
           } else {
             _recv_fpos = 0;
             _escape = false;
-            if (((MsgType)_recv_buf[1]) == COMMAND) {
-              _sendStatus(false);
-            }
             return false;
           }
         /* bad frame */
@@ -279,7 +266,7 @@ unsigned int SerialLink::read(unsigned char *data, unsigned int len)
 /*
 * Send ack or nack response
 */
-void SerialLink::_sendStatus(bool ack)
+void SerialLink::sendStatus(bool ack)
 {
   unsigned char buf[_header_len + 2 * _footer_len];
   unsigned char crc_bytes[2];

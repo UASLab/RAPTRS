@@ -48,6 +48,7 @@ class SerialLink {
 		unsigned char read();
 		unsigned int read(unsigned char *data, unsigned int len);
 		bool getTransmissionStatus();
+		void sendStatus(bool ack);
 	private:
 		HardwareSerial* _bus;
 		CRC16 _send_crc_16, _recv_crc_16;
@@ -72,7 +73,6 @@ class SerialLink {
 		bool _escape = false;
 		unsigned char _send_buf[BUFFER_SIZE];
 		unsigned char _recv_buf[BUFFER_SIZE];
-		void _sendStatus(bool ack);
 };
 
 #endif
