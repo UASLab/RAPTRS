@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define COMMS_H_
 
 #include "mission.h"
+#include "SerialLink.h"
 #include "Vector.h"
 #include "i2c_t3.h"
 #include "Arduino.h"
@@ -45,21 +46,11 @@ class AircraftSocComms {
     void SendMessage(Message message,std::vector<uint8_t> &Payload);
     bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
   private:
-    HardwareSerial *bus_;
+    SerialLink *bus_;
     uint32_t baud_;
-    uint8_t Buffer_[kUartBufferMaxSize];
-    const uint8_t header_[2] = {0x42,0x46};
-    const uint8_t headerLength_ = 5;
-    const uint8_t checksumLength_ = 2;
-    uint8_t RxByte_;
-    uint16_t ParserState_ = 0;
-    uint8_t LengthBuffer_[2];
-    uint16_t Length_;
-    uint8_t Checksum_[2];
     bool MessageReceived_ = false;
     Message ReceivedMessage_;
     std::vector<uint8_t> ReceivedPayload_;
-    void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
 };
 
 #endif

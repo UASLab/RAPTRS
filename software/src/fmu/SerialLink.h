@@ -55,7 +55,6 @@ class SerialLink {
 	private:
 		HardwareSerial* _bus;
 		FastCRC16 _send_crc_16, _recv_crc_16;
-		void (*_onReceive)(unsigned int len);
 		enum MsgType {
 			COMMAND,
 			ACK,
@@ -77,7 +76,6 @@ class SerialLink {
 		unsigned char _send_buf[BUFFER_SIZE];
 		unsigned char _recv_buf[BUFFER_SIZE];
 };
-extern SerialLink Serial1Link;
 
 #endif
 
