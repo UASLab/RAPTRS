@@ -32,7 +32,7 @@ const uint32_t kDebugBaud = 115200;                           // Baudrate for st
 
 // SOC port
 static HardwareSerial &kSocUart = Serial1;                    // Serial port used for communicating with SOC
-const uint32_t kSocBaud = 1500000;                            // Baudrate for communicating with SOC
+const uint32_t kSocBaud = 921600;                            // Baudrate for communicating with SOC
 
 // BFS bus
 static i2c_t3 &kBfsPort = Wire;                               // I2C port

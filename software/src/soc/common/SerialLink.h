@@ -27,6 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "HardwareSerial.h"
 #include "elapsedMillis.h"
 #include "crc16.h"
+#include <string>
 #include <cstring>
 
 #define BUFFER_SIZE 4096

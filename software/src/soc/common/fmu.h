@@ -38,7 +38,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <vector>
 #include <cstring>
 #include <Eigen/Dense>
-
+#include <string>
 #include <vector>
 using std::vector;
 
@@ -207,12 +207,13 @@ class FlightManagementUnit {
       vector<AnalogSensorNodes> Analog;
     };
     const std::string Port_ = FmuPort;
+    const std::string RootPath_ = "/Sensors";
     const uint32_t Baud_ = FmuBaud;
     HardwareSerial *_serial;
     SerialLink *_bus;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
-    std::string RootPath_ = "/Sensors";
+    // static const 
     void ConfigureSensors(const rapidjson::Value& Config);
     void ConfigureMissionManager(const rapidjson::Value& Config);
     void ConfigureControlLaws(const rapidjson::Value& Config);
