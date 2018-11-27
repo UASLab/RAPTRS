@@ -22,38 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "SerialLink.h"
 
-/* interrupt chain to generate serial interrupts */
-class interruptChain {
-  public:
-    void chainInterrupt(int intNumber, void (*interruptPtr)(void)) {
-			prevInterruptPtr = _VectorsRam[intNumber];
-			_VectorsRam[intNumber] = interruptPtr;
-    }
-    inline void callNext(void) {
-      prevInterruptPtr();
-    }
-  protected:
-    void (*prevInterruptPtr)(void);
-};
-interruptChain _serial1Interrupt, _serial2Interrupt, _serial3Interrupt;
-/* serial1 interrupt handler */
-void hdlc_serial1_int_handler(void)
-{
-  _serial1Interrupt.callNext();
-  Serial1Link.checkReceived();
-}
-/* serial2 interrupt handler */
-void hdlc_serial2_int_handler(void)
-{
-  _serial2Interrupt.callNext();
-  Serial2Link.checkReceived();
-}
-/* serial3 interrupt handler */
-void hdlc_serial3_int_handler(void)
-{
-  _serial3Interrupt.callNext();
-  Serial3Link.checkReceived();
-}
 /* Assigning a hardware serial bus */
 SerialLink::SerialLink(HardwareSerial& bus)
 {
@@ -65,16 +33,6 @@ SerialLink::SerialLink(HardwareSerial& bus)
 void SerialLink::begin(unsigned int baud)
 {
   _bus->begin(baud);
-  /* assigning the appropriate interrupt handler */
-  if (_bus == &Serial1) {
-    _serial1Interrupt.chainInterrupt(IRQ_UART0_STATUS + 16, hdlc_serial1_int_handler);
-  }
-  if (_bus == &Serial2) {
-    _serial2Interrupt.chainInterrupt(IRQ_UART1_STATUS + 16, hdlc_serial2_int_handler);
-  }
-  if (_bus == &Serial3) {
-    _serial3Interrupt.chainInterrupt(IRQ_UART2_STATUS + 16, hdlc_serial3_int_handler);
-  } 
 }
 /*
 * Starting to build a new packet to send.
@@ -156,10 +114,7 @@ void SerialLink::endTransmission()
   elapsedMicros sendTime = 0;
   /* wait for ACK */
   while (_status != ACK) {
-    if (sendTime > RETX_DELAY_US) {
-      sendTime -= RETX_DELAY_US;
-      _bus->write(_send_buf,_send_fpos);
-    } 
+    checkReceived();
   }
 }
 /*
@@ -188,10 +143,7 @@ void SerialLink::endTransmission(unsigned int timeout)
   /* wait for ACK */
   elapsedMicros t = 0, sendTime = 0;
   while ((_status != ACK) && (t < timeout)) {
-    if (sendTime > RETX_DELAY_US) {
-      sendTime -= RETX_DELAY_US;
-      _bus->write(_send_buf,_send_fpos);
-    } 
+    checkReceived();
   }
 }
 /*
@@ -247,18 +199,11 @@ bool SerialLink::checkReceived()
             if ((_recv_type == ACK) || (_recv_type == NACK)) {
               _status = _recv_type;
             }
-            if (((MsgType)_recv_buf[1]) == COMMAND) {
-              _onReceive(_msg_len);
-              _sendStatus(true);
-            }
             return true;
           /* did not pass crc, bad packet */
           } else {
             _recv_fpos = 0;
             _escape = false;
-            if (((MsgType)_recv_buf[1]) == COMMAND) {
-              _sendStatus(false);
-            }
             return false;
           }
         /* bad frame */
@@ -321,7 +266,7 @@ unsigned int SerialLink::read(unsigned char *data, unsigned int len)
 /*
 * Send ack or nack response
 */
-void SerialLink::_sendStatus(bool ack)
+void SerialLink::sendStatus(bool ack)
 {
   unsigned char buf[_header_len + 2 * _footer_len];
   unsigned char crc_bytes[2];
@@ -360,5 +305,3 @@ bool SerialLink::getTransmissionStatus()
 }
 
 SerialLink Serial1Link = SerialLink(Serial1);
-SerialLink Serial2Link = SerialLink(Serial2);
-SerialLink Serial3Link = SerialLink(Serial3);

@@ -42,7 +42,6 @@ class SerialLink {
 		void endTransmission();
 		void endTransmission(unsigned int timeout);
 		void sendTransmission();
-		inline void onReceive(void (*function)(unsigned int len)) { _onReceive = function; }
 		bool checkReceived();
 		unsigned int available();
 		unsigned char read();
