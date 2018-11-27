@@ -331,6 +331,7 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config) {
 
 /* Registers sensor data with global definition tree */
 void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config) {
+
   for (size_t i=0; i < SensorData_.Time_us.size(); i++) {
     string Path = RootPath_+"/"+GetSensorOutputName(Config,"Time",i);
     SensorNodes_.Time_us[i] = deftree.initElement(Path, "Flight management unit time, us", LOG_UINT64, LOG_NONE);
@@ -484,7 +485,11 @@ void FlightManagementUnit::SendMessage(Message message,std::vector<uint8_t> &Pay
   _bus->beginTransmission();
   _bus->write((uint8_t) message);
   _bus->write(Payload.data(),Payload.size());
-  _bus->sendTransmission();
+  if ((message == kModeCommand)||(message == kConfigMesg)) {
+    _bus->endTransmission();
+  } else {
+    _bus->sendTransmission();
+  }
 }
 
 /* Receive a BFS Bus message. */

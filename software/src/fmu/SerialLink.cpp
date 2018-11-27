@@ -198,7 +198,9 @@ bool SerialLink::checkReceived()
             _recv_type = (MsgType)_recv_buf[1];
             if ((_recv_type == ACK) || (_recv_type == NACK)) {
               _status = _recv_type;
+              return false;
             }
+            
             return true;
           /* did not pass crc, bad packet */
           } else {
