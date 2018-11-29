@@ -37,10 +37,10 @@
 ////////////////////////////////////////////////////////////////
 
 #ifndef SERIAL1_TX_BUFFER_SIZE
-#define SERIAL1_TX_BUFFER_SIZE     64 // number of outgoing bytes to buffer
+#define SERIAL1_TX_BUFFER_SIZE     4096 // number of outgoing bytes to buffer
 #endif
 #ifndef SERIAL1_RX_BUFFER_SIZE
-#define SERIAL1_RX_BUFFER_SIZE     64 // number of incoming bytes to buffer
+#define SERIAL1_RX_BUFFER_SIZE     4096 // number of incoming bytes to buffer
 #endif
 #define RTS_HIGH_WATERMARK (SERIAL1_RX_BUFFER_SIZE-24) // RTS requests sender to pause
 #define RTS_LOW_WATERMARK  (SERIAL1_RX_BUFFER_SIZE-38) // RTS allows sender to resume
