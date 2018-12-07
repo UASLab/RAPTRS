@@ -43,6 +43,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 using std::cout;
 using std::endl;
 
+// Note: deftree is defined in common/definitiontree2.h and declared
+// (and initialized) globally in common/definitiontree2.cpp.  Any
+// source file that includes definitiontree2.h may reference and use
+// deftree.
+
 int main(int argc, char* argv[]) {
   if (argc!=2) {
     std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
