@@ -56,24 +56,6 @@ static uint8_t fix = 0;
 static float ias_kt = 0.0;
 static float press_pa = 0.0;
 
-static float cmd_ail = 0.0;
-static float cmd_ele = 0.0;
-static float cmd_thr = 0.0;
-static float cmd_rud = 0.0;
-static float cmd_ch5 = 0.0;
-static float cmd_ch6 = 0.0;
-static float cmd_ch7 = 0.0;
-static float cmd_ch8 = 0.0;
-static float tgt_roll = 0.0;
-static float tgt_pitch = 0.0;
-static float tgt_yaw = 0.0;
-static float tgt_climb = 0.0;
-static float tgt_alt = 0.0;
-static float tgt_kts = 0.0;
-static float tgt_offset = 0.0;
-static float wp_dist = 0.0;
-static float wp_eta = 0.0;
-
 // pointers to def tree
 static ElementPtr p_node;
 static ElementPtr q_node;
@@ -97,11 +79,13 @@ static ElementPtr fix_node;
 static ElementPtr ias_node;
 static ElementPtr press_node;
 
-static ElementPtr cmd_left_ail_node;
-static ElementPtr cmd_right_ail_node;
-static ElementPtr cmd_ele_node;
-static ElementPtr cmd_thr_node;
-static ElementPtr cmd_rud_node;
+static ElementPtr cmdAilL_node;
+static ElementPtr cmdAilR_node;
+static ElementPtr cmdElev_node;
+static ElementPtr cmdRud_node;
+static ElementPtr cmdFlapL_node;
+static ElementPtr cmdFlapR_node;
+static ElementPtr cmdMotor_node;
 
 static const float D2R = M_PI / 180.0;
 static const float SG_METER_TO_FEET = 1.0 / 0.3048;
@@ -128,12 +112,12 @@ bool fgfs_init( const rapidjson::Value& Config ) {
     return true;
   } else {
     return false;
-  }  
+  }
 }
 
 bool fgfs_imu_init() {
   printf("fgfs_imu_init()\n");
-    
+
   p_node = deftree.getElement("/Sensors/Fmu/Mpu9250/GyroX_rads");
   q_node = deftree.getElement("/Sensors/Fmu/Mpu9250/GyroY_rads");
   r_node = deftree.getElement("/Sensors/Fmu/Mpu9250/GyroZ_rads");
@@ -158,7 +142,7 @@ bool fgfs_imu_init() {
 
   // don't block waiting for input
   sock_imu.setBlocking( false );
-    
+
   return true;
 }
 
@@ -178,7 +162,7 @@ bool fgfs_gps_init() {
   // some initial value
   mag_ned << 0.5, 0.01, -0.9;
   mag_ned.normalize();
-    
+
   // open a UDP socket
   if ( ! sock_gps.open( false ) ) {
     printf("Error opening imu input socket\n");
@@ -201,11 +185,13 @@ bool fgfs_gps_init() {
 bool fgfs_act_init() {
   printf("fgfs_act_init()\n");
 
-  cmd_left_ail_node = deftree.getElement("/Control/cmdAilL_rad");
-  cmd_right_ail_node = deftree.getElement("/Control/cmdAilR_rad");
-  cmd_ele_node = deftree.getElement("/Control/cmdElev_rad");
-  cmd_thr_node = deftree.getElement("/Control/cmdMotor_nd");
-  cmd_rud_node = deftree.getElement("/Control/cmdRud_rad");
+  cmdAilL_node = deftree.getElement("/Control/cmdAilL_rad");
+  cmdAilR_node = deftree.getElement("/Control/cmdAilR_rad");
+  cmdElev_node = deftree.getElement("/Control/cmdElev_rad");
+  cmdRud_node = deftree.getElement("/Control/cmdRud_rad");
+  cmdFlapL_node = deftree.getElement("/Control/cmdFlapL_rad");
+  cmdFlapR_node = deftree.getElement("/Control/cmdFlapR_rad");
+  cmdMotor_node = deftree.getElement("/Control/cmdMotor_nd");
 
   // open a UDP socket
   if ( ! sock_act.open( false ) ) {
@@ -253,7 +239,7 @@ bool fgfs_imu_update() {
   bool fresh_data = false;
 
   int result;
-  if ( (result = sock_imu.recv(packet_buf, fgfs_imu_size, 0)) == fgfs_imu_size ) {
+  while ( (result = sock_imu.recv(packet_buf, fgfs_imu_size, 0)) == fgfs_imu_size ) {
     fresh_data = true;
 
     if ( ulIsLittleEndian ) {
@@ -344,7 +330,7 @@ bool fgfs_gps_update() {
     vd = *(float *)buf; buf += 4;
 
     // cout << gps_time << " " << lat << " " << lon << " " << alt << endl;
-        
+
     // compute ideal magnetic vector in ned frame
     long int jd = now_to_julian_days();
     double field[6];
@@ -368,7 +354,7 @@ bool fgfs_gps_update() {
   fix_node->setInt(fix);
 
   // cout << "gps: " << *lon_node << " " << *lat_node << " " << *alt_node << " " << *vn_node << " " << *ve_node << " " << *vd_node << endl;
-    
+
   return fresh_data;
 }
 
@@ -385,65 +371,56 @@ bool fgfs_act_update() {
   double time = 0.0;
   *(double *)buf = time; buf += 8;
 
-  float ail = (cmd_left_ail_node->getFloat() - cmd_right_ail_node->getFloat());
-  *(float *)buf = ail; buf += 4;
+  float cmdAilL_rad = cmdAilL_node->getFloat();
+  *(float *)buf = cmdAilL_rad; buf += 4;
 
-  float ele = cmd_ele_node->getFloat() * 2.0;
-  *(float *)buf = ele; buf += 4;
+  float cmdAilR_rad = cmdAilR_node->getFloat();
+  *(float *)buf = cmdAilR_rad; buf += 4;
 
-  float thr = cmd_thr_node->getFloat();
-  *(float *)buf = thr; buf += 4;
+  float cmdElev_rad = cmdElev_node->getFloat();
+  *(float *)buf = cmdElev_rad; buf += 4;
 
-  float rud = cmd_rud_node->getFloat() * -2.0;
-  *(float *)buf = rud; buf += 4;
+  float cmdRud_rad = cmdRud_node->getFloat();
+  *(float *)buf = cmdRud_rad; buf += 4;
 
-  float ch5 = 0.0;
-  *(float *)buf = ch5; buf += 4;
+  float cmdFlapL_rad = cmdFlapL_node->getFloat();
+  *(float *)buf = cmdFlapL_rad; buf += 4;
 
-  float ch6 = 0.0;
-  *(float *)buf = ch6; buf += 4;
+  float cmdFlapR_rad = cmdFlapR_node->getFloat();
+  *(float *)buf = cmdFlapR_rad; buf += 4;
 
-  float ch7 = 0.0;
-  *(float *)buf = ch7; buf += 4;
+  float cmdMotor_nd = cmdMotor_node->getFloat();
+  *(float *)buf = cmdMotor_nd; buf += 4;
 
   float ch8 = 0.0;
   *(float *)buf = ch8; buf += 4;
 
-  float bank = 0.0;
-  *(float *)buf = bank; buf += 4;
+  float ch9 = 0.0;
+  *(float *)buf = ch9; buf += 4;
 
-  float pitch = 0.0;
-  *(float *)buf = pitch; buf += 4;
+  float ch10 = 0.0;
+  *(float *)buf = ch10; buf += 4;
 
-  float target_track_offset = 0.0;
-  if ( target_track_offset < -180 ) { target_track_offset += 360.0; }
-  if ( target_track_offset > 180 ) { target_track_offset -= 360.0; }
-  float hdg = target_track_offset * 100 + 36000.0;
-  *(float *)buf = hdg; buf += 4;
+  float ch11 = 0.0;
+  *(float *)buf = ch11; buf += 4;
 
-  // FIXME: no longer used so wasted 4 bytes ...
-  float climb = 0.0;
-  *(float *)buf = climb; buf += 4;
+  float ch12 = 0.0;
+  *(float *)buf = ch12; buf += 4;
 
-  float alt_agl_ft = 0.0;
-  float ground_m = 0.0;
-  float alt_msl_ft = (ground_m * SG_METER_TO_FEET + alt_agl_ft) * 100.0;
-  *(float *)buf = alt_msl_ft; buf += 4;
+  float ch13 = 0.0;
+  *(float *)buf = ch13; buf += 4;
 
-  float speed = 0.0;
-  *(float *)buf = speed; buf += 4;
+  float ch14 = 0.0;
+  *(float *)buf = ch14; buf += 4;
 
-  float track_offset = 0.0;
-  if ( track_offset < -180 ) { track_offset += 360.0; }
-  if ( track_offset > 180 ) { track_offset -= 360.0; }
-  float offset = track_offset * 100 + 36000.0;
-  *(float *)buf = offset; buf += 4;
+  float ch15 = 0.0;
+  *(float *)buf = ch15; buf += 4;
 
-  float dist = 0.0;
-  *(float *)buf = dist; buf += 4;
+  float ch16 = 0.0;
+  *(float *)buf = ch16; buf += 4;
 
-  float eta = 0.0;
-  *(float *)buf = eta; buf += 4;
+  float ch17 = 0.0;
+  *(float *)buf = ch17; buf += 4;
 
   if ( ulIsLittleEndian ) {
     my_swap( packet_buf, 0, 8 );
