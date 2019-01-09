@@ -187,6 +187,9 @@ bool SerialLink::checkReceived()
     } else {
       if (c == _frame_byte) {
         /* frame end */
+        if (_recv_fpos == 1) {
+          // Do nothing
+        } else 
         if (_recv_fpos >= _header_len + _footer_len - 1) {
           /* passed crc check, good packet */
           crc = _recv_crc_16.xmodem(&_recv_buf[1],_recv_fpos - 3);
