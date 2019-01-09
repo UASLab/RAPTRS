@@ -79,13 +79,30 @@ static ElementPtr fix_node;
 static ElementPtr ias_node;
 static ElementPtr press_node;
 
+
 static ElementPtr cmdAilL_node;
 static ElementPtr cmdAilR_node;
 static ElementPtr cmdElev_node;
 static ElementPtr cmdRud_node;
 static ElementPtr cmdFlapL_node;
 static ElementPtr cmdFlapR_node;
+
+static ElementPtr cmdTE1L_node;
+static ElementPtr cmdTE1R_node;
+static ElementPtr cmdTE2L_node;
+static ElementPtr cmdTE2R_node;
+static ElementPtr cmdTE3L_node;
+static ElementPtr cmdTE3R_node;
+static ElementPtr cmdTE4L_node;
+static ElementPtr cmdTE4R_node;
+static ElementPtr cmdTE5L_node;
+static ElementPtr cmdTE5R_node;
+static ElementPtr cmdLEL_node;
+static ElementPtr cmdLER_node;
+
 static ElementPtr cmdMotor_node;
+static ElementPtr cmdGear_node;
+
 
 static const float D2R = M_PI / 180.0;
 static const float SG_METER_TO_FEET = 1.0 / 0.3048;
@@ -97,16 +114,21 @@ Quaternionf q_N2B;
 Matrix3f C_N2B;
 
 static bool fgfs_interface_active = false;
+string modelName;
 
 // Todo: make flightgear ports and host configurable
 bool fgfs_init( const rapidjson::Value& Config ) {
   if ( Config.HasMember("FlightGear") ) {
+    const rapidjson::Value& FgConfig = Config["FlightGear"];
+    if ( FgConfig.HasMember("Model") ) {
+      modelName = FgConfig["Model"].GetString();
+    }
     fgfs_imu_init();
     fgfs_gps_init();
     fgfs_airdata_init();
     fgfs_act_init();
 
-    printf("FlightGear interface initialized\n");
+    std::cout << "FlightGear interface initialized: " << modelName << std::endl;
     fgfs_interface_active = true;
 
     return true;
@@ -185,13 +207,32 @@ bool fgfs_gps_init() {
 bool fgfs_act_init() {
   printf("fgfs_act_init()\n");
 
-  cmdAilL_node = deftree.getElement("/Control/cmdAilL_rad");
-  cmdAilR_node = deftree.getElement("/Control/cmdAilR_rad");
-  cmdElev_node = deftree.getElement("/Control/cmdElev_rad");
-  cmdRud_node = deftree.getElement("/Control/cmdRud_rad");
-  cmdFlapL_node = deftree.getElement("/Control/cmdFlapL_rad");
-  cmdFlapR_node = deftree.getElement("/Control/cmdFlapR_rad");
-  cmdMotor_node = deftree.getElement("/Control/cmdMotor_nd");
+  if (modelName == "mAEWing2") {
+    cmdTE1L_node = deftree.getElement("/Control/cmdTE1L_rad");
+    cmdTE1R_node = deftree.getElement("/Control/cmdTE1R_rad");
+    cmdTE2L_node = deftree.getElement("/Control/cmdTE2L_rad");
+    cmdTE2R_node = deftree.getElement("/Control/cmdTE2R_rad");
+    cmdTE3L_node = deftree.getElement("/Control/cmdTE3L_rad");
+    cmdTE3R_node = deftree.getElement("/Control/cmdTE3R_rad");
+    cmdTE4L_node = deftree.getElement("/Control/cmdTE4L_rad");
+    cmdTE4R_node = deftree.getElement("/Control/cmdTE4R_rad");
+    cmdTE5L_node = deftree.getElement("/Control/cmdTE5L_rad");
+    cmdTE5R_node = deftree.getElement("/Control/cmdTE5R_rad");
+    cmdLEL_node = deftree.getElement("/Control/cmdLEL_rad");
+    cmdLER_node = deftree.getElement("/Control/cmdLER_rad");
+    cmdMotor_node = deftree.getElement("/Control/cmdMotor_nd");
+    cmdGear_node = deftree.getElement("/Control/cmdGear_nd");
+  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+    cmdAilL_node = deftree.getElement("/Control/cmdAilL_rad");
+    cmdAilR_node = deftree.getElement("/Control/cmdAilR_rad");
+    cmdElev_node = deftree.getElement("/Control/cmdElev_rad");
+    cmdRud_node = deftree.getElement("/Control/cmdRud_rad");
+    cmdFlapL_node = deftree.getElement("/Control/cmdFlapL_rad");
+    cmdFlapR_node = deftree.getElement("/Control/cmdFlapR_rad");
+    cmdMotor_node = deftree.getElement("/Control/cmdMotor_nd");
+  } else {
+    std::cout << "Flight Gear 'Model' not understood" << std::endl;
+  }
 
   // open a UDP socket
   if ( ! sock_act.open( false ) ) {
@@ -371,56 +412,113 @@ bool fgfs_act_update() {
   double time = 0.0;
   *(double *)buf = time; buf += 8;
 
-  float cmdAilL_rad = cmdAilL_node->getFloat();
-  *(float *)buf = cmdAilL_rad; buf += 4;
+  if (modelName == "mAEWing2") {
+    float cmdTE1L_rad = cmdTE1L_node->getFloat();
+    *(float *)buf = cmdTE1L_rad; buf += 4;
 
-  float cmdAilR_rad = cmdAilR_node->getFloat();
-  *(float *)buf = cmdAilR_rad; buf += 4;
+    float cmdTE1R_rad = cmdTE1R_node->getFloat();
+    *(float *)buf = cmdTE1R_rad; buf += 4;
 
-  float cmdElev_rad = cmdElev_node->getFloat();
-  *(float *)buf = cmdElev_rad; buf += 4;
+    float cmdTE2L_rad = cmdTE2L_node->getFloat();
+    *(float *)buf = cmdTE2L_rad; buf += 4;
 
-  float cmdRud_rad = cmdRud_node->getFloat();
-  *(float *)buf = cmdRud_rad; buf += 4;
+    float cmdTE2R_rad = cmdTE2R_node->getFloat();
+    *(float *)buf = cmdTE2R_rad; buf += 4;
 
-  float cmdFlapL_rad = cmdFlapL_node->getFloat();
-  *(float *)buf = cmdFlapL_rad; buf += 4;
+    float cmdTE3L_rad = cmdTE3L_node->getFloat();
+    *(float *)buf = cmdTE3L_rad; buf += 4;
 
-  float cmdFlapR_rad = cmdFlapR_node->getFloat();
-  *(float *)buf = cmdFlapR_rad; buf += 4;
+    float cmdTE3R_rad = cmdTE3R_node->getFloat();
+    *(float *)buf = cmdTE3R_rad; buf += 4;
 
-  float cmdMotor_nd = cmdMotor_node->getFloat();
-  *(float *)buf = cmdMotor_nd; buf += 4;
+    float cmdTE4L_rad = cmdTE4L_node->getFloat();
+    *(float *)buf = cmdTE4L_rad; buf += 4;
 
-  float ch8 = 0.0;
-  *(float *)buf = ch8; buf += 4;
+    float cmdTE4R_rad = cmdTE4R_node->getFloat();
+    *(float *)buf = cmdTE4R_rad; buf += 4;
 
-  float ch9 = 0.0;
-  *(float *)buf = ch9; buf += 4;
+    float cmdTE5L_rad = cmdTE5L_node->getFloat();
+    *(float *)buf = cmdTE5L_rad; buf += 4;
 
-  float ch10 = 0.0;
-  *(float *)buf = ch10; buf += 4;
+    float cmdTE5R_rad = cmdTE5R_node->getFloat();
+    *(float *)buf = cmdTE5R_rad; buf += 4;
 
-  float ch11 = 0.0;
-  *(float *)buf = ch11; buf += 4;
+    float cmdLEL_rad = cmdLEL_node->getFloat();
+    *(float *)buf = cmdLEL_rad; buf += 4;
 
-  float ch12 = 0.0;
-  *(float *)buf = ch12; buf += 4;
+    float cmdLER_rad = cmdLER_node->getFloat();
+    *(float *)buf = cmdLER_rad; buf += 4;
 
-  float ch13 = 0.0;
-  *(float *)buf = ch13; buf += 4;
+    float cmdMotor_nd = cmdMotor_node->getFloat();
+    *(float *)buf = cmdMotor_nd; buf += 4;
 
-  float ch14 = 0.0;
-  *(float *)buf = ch14; buf += 4;
+    float cmdGear_nd = cmdGear_node->getFloat();
+    *(float *)buf = cmdGear_nd; buf += 4;
 
-  float ch15 = 0.0;
-  *(float *)buf = ch15; buf += 4;
+    float ch15 = 0.0;
+    *(float *)buf = ch15; buf += 4;
 
-  float ch16 = 0.0;
-  *(float *)buf = ch16; buf += 4;
+    float ch16 = 0.0;
+    *(float *)buf = ch16; buf += 4;
 
-  float ch17 = 0.0;
-  *(float *)buf = ch17; buf += 4;
+    float ch17 = 0.0;
+    *(float *)buf = ch17; buf += 4;
+
+  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+
+    float cmdAilL_rad = cmdAilL_node->getFloat();
+    *(float *)buf = cmdAilL_rad; buf += 4;
+
+    float cmdAilR_rad = cmdAilR_node->getFloat();
+    *(float *)buf = cmdAilR_rad; buf += 4;
+
+    float cmdElev_rad = cmdElev_node->getFloat();
+    *(float *)buf = cmdElev_rad; buf += 4;
+
+    float cmdRud_rad = cmdRud_node->getFloat();
+    *(float *)buf = cmdRud_rad; buf += 4;
+
+    float cmdFlapL_rad = cmdFlapL_node->getFloat();
+    *(float *)buf = cmdFlapL_rad; buf += 4;
+
+    float cmdFlapR_rad = cmdFlapR_node->getFloat();
+    *(float *)buf = cmdFlapR_rad; buf += 4;
+
+    float cmdMotor_nd = cmdMotor_node->getFloat();
+    *(float *)buf = cmdMotor_nd; buf += 4;
+
+    float ch8 = 0.0;
+    *(float *)buf = ch8; buf += 4;
+
+    float ch9 = 0.0;
+    *(float *)buf = ch9; buf += 4;
+
+    float ch10 = 0.0;
+    *(float *)buf = ch10; buf += 4;
+
+    float ch11 = 0.0;
+    *(float *)buf = ch11; buf += 4;
+
+    float ch12 = 0.0;
+    *(float *)buf = ch12; buf += 4;
+
+    float ch13 = 0.0;
+    *(float *)buf = ch13; buf += 4;
+
+    float ch14 = 0.0;
+    *(float *)buf = ch14; buf += 4;
+
+    float ch15 = 0.0;
+    *(float *)buf = ch15; buf += 4;
+
+    float ch16 = 0.0;
+    *(float *)buf = ch16; buf += 4;
+
+    float ch17 = 0.0;
+    *(float *)buf = ch17; buf += 4;
+  } else {
+    std::cout << "Flight Gear 'Model' not understood" << std::endl;
+  }
 
   if ( ulIsLittleEndian ) {
     my_swap( packet_buf, 0, 8 );
