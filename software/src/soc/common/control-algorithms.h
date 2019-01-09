@@ -47,7 +47,7 @@ class __SSClass {
 
     Eigen::MatrixXf CA_inv_, CB_;
 
-    void InitializeState(Eigen::VectorXf u, float dt);
+    void InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt);
     void UpdateState(Eigen::VectorXf u, float dt);
     void OutputEquation(Eigen::VectorXf u, float dt);
     void Reset();

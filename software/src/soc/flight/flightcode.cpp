@@ -43,6 +43,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 using std::cout;
 using std::endl;
 
+
+float timePrev_s = 0;
+
+
 int main(int argc, char* argv[]) {
   if (argc!=2) {
     std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
@@ -135,8 +139,6 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
   std::cout << "Entering main loop." << std::endl;
 
-  deftree.PrettyPrint("/");
-
   netInit();                    // do this before creating telnet instance
   UGTelnet telnet( 6500 );
   telnet.open();
@@ -187,10 +189,19 @@ int main(int argc, char* argv[]) {
         // run armed control laws
         Control.RunArmed();
 
-//
-std::string CtrlEngaged = Mission.GetEngagedController();
-std::string ExcitEngaged = Mission.GetEngagedExcitation();
-std::cout << CtrlEngaged << "\t" << ExcitEngaged << std::endl;
+        // Print some status
+        static const double r2d = 180.0 / M_PI;
+
+        std::string CtrlEngaged = Mission.GetEngagedController();
+        std::string ExcitEngaged = Mission.GetEngagedExcitation();
+
+        float timeCurr_s = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+        float dt = timeCurr_s - timePrev_s;
+        timePrev_s = timeCurr_s;
+
+        std::cout << CtrlEngaged << "\t" << ExcitEngaged
+                  << "\tdt:  " << dt
+                  << std::endl;
 
       }
       // run telemetry
