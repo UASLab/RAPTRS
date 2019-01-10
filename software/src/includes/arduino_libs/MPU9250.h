@@ -87,7 +87,8 @@ class MPU9250{
     bool _useSPIHS;
     const uint8_t SPI_READ = 0x80;
     const uint32_t SPI_LS_CLOCK = 1000000;  // 1 MHz
-    const uint32_t SPI_HS_CLOCK = 15000000; // 15 MHz
+    const uint32_t SPI_HS_CLOCK = 5000000; // 5 MHz
+    // const uint32_t SPI_HS_CLOCK = 15000000; // 15 MHz
     // track success of interacting with sensor
     int _status;
     // buffer for reading from sensor
