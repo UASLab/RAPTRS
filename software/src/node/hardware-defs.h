@@ -33,7 +33,8 @@ const uint32_t kDebugBaud = 115200;                           // Baudrate for st
 // BFS port
 static i2c_t3 &kBfsPort = Wire;                               // I2C port used for communicating with FMU
 const i2c_pins kBfsPins = I2C_PINS_18_19;                     // I2C pins used for communicating with FMU
-const uint32_t kBfsRate = 6000000;                            // I2C rate used for communicating with FMU
+const uint32_t kBfsRate = 3000000;                            // I2C rate used for communicating with FMU
+// const uint32_t kBfsRate = 6000000;                         // I2C rate used for communicating with FMU
 
 // Buffers
 const size_t kEepromMaxSize = 4096;                           // Max EEPROM size on board
