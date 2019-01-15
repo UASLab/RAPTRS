@@ -192,8 +192,6 @@ int main(int argc, char* argv[]) {
         Control.RunArmed();
 
         // Print some status
-        static const double r2d = 180.0 / M_PI;
-
         std::string CtrlEngaged = Mission.GetEngagedController();
         std::string ExcitEngaged = Mission.GetEngagedExcitation();
 
