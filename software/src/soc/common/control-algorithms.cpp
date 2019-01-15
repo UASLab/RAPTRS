@@ -60,11 +60,11 @@ void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,
   *Saturated = Saturated_;
 }
 
-void __PID2Class::InitializeState(float Command) {
+void __PID2Class::InitializeState(float Output) {
   // Protect for Ki == 0
   if (Ki_ != 0.0f) {
-    // IntegralErrorState_ = (Command - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
-    IntegralErrorState_ = (Command - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
+    // IntegralErrorState_ = (Output - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
+    IntegralErrorState_ = (Output - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
   } else {
     IntegralErrorState_ = 0.0f;
   }
@@ -76,7 +76,7 @@ void __PID2Class::ComputeDerivative(float dt) {
   float DerivativeFiltVal = 0.0f;
 
   if (DerivativeErrorChange != 0) {
-    DerivativeFiltVal = Tf_ + dt / (DerivativeError_ - PreviousDerivativeError_);
+    DerivativeFiltVal = Tf_ + dt / DerivativeErrorChange;
 
     if (DerivativeFiltVal != 0) {
       DerivativeErrorState_ = 1.0f / DerivativeFiltVal;
@@ -202,7 +202,7 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
     }
     case GenericFunction::Mode::kArm: {
       Reset();
-      InitializeState(u, dt);
+      InitializeState(u, *y, dt);
       initLatch_ = true;
       UpdateState(u, dt);
       OutputEquation(u, dt);
@@ -214,7 +214,7 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
     }
     case GenericFunction::Mode::kEngage: {
       if (initLatch_ == false) {
-        InitializeState(u, dt);
+        InitializeState(u, *y, dt);
         initLatch_ = true;
       }
       UpdateState(u, dt);
@@ -226,8 +226,8 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
   *ySat = ySat_;
 }
 
-void __SSClass::InitializeState(Eigen::VectorXf u, float dt) {
-  x_ = CA_inv_ * (y_ - (CB_*dt + D_) * u);
+void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) {
+  x_ = CA_inv_ * (y - (CB_*dt + D_) * u);
 }
 
 void __SSClass::UpdateState(Eigen::VectorXf u, float dt) {
@@ -255,7 +255,7 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
     }
 
     if (ySat_.cwiseAbs().any()) { // check if any of the outputs are saturated
-      InitializeState(u, dt); // Re-initialize the states with saturated outputs
+      InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
     }
   }
 }
