@@ -265,6 +265,61 @@ private:
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
     float Scale = 1.0f;
+    float FreqK = 0.0f;
+    float AmpK = 0.0f;
+  };
+  struct Data {
+    uint8_t Mode = kStandby;
+    ElementPtr excitation_node;
+  };
+  Config config_;
+  Data data_;
+  uint64_t Time0_us = 0;
+  float ExciteTime_s = 0;
+  bool TimeLatch = false;
+};
+
+/*
+Log Chirp Class - Adds a log chirp to the signal for the specified duration
+Example JSON configuration:
+{
+  "Type": "LogChirp"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": [start,end],
+  "Frequency": [start,end]
+  }
+}
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the chirp
+   * Amplitude is an array specifying the starting and ending chirp amplitude
+   * Frequency is an array specifying the starting and ending frequency in rad/sec
+*/
+
+class LogChirp: public GenericFunction {
+public:
+  void Configure(const rapidjson::Value& Config,std::string RootPath);
+  void Run(Mode mode);
+  void Initialize();
+  bool Initialized();
+  void Clear();
+private:
+  struct Config {
+    ElementPtr time_node;
+    ElementPtr signal_node;
+    float Amplitude[2] = {0.0f};
+    float Frequency[2] = {0.0f};
+    float StartTime_s = 0.0f;
+    float Duration_s = 0.0f;
+    float Scale = 1.0f;
+    float FreqK = 0.0f;
+    float FreqLogK = 0.0f;
+    float AmpK = 0.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;

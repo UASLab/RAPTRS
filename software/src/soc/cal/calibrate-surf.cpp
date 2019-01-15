@@ -25,6 +25,11 @@
 
 typedef Eigen::Matrix<float, -1, 1, 0, MaxCmdDim, 1> VecCmd;
 
+// Note: deftree is defined in common/definitiontree2.h and declared
+// (and initialized) globally in common/definitiontree2.cpp.  Any
+// source file that includes definitiontree2.h may reference and use
+// deftree.
+
 int main(int argc, char* argv[]) {
   if (argc!=2) {
     std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;

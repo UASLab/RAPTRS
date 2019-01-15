@@ -81,6 +81,8 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
                       ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Doublet3211>());
                     } else if (WaveformValue["Type"] == "LinearChirp") {
                       ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<LinearChirp>());
+                    } else if (WaveformValue["Type"] == "LogChirp") {
+                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<LogChirp>());
                     } else if (WaveformValue["Type"] == "1-Cos") {
                       ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Pulse_1_Cos>());
                     } else if (WaveformValue["Type"] == "MultiSine") {

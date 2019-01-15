@@ -197,7 +197,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
         cout << "WARNING: RESIZING Analog size to: "<< (int)NumberAnalogSensor << endl;
         SensorNodes_.Analog.resize(NumberAnalogSensor);
       }
-
+      
       // sensor data
       memcpy(SensorData_.Time_us.data(),Payload.data()+PayloadLocation,SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]));
       PayloadLocation += SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]);
@@ -232,7 +232,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
           // copy the incoming sensor data into the definition tree
           PublishSensors();
       }
-
+      
       return true;
     } else {
       return false;
