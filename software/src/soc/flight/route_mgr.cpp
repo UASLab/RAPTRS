@@ -159,6 +159,9 @@ void FGRouteMgr::update() {
     /* printf("direct_dist = %.1f angle = %.1f dist_m = %.1f\n",
        direct_distance, angle, dist_m); */
 
+    xtrack_node->setFloat(xtrack_m);
+    nav_dist_node->setFloat(dist_m);
+
     // compute navigation course with xtrack correction
     float xtrack_comp = xtrack_m * xtrack_gain;
     if ( xtrack_comp < -45.0 ) { xtrack_comp = -45.0; }
@@ -185,11 +188,11 @@ void FGRouteMgr::update() {
     //nav_dist_m = direct_distance;
     float nav_dist_m = dist_m;
 
-    static int count = 0;
-    if ( count++ > 10 ) {
-      printf("crs:%.0f err:%.0f xtrk:%.1f dist:%.0f\n", leg_course, course_error, xtrack_m, nav_dist_m);
-      count = 0;
-    }
+    // static int count = 0;
+    // if ( count++ > 10 ) {
+    //   printf("crs:%.0f err:%.0f xtrk:%.1f dist:%.0f\n", leg_course, course_error, xtrack_m, nav_dist_m);
+    //   count = 0;
+    // }
 
     // estimate distance remaining to completion of route
     dist_remaining_m = nav_dist_m
