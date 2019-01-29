@@ -31,7 +31,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "datalog.h"
 #include "netSocket.h"
 #include "telnet.hxx"
-#include "FGFS.h"
+#include "sim-interface.h"
 #include "route_mgr.hxx"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -146,15 +146,15 @@ int main(int argc, char* argv[]) {
   telnet.open();
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
-  bool fgfs = fgfs_init(AircraftConfiguration);
+  bool sim = sim_init(AircraftConfiguration);
 
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
-      if ( fgfs ) {
+      if ( sim ) {
         // insert flightgear sim data calls
-        fgfs_imu_update();
-        fgfs_gps_update();
+        sim_imu_update();
+        sim_gps_update();
       }
       if (SenProc.Configured()&&SenProc.Initialized()) {
         // run mission
@@ -163,8 +163,8 @@ int main(int argc, char* argv[]) {
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
         SenProc.Run();
-        if ( fgfs ) {
-          fgfs_airdata_update(); // overwrite processed air data
+        if ( sim ) {
+          sim_pitot_update(); // overwrite processed air data
         }
         route_mgr.update();
         // get and set engaged and armed controllers
@@ -183,8 +183,8 @@ int main(int argc, char* argv[]) {
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
-        if ( fgfs ) {
-          fgfs_act_update();
+        if ( sim ) {
+          sim_cmd_update();
         }
         // run armed excitations
         Excitation.RunArmed();
