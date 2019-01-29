@@ -24,10 +24,12 @@ bool sim_init( const rapidjson::Value& Config ) {
       modelName = JsbConfig["Model"].GetString();
     }
 
-    // Init each message
+    // Init input messages
     sim_imu_init();
     sim_gps_init();
     sim_pitot_init();
+
+    // Init output message
     sim_cmd_init();
 
     std::cout << "JSBSim interface initialized: " << modelName << std::endl;
