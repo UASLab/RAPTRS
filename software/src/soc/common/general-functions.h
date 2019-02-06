@@ -138,6 +138,7 @@ class SumClass: public GenericFunction {
       std::vector<ElementPtr > input_nodes;
       bool SaturateOutput = false;
       float UpperLimit, LowerLimit = 0.0f;
+      bool debug = false;
     };
     struct Data {
       uint8_t Mode = kStandby;

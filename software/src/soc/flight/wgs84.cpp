@@ -1,7 +1,7 @@
 #include <limits>
 #include <math.h>
 
-#include "wgs84.hxx"
+#include "wgs84.h"
 
 // These are hard numbers from the WGS84 standard.  DON'T MODIFY
 // unless you want to change the datum.

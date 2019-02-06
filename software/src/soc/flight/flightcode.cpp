@@ -30,9 +30,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "telemetry.h"
 #include "datalog.h"
 #include "netSocket.h"
-#include "telnet.hxx"
+#include "telnet.h"
 #include "FGFS.h"
-#include "route_mgr.hxx"
+#include "circle_mgr.h"
+#include "route_mgr.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -68,7 +69,8 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-  FGRouteMgr route_mgr;
+  CircleMgr circle_mgr;
+  RouteMgr route_mgr;
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
@@ -99,6 +101,9 @@ int main(int argc, char* argv[]) {
     if (AircraftConfiguration.HasMember("Route")) {
       std::cout << "\tConfiguring route following..." << std::endl;
       route_mgr.init(AircraftConfiguration["Route"]);
+    } else if (AircraftConfiguration.HasMember("Circle")) {
+      std::cout << "\tConfiguring circle hold..." << std::endl;
+      circle_mgr.init(AircraftConfiguration["Circle"]);
     }
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {

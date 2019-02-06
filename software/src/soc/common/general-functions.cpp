@@ -177,6 +177,10 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     }
   }
 
+  if (Config.HasMember("Debug")) {
+    config_.debug = Config["Debug"].GetBool();
+  }
+  
   // pointer to log command data
   string path = Config["Output"].GetString();
   if ( path.size() && path[0] == '/' ) {
@@ -197,8 +201,18 @@ void SumClass::Run(Mode mode) {
   float sum = 0.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
     sum += config_.input_nodes[i]->getFloat();
+    if ( config_.debug ) {
+      if ( i == 0 ) {
+        printf("%.3f", config_.input_nodes[i]->getFloat());
+      } else {
+        printf(" + %.3f", config_.input_nodes[i]->getFloat());
+      }
+    }
   }
-
+  if ( config_.debug ) {
+    printf(" = %.3f", sum);
+  }
+  
   // saturate command
   if (config_.SaturateOutput) {
     if (sum <= config_.LowerLimit) {
@@ -210,6 +224,12 @@ void SumClass::Run(Mode mode) {
     } else {
       data_.saturated_node->setInt(0);
     }
+    if ( config_.debug ) {
+      printf(" (clipped) %.3f", sum);
+    }
+  }
+  if ( config_.debug ) {
+    printf("\n");
   }
 
   data_.output_node->setFloat(sum);

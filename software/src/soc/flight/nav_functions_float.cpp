@@ -30,7 +30,7 @@
 #include <Eigen/Geometry>
 using namespace Eigen;
 
-#include "nav_functions_float.hxx"
+#include "nav_functions_float.h"
 
 
 // This function calculates the rate of change of latitude, longitude,

@@ -18,7 +18,7 @@ using std::endl;
 
 #include "definition-tree2.h"
 #include "coremag.h"
-#include "nav_functions_float.hxx"
+#include "nav_functions_float.h"
 #include "netSocket.h"
 #include "FGFS.h"
 
