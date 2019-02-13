@@ -140,8 +140,8 @@ soc_surf_cal_obj = $(foreach src,$(soc_surf_cal_src), $(BUILD)/$(SOC_ARCH)/$(src
 fmu_obj = $(foreach src,$(fmu_src), $(BUILD)/$(FMU_ARCH)/$(src))
 node_obj = $(foreach src,$(node_src), $(BUILD)/$(NODE_ARCH)/$(src))
 # --- Compiler ---
-SOC_CC = $(SOC_COMPILER)/arm-linux-gnueabihf-gcc-7
-SOC_CXX = $(SOC_COMPILER)/arm-linux-gnueabihf-g++-7
+SOC_CC = $(SOC_COMPILER)/arm-linux-gnueabihf-gcc
+SOC_CXX = $(SOC_COMPILER)/arm-linux-gnueabihf-g++
 SIM_CC = $(SIM_COMPILER)/gcc-7
 SIM_CXX = $(SIM_COMPILER)/g++-7
 FMU_CC = $(FMU_COMPILER)/arm-none-eabi-gcc
