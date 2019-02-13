@@ -52,12 +52,12 @@ static void my_swap( uint8_t *buf, int index, int count ) {
   }
 }
 
-
 // IMU
 static netSocket sock_imu;
 static int port_imu = 59011;
 
-static double imu_time = 0.0;
+static float imuTime_s = 0.0;
+static double imuTime_us = 0.0;
 static float p_rps = 0.0;
 static float q_rps = 0.0;
 static float r_rps = 0.0;
@@ -68,6 +68,7 @@ static float hx_uT = 0.0;
 static float hy_uT = 0.0;
 static float hz_uT = 0.0;
 
+static ElementPtr imuTime_node;
 static ElementPtr p_node;
 static ElementPtr q_node;
 static ElementPtr r_node;
@@ -81,6 +82,7 @@ static ElementPtr hz_node;
 bool sim_imu_init() {
   printf("sim_imu_init()\n");
 
+  imuTime_node = deftree.getElement("/Sensors/Fmu/Time_us");
   ax_node = deftree.getElement("/Sensors/Fmu/Mpu9250/AccelX_mss");
   ay_node = deftree.getElement("/Sensors/Fmu/Mpu9250/AccelY_mss");
   az_node = deftree.getElement("/Sensors/Fmu/Mpu9250/AccelZ_mss");
@@ -109,42 +111,45 @@ bool sim_imu_init() {
   return true;
 }
 
+
 bool sim_imu_update() {
-  const int sim_imu_size = 44;
-  uint8_t packet_buf[sim_imu_size];
+  const int sim_imu_size = 4096;
+  char packet_buf[sim_imu_size];
+  char *pt;
 
   bool fresh_data = false;
 
   int result;
-  while ( (result = sock_imu.recv(packet_buf, sim_imu_size, 0)) == sim_imu_size ) {
+  while ( (result = sock_imu.recv(packet_buf, sim_imu_size, 0)) > 0) {
     fresh_data = true;
 
-    if ( ulIsLittleEndian ) {
-      my_swap( packet_buf, 0, 8 );
-      my_swap( packet_buf, 8, 4 );
-      my_swap( packet_buf, 12, 4 );
-      my_swap( packet_buf, 16, 4 );
-      my_swap( packet_buf, 20, 4 );
-      my_swap( packet_buf, 24, 4 );
-      my_swap( packet_buf, 28, 4 );
-      my_swap( packet_buf, 32, 4 );
-      my_swap( packet_buf, 36, 4 );
-      my_swap( packet_buf, 40, 4 );
-    }
+    pt = strtok(packet_buf, ","); imuTime_s = atof(pt);
+    pt = strtok(NULL, ","); imuTime_us = atof(pt);
+    pt = strtok(NULL, ","); ax_mps2 = atof(pt);
+    pt = strtok(NULL, ","); ay_mps2 = atof(pt);
+    pt = strtok(NULL, ","); az_mps2 = atof(pt);
+    pt = strtok(NULL, ","); p_rps = atof(pt);
+    pt = strtok(NULL, ","); q_rps = atof(pt);
+    pt = strtok(NULL, ","); r_rps = atof(pt);
+    pt = strtok(NULL, ","); hx_uT = atof(pt);
+    pt = strtok(NULL, ","); hy_uT = atof(pt);
+    pt = strtok(NULL, ","); hz_uT = atof(pt);
 
-    uint8_t *buf = packet_buf;
-    imu_time = *(double *)buf; buf += 8;
-    ax_mps2 = *(float *)buf; buf += 4;
-    ay_mps2 = *(float *)buf; buf += 4;
-    az_mps2 = *(float *)buf; buf += 4;
-    p_rps = *(float *)buf; buf += 4;
-    q_rps = *(float *)buf; buf += 4;
-    r_rps = *(float *)buf; buf += 4;
-    hx_uT = *(float *)buf; buf += 4;
-    hy_uT = *(float *)buf; buf += 4;
-    hz_uT = *(float *)buf; buf += 4;
+    // std::cout << imuTime_s << "\t"
+    //           << imuTime_us << "\t"
+    //           << ax_mps2 << "\t"
+    //           << ay_mps2 << "\t"
+    //           << az_mps2 << "\t"
+    //           << p_rps << "\t"
+    //           << q_rps << "\t"
+    //           << r_rps << "\t"
+    //           << hx_uT << "\t"
+    //           << hy_uT << "\t"
+    //           << hz_uT << "\t"
+    //           << std::endl;
   }
 
+  imuTime_node->setDouble(imuTime_us);
   ax_node->setFloat(ax_mps2);
   ay_node->setFloat(ay_mps2);
   az_node->setFloat(az_mps2);
@@ -166,16 +171,18 @@ void sim_imu_close() {
 static netSocket sock_gps;
 static int port_gps = 59012;
 
-static double gps_time = 0.0;
+static float gpsTime_s = 0.0;
+static double gpsTime_us = 0.0;
 static double lat_rad = 0.0;
 static double lon_rad = 0.0;
-static double alt_m = 0.0;
-static double vn_mps = 0.0;
-static double ve_mps = 0.0;
-static double vd_mps = 0.0;
+static float alt_m = 0.0;
+static float vn_mps = 0.0;
+static float ve_mps = 0.0;
+static float vd_mps = 0.0;
 static uint8_t sats = 0;
 static uint8_t fix = 0;
 
+static ElementPtr gpsTime_node;
 static ElementPtr lat_node;
 static ElementPtr lon_node;
 static ElementPtr alt_node;
@@ -188,6 +195,7 @@ static ElementPtr fix_node;
 bool sim_gps_init() {
   printf("sim_gps_init()\n");
   // bind def tree pointers
+  gpsTime_node = deftree.getElement("/Sensors/uBlox/Time_us");
   lon_node = deftree.getElement("/Sensors/uBlox/Longitude_rad");
   lat_node = deftree.getElement("/Sensors/uBlox/Latitude_rad");
   alt_node = deftree.getElement("/Sensors/uBlox/Altitude_m");
@@ -199,7 +207,7 @@ bool sim_gps_init() {
 
   // open a UDP socket
   if ( ! sock_gps.open( false ) ) {
-    printf("Error opening imu input socket\n");
+    printf("Error opening gps input socket\n");
     return false;
   }
 
@@ -216,37 +224,39 @@ bool sim_gps_init() {
 }
 
 bool sim_gps_update() {
-  const int sim_gps_size = 40;
-  uint8_t packet_buf[sim_gps_size];
+  const int sim_gps_size = 4096;
+  char packet_buf[sim_gps_size];
+  char *pt;
 
   bool fresh_data = false;
 
   int result;
-  while ( (result = sock_gps.recv(packet_buf, sim_gps_size, 0)) == sim_gps_size ) {
+  while ( (result = sock_gps.recv(packet_buf, sim_gps_size, 0)) > 0 ) {
     fresh_data = true;
     fix = 1;
 
-    if ( ulIsLittleEndian ) {
-      my_swap( packet_buf, 0, 8 );
-      my_swap( packet_buf, 8, 8 );
-      my_swap( packet_buf, 16, 8 );
-      my_swap( packet_buf, 24, 4 );
-      my_swap( packet_buf, 28, 4 );
-      my_swap( packet_buf, 32, 4 );
-      my_swap( packet_buf, 36, 4 );
-    }
+    pt = strtok(packet_buf, ","); gpsTime_s = atof(pt);
+    pt = strtok(NULL, ","); gpsTime_us = atof(pt);
+    pt = strtok(NULL, ","); lat_rad = atof(pt);
+    pt = strtok(NULL, ","); lon_rad = atof(pt);
+    pt = strtok(NULL, ","); alt_m = atof(pt);
+    pt = strtok(NULL, ","); vn_mps = atof(pt);
+    pt = strtok(NULL, ","); ve_mps = atof(pt);
+    pt = strtok(NULL, ","); vd_mps = atof(pt);
 
-    uint8_t *buf = packet_buf;
-    gps_time = *(double *)buf; buf += 8;
-    lat_rad = *(double *)buf; buf += 8;
-    lon_rad = *(double *)buf; buf += 8;
-    alt_m = *(float *)buf; buf += 4;
-    vn_mps = *(float *)buf; buf += 4;
-    ve_mps = *(float *)buf; buf += 4;
-    vd_mps = *(float *)buf; buf += 4;
+    // std::cout << gpsTime_s << "\t"
+    //           << gpsTime_us << "\t"
+    //           << lat_rad << "\t"
+    //           << lon_rad << "\t"
+    //           << alt_m << "\t"
+    //           << vn_mps << "\t"
+    //           << ve_mps << "\t"
+    //           << vd_mps << "\t"
+    //           << std::endl;
   }
 
   // write values even if data isn't fresh (to overwrite real sensor data)
+  gpsTime_node->setDouble(gpsTime_us);
   lon_node->setDouble(lon_rad);
   lat_node->setDouble(lat_rad);
   alt_node->setFloat(alt_m);
@@ -267,11 +277,14 @@ void sim_gps_close() {
 static netSocket sock_pitot;
 static int port_pitot = 59013;
 
+static float pitotTime_s = 0.0;
+static double pitotTime_us = 0.0;
 static float presStatic_pa = 0.0;
 static float tempStatic_C = 0.0;
 static float presTip_pa = 0.0;
 static float tempTip_C = 0.0;
 
+// static ElementPtr pitotTime_node;
 static ElementPtr presStatic_node;
 static ElementPtr tempStatic_node;
 static ElementPtr presTip_node;
@@ -279,39 +292,59 @@ static ElementPtr tempTip_node;
 
 bool sim_pitot_init() {
   printf("sim_pitot_init()\n");
+  // pitotTime_node = deftree.getElement("/Sensors/Fmu/Time_us");
   presStatic_node = deftree.getElement("/Sensors/Pitot/Static/Pressure_Pa");
   tempStatic_node = deftree.getElement("/Sensors/Pitot/Static/Temperature_C");
-  presTip_node = deftree.getElement("/Sensors/Pitot/Dynamic/Pressure_Pa");
-  tempTip_node = deftree.getElement("/Sensors/Pitot/Dynamic/Temperature_C");
+  presTip_node = deftree.getElement("/Sensors/Pitot/Differential/Pressure_Pa");
+  tempTip_node = deftree.getElement("/Sensors/Pitot/Differential/Temperature_C");
+
+  // open a UDP socket
+  if ( ! sock_pitot.open( false ) ) {
+    printf("Error opening pitot input socket\n");
+    return false;
+  }
+
+  // bind ...
+  if ( sock_pitot.bind( "", port_pitot ) == -1 ) {
+    printf("error binding to port %d\n", port_pitot );
+    return false;
+  }
+
+  // don't block waiting for input
+  sock_pitot.setBlocking( false );
+
   return true;
 }
 
 bool sim_pitot_update() {
-  const int sim_pitot_size = 16;
-  uint8_t packet_buf[sim_pitot_size];
+  const int sim_pitot_size = 4096;
+  char packet_buf[sim_pitot_size];
+  char *pt;
 
   bool fresh_data = false;
 
   int result;
-  while ( (result = sock_pitot.recv(packet_buf, sim_pitot_size, 0)) == sim_pitot_size ) {
+  while ( (result = sock_pitot.recv(packet_buf, sim_pitot_size, 0)) > 0 ) {
     fresh_data = true;
-    fix = 1;
 
-    if ( ulIsLittleEndian ) {
-      my_swap( packet_buf, 0, 4 );
-      my_swap( packet_buf, 4, 4 );
-      my_swap( packet_buf, 8, 4 );
-      my_swap( packet_buf, 12, 4 );
-    }
+    pt = strtok(packet_buf, ","); pitotTime_s = atof(pt);
+    // pt = strtok(NULL, ","); pitotTime_us = atof(pt);
+    pt = strtok(NULL, ","); presStatic_pa = atof(pt);
+    pt = strtok(NULL, ","); tempStatic_C = atof(pt);
+    pt = strtok(NULL, ","); presTip_pa = atof(pt);
+    pt = strtok(NULL, ","); tempTip_C = atof(pt);
 
-    uint8_t *buf = packet_buf;
-    presStatic_pa = *(double *)buf; buf += 4;
-    tempStatic_C = *(double *)buf; buf += 4;
-    presTip_pa = *(float *)buf; buf += 4;
-    tempTip_C = *(float *)buf; buf += 4;
+    // std::cout << pitotTime_s << "\t"
+    //           << pitotTime_us << "\t"
+    //           << presStatic_pa << "\t"
+    //           << tempStatic_C << "\t"
+    //           << presTip_pa << "\t"
+    //           << tempTip_C << "\t"
+    //           << std::endl;
   }
 
   // write values even if data isn't fresh (to overwrite real sensor data)
+  // pitotTime_node->setDouble(pitotTime_us);
   presStatic_node->setFloat(presStatic_pa);
   tempStatic_node->setFloat(tempStatic_C);
   presTip_node->setFloat(presTip_pa);
@@ -329,6 +362,8 @@ void sim_pitot_close() {
 static netSocket sock_cmd;
 static int port_cmd = 59051;
 static std::string host_cmd = "192.168.7.1";
+
+static ElementPtr cmdTime_node;
 
 static ElementPtr cmdAilL_node;
 static ElementPtr cmdAilR_node;
@@ -357,6 +392,7 @@ bool sim_cmd_init() {
   printf("sim_cmd_init()\n");
 
   if (modelName == "mAEWing2") {
+    cmdTime_node = deftree.getElement("/Sensors/Fmu/Time_us");
     cmdTE1L_node = deftree.getElement("/Control/cmdTE1L_rad");
     cmdTE1R_node = deftree.getElement("/Control/cmdTE1R_rad");
     cmdTE2L_node = deftree.getElement("/Control/cmdTE2L_rad");
@@ -372,6 +408,7 @@ bool sim_cmd_init() {
     cmdMotor_node = deftree.getElement("/Control/cmdMotor_nd");
     cmdGear_node = deftree.getElement("/Control/cmdGear_nd");
   } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+    cmdTime_node = deftree.getElement("/Sensors/Fmu/Time_us");
     cmdAilL_node = deftree.getElement("/Control/cmdAilL_rad");
     cmdAilR_node = deftree.getElement("/Control/cmdAilR_rad");
     cmdElev_node = deftree.getElement("/Control/cmdElev_rad");
@@ -405,7 +442,8 @@ bool sim_cmd_update() {
   std::string response = "";
 
   if (modelName == "mAEWing2") {
-    double time = 0.0;
+    float cmdTime_s = 1e-6 * cmdTime_node->getFloat();
+    double cmdTime_us = cmdTime_node->getDouble();
     float cmdTE1L_rad = cmdTE1L_node->getFloat();
     float cmdTE1R_rad = cmdTE1R_node->getFloat();
     float cmdTE2L_rad = cmdTE2L_node->getFloat();
@@ -421,7 +459,8 @@ bool sim_cmd_update() {
     float cmdMotor_nd = cmdMotor_node->getFloat();
     float cmdGear_nd = cmdGear_node->getFloat();
 
-    response += std::to_string(time) + ",";
+    response += std::to_string(cmdTime_s) + ",";
+    response += std::to_string(cmdTime_us) + ",";
     response += std::to_string(cmdTE1L_rad) + ",";
     response += std::to_string(cmdTE1R_rad) + ",";
     response += std::to_string(cmdTE2L_rad) + ",";
@@ -439,7 +478,8 @@ bool sim_cmd_update() {
 
   } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
 
-    double time = 0.0;
+    float cmdTime_s = 1e-6 * cmdTime_node->getFloat();
+    double cmdTime_us = cmdTime_node->getDouble();
     float cmdAilL_rad = cmdAilL_node->getFloat();
     float cmdAilR_rad = cmdAilR_node->getFloat();
     float cmdElev_rad = cmdElev_node->getFloat();
@@ -448,7 +488,8 @@ bool sim_cmd_update() {
     float cmdFlapR_rad = cmdFlapR_node->getFloat();
     float cmdMotor_nd = cmdMotor_node->getFloat();
 
-    response += std::to_string(time) + ",";
+    response += std::to_string(cmdTime_s) + ",";
+    response += std::to_string(cmdTime_us) + ",";
     response += std::to_string(cmdAilL_rad) + ",";
     response += std::to_string(cmdAilR_rad) + ",";
     response += std::to_string(cmdElev_rad) + ",";
@@ -457,11 +498,15 @@ bool sim_cmd_update() {
     response += std::to_string(cmdFlapR_rad) + ",";
     response += std::to_string(cmdMotor_nd) + "\r\n";
 
+    // std::cout << cmdTime_s << "\t"
+    //           << cmdTime_us << "\t"
+    //           << cmdMotor_nd << "\t"
+    //           << std::endl;
+
   } else {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
   }
 
-  std::cout << response.c_str() << std::endl;
   int result = sock_cmd.send( response.c_str(), response.length(), 0 );
   if ( result != response.length() ) {
     return false;

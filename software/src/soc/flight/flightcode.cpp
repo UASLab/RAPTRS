@@ -152,10 +152,12 @@ int main(int argc, char* argv[]) {
   while(1) {
     if (Fmu.ReceiveSensorData()) {
       if ( sim ) {
-        // insert flightgear sim data calls
+        // insert sim data calls
         sim_imu_update();
         sim_gps_update();
       }
+      float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+
       if (SenProc.Configured()&&SenProc.Initialized()) {
         // run mission
         Mission.Run();
@@ -201,8 +203,11 @@ int main(int argc, char* argv[]) {
         float dt = timeCurr_s - timePrev_s;
         timePrev_s = timeCurr_s;
 
+        float vel = (deftree.getElement("/Sensor-Processing/vIAS_ms") -> getFloat());
+
         std::cout << CtrlEngaged << "\t" << ExcitEngaged
                   << "\tdt:  " << dt
+                  << "\tvel:  " << vel
                   << std::endl;
 
       }
