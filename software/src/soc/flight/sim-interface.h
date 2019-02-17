@@ -23,6 +23,14 @@ bool sim_pitot_init();
 bool sim_pitot_update();
 void sim_pitot_close();
 
+bool sim_5hole1_init();
+bool sim_5hole1_update();
+void sim_5hole1_close();
+
+bool sim_5hole2_init();
+bool sim_5hole2_update();
+void sim_5hole2_close();
+
 bool sim_cmd_init();
 bool sim_cmd_update();
 void sim_cmd_close();

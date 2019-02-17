@@ -15,22 +15,74 @@
 //
 static bool sim_interface_active = false;
 static std::string modelName;
+static int port_imu = 59011;
+static int port_gps = 59012;
+static int port_pitot = 59013;
+static int port_five1 = 59014;
+static int port_five2 = 59015;
+static int port_cmd = 59051;
+static std::string host_cmd = "192.168.7.1";
 
 // Todo: make JSB ports and host configurable
 bool sim_init( const rapidjson::Value& Config ) {
   if ( Config.HasMember("JSBSim") ) {
     const rapidjson::Value& JsbConfig = Config["JSBSim"];
+
     if ( JsbConfig.HasMember("Model") ) {
       modelName = JsbConfig["Model"].GetString();
     }
 
-    // Init input messages
-    sim_imu_init();
-    sim_gps_init();
-    sim_pitot_init();
+    if ( JsbConfig.HasMember("ImuPort") ) {
+      port_imu = JsbConfig["ImuPort"].GetInt();
+      sim_imu_init();
+      std::cout << "IMU interface initialized on Port: " << port_imu << std::endl;
+    }
+
+    if ( JsbConfig.HasMember("GpsPort") ) {
+      port_gps = JsbConfig["GpsPort"].GetInt();
+      sim_gps_init();
+      std::cout << "Gps interface initialized on Port: " << port_gps << std::endl;
+    }
+
+    if ( JsbConfig.HasMember("PitotPort") ) {
+      port_pitot = JsbConfig["PitotPort"].GetInt();
+      sim_pitot_init();
+      std::cout << "Pitot interface initialized on Port: " << port_pitot << std::endl;
+    }
+
+    if ( JsbConfig.HasMember("5hole1Port") ) {
+      port_five1 = JsbConfig["5hole1Port"].GetInt();
+      sim_5hole1_init();
+      std::cout << "Five Hole [Method1] interface initialized on Port: " << port_five1 << std::endl;
+    }
+
+    if ( JsbConfig.HasMember("5hole2Port") ) {
+      port_five2 = JsbConfig["5hole2Port"].GetInt();
+      sim_5hole2_init();
+      std::cout << "Five Hole [Method2] interface initialized on Port: " << port_five2 << std::endl;
+    }
 
     // Init output message
-    sim_cmd_init();
+    if (( JsbConfig.HasMember("CmdPort")) & ( JsbConfig.HasMember("CmdHost"))) {
+      port_cmd = JsbConfig["CmdPort"].GetInt();
+      host_cmd = JsbConfig["CmdHost"].GetString();
+      sim_cmd_init();
+      std::cout << "Output Cmd interface initialized on Port: " << host_cmd << ":" << port_cmd << std::endl;
+    }
+
+    // if (JsbConfig.HasMember("CmdList")) {
+    //   for (size_t i=0; i < JsbConfig["CmdList"].Size(); i++) {
+    //     const rapidjson::Value& Input = JsbConfig["CmdList"][i];
+    //     CmdKeys_.push_back(Input.GetString());
+    //
+    //     ElementPtr ele = deftree.getElement(CmdKeys_.back());
+    //     if ( ele ) {
+    //       cmd_nodes.push_back(ele);
+    //     } else {
+    //       throw std::runtime_error(std::string("ERROR ")+"CmdList"+std::string(": Input ")+CmdKeys_.back()+std::string(" not found in global data."));
+    //     }
+    //   }
+    // }
 
     std::cout << "JSBSim interface initialized: " << modelName << std::endl;
     sim_interface_active = true;
@@ -41,20 +93,8 @@ bool sim_init( const rapidjson::Value& Config ) {
   }
 }
 
-// swap big/little endian bytes
-static void my_swap( uint8_t *buf, int index, int count ) {
-  int i;
-  uint8_t tmp;
-  for ( i = 0; i < count / 2; ++i ) {
-    tmp = buf[index+i];
-    buf[index+i] = buf[index+count-i-1];
-    buf[index+count-i-1] = tmp;
-  }
-}
-
 // IMU
 static netSocket sock_imu;
-static int port_imu = 59011;
 
 static float imuTime_s = 0.0;
 static double imuTime_us = 0.0;
@@ -169,7 +209,6 @@ void sim_imu_close() {
 
 // GPS
 static netSocket sock_gps;
-static int port_gps = 59012;
 
 static float gpsTime_s = 0.0;
 static double gpsTime_us = 0.0;
@@ -275,28 +314,27 @@ void sim_gps_close() {
 
 // Pitot Static
 static netSocket sock_pitot;
-static int port_pitot = 59013;
 
 static float pitotTime_s = 0.0;
 static double pitotTime_us = 0.0;
-static float presStatic_pa = 0.0;
-static float tempStatic_C = 0.0;
-static float presTip_pa = 0.0;
-static float tempTip_C = 0.0;
+static float pitotPresStatic_pa = 0.0;
+static float pitotTempStatic_C = 0.0;
+static float pitotPresTip_pa = 0.0;
+static float pitotTempTip_C = 0.0;
 
 // static ElementPtr pitotTime_node;
-static ElementPtr presStatic_node;
-static ElementPtr tempStatic_node;
-static ElementPtr presTip_node;
-static ElementPtr tempTip_node;
+static ElementPtr pitotPresStatic_node;
+static ElementPtr pitotTempStatic_node;
+static ElementPtr pitotPresTip_node;
+static ElementPtr pitotTempTip_node;
 
 bool sim_pitot_init() {
   printf("sim_pitot_init()\n");
   // pitotTime_node = deftree.getElement("/Sensors/Fmu/Time_us");
-  presStatic_node = deftree.getElement("/Sensors/Pitot/Static/Pressure_Pa");
-  tempStatic_node = deftree.getElement("/Sensors/Pitot/Static/Temperature_C");
-  presTip_node = deftree.getElement("/Sensors/Pitot/Differential/Pressure_Pa");
-  tempTip_node = deftree.getElement("/Sensors/Pitot/Differential/Temperature_C");
+  pitotPresStatic_node = deftree.getElement("/Sensors/Pitot/Static/Pressure_Pa");
+  pitotTempStatic_node = deftree.getElement("/Sensors/Pitot/Static/Temperature_C");
+  pitotPresTip_node = deftree.getElement("/Sensors/Pitot/Differential/Pressure_Pa");
+  pitotTempTip_node = deftree.getElement("/Sensors/Pitot/Differential/Temperature_C");
 
   // open a UDP socket
   if ( ! sock_pitot.open( false ) ) {
@@ -329,26 +367,26 @@ bool sim_pitot_update() {
 
     pt = strtok(packet_buf, ","); pitotTime_s = atof(pt);
     // pt = strtok(NULL, ","); pitotTime_us = atof(pt);
-    pt = strtok(NULL, ","); presStatic_pa = atof(pt);
-    pt = strtok(NULL, ","); tempStatic_C = atof(pt);
-    pt = strtok(NULL, ","); presTip_pa = atof(pt);
-    pt = strtok(NULL, ","); tempTip_C = atof(pt);
+    pt = strtok(NULL, ","); pitotPresStatic_pa = atof(pt);
+    pt = strtok(NULL, ","); pitotTempStatic_C = atof(pt);
+    pt = strtok(NULL, ","); pitotPresTip_pa = atof(pt);
+    pt = strtok(NULL, ","); pitotTempTip_C = atof(pt);
 
     // std::cout << pitotTime_s << "\t"
     //           << pitotTime_us << "\t"
-    //           << presStatic_pa << "\t"
-    //           << tempStatic_C << "\t"
-    //           << presTip_pa << "\t"
-    //           << tempTip_C << "\t"
+    //           << pitotPresStatic_pa << "\t"
+    //           << pitotTempStatic_C << "\t"
+    //           << pitotPresTip_pa << "\t"
+    //           << pitotTempTip_C << "\t"
     //           << std::endl;
   }
 
   // write values even if data isn't fresh (to overwrite real sensor data)
   // pitotTime_node->setDouble(pitotTime_us);
-  presStatic_node->setFloat(presStatic_pa);
-  tempStatic_node->setFloat(tempStatic_C);
-  presTip_node->setFloat(presTip_pa);
-  tempTip_node->setFloat(tempTip_C);
+  pitotPresStatic_node->setFloat(pitotPresStatic_pa);
+  pitotTempStatic_node->setFloat(pitotTempStatic_C);
+  pitotPresTip_node->setFloat(pitotPresTip_pa);
+  pitotTempTip_node->setFloat(pitotTempTip_C);
 
   return fresh_data;
 }
@@ -358,10 +396,224 @@ void sim_pitot_close() {
 }
 
 
+// 5-Hole Probe - [Method1]
+static netSocket sock_five1;
+
+static float five1Time_s = 0.0;
+static double five1Time_us = 0.0;
+static float five1PresStatic_pa = 0.0;
+static float five1TempStatic_C = 0.0;
+static float five1PresTip_pa = 0.0;
+static float five1TempTip_C = 0.0;
+static float five1PresAlpha_pa = 0.0;
+static float five1TempAlpha_C = 0.0;
+static float five1PresBeta_pa = 0.0;
+static float five1TempBeta_C = 0.0;
+
+// static ElementPtr fiveholeTime_node;
+static ElementPtr five1PresStatic_node;
+static ElementPtr five1TempStatic_node;
+static ElementPtr five1PresTip_node;
+static ElementPtr five1TempTip_node;
+static ElementPtr five1PresAlpha_node;
+static ElementPtr five1TempAlpha_node;
+static ElementPtr five1PresBeta_node;
+static ElementPtr five1TempBeta_node;
+
+bool sim_5hole1_init() {
+  printf("sim_5hole1_init()\n");
+  // five1Time_node = deftree.getElement("/Sensors/5Hole/Time_us");
+  five1PresStatic_node = deftree.getElement("/Sensors/5Hole/Static/Pressure_Pa");
+  five1TempStatic_node = deftree.getElement("/Sensors/5Hole/Static/Temperature_C");
+  five1PresTip_node = deftree.getElement("/Sensors/5Hole/Tip/Pressure_Pa");
+  five1TempTip_node = deftree.getElement("/Sensors/5Hole/Tip/Temperature_C");
+  five1PresAlpha_node = deftree.getElement("/Sensors/5Hole/PresAlpha/Pressure_Pa");
+  five1TempAlpha_node = deftree.getElement("/Sensors/5Hole/PresAlpha/Temperature_C");
+  five1PresBeta_node = deftree.getElement("/Sensors/5Hole/PresBeta/Pressure_Pa");
+  five1TempBeta_node = deftree.getElement("/Sensors/5Hole/PresBeta/Temperature_C");
+
+  // open a UDP socket
+  if ( ! sock_five1.open( false ) ) {
+    printf("Error opening 5Hole1 input socket\n");
+    return false;
+  }
+
+  // bind ...
+  if ( sock_five1.bind( "", port_five1 ) == -1 ) {
+    printf("error binding to port %d\n", port_five1 );
+    return false;
+  }
+
+  // don't block waiting for input
+  sock_five1.setBlocking( false );
+
+  return true;
+}
+
+bool sim_5hole1_update() {
+  const int sim_five1_size = 4096;
+  char packet_buf[sim_five1_size];
+  char *pt;
+
+  bool fresh_data = false;
+
+  int result;
+  while ( (result = sock_five1.recv(packet_buf, sim_five1_size, 0)) > 0 ) {
+    fresh_data = true;
+
+    pt = strtok(packet_buf, ","); five1Time_s = atof(pt);
+    // pt = strtok(NULL, ","); five1Time_us = atof(pt);
+    pt = strtok(NULL, ","); five1PresStatic_pa = atof(pt);
+    pt = strtok(NULL, ","); five1TempStatic_C = atof(pt);
+    pt = strtok(NULL, ","); five1PresTip_pa = atof(pt);
+    pt = strtok(NULL, ","); five1TempTip_C = atof(pt);
+    pt = strtok(NULL, ","); five1PresAlpha_pa = atof(pt);
+    pt = strtok(NULL, ","); five1TempAlpha_C = atof(pt);
+    pt = strtok(NULL, ","); five1PresBeta_pa = atof(pt);
+    pt = strtok(NULL, ","); five1TempBeta_C = atof(pt);
+
+    // std::cout << five1Time_s << "\t"
+    //           << five1Time_us << "\t"
+    //           << five1PresStatic_pa << "\t"
+    //           << five1TempStatic_C << "\t"
+    //           << five1PresTip_pa << "\t"
+    //           << five1TempTip_C << "\t"
+    //           << five1PresAlpha_pa << "\t"
+    //           << five1TempAlpha_C << "\t"
+    //           << five1PresBeta_pa << "\t"
+    //           << five1TempBeta_C << "\t"
+    //           << std::endl;
+  }
+
+  // write values even if data isn't fresh (to overwrite real sensor data)
+  // five1Time_node->setDouble(five1Time_us);
+  five1PresStatic_node->setFloat(five1PresStatic_pa);
+  five1TempStatic_node->setFloat(five1TempStatic_C);
+  five1PresTip_node->setFloat(five1PresTip_pa);
+  five1TempTip_node->setFloat(five1TempTip_C);
+  five1PresAlpha_node->setFloat(five1PresAlpha_pa);
+  five1TempAlpha_node->setFloat(five1TempAlpha_C);
+  five1PresBeta_node->setFloat(five1PresBeta_pa);
+  five1TempBeta_node->setFloat(five1TempBeta_C);
+
+  return fresh_data;
+}
+
+void sim_5hole1_close() {
+  sock_five1.close();
+}
+
+
+// 5-Hole Probe - [Method2]
+static netSocket sock_five2;
+
+static float five2Time_s = 0.0;
+static double five2Time_us = 0.0;
+static float five2PresStatic_pa = 0.0;
+static float five2TempStatic_C = 0.0;
+static float five2PresTip_pa = 0.0;
+static float five2TempTip_C = 0.0;
+static float five2PresAlpha_pa = 0.0;
+static float five2TempAlpha_C = 0.0;
+static float five2PresBeta_pa = 0.0;
+static float five2TempBeta_C = 0.0;
+
+// static ElementPtr fiveholeTime_node;
+static ElementPtr five2PresStatic_node;
+static ElementPtr five2TempStatic_node;
+static ElementPtr five2PresTip_node;
+static ElementPtr five2TempTip_node;
+static ElementPtr five2PresAlpha_node;
+static ElementPtr five2TempAlpha_node;
+static ElementPtr five2PresBeta_node;
+static ElementPtr five2TempBeta_node;
+
+bool sim_5hole2_init() {
+  printf("sim_5hole2_init()\n");
+  // five2Time_node = deftree.getElement("/Sensors/5Hole/Time_us");
+  five2PresStatic_node = deftree.getElement("/Sensors/5Hole/Static/Pressure_Pa");
+  five2TempStatic_node = deftree.getElement("/Sensors/5Hole/Static/Temperature_C");
+  five2PresTip_node = deftree.getElement("/Sensors/5Hole/Tip/Pressure_Pa");
+  five2TempTip_node = deftree.getElement("/Sensors/5Hole/Tip/Temperature_C");
+  five2PresAlpha_node = deftree.getElement("/Sensors/5Hole/PresAlpha/Pressure_Pa");
+  five2TempAlpha_node = deftree.getElement("/Sensors/5Hole/PresAlpha/Temperature_C");
+  five2PresBeta_node = deftree.getElement("/Sensors/5Hole/PresBeta/Pressure_Pa");
+  five2TempBeta_node = deftree.getElement("/Sensors/5Hole/PresBeta/Temperature_C");
+
+  // open a UDP socket
+  if ( ! sock_five2.open( false ) ) {
+    printf("Error opening 5Hole2 input socket\n");
+    return false;
+  }
+
+  // bind ...
+  if ( sock_five2.bind( "", port_five2 ) == -1 ) {
+    printf("error binding to port %d\n", port_five2 );
+    return false;
+  }
+
+  // don't block waiting for input
+  sock_five2.setBlocking( false );
+
+  return true;
+}
+
+bool sim_5hole2_update() {
+  const int sim_five2_size = 4096;
+  char packet_buf[sim_five2_size];
+  char *pt;
+
+  bool fresh_data = false;
+
+  int result;
+  while ( (result = sock_five2.recv(packet_buf, sim_five2_size, 0)) > 0 ) {
+    fresh_data = true;
+
+    pt = strtok(packet_buf, ","); five2Time_s = atof(pt);
+    // pt = strtok(NULL, ","); five2Time_us = atof(pt);
+    pt = strtok(NULL, ","); five2PresStatic_pa = atof(pt);
+    pt = strtok(NULL, ","); five2TempStatic_C = atof(pt);
+    pt = strtok(NULL, ","); five2PresTip_pa = atof(pt);
+    pt = strtok(NULL, ","); five2TempTip_C = atof(pt);
+    pt = strtok(NULL, ","); five2PresAlpha_pa = atof(pt);
+    pt = strtok(NULL, ","); five2TempAlpha_C = atof(pt);
+    pt = strtok(NULL, ","); five2PresBeta_pa = atof(pt);
+    pt = strtok(NULL, ","); five2TempBeta_C = atof(pt);
+
+    // std::cout << five2Time_s << "\t"
+    //           << five2Time_us << "\t"
+    //           << five2PresStatic_pa << "\t"
+    //           << five2TempStatic_C << "\t"
+    //           << five2PresTip_pa << "\t"
+    //           << five2TempTip_C << "\t"
+    //           << five2PresAlpha_pa << "\t"
+    //           << five2TempAlpha_C << "\t"
+    //           << five2PresBeta_pa << "\t"
+    //           << five2TempBeta_C << "\t"
+    //           << std::endl;
+  }
+
+  // write values even if data isn't fresh (to overwrite real sensor data)
+  // five2Time_node->setDouble(five2Time_us);
+  five2PresStatic_node->setFloat(five2PresStatic_pa);
+  five2TempStatic_node->setFloat(five2TempStatic_C);
+  five2PresTip_node->setFloat(five2PresTip_pa);
+  five2TempTip_node->setFloat(five2TempTip_C);
+  five2PresAlpha_node->setFloat(five2PresAlpha_pa);
+  five2TempAlpha_node->setFloat(five2TempAlpha_C);
+  five2PresBeta_node->setFloat(five2PresBeta_pa);
+  five2TempBeta_node->setFloat(five2TempBeta_C);
+
+  return fresh_data;
+}
+
+void sim_5hole2_close() {
+  sock_five2.close();
+}
+
+
 // Actuator Commands
 static netSocket sock_cmd;
-static int port_cmd = 59051;
-static std::string host_cmd = "192.168.7.1";
 
 static ElementPtr cmdTime_node;
 
