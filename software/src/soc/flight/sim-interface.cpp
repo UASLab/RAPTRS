@@ -3,7 +3,6 @@
 // DESCRIPTION: aquire live sensor data from an running copy of JSBSim
 //
 
-
 #include <stdlib.h>
 #include <iostream>
 #include <string>
@@ -16,14 +15,20 @@
 static bool sim_interface_active = false;
 static std::string modelName;
 static int port_imu = 59011;
+static bool run_imu = 0;
 static int port_gps = 59012;
+static bool run_gps = 0;
 static int port_pitot = 59013;
+static bool run_pitot = 0;
 static int port_five1 = 59014;
+static bool run_five1 = 0;
 static int port_five2 = 59015;
+static bool run_five2 = 0;
 static int port_cmd = 59051;
 static std::string host_cmd = "192.168.7.1";
+static bool run_cmd = 0;
 
-// Todo: make JSB ports and host configurable
+// Sim Init
 bool sim_init( const rapidjson::Value& Config ) {
   if ( Config.HasMember("JSBSim") ) {
     const rapidjson::Value& JsbConfig = Config["JSBSim"];
@@ -35,30 +40,35 @@ bool sim_init( const rapidjson::Value& Config ) {
     if ( JsbConfig.HasMember("ImuPort") ) {
       port_imu = JsbConfig["ImuPort"].GetInt();
       sim_imu_init();
+      run_imu = 1;
       std::cout << "IMU interface initialized on Port: " << port_imu << std::endl;
     }
 
     if ( JsbConfig.HasMember("GpsPort") ) {
       port_gps = JsbConfig["GpsPort"].GetInt();
       sim_gps_init();
+      run_gps = 1;
       std::cout << "Gps interface initialized on Port: " << port_gps << std::endl;
     }
 
     if ( JsbConfig.HasMember("PitotPort") ) {
       port_pitot = JsbConfig["PitotPort"].GetInt();
       sim_pitot_init();
+      run_pitot = 1;
       std::cout << "Pitot interface initialized on Port: " << port_pitot << std::endl;
     }
 
     if ( JsbConfig.HasMember("5hole1Port") ) {
       port_five1 = JsbConfig["5hole1Port"].GetInt();
       sim_5hole1_init();
+      run_five1 = 1;
       std::cout << "Five Hole [Method1] interface initialized on Port: " << port_five1 << std::endl;
     }
 
     if ( JsbConfig.HasMember("5hole2Port") ) {
       port_five2 = JsbConfig["5hole2Port"].GetInt();
       sim_5hole2_init();
+      run_five2 = 1;
       std::cout << "Five Hole [Method2] interface initialized on Port: " << port_five2 << std::endl;
     }
 
@@ -67,6 +77,7 @@ bool sim_init( const rapidjson::Value& Config ) {
       port_cmd = JsbConfig["CmdPort"].GetInt();
       host_cmd = JsbConfig["CmdHost"].GetString();
       sim_cmd_init();
+      run_cmd = 1;
       std::cout << "Output Cmd interface initialized on Port: " << host_cmd << ":" << port_cmd << std::endl;
     }
 
@@ -92,6 +103,17 @@ bool sim_init( const rapidjson::Value& Config ) {
     return false;
   }
 }
+
+// Sim Update
+bool sim_sensor_update( ) {
+  if ( run_imu ) { sim_imu_update(); }
+  if ( run_gps ) { sim_gps_update(); }
+  if ( run_pitot ) { sim_pitot_update(); }
+  if ( run_five1 ) { sim_5hole1_update(); }
+  if ( run_five2 ) { sim_5hole2_update(); }
+  return true;
+}
+
 
 // IMU
 static netSocket sock_imu;
@@ -153,7 +175,7 @@ bool sim_imu_init() {
 
 
 bool sim_imu_update() {
-  const int sim_imu_size = 4096;
+  const int sim_imu_size = 1024;
   char packet_buf[sim_imu_size];
   char *pt;
 
@@ -263,7 +285,7 @@ bool sim_gps_init() {
 }
 
 bool sim_gps_update() {
-  const int sim_gps_size = 4096;
+  const int sim_gps_size = 1024;
   char packet_buf[sim_gps_size];
   char *pt;
 
@@ -272,7 +294,6 @@ bool sim_gps_update() {
   int result;
   while ( (result = sock_gps.recv(packet_buf, sim_gps_size, 0)) > 0 ) {
     fresh_data = true;
-    fix = 1;
 
     pt = strtok(packet_buf, ","); gpsTime_s = atof(pt);
     pt = strtok(NULL, ","); gpsTime_us = atof(pt);
@@ -282,6 +303,8 @@ bool sim_gps_update() {
     pt = strtok(NULL, ","); vn_mps = atof(pt);
     pt = strtok(NULL, ","); ve_mps = atof(pt);
     pt = strtok(NULL, ","); vd_mps = atof(pt);
+    sats = 8;
+    fix = 1;
 
     // std::cout << gpsTime_s << "\t"
     //           << gpsTime_us << "\t"
@@ -355,7 +378,7 @@ bool sim_pitot_init() {
 }
 
 bool sim_pitot_update() {
-  const int sim_pitot_size = 4096;
+  const int sim_pitot_size = 1024;
   char packet_buf[sim_pitot_size];
   char *pt;
 
@@ -451,7 +474,7 @@ bool sim_5hole1_init() {
 }
 
 bool sim_5hole1_update() {
-  const int sim_five1_size = 4096;
+  const int sim_five1_size = 1024;
   char packet_buf[sim_five1_size];
   char *pt;
 
@@ -559,7 +582,7 @@ bool sim_5hole2_init() {
 }
 
 bool sim_5hole2_update() {
-  const int sim_five2_size = 4096;
+  const int sim_five2_size = 1024;
   char packet_buf[sim_five2_size];
   char *pt;
 

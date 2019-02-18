@@ -152,9 +152,7 @@ int main(int argc, char* argv[]) {
   while(1) {
     if (Fmu.ReceiveSensorData()) {
       if ( sim ) {
-        // insert sim data calls
-        sim_imu_update();
-        sim_gps_update();
+        sim_sensor_update(); // update sim sensors
       }
       float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
 
@@ -165,9 +163,7 @@ int main(int argc, char* argv[]) {
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
         SenProc.Run();
-        if ( sim ) {
-          sim_pitot_update(); // overwrite processed air data
-        }
+        // run route manager
         route_mgr.update();
         // get and set engaged and armed controllers
         Control.SetEngagedController(Mission.GetEngagedController());

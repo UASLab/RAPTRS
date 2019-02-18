@@ -9,6 +9,7 @@
 
 // init everything
 bool sim_init( const rapidjson::Value& Config );
+bool sim_sensor_update();
 
 // function prototypes
 bool sim_imu_init();
