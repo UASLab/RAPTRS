@@ -190,9 +190,8 @@ int main(int argc, char* argv[]) {
         Control.RunArmed();
 
         // Print some status
-        static const double r2d = 180.0 / M_PI;
-
         std::string CtrlEngaged = Mission.GetEngagedController();
+        std::string SenProcEngaged = Mission.GetEngagedSensorProcessing();
         std::string ExcitEngaged = Mission.GetEngagedExcitation();
 
         float timeCurr_s = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
@@ -201,7 +200,7 @@ int main(int argc, char* argv[]) {
 
         float vel = (deftree.getElement("/Sensor-Processing/vIAS_ms") -> getFloat());
 
-        std::cout << CtrlEngaged << "\t" << ExcitEngaged
+        std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
                   << "\tdt:  " << dt
                   << "\tvel:  " << vel
                   << std::endl;
