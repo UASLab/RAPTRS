@@ -61,11 +61,11 @@ void FGRouteMgr::init( const rapidjson::Value& Config ) {
   gps_fix_node = deftree.getElement("/Sensors/uBlox/Fix");
 
   // output signals
-  course_error_node = deftree.initElement("/Route/course_error_rad", "Route manager course error", LOG_NONE, LOG_NONE);
-  nav_course_error_node = deftree.initElement("/Route/nav_course_error_rad", "Route manager course (corrected for xtrack) error", LOG_NONE, LOG_NONE);
-  xtrack_node = deftree.initElement("/Route/xtrack_m", "Route manager cross track error", LOG_NONE, LOG_NONE);
-  nav_dist_node = deftree.initElement("/Route/dist_m", "Route manager distance remaining on leg", LOG_NONE, LOG_NONE);
-    
+  course_error_node = deftree.initElement("/Route/course_error_rad", "Route manager course error", LOG_FLOAT, LOG_NONE);
+  nav_course_error_node = deftree.initElement("/Route/nav_course_error_rad", "Route manager course (corrected for xtrack) error", LOG_FLOAT, LOG_NONE);
+  xtrack_node = deftree.initElement("/Route/xtrack_m", "Route manager cross track error", LOG_FLOAT, LOG_NONE);
+  nav_dist_node = deftree.initElement("/Route/dist_m", "Route manager distance remaining on leg", LOG_FLOAT, LOG_NONE);
+  
   active->clear();
   standby->clear();
 
