@@ -3,9 +3,8 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "waypoint.hxx"
-#include "route_mgr.hxx"
-
+#include "waypoint.h"
+#include "route_mgr.h"
 
 static const double r2d = 180.0 / M_PI;
 static const double d2r = M_PI / 180.0;
@@ -21,7 +20,7 @@ static ElementPtr nav_course_error_node;
 static ElementPtr xtrack_node;
 static ElementPtr nav_dist_node;
 
-FGRouteMgr::FGRouteMgr() :
+RouteMgr::RouteMgr() :
   active( new SGRoute ),
   standby( new SGRoute ),
   last_lon( 0.0 ),
@@ -36,13 +35,13 @@ FGRouteMgr::FGRouteMgr() :
 }
 
 
-FGRouteMgr::~FGRouteMgr() {
+RouteMgr::~RouteMgr() {
   delete standby;
   delete active;
 }
 
 
-void FGRouteMgr::init( const rapidjson::Value& Config ) {
+void RouteMgr::init( const rapidjson::Value& Config ) {
   printf("Initializing Route Manager...\n");
 
   // configuration
@@ -83,9 +82,10 @@ void FGRouteMgr::init( const rapidjson::Value& Config ) {
 }
 
 
-void FGRouteMgr::update() {
+void RouteMgr::update() {
   if ( !initialized ) {
-    // bail out if we were never initialized (i.e. no route in the config file.)
+    // bail out if we were never initialized (i.e. no Route section in
+    // the config file.)
     return;
   }
   
@@ -128,8 +128,7 @@ void FGRouteMgr::update() {
     SGWayPoint wp = active->get_current();
 
     // compute direct-to course and distance
-    wp.CourseAndDistance( lon_deg, lat_deg,
-                          &direct_course, &direct_distance );
+    wp.CourseAndDistance( lon_deg, lat_deg, &direct_course, &direct_distance );
 
     // compute leg course and distance
     float leg_course;
@@ -232,7 +231,7 @@ void FGRouteMgr::update() {
 }
 
 
-bool FGRouteMgr::swap() {
+bool RouteMgr::swap() {
   if ( !standby->size() ) {
     // standby route is empty
     return false;
@@ -252,7 +251,7 @@ bool FGRouteMgr::swap() {
 
 
 // build a route from a property (sub) tree
-bool FGRouteMgr::build( const rapidjson::Value& Config ) {
+bool RouteMgr::build( const rapidjson::Value& Config ) {
   standby->clear();
   if ( Config.HasMember("waypoints") ) {
     const rapidjson::Value& waypoints = Config["waypoints"];
@@ -266,7 +265,7 @@ bool FGRouteMgr::build( const rapidjson::Value& Config ) {
 }
 
 
-int FGRouteMgr::new_waypoint( const double field1, const double field2,
+int RouteMgr::new_waypoint( const double field1, const double field2,
 			      const int mode )
 {
   if ( mode == 0 ) {

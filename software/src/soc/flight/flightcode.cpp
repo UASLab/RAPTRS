@@ -30,9 +30,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "telemetry.h"
 #include "datalog.h"
 #include "netSocket.h"
-#include "telnet.hxx"
+#include "telnet.h"
 #include "sim-interface.h"
-#include "route_mgr.hxx"
+#include "circle_mgr.h"
+#include "route_mgr.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -68,7 +69,8 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-  FGRouteMgr route_mgr;
+  CircleMgr circle_mgr;
+  RouteMgr route_mgr;
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
@@ -99,6 +101,9 @@ int main(int argc, char* argv[]) {
     if (AircraftConfiguration.HasMember("Route")) {
       std::cout << "\tConfiguring route following..." << std::endl;
       route_mgr.init(AircraftConfiguration["Route"]);
+    } else if (AircraftConfiguration.HasMember("Circle")) {
+      std::cout << "\tConfiguring circle hold..." << std::endl;
+      circle_mgr.init(AircraftConfiguration["Circle"]);
     }
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
@@ -163,8 +168,11 @@ int main(int argc, char* argv[]) {
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
         SenProc.Run();
+
         // run route manager
         route_mgr.update();
+        circle_mgr.update();
+
         // get and set engaged and armed controllers
         Control.SetEngagedController(Mission.GetEngagedController());
         Control.SetArmedController(Mission.GetArmedController());
@@ -198,11 +206,8 @@ int main(int argc, char* argv[]) {
         float dt = timeCurr_s - timePrev_s;
         timePrev_s = timeCurr_s;
 
-        float vel = (deftree.getElement("/Sensor-Processing/vIAS_ms") -> getFloat());
-
         std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
                   << "\tdt:  " << dt
-                  << "\tvel:  " << vel
                   << std::endl;
 
       }

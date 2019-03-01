@@ -17,9 +17,9 @@
 
 #include "definition-tree2.h"
 
-#include "strutils.hxx"
+#include "strutils.h"
 #include "netChat.h"
-#include "telnet.hxx"
+#include "telnet.h"
 
 //using std::stringstream;
 using std::ends;

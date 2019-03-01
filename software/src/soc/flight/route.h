@@ -25,7 +25,7 @@
 #include <vector>
 using std::vector;
 
-#include "waypoint.hxx"
+#include "waypoint.h"
 
 /**
  * A class to manage a list of waypoints (i.e. a route).

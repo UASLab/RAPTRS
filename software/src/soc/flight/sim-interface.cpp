@@ -197,7 +197,7 @@ bool sim_imu_update() {
     pt = strtok(NULL, ","); hy_uT = atof(pt);
     pt = strtok(NULL, ","); hz_uT = atof(pt);
 
-    // std::cout << imuTime_s << "\t"
+    // std::cout << "IMU:\t" << imuTime_s << "\t"
     //           << imuTime_us << "\t"
     //           << ax_mps2 << "\t"
     //           << ay_mps2 << "\t"
@@ -233,7 +233,7 @@ void sim_imu_close() {
 static netSocket sock_gps;
 
 static float gpsTime_s = 0.0;
-static double gpsTime_us = 0.0;
+// static double gpsTime_us = 0.0;
 static double lat_rad = 0.0;
 static double lon_rad = 0.0;
 static float alt_m = 0.0;
@@ -256,7 +256,7 @@ static ElementPtr fix_node;
 bool sim_gps_init() {
   printf("sim_gps_init()\n");
   // bind def tree pointers
-  gpsTime_node = deftree.getElement("/Sensors/uBlox/Time_us");
+  // gpsTime_node = deftree.getElement("/Sensors/uBlox/Time_us");
   lon_node = deftree.getElement("/Sensors/uBlox/Longitude_rad");
   lat_node = deftree.getElement("/Sensors/uBlox/Latitude_rad");
   alt_node = deftree.getElement("/Sensors/uBlox/Altitude_m");
@@ -296,7 +296,7 @@ bool sim_gps_update() {
     fresh_data = true;
 
     pt = strtok(packet_buf, ","); gpsTime_s = atof(pt);
-    pt = strtok(NULL, ","); gpsTime_us = atof(pt);
+    // pt = strtok(NULL, ","); gpsTime_us = atof(pt);
     pt = strtok(NULL, ","); lat_rad = atof(pt);
     pt = strtok(NULL, ","); lon_rad = atof(pt);
     pt = strtok(NULL, ","); alt_m = atof(pt);
@@ -318,7 +318,7 @@ bool sim_gps_update() {
   }
 
   // write values even if data isn't fresh (to overwrite real sensor data)
-  gpsTime_node->setDouble(gpsTime_us);
+  // gpsTime_node->setDouble(gpsTime_us);
   lon_node->setDouble(lon_rad);
   lat_node->setDouble(lat_rad);
   alt_node->setFloat(alt_m);
@@ -339,7 +339,7 @@ void sim_gps_close() {
 static netSocket sock_pitot;
 
 static float pitotTime_s = 0.0;
-static double pitotTime_us = 0.0;
+// static double pitotTime_us = 0.0;
 static float pitotPresStatic_pa = 0.0;
 static float pitotTempStatic_C = 0.0;
 static float pitotPresTip_pa = 0.0;
@@ -353,7 +353,7 @@ static ElementPtr pitotTempTip_node;
 
 bool sim_pitot_init() {
   printf("sim_pitot_init()\n");
-  // pitotTime_node = deftree.getElement("/Sensors/Fmu/Time_us");
+  // pitotTime_node = deftree.getElement("/Sensors/Pitot/Time_us");
   pitotPresStatic_node = deftree.getElement("/Sensors/Pitot/Static/Pressure_Pa");
   pitotTempStatic_node = deftree.getElement("/Sensors/Pitot/Static/Temperature_C");
   pitotPresTip_node = deftree.getElement("/Sensors/Pitot/Differential/Pressure_Pa");
@@ -395,13 +395,13 @@ bool sim_pitot_update() {
     pt = strtok(NULL, ","); pitotPresTip_pa = atof(pt);
     pt = strtok(NULL, ","); pitotTempTip_C = atof(pt);
 
-    // std::cout << pitotTime_s << "\t"
+    // std::cout << "Pitot:\t" << pitotTime_s << "\t"
     //           << pitotTime_us << "\t"
     //           << pitotPresStatic_pa << "\t"
     //           << pitotTempStatic_C << "\t"
     //           << pitotPresTip_pa << "\t"
     //           << pitotTempTip_C << "\t"
-    //           << std::endl;
+              // << std::endl;
   }
 
   // write values even if data isn't fresh (to overwrite real sensor data)
@@ -423,7 +423,7 @@ void sim_pitot_close() {
 static netSocket sock_five1;
 
 static float five1Time_s = 0.0;
-static double five1Time_us = 0.0;
+// static double five1Time_us = 0.0;
 static float five1PresStatic_pa = 0.0;
 static float five1TempStatic_C = 0.0;
 static float five1PresTip_pa = 0.0;
@@ -433,7 +433,7 @@ static float five1TempAlpha_C = 0.0;
 static float five1PresBeta_pa = 0.0;
 static float five1TempBeta_C = 0.0;
 
-// static ElementPtr fiveholeTime_node;
+static ElementPtr five1Time_node;
 static ElementPtr five1PresStatic_node;
 static ElementPtr five1TempStatic_node;
 static ElementPtr five1PresTip_node;
@@ -531,7 +531,7 @@ void sim_5hole1_close() {
 static netSocket sock_five2;
 
 static float five2Time_s = 0.0;
-static double five2Time_us = 0.0;
+// static double five2Time_us = 0.0;
 static float five2PresStatic_pa = 0.0;
 static float five2TempStatic_C = 0.0;
 static float five2PresTip_pa = 0.0;
@@ -541,7 +541,7 @@ static float five2TempAlpha_C = 0.0;
 static float five2PresBeta_pa = 0.0;
 static float five2TempBeta_C = 0.0;
 
-// static ElementPtr fiveholeTime_node;
+static ElementPtr five2Time_node;
 static ElementPtr five2PresStatic_node;
 static ElementPtr five2TempStatic_node;
 static ElementPtr five2PresTip_node;
