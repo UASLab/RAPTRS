@@ -140,10 +140,10 @@ soc_surf_cal_obj = $(foreach src,$(soc_surf_cal_src), $(BUILD)/$(SOC_ARCH)/$(src
 fmu_obj = $(foreach src,$(fmu_src), $(BUILD)/$(FMU_ARCH)/$(src))
 node_obj = $(foreach src,$(node_src), $(BUILD)/$(NODE_ARCH)/$(src))
 # --- Compiler ---
-SOC_CC = $(SOC_COMPILER)/arm-linux-gnueabihf-gcc-7
-SOC_CXX = $(SOC_COMPILER)/arm-linux-gnueabihf-g++-7
-SIM_CC = $(SIM_COMPILER)/gcc-7
-SIM_CXX = $(SIM_COMPILER)/g++-7
+SOC_CC = $(SOC_COMPILER)/arm-linux-gnueabihf-gcc-6
+SOC_CXX = $(SOC_COMPILER)/arm-linux-gnueabihf-g++-6
+SIM_CC = $(SIM_COMPILER)/gcc-6
+SIM_CXX = $(SIM_COMPILER)/g++-6
 FMU_CC = $(FMU_COMPILER)/arm-none-eabi-gcc
 FMU_CXX = $(FMU_COMPILER)/arm-none-eabi-g++
 FMU_OBJCOPY = $(FMU_COMPILER)/arm-none-eabi-objcopy
@@ -154,9 +154,9 @@ NODE_OBJCOPY = $(NODE_COMPILER)/arm-none-eabi-objcopy
 NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 # compiler options
 SOC_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
-SOC_CXXFLAGS = -std=c++17
+SOC_CXXFLAGS = -std=c++11
 SIM_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
-SIM_CXXFLAGS = -std=c++17
+SIM_CXXFLAGS = -std=c++11
 FMU_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(FMU_CORE)
 FMU_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti
 FMU_LDSCRIPT = $(FMU_CORE)/mk66fx1m0.ld

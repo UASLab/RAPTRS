@@ -30,9 +30,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "telemetry.h"
 #include "datalog.h"
 #include "netSocket.h"
-#include "telnet.hxx"
-#include "FGFS.h"
-#include "route_mgr.hxx"
+#include "telnet.h"
+#include "sim-interface.h"
+#include "circle_mgr.h"
+#include "route_mgr.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -68,7 +69,8 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-  FGRouteMgr route_mgr;
+  CircleMgr circle_mgr;
+  RouteMgr route_mgr;
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
@@ -99,6 +101,9 @@ int main(int argc, char* argv[]) {
     if (AircraftConfiguration.HasMember("Route")) {
       std::cout << "\tConfiguring route following..." << std::endl;
       route_mgr.init(AircraftConfiguration["Route"]);
+    } else if (AircraftConfiguration.HasMember("Circle")) {
+      std::cout << "\tConfiguring circle hold..." << std::endl;
+      circle_mgr.init(AircraftConfiguration["Circle"]);
     }
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
@@ -146,16 +151,16 @@ int main(int argc, char* argv[]) {
   telnet.open();
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
-  bool fgfs = fgfs_init(AircraftConfiguration);
+  bool sim = sim_init(AircraftConfiguration);
 
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
-      if ( fgfs ) {
-        // insert flightgear sim data calls
-        fgfs_imu_update();
-        fgfs_gps_update();
+      if ( sim ) {
+        sim_sensor_update(); // update sim sensors
       }
+      float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+
       if (SenProc.Configured()&&SenProc.Initialized()) {
         // run mission
         Mission.Run();
@@ -163,10 +168,11 @@ int main(int argc, char* argv[]) {
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
         SenProc.Run();
-        if ( fgfs ) {
-          fgfs_airdata_update(); // overwrite processed air data
-        }
+
+        // run route manager
         route_mgr.update();
+        circle_mgr.update();
+
         // get and set engaged and armed controllers
         Control.SetEngagedController(Mission.GetEngagedController());
         Control.SetArmedController(Mission.GetArmedController());
@@ -183,8 +189,8 @@ int main(int argc, char* argv[]) {
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
-        if ( fgfs ) {
-          fgfs_act_update();
+        if ( sim ) {
+          sim_cmd_update();
         }
         // run armed excitations
         Excitation.RunArmed();
@@ -193,13 +199,14 @@ int main(int argc, char* argv[]) {
 
         // Print some status
         std::string CtrlEngaged = Mission.GetEngagedController();
+        std::string SenProcEngaged = Mission.GetEngagedSensorProcessing();
         std::string ExcitEngaged = Mission.GetEngagedExcitation();
 
         float timeCurr_s = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
         float dt = timeCurr_s - timePrev_s;
         timePrev_s = timeCurr_s;
 
-        std::cout << CtrlEngaged << "\t" << ExcitEngaged
+        std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
                   << "\tdt:  " << dt
                   << std::endl;
 

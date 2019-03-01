@@ -28,9 +28,8 @@ using std::string;
 using std::vector;
 
 #include "rapidjson/document.h"
-
 #include "definition-tree2.h"
-#include "route.hxx"
+#include "route.h"
 
 
 /**
@@ -38,7 +37,7 @@ using std::vector;
  * 
  */
 
-class FGRouteMgr {
+class RouteMgr {
 
 public:
 
@@ -79,8 +78,8 @@ private:
     
 public:
 
-  FGRouteMgr();
-  ~FGRouteMgr();
+  RouteMgr();
+  ~RouteMgr();
 
   void init( const rapidjson::Value& Config );
 
