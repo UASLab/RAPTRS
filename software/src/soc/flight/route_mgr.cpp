@@ -50,7 +50,7 @@ void RouteMgr::init( const rapidjson::Value& Config ) {
   } else {
     xtrack_gain = 1.0;
   }
-  
+
   // input signals
   vn_node = deftree.getElement("/Sensor-Processing/NorthVelocity_ms", true);
   ve_node = deftree.getElement("/Sensor-Processing/EastVelocity_ms", true);
@@ -64,7 +64,7 @@ void RouteMgr::init( const rapidjson::Value& Config ) {
   nav_course_error_node = deftree.initElement("/Route/nav_course_error_rad", "Route manager course (corrected for xtrack) error", LOG_FLOAT, LOG_NONE);
   xtrack_node = deftree.initElement("/Route/xtrack_m", "Route manager cross track error", LOG_FLOAT, LOG_NONE);
   nav_dist_node = deftree.initElement("/Route/dist_m", "Route manager distance remaining on leg", LOG_FLOAT, LOG_NONE);
-  
+
   active->clear();
   standby->clear();
 
@@ -88,7 +88,7 @@ void RouteMgr::update() {
     // the config file.)
     return;
   }
-  
+
   float direct_course, direct_distance;
   float leg_distance;
 
@@ -103,7 +103,7 @@ void RouteMgr::update() {
     active->refresh_offset_positions(SGWayPoint(lon_deg, lat_deg), 0.0);
     pos_set = true;
   }
-    
+
   // route_node.setLong("route_size", active->size());
   if ( active->size() > 0 ) {
     // route start up logic: if start_mode == first_wpt then
@@ -150,7 +150,7 @@ void RouteMgr::update() {
       course_error -= 360.0;
     }
     course_error_node->setFloat(course_error * d2r);
-        
+
     // compute cross-track error
     float angle_rad = angle * d2r;
     float xtrack_m = sin( angle_rad ) * direct_distance;
@@ -179,7 +179,7 @@ void RouteMgr::update() {
       nav_course_error -= 360.0;
     }
     nav_course_error_node->setFloat(nav_course_error * d2r);
-    
+
     // default distance for waypoint acquisition = direct
     // distance to the target waypoint.  This can be
     // overridden later by leg following and replaced with
