@@ -235,7 +235,7 @@ for k in range(0, len(FileContentsBinary)):
             KeyName = ""
             for i in range(0,len(Payload)):
                 KeyName += chr(Payload[i])
-            mtype = mkey[1]
+            mtype = mkey.group(1)
             storage[mtype]['keys'].append(KeyName)
             storage[mtype]['data'].append([])
             storage[mtype]['packstr'] += storage[mtype]['packcode']
@@ -246,7 +246,7 @@ for k in range(0, len(FileContentsBinary)):
             Desc = ""
             for i in range(0,len(Payload)):
                 Desc += chr(Payload[i])
-            dtype = mdesc[1]
+            dtype = mdesc.group(1)
             storage[dtype]['desc'].append(Desc)
         # match 'Data' token
         if DataType == 'Data':
