@@ -81,7 +81,7 @@ float AirData::getDensity(float p, float T) {
 // Angle of Attack or Sidslip estimate when all ports are measuring pressure difference from static ring
 // For alpha: Angle ports are alpha, Side ports are beta
 // For beta: Angle ports are beta, Side ports are alpha
-float AirData::getAngle(float pTip, float pAngle1, float pAngle2, float pSide1, float pSide2, float kCal) {
+float AirData::getAngle1(float pTip, float pAngle1, float pAngle2, float pSide1, float pSide2, float kCal) {
 
   float qcn = pTip - 0.5 * (pSide1 + pSide2);
   float angle;
@@ -96,7 +96,7 @@ float AirData::getAngle(float pTip, float pAngle1, float pAngle2, float pSide1, 
 }
 
 // Angle of Attack estimate when pAlpha is measuring pAlpha1-pAlpha2 directly
-float AirData::getAngleMeth2(float pTip, float pAngle, float kCal) {
+float AirData::getAngle2(float pTip, float pAngle, float kCal) {
 
   float angle = pAngle / (kCal * pTip);
 
