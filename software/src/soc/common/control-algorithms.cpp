@@ -72,22 +72,17 @@ void __PID2Class::InitializeState(float Output) {
 
 void __PID2Class::ComputeDerivative(float dt) {
 
-  float DerivativeErrorChange = DerivativeError_ - PreviousDerivativeError_;
+  float ErrorChange = DerivativeError_ - PreviousDerivativeError_;
   float DerivativeFiltVal = 0.0f;
 
-  if (DerivativeErrorChange != 0) {
-    DerivativeFiltVal = Tf_ + dt / DerivativeErrorChange;
-
-    if (DerivativeFiltVal != 0) {
-      DerivativeErrorState_ = 1.0f / DerivativeFiltVal;
-    } else {
-      DerivativeErrorState_ = 0.0f;
-    }
+  if ((Tf_ + dt) != 0) {
+    DerivativeErrorState_ = Tf_ * (PreviousDerivativeErrorState_ + ErrorChange) / (Tf_ + dt);
   } else {
     DerivativeErrorState_ = 0.0f;
   }
 
   PreviousDerivativeError_ = DerivativeError_;
+  PreviousDerivativeErrorState_ = DerivativeErrorState_;
 }
 
 void __PID2Class::UpdateState(float dt) {

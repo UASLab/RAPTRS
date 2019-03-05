@@ -18,7 +18,7 @@ class __PID2Class {
     bool initLatch_ = false;
 
     float ProportionalError_, DerivativeError_, IntegralError_, DerivativeErrorState_;
-    float PreviousDerivativeError_, IntegralErrorState_;
+    float PreviousDerivativeError_, PreviousDerivativeErrorState_, IntegralErrorState_;
 
     int8_t Saturated_;
 
