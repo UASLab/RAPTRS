@@ -48,7 +48,7 @@ using std::endl;
 // (and initialized) globally in common/definitiontree2.cpp.  Any
 // source file that includes definitiontree2.h may reference and use
 // deftree.
-float timePrev_s = 0;
+float timePrev_ms = 0;
 
 int main(int argc, char* argv[]) {
   if (argc!=2) {
@@ -85,6 +85,10 @@ int main(int argc, char* argv[]) {
   Config.LoadConfiguration(argv[1], &AircraftConfiguration);
   std::cout << "done!" << std::endl;
 
+  /* initialize simulation */
+  bool sim = sim_init(AircraftConfiguration);
+
+  /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
@@ -151,8 +155,6 @@ int main(int argc, char* argv[]) {
   telnet.open();
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
-  bool sim = sim_init(AircraftConfiguration);
-
   /* main loop */
   while(1) {
     if (Fmu.ReceiveSensorData()) {
@@ -202,12 +204,12 @@ int main(int argc, char* argv[]) {
         std::string SenProcEngaged = Mission.GetEngagedSensorProcessing();
         std::string ExcitEngaged = Mission.GetEngagedExcitation();
 
-        float timeCurr_s = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
-        float dt = timeCurr_s - timePrev_s;
-        timePrev_s = timeCurr_s;
+        float timeCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+        float dt_ms = timeCurr_ms - timePrev_ms;
+        timePrev_ms = timeCurr_ms;
 
         std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
-                  << "\tdt:  " << dt
+                  << "\tdt (ms):  " << dt_ms
                   << std::endl;
 
       }
