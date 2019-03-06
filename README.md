@@ -42,6 +42,28 @@ Use the makefile in /RAPTRS/software to build flight software binaries, which ar
    
 Additionally, within /RAPTRS/software/src there is an Arduino program called _write-addr_, which writes the BFS-Bus address for the FMU and Nodes using the Arduino serial monitor and following the prompts. This must be run prior to uploading FMU or Node software.
 
+While the FMU and Node software is flashed by _make upload_fmu_ and _make upload_node_, the flight and datalog-server software should be transfered to the BeagleBone Black using SFTP or SCP.
+
+### Configuration
+
+
+### Flight
+On the BeagleBone Black:
+1. Setup the UARTS by running this [script]()
+2. Start the datalog server
+```
+$ nohup ./datalog-server &
+```
+3. Start the flight code
+```
+$ nohup ./flight config.json &
+```
+4. You can check that the datalog file (_dataX.bin_) is growing and disconnect from the BeagleBone Black.
+5. After the flight, download the datalog file and convert to HDF5 using 'bin2hdf_clo.py' in /RAPTRS/analysis-tools. Note that this script requires python3 and h5py installed.
+```
+$ python3 bin2hdf_clo.py data0.bin
+```
+
 ## Feedback
 Pull requests improving our software or documentation are always appreciated.
 
