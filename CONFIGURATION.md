@@ -157,7 +157,58 @@ Computes the minimum cell voltage amongst a number of batteries. Configurable it
 { "Type": "MinCellVolt", "Output": "MinCellVolt_V", "Inputs": ["/Sensors/Fmu/Voltage/Input_V"], "NumCells": [3]}
 ```
 ## Control
+Control outputs are collected in the "/Control/" directory. The _Control_ JSON object is an object that contains named JSON arrays of sensor-processing algorithms. The "Fmu" named control law is run on the FMU as a reversionary mode using a limited set of configurable blocks. The "Soc" control laws contain a vector naming several control laws that can be run. These can be selected by the mission manager enabling launch, landing, and test points to use individual control laws to facilitate research and provide reversionary modes. The following defines a control law named "PilotDirect" to run on the FMU and a "PilotRate" and "PilotAttitude" control laws to run on the SOC.
+```json
+"Control": {
+    "Fmu": "PilotDirect",
+    "Soc": ["PilotRate", "PilotAttitude"],
+```
+Following this initial declaration, each control law is defined. First, each control law can have one or more named levels. And each level constsists of a name and a vector of components. For example, "PilotDirect" is only one level deep and consists of a series of gain components mapping SBUS input commands (i.e. pilot stick inputs) to effector outputs.
+```json
+"PilotDirect": [
+      { "Level": "SCAS-Rate",
+        "Components": [
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1, "Limits": {"Upper": 1, "Lower": 0}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdAilL_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdAilR_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdElev_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdRud_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapL_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapR_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}}
+        ]
+      }
+    ]
+```
+Control laws can have multiple levels. Each level is run in order and the outputs from one level can be the inputs to the next. This allows defining cascaded control laws. For example, "PilotRate" uses two levels - the first to map pilot stick inputs to aircraft rate commands and the second to perform pseudo inverse control allocation to determine effector positions to meet those commands.
+```json
+"PilotRate": [
+      { "Level": "SCAS-Rate",
+        "Components": [
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1, "Limits": {"Upper": 1, "Lower": 0}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdRoll_rps", "Gain": 1.0472, "Limits": {"Upper": 1.0472, "Lower": -1.0472}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdPitch_rps", "Gain": 1.0472, "Limits": {"Upper": 1.0472, "Lower": -1.0472}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdYaw_rps", "Gain": 0.523599, "Limits": {"Upper": 0.523599, "Lower": -0.523599}},
+          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_rad", "Gain": 0.436332, "Limits": {"Upper": 0.436332, "Lower": -0.436332}}
+        ]
+      },
 
+      { "Level": "Allocator",
+        "Components": [
+          { "Type": "PseudoInverse",
+            "Inputs": ["/Control/cmdRoll_rps", "/Control/cmdPitch_rps", "/Control/cmdYaw_rps"],
+            "Outputs": ["cmdElev_rad", "cmdRud_rad", "cmdAilR_rad", "cmdFlapR_alloc_rad", "cmdFlapL_alloc_rad", "cmdAilL_rad"],
+            "Effectiveness": [
+              [0.00000, -0.1418,-1.33413, -0.5634, 0.5634, 1.33413],
+              [-2.2716, 0.00000, 0.06000, 0.05800, 0.05800, 0.06000],
+              [0.00000,-1.59190, 0.00000, 0.00000, 0.00000, 0.00000]],
+            "Limits": {
+              "Lower": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
+              "Upper": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
+            }
+          }
+        ]
+      }
+```
 ### Constant
 Outputs a constant value. Configurable items include the output location and the value.
 ```json
