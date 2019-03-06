@@ -58,7 +58,7 @@ Static pressure data from the BME-280 environmental sensor. Data is output in un
 ```
 Additional BME-280's can be added, referred to as "Bme280". Additional configurable items include the I2C bus and address.
 ``` json
-{ "Type": "InternalBme280", "Output": "Fmu/Bme280", "I2c": 1, "Address": 118}
+{ "Type": "Bme280", "Output": "Fmu/Bme280", "I2c": 1, "Address": 118}
 ```
 ### SBUS Receiver
 Measures and scales the 16 SBUS receiver channels to a -1 to +1 range. The input port is labeled SBUS RX on the FMU and nodes. Specify the output location.
