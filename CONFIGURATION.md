@@ -98,13 +98,25 @@ Sensor processing outputs are collected in the "/Sensor-Processing/" directory. 
 ]
 ```
 ### Gain
-
+Multiplies an input by a gain. Configurable items include the input, output, gain value, and optional limits, which saturate the output if defined.
+```json
+{ "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1.0, "Limits": {"Upper": 1.0, "Lower": 0.0}},
+```
 ### Sum
-
+Sums a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
+```json
+{ "Type": "Sum", "Inputs": ["/Control/cmdTE1L_alloc_rad", "/Control/cmdTE1L_flap_rad"], "Output": "cmdTE1L_rad", "Limits": {"Upper": 0.436332, "Lower": -0.436332}
+```
 ### Product
-
+Multiplies a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
+```json
+ { "Type": "Product", "Inputs": ["/Control/cmdSurf_faultGain_nd", "/Control/cmdAilL_alloc_rad"], "Output": "cmdAilL_gained_rad"}
+```
 ### Delay
-
+Delays a signal by _N_ frames. Configurable items include the input, output, and number of frames to delay.
+```json
+{ "Type": "Delay", "Input": "/Control/cmdMotor_nom_nd", "Output": "cmdMotor_nd", "Delay_frames": 4}
+```
 ### IAS
 
 ### AGL
@@ -123,15 +135,30 @@ Sensor processing outputs are collected in the "/Sensor-Processing/" directory. 
 ## Control
 
 ### Constant
-
+Outputs a constant value. Configurable items include the output location and the value.
+```json
+{ "Type": "Constant", "Output": "refPitch_bias_rps", "Constant": 0.25}
+```
 ### Gain
-
+Multiplies an input by a gain. Configurable items include the input, output, gain value, and optional limits, which saturate the output if defined.
+```json
+{ "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1.0, "Limits": {"Upper": 1.0, "Lower": 0.0}},
+```
 ### Sum
-
+Sums a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
+```json
+{ "Type": "Sum", "Inputs": ["/Control/cmdTE1L_alloc_rad", "/Control/cmdTE1L_flap_rad"], "Output": "cmdTE1L_rad", "Limits": {"Upper": 0.436332, "Lower": -0.436332}
+```
 ### Product
-
+Multiplies a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
+```json
+ { "Type": "Product", "Inputs": ["/Control/cmdSurf_faultGain_nd", "/Control/cmdAilL_alloc_rad"], "Output": "cmdAilL_gained_rad"}
+```
 ### Delay
-
+Delays a signal by _N_ frames. Configurable items include the input, output, and number of frames to delay.
+```json
+{ "Type": "Delay", "Input": "/Control/cmdMotor_nom_nd", "Output": "cmdMotor_nd", "Delay_frames": 4}
+```
 ### PID2
 
 ### PID
