@@ -45,7 +45,16 @@ Additionally, within /RAPTRS/software/src there is an Arduino program called _wr
 While the FMU and Node software is flashed by _make upload_fmu_ and _make upload_node_, the flight and datalog-server software should be transfered to the BeagleBone Black using SFTP or SCP.
 
 ### Configuration
+Aircraft configuration is done via a JSON file that is read by the BeagleBone Black and used to configure the aircraft sensors, sensor-processing and estimation algorithms, control laws, mission manager, and effectors. Details are provided, below, for each of the configurable items. A couple of examples are also provided for an [Ultra Stick 25e]() and a [quadrotor]() UAS.
 
+#### Sensors
+Sensor outputs are collected in the "/Sensors/" directory. The _Sensors_ JSON object is simply an array of sensors on the aircraft.
+
+##### Time
+Time since the FMU booted, in us. Specify the output location.
+``` json
+{ "Type": "Time", "Output": "Fmu/Time_us"}
+```
 
 ### Flight
 On the BeagleBone Black:
