@@ -85,30 +85,30 @@ class uNavINS {
     // error characteristics of navigation parameters
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // Std dev of Accelerometer Wide Band Noise (m/s^2)
-    float SIG_W_A = 1.0f;       // 1 m/s^2
+    float SIG_W_A = 0.05f;
     // Std dev of gyro output noise (rad/s)
-    float SIG_W_G = 0.00524f;   // 0.3 deg/s
+    float SIG_W_G = 0.00175f;
     // Std dev of Accelerometer Markov Bias
-    float SIG_A_D = 0.1f;       // 5e-2*g
+    float SIG_A_D = 0.01f;
     // Correlation time or time constant
     float TAU_A = 100.0f;
     // Std dev of correlated gyro bias
-    float SIG_G_D = 0.00873f;   // 0.1 deg/s
+    float SIG_G_D = 0.00025;
     // Correlati1on time or time constant
     float TAU_G = 50.0f;
     // GPS measurement noise std dev (m)
     float SIG_GPS_P_NE = 3.0f;
-    float SIG_GPS_P_D = 5.0f;
+    float SIG_GPS_P_D = 6.0f;
     // GPS measurement noise std dev (m/s)
     float SIG_GPS_V_NE = 0.5f;
-    float SIG_GPS_V_D = 0.5f;
+    float SIG_GPS_V_D = 1.0f;
     // Initial set of covariance
     const float P_P_INIT = 10.0f;
     const float P_V_INIT = 1.0f;
-    const float P_A_INIT = 0.34906f;     // 20 deg
-    const float P_HDG_INIT = 3.14159f;   // 180 deg
-    const float P_AB_INIT = 0.9810f;     // 0.5*g
-    const float P_GB_INIT = 0.01745f;    // 5 deg/s
+    const float P_A_INIT = 0.34906f;
+    const float P_HDG_INIT = 3.14159f;
+    const float P_AB_INIT = 0.9810f;
+    const float P_GB_INIT = 0.01745f;
     // acceleration due to gravity
     const float G = 9.807f;
     // major eccentricity squared

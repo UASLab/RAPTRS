@@ -23,8 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef MILLIS_h
 #define MILLIS_h
 
-#include <sys/time.h>
-#include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
 
 /*
 * Ensure C friendly linkages in a mixed C/C++ build
@@ -34,8 +34,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 extern "C" {
 #endif
 
-unsigned long long millis();
-unsigned long long micros();
+uint64_t millis();
+uint64_t micros();
+uint64_t nanos();
 
 /*
 * Ensure C friendly linkages in a mixed C/C++ build

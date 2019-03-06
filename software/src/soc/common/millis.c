@@ -22,14 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "millis.h"
 
-unsigned long long millis() 
-{
-  return micros() / 1000;
+static inline struct timespec gettime() {
+  struct timespec tcur;
+  clock_gettime(CLOCK_MONOTONIC, &tcur);
+  return tcur;
 }
 
-unsigned long long micros() 
+uint64_t millis()
 {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(unsigned long long)1000000+tv.tv_usec;
+  struct timespec tcur = gettime();
+  return tcur.tv_sec * (uint64_t)1000 + tcur.tv_nsec / 1000000;
+}
+
+uint64_t micros()
+{
+  struct timespec tcur = gettime();
+  return (uint64_t)tcur.tv_sec * (uint64_t)1000000 + (uint64_t)tcur.tv_nsec / 1000;
+}
+
+uint64_t nanos()
+{
+  struct timespec tcur = gettime();
+  return (uint64_t)tcur.tv_sec * (uint64_t)1000000000 + (uint64_t)tcur.tv_nsec;
 }
