@@ -1,3 +1,5 @@
+# Configuration Fields
+
 #### Sensors
 Sensor outputs are collected in the "/Sensors/" directory. The _Sensors_ JSON object is simply an array of sensors on the aircraft.
 
