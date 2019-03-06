@@ -90,3 +90,16 @@ Data from the analog to digital converters. Configurable items include the chann
 ```
 
 ## Sensor-Processing
+Sensor processing outputs are collected in the "/Sensor-Processing/" directory. The _Sensor-Processing_ JSON object is an object that contains named JSON arrays of sensor-processing algorithms. For example, this defines two arrays of algorithms, one named "Baseline" and the other "Research". The mission manager can select a different array depending on the test point; with this approach you can test research sensor-processing algorithms with baseline algorithms available as a reversionary mode.
+``` json
+"Sensors": [
+    { "Type": "Time", "Output": "Fmu/Time_us"},
+    { "Type": "InputVoltage", "Output": "Fmu/Voltage/Input_V"}
+]
+```
+
+## Control
+
+## Excitation
+
+## Mission Manager
