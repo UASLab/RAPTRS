@@ -9,7 +9,7 @@ The following steps are used to create a development environment:
 3. Clone this [repository](https://github.com/bolderflight/RAPTRS) to your VM or development computer.
 
 ### BeagleBone Black Image
-1. Download the BeagleBone Black [Debian 9.5 IOT image](https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz).
+1. Download the BeagleBone Black [image](https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz).
 2. Install [xz-utils](https://packages.debian.org/stretch/xz-utils) and extract the compressed image.
 ```
 $ xz -d bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz
@@ -18,9 +18,12 @@ $ xz -d bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz
 ```
 $ sudo dd if=bone-debian-9.5-iot-armhf-2018-10-07-4gb.img of=/dev/sdX
 ```
-4. Insert the micro-sd in the BeagleBone Black and power on the device while holding down the "User Boot" button.
+4. Insert the micro-sd in the BeagleBone Black and power on the device while holding down the "User Boot" button. Power can be supplied by plugging the BeagleBone Black into your computer with a USB micro plug.
 ![BeagleBone Black User Boot](https://cdn-learn.adafruit.com/assets/assets/000/008/680/small240/beaglebone_BeagleBoneBlack.jpeg)
-5. Login using the default user name: _debian_ and password: _temppwd_.
+5. Once the BeagleBone Black has booted, you should see it connect to your development computer as a network device. SSH to the BeagleBone Black using a terminal using its default user name, _debian_, and IP address, _192.168.7.2_. The default password is: _temppwd_.
+```
+$ ssh debian@192.168.7.2
+```
 
 ## Feedback
 Pull requests improving our software or documentation are always appreciated.
