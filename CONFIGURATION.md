@@ -178,19 +178,102 @@ Delays a signal by _N_ frames. Configurable items include the input, output, and
 { "Type": "Delay", "Input": "/Control/cmdMotor_nom_nd", "Output": "cmdMotor_nd", "Delay_frames": 4}
 ```
 ### PID2
+Implements a PID2 control law. 
 
+Where:
+   * Output gives a convenient name for the block (i.e. PitchControl).
+   * Reference is the full path name of the reference signal.
+   * Feedback is the full path name of the feedback signal.
+   * Sample-Time is either: the full path name of the sample time signal in seconds,
+     or a fixed value sample time in seconds.
+   * Time-Constant is the time constant for the derivative filter.
+     If a time constant is not specified, then no filtering is used.
+   * Gains specifies the proportional derivative and integral gains.
+   * Setpoint weights optionally specifies the proportional and derivative setpoint
+     weights used in the filter.
+   * Limits are optional and saturate the output if defined.
+Data types for all input and output values are float.
 ### PID
+Implements a PID control law. 
 
+Where:
+   * Output gives a convenient name for the block (i.e. PitchControl).
+   * Reference is the full path name of the reference signal.
+   * Sample-Time is either: the full path name of the sample time signal in seconds,
+     or a fixed value sample time in seconds.
+   * Time-Constant is the time constant for the derivative filter.
+     If a time constant is not specified, then no filtering is used.
+   * Gains specifies the proportional derivative and integral gains.
+   * Limits are optional and saturate the output if defined.
+Data types for all input and output values are float.
 ### State Space
+Implements a state space control law.
 
+Where:
+   * Name gives a convenient name for the block (i.e. PitchControl).
+   * Inputs is the full path name of the input signals.
+   * Outputs is the full path name of the output signals.
+   * Sample-Time is either: the full path name of the sample time signal in seconds,
+     or a fixed value sample time in seconds.
+   * Gains specifies the proportional derivative and integral gains.
+   * Limits are optional and saturate the output if defined.
+
+Data types for all input and output values are float.
+
+The implemented algorithm uses a discrete state space model, with variable dt.
+The A and B matrices supplied are the continuous form, a simple zero-order hold is used to compute the discrete form.
+xDot = A*x + B*u;
+y = C*x + D*u;
+  where:  Ad = (Ac*dt + I);
+          Bd = B*dt;
+Thus, x[k+1] = Ad*x + Bd*u;
 ### Filter
+Implements a general discrete time filter using the general filter difference equation. Configurable items include the input, output, a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given. Denominator coefficients are optional and, if none are provided, a FIR filter is implemented. b is a vector of numerator coefficients. At least one feedforward coefficient must be given. The order of the filter is given by the length of the b and a vectors. 
 
+a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
+
+```json
+{ "Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYawDamp_rps", "b": [-0.065, 0.065], "a": [1.0, -0.9418]}
+```
 ### Pseudo Inverse
+Implements a pseudo inverse control allocation.
 
+Where:
+   * Input gives the full path of the allocator inputs / objectives (i.e. /Control/PitchMomentCmd)
+   * Output gives the relative path of the allocator outputs / effector commands (i.e Elevator)
+   * Effectiveness gives the control effectiveness (i.e. change in moment for a unit change in effector output)
+     The order is MxN where M is the number of outputs / effectors and N is the number of inputs / objectives. So,
+     for a situation with 3 objectives (i.e. pitch, roll, yaw moments) and 7 control surfaces, Effectiveness would
+     be given as:
+     "Effectiveness":[[PitchEff_Surf0,RollEff_Surf0,YawEff_Surf0],
+                      [PitchEff_Surf1,RollEff_Surf1,YawEff_Surf1],
+                      .
+                      .
+                      .
+                      [PitchEff_Surf6,RollEff_Surf6,YawEff_Surf6]]
+   * Limits gives the upper and lower limits for each output / effector command.
 ### TECS
+Implements a Total Energy Control System control law.
 
+Where:
+   * mass_kg is the total aircraft weight in kg
+   * weight_bal is a value = [0.0 - 2.0] with 1.0 being a good starting point.
+     0.0 = elevator controls speed only, 2.0 = elevator controls altitude only
+   * min_mps: the system will not command a pitch angle that causes the
+     airspeed to drop below min_mps, even with zero throttle.
+   * max_mps: the system will not command a combination of pitch and throttle
+     that will cause the airspeed to exceed this value
+   * In either case it is possible to momentarily bust these limits, but the
+     system will always be driving the airspeed back within the specified limits
+
+Data types for all input and output values are float.
 ### Latch
+Latches the output to the initial input.
 
+Where:
+   * Output gives a convenient name for the block (i.e. SpeedControl).
+   * Input is the full path name of the input signal.
+Data types for the input and output are both float.
 ## Excitation
 
 ### Doublet
