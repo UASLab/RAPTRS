@@ -82,7 +82,8 @@ void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double 
     // ... R
     R.block(0,0,2,2) = powf(SIG_GPS_P_NE,2.0f)*Eigen::Matrix<float,2,2>::Identity();
     R(2,2) = powf(SIG_GPS_P_D,2.0f);
-    R.block(3,3,3,3) = powf(SIG_GPS_V,2.0f)*Eigen::Matrix<float,3,3>::Identity();
+    R.block(3,3,2,2) = powf(SIG_GPS_V_NE,2.0f)*Eigen::Matrix<float,2,2>::Identity();
+    R(5,5) = powf(SIG_GPS_V_D,2.0f);
     // .. then initialize states with GPS Data
     lat_ins = lat;
     lon_ins = lon;
