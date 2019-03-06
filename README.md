@@ -10,7 +10,7 @@ The following steps are used to create a development environment:
 4. Install [Arudino](https://www.arduino.cc/en/Main/Software) and [Teensyduino](https://www.pjrc.com/teensy/td_download.html)
 
 ### BeagleBone Black Image
-1. Download the BeagleBone Black [image](https://debian.beagleboard.org/images/bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz).
+1. Download the BeagleBone Black [image](https://www.dropbox.com/s/iflf17w17z6j3wi/SOC_v9.5_B.img.xz?dl=0).
 2. Install [xz-utils](https://packages.debian.org/stretch/xz-utils) and extract the compressed image.
 ```
 $ xz -d bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz
@@ -49,7 +49,7 @@ While the FMU and Node software is flashed by _make upload_fmu_ and _make upload
 
 ### Flight
 On the BeagleBone Black:
-1. Setup the UARTS by running this [script]()
+1. Setup the UARTS by running this [script](https://www.dropbox.com/s/4zfucbmtxqe7tgx/setup-uarts.sh?dl=0)
 2. Start the datalog server
 ```
 $ nohup ./datalog-server &
