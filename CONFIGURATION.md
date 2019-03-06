@@ -1,7 +1,29 @@
 # Configuration Fields
 
 ## Sensors
-Sensor outputs are collected in the "/Sensors/" directory. The _Sensors_ JSON object is simply an array of sensors on the aircraft.
+Sensor outputs are collected in the "/Sensors/" directory. The _Sensors_ JSON object is simply an array of sensors on the aircraft. The following lists two sensors connected to the FMU:
+``` json
+"Sensors": [
+    { "Type": "Time", "Output": "Fmu/Time_us"},
+    { "Type": "InputVoltage", "Output": "Fmu/Voltage/Input_V"}
+]
+```
+Sensors on nodes are added by specifying the node address and listing sensors. For example, this adds PWM voltage and air data to the node at BFS-Bus address 3.
+``` json
+"Sensors": [
+    { "Type": "Time", "Output": "Fmu/Time_us"},
+    { "Type": "InputVoltage", "Output": "Fmu/Voltage/Input_V"},
+    { "Type": "Node", "Address": 3,
+      "Sensors": [
+        { "Type": "PwmVoltage", "Output": "Power/WingServoVoltage_V"},
+        { "Type": "Swift", "Output": "Pitot", "I2c": 1,
+          "Static": {"Address": 20},
+          "Differential": {"Address": 21, "Transducer": "AMS5915-0020-D"}
+        }
+      ]
+    }
+]
+```
 
 ### Time
 Time since the FMU booted, in microseconds. Specify the output location.
