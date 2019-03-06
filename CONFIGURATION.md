@@ -141,10 +141,15 @@ a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
 { "Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYawDamp_rps", "b": [-0.065, 0.065], "a": [1.0, -0.9418]}
 ```
 ### If
-
+Outputs a 0 or 1 depending on input and threshold values - if the input is greater than the threshold, the output is 1 otherwise, it's 0. Configurable items include the input, output, and threshold value.
+```json
+{ "Type": "If", "Input": "/Sensors/Sbus/Channels/7", "Output": "gear", "Threshold": 0.5}
+```
 ### Minimum Cell Voltage
-
-
+Computes the minimum cell voltage amongst a number of batteries. Configurable items include the inputs, output, and number of lipo cells.
+```json
+{ "Type": "MinCellVolt", "Output": "MinCellVolt_V", "Inputs": ["/Sensors/Fmu/Voltage/Input_V"], "NumCells": [3]}
+```
 ## Control
 
 ### Constant
