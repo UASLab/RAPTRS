@@ -18,6 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "millis.h"
 #include "airdata-functions.h"
 
 void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string RootPath) {
@@ -115,12 +116,6 @@ void IndicatedAirspeed::Clear() {
   OutputKey_.clear();
 }
 
-uint64_t IndicatedAirspeed::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
-}
-
 void AglAltitude::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // get output name
   std::string OutputName;
@@ -216,12 +211,6 @@ void AglAltitude::Clear() {
   StaticPressureKeys_.clear();
   ModeKey_.clear();
   OutputKey_.clear();
-}
-
-uint64_t AglAltitude::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
 }
 
 /* Pitot-Static System */
@@ -356,13 +345,6 @@ void PitotStatic::Clear() {
   OutputIasKey_.clear();
   OutputAglKey_.clear();
 }
-
-uint64_t PitotStatic::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
-}
-
 
 /* 5-Hole Probe - Method 1 */
 // Assume that all 5 pressure sensors are measuring relative to the static ring
@@ -621,10 +603,4 @@ void FiveHole::Clear() {
   OutputAglKey_.clear();
   OutputAlphaKey_.clear();
   OutputBetaKey_.clear();
-}
-
-uint64_t FiveHole::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
 }

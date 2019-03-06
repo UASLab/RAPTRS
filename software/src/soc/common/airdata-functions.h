@@ -74,7 +74,6 @@ class IndicatedAirspeed: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
@@ -123,7 +122,6 @@ class AglAltitude: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
@@ -182,7 +180,6 @@ class PitotStatic: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
@@ -259,7 +256,6 @@ class FiveHole: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
