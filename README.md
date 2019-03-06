@@ -19,7 +19,7 @@ $ xz -d bone-debian-9.5-iot-armhf-2018-10-07-4gb.img.xz
 $ sudo dd if=bone-debian-9.5-iot-armhf-2018-10-07-4gb.img of=/dev/sdX
 ```
 4. Insert the micro-sd in the BeagleBone Black and power on the device while holding down the "User Boot" button.
-![BeagleBone Black User Boot](https://learn.adafruit.com/assets/8680 "BeagleBone Black User Boot")
+![BeagleBone Black User Boot](https://cdn-learn.adafruit.com/assets/assets/000/008/680/small240/beaglebone_BeagleBoneBlack.jpeg)
 5. Login using the default user name: _debian_ and password: _temppwd_.
 
 ## Feedback
