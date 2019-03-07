@@ -445,7 +445,6 @@ Adds a pulse to the signal for the specified duration
   "Duration": X,
   "Amplitude": X,
   "Scale-Factor": X
-  }
 }
 ```
 Where:
@@ -465,7 +464,6 @@ Adds a doublet to the signal for the specified duration
   "Start-Time": X,
   "Duration": X,
   "Amplitude": X
-  }
 }
 ```
 Where:
@@ -485,7 +483,6 @@ Adds a 1-2-1 doublet to the signal for the specified duration
   "Start-Time": X,
   "Duration": X,
   "Amplitude": X
-  }
 }
 ```
 Where:
@@ -505,7 +502,6 @@ Adds a 3-2-1-1 doublet to the signal for the specified duration
   "Start-Time": X,
   "Duration": X,
   "Amplitude": X
-  }
 }
 ```
 Where:
@@ -526,7 +522,6 @@ Adds a linear chirp to the signal for the specified duration
   "Duration": X,
   "Amplitude": [start,end],
   "Frequency": [start,end]
-  }
 }
 ```
 Where:
@@ -547,7 +542,6 @@ Adds a log chirp to the signal for the specified duration
   "Duration": X,
   "Amplitude": [start,end],
   "Frequency": [start,end]
-  }
 }
 ```
 Where:
@@ -568,7 +562,6 @@ Adds a 1-cosine signal for the specified duration
   "Duration": X,
   "Pause": X,
   "Amplitude": X
-  }
 }
 ```
 Where:
@@ -589,7 +582,6 @@ Adds a multisine to the signal for the specified duration
   "Amplitude": [X],
   "Frequency": [X],
   "Phase": [X]
-  }
 }
 ```
 Where:
