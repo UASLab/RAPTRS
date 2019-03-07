@@ -87,7 +87,11 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
 
   /* initialize simulation */
+  std::cout << "Configuring Simulation HIL..." << std::endl;
   bool sim = sim_init(AircraftConfiguration);
+  std::cout << "\tdone!" << std::endl;
+  deftree.PrettyPrint("/");
+  std::cout << std::endl;
 
   /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
