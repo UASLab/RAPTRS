@@ -592,5 +592,23 @@ Where:
    * Amplitude, frequency, and phase are vectors specifying the amplitude,
      frequency, and phase of the multisine. They should all be the same length.
 ## Effector
+Similar to Sensors, Effectors simply lists an array of all effectors on the vehicle. Effectors on nodes are added by specifying the node address and listing the effectors. For example, this specifies 3 effectors connected to the FMU (a motor and two servos) and 4 effectors connected to the node.
+```json
+"Effectors": [
+    { "Type": "Motor", "Input": "/Control/cmdMotor_nd", "Channel": 0, "Calibration": [800, 1200], "Safed-Command": 0},
+    { "Type": "Pwm", "Input": "/Control/cmdElev_rad", "Channel": 1, "Calibration": [ 0.0, 0.0, 945.56893619, 1532.92371906]},
+    { "Type": "Pwm", "Input": "/Control/cmdRud_rad", "Channel": 2, "Calibration": [ -406.23428499, -72.84894531, -822.84212170, 1495.85430736]},
+    { "Type": "Node", "Address": 3,
+      "Effectors": [
+        { "Type": "Pwm", "Input": "/Control/cmdAilR_rad", "Channel": 0, "Calibration": [ 0.0, 24.74931945, -877.03584524, 1501.05819261]},
+        { "Type": "Pwm", "Input": "/Control/cmdFlapR_rad", "Channel": 2, "Calibration": [ 0.0, -167.40715677, 830.81057931, 1499.57954854]},
+        { "Type": "Pwm", "Input": "/Control/cmdFlapL_rad", "Channel": 5, "Calibration": [ -280.29921208, 75.65078940, -855.43748599, 1442.51416948]},
+        { "Type": "Pwm", "Input": "/Control/cmdAilL_rad", "Channel": 7, "Calibration": [ 0.0, -64.70244278, 828.18022105, 1519.68482092]}
+      ]
+    }
+  ]
+```
+
+Three types of effectors are available: motor, PWM, and SBUS. All three have the input signal, channel number, and calibration as configurable items. The input signal is the source of the effector command and is typically an output from a control law. The channel number refers to the PWM or SBUS channel number the effector is connected to. Calibration is a vector of polynomial coefficients given in descending order, which converts the input signal from engineering units (i.e. trailing edge down angle value) to PWM or SBUS command. The motor effector type is the same as PWM, except it also includes a "Safed-Command", which specifies the value to be commanded when the throttle is safed.
 
 ## Mission Manager
