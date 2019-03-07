@@ -612,3 +612,37 @@ Similar to Sensors, Effectors simply lists an array of all effectors on the vehi
 Three types of effectors are available: motor, PWM, and SBUS. All three have the input signal, channel number, and calibration as configurable items. The input signal is the source of the effector command and is typically an output from a control law. The channel number refers to the PWM or SBUS channel number the effector is connected to. Calibration is a vector of polynomial coefficients given in descending order, which converts the input signal from engineering units (i.e. trailing edge down angle value) to PWM or SBUS command. The motor effector type is the same as PWM, except it also includes a "Safed-Command", which specifies the value to be commanded when the throttle is safed.
 
 ## Mission Manager
+The mission manager configures the switches used to define the vehicle's state along with a vector of test points. The switch definitions are:
+```json
+  "Mission-Manager": {
+    "Fmu-Soc-Switch": {"Source": "/Sensors/Sbus/Channels/0", "Threshold": 0.0, "Gain": 1},
+    "Throttle-Safety-Switch": {"Source": "/Sensors/Sbus/Channels/1", "Threshold": 0.33, "Gain": 1},
+    "Control-Select-Switch": {"Source": "/Sensors/Sbus/Channels/8", "Threshold": 0.33, "Gain": 1},
+    "Test-Increment-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Threshold": 0.33, "Gain": 1},
+    "Test-Decrement-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Threshold": 0.33, "Gain": -1},
+    "Trigger-Switch": {"Source": "/Sensors/Sbus/Channels/10", "Threshold": 0.0, "Gain": 1},
+    "Launch-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Threshold": 0.33, "Gain": -1},
+    "Land-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Threshold": 0.33, "Gain": 1},
+    "Launch-Controller":"PilotRate",
+    "Baseline-Controller":"PilotAttitudeMan",
+    "Land-Controller":"PilotAttitudeMan"
+```
+In general, the switch definitions consist of a source, typically and SBUS receiver channel, a threshold and a gain. If the input multiplied by the gain is greater than the threshold, then the switch evaluates to true. 
+   * FMU-SOC Switch: manages whether the FMU or SOC is in control of the aircraft. Typically the FMU hosts a reversionary control law and this switch enables the pilot to transition between the FMU reversionary control law or the SOC control laws flying the vehicle. 
+   * Throttle Safety Switch: puts motors into a safed state, enabling safe ground handling and testing of the vehicle.
+   * Control Select Switch: engages the chosen test point, otherwise the baseline control laws will be flown.
+   * Test Increment / Decrement Switch: increments or decrements the queued test point number to be selected.
+   * Trigger Switch: triggers the test point's excitation, if defined.
+   * Launch / Land Switch: switches the aircraft into launch or landing mode. This is useful for configuring and using specialized launch and landing control laws.
+
+Launch, landing, and baseline control laws can be specified. The launch and landing control laws are engaged with the Launch/Land Switch. Baseline control is flown when the SOC is in control, but a test point is not currently engaged. Otherwise, the test point defined control law is used.
+
+Test points can be defined for the sensor-processing, control law, and excitation to use. This is useful to predefine all research test points in a flight.
+```json
+"Test-Points": [
+      { "Test-ID": "0", "Sensor-Processing": "Baseline", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Med"},
+      { "Test-ID": "1", "Sensor-Processing": "Baseline", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Long"},
+      { "Test-ID": "2", "Sensor-Processing": "Baseline", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Large"}
+]
+```
+The increment and decrement switch are used to queue up the next test point and the control select switch is used to engage it. The trigger switch is used to trigger the excitation if one is defined. The aircraft always returns to baseline control between test points (i.e. you need to unengage the control select switch, queue up the next test point and then re-engage the control select). 
