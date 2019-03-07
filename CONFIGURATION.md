@@ -235,9 +235,7 @@ Delays a signal by _N_ frames. Configurable items include the input, output, and
 { "Type": "Delay", "Input": "/Control/cmdMotor_nom_nd", "Output": "cmdMotor_nd", "Delay_frames": 4}
 ```
 ### PID2
-Implements a PID2 control law. 
-
-Where:
+Implements a PID2 control law. Configurable items include:
    * Output gives a convenient name for the block (i.e. PitchControl).
    * Reference is the full path name of the reference signal.
    * Feedback is the full path name of the feedback signal.
@@ -245,14 +243,54 @@ Where:
      or a fixed value sample time in seconds.
    * Time-Constant is the time constant for the derivative filter.
      If a time constant is not specified, then no filtering is used.
-   * Gains specifies the proportional derivative and integral gains.
-   * Setpoint weights optionally specifies the proportional and derivative setpoint
+   * Gains specifies the proportional, derivative, and integral gains.
+   * Setpoint weights optionally specify the proportional and derivative setpoint
      weights used in the filter.
    * Limits are optional and saturate the output if defined.
 Data types for all input and output values are float.
+```json
+{
+  "Type": "PID2",
+  "Output": "OutputName",
+  "Reference": "ReferenceName",
+  "Feedback": "FeedbackName",
+  "Sample-Time": "SampleTime" or X,
+  "Time-Constant": X,
+  "Gains": {
+    "Proportional": Kp,
+    "Integral": Ki,
+    "Derivative": Kd,
+  },
+  "Setpoint-Weights": {
+    "Proportional": b,
+    "Derivative": c
+  },
+  "Limits": {
+    "Upper": X,
+    "Lower": X
+  }
+}
+```
 ### PID
 Implements a PID control law. 
-
+```json
+{
+  "Type": "PID",
+  "Output": "OutputName",
+  "Reference": "ReferenceName",
+  "Sample-Time": "SampleTime" or X,
+  "Time-Constant": X,
+  "Gains": {
+    "Proportional": Kp,
+    "Integral": Ki,
+    "Derivative": Kd,
+  },
+  "Limits": {
+    "Upper": X,
+    "Lower": X
+  }
+}
+```
 Where:
    * Output gives a convenient name for the block (i.e. PitchControl).
    * Reference is the full path name of the reference signal.
@@ -265,24 +303,36 @@ Where:
 Data types for all input and output values are float.
 ### State Space
 Implements a state space control law.
-
-Where:
-   * Name gives a convenient name for the block (i.e. PitchControl).
-   * Inputs is the full path name of the input signals.
-   * Outputs is the full path name of the output signals.
-   * Sample-Time is either: the full path name of the sample time signal in seconds,
-     or a fixed value sample time in seconds.
-   * Gains specifies the proportional derivative and integral gains.
-   * Limits are optional and saturate the output if defined.
-
-Data types for all input and output values are float.
-
-The implemented algorithm uses a discrete state space model, with variable dt.
+```json
+{
+  "Type": "SS",
+  "Name": "Name",
+  "Inputs": ["InputNames"],
+  "Outputs": ["OutputNames"],
+  "Sample-Time": "SampleTime" or X,
+  "A": [[X]],
+  "B": [[X]],
+  "C": [[X]],
+  "D": [[X]],
+  "Limits": {
+    "Upper": [X],
+    "Lower": [X]
+  }
+}
+```
+The implemented algorithm uses a discrete state space model, with variable sample time.
 The A and B matrices supplied are the continuous form, a simple zero-order hold is used to compute the discrete form.
+
 xDot = A*x + B*u;
+
 y = C*x + D*u;
-  where:  Ad = (Ac*dt + I);
-          Bd = B*dt;
+
+where:  
+
+Ad = (Ac*dt + I);
+
+Bd = B*dt;
+
 Thus, x[k+1] = Ad*x + Bd*u;
 ### Filter
 Implements a general discrete time filter using the general filter difference equation. Configurable items include the input, output, a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given. Denominator coefficients are optional and, if none are provided, a FIR filter is implemented. b is a vector of numerator coefficients. At least one feedforward coefficient must be given. The order of the filter is given by the length of the b and a vectors. 
