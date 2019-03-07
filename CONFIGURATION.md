@@ -254,7 +254,7 @@ Data types for all input and output values are float.
   "Output": "OutputName",
   "Reference": "ReferenceName",
   "Feedback": "FeedbackName",
-  "Sample-Time": "SampleTime" or X,
+  "Sample-Time": "SampleTime",
   "Time-Constant": X,
   "Gains": {
     "Proportional": Kp,
@@ -278,7 +278,7 @@ Implements a PID control law.
   "Type": "PID",
   "Output": "OutputName",
   "Reference": "ReferenceName",
-  "Sample-Time": "SampleTime" or X,
+  "Sample-Time": "SampleTime",
   "Time-Constant": X,
   "Gains": {
     "Proportional": Kp,
@@ -309,7 +309,7 @@ Implements a state space control law.
   "Name": "Name",
   "Inputs": ["InputNames"],
   "Outputs": ["OutputNames"],
-  "Sample-Time": "SampleTime" or X,
+  "Sample-Time": "SampleTime",
   "A": [[X]],
   "B": [[X]],
   "C": [[X]],
