@@ -369,7 +369,6 @@ Where:
      "Effectiveness":[[PitchEff_Surf0,...,PitchEff_Surf6],
                       [RollEff_Surf0,...,RollEff_Surf6],
                       [YawEff_Surf0,...,YawEff_Surf6]]
-                      ```
    * Limits gives the upper and lower limits for each output / effector command.
 ### TECS
 Implements a Total Energy Control System control law.
