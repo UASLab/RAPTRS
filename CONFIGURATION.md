@@ -248,13 +248,13 @@ Implements a PID2 control law. Configurable items include:
      weights used in the filter.
    * Limits are optional and saturate the output if defined.
 Data types for all input and output values are float.
-```json
+```
 {
   "Type": "PID2",
   "Output": "OutputName",
   "Reference": "ReferenceName",
   "Feedback": "FeedbackName",
-  "Sample-Time": "SampleTime",
+  "Sample-Time": "SampleTime" or X,
   "Time-Constant": X,
   "Gains": {
     "Proportional": Kp,
@@ -273,12 +273,12 @@ Data types for all input and output values are float.
 ```
 ### PID
 Implements a PID control law. 
-```json
+```
 {
   "Type": "PID",
   "Output": "OutputName",
   "Reference": "ReferenceName",
-  "Sample-Time": "SampleTime",
+  "Sample-Time": "SampleTime" or X,
   "Time-Constant": X,
   "Gains": {
     "Proportional": Kp,
@@ -303,13 +303,13 @@ Where:
 Data types for all input and output values are float.
 ### State Space
 Implements a state space control law.
-```json
+```
 {
   "Type": "SS",
   "Name": "Name",
   "Inputs": ["InputNames"],
   "Outputs": ["OutputNames"],
-  "Sample-Time": "SampleTime",
+  "Sample-Time": "SampleTime" or X,
   "A": [[X]],
   "B": [[X]],
   "C": [[X]],
@@ -361,7 +361,21 @@ Where:
    * Limits gives the upper and lower limits for each output / effector command.
 ### TECS
 Implements a Total Energy Control System control law.
-
+```
+{
+  "Type": "Tecs",
+  "mass_kg": x,
+  "weight_bal": x,
+  "max_mps": x,
+  "min_mps": x,
+  "RefSpeed": "RefSpeed",
+  "RefAltitude": "RefAltitude",
+  "FeedbackSpeed": "FeedbackSpeed",
+  "FeedbackAltitude": "FeedbackAltitude",
+  "OutputTotal": "OutputTotal",
+  "OutputDiff": "OutputDiff"
+}
+```
 Where:
    * mass_kg is the total aircraft weight in kg
    * weight_bal is a value = [0.0 - 2.0] with 1.0 being a good starting point.
