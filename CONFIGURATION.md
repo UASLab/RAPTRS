@@ -344,20 +344,32 @@ a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
 ```
 ### Pseudo Inverse
 Implements a pseudo inverse control allocation.
-
+```json
+{ "Type": "PseudoInverse",
+            "Inputs": ["/Control/cmdVert_nd", "/Control/cmdRoll_rps", "/Control/cmdPitch_rps", "/Control/cmdYaw_rps"],
+            "Outputs": ["cmdMotorFR_nd", "cmdMotorAL_nd", "cmdMotorFL_nd", "cmdMotorAR_nd"],
+            "Effectiveness": [
+              [ 0.25000, 0.25000, 0.25000, 0.25000],
+              [-0.25000, 0.25000, 0.25000,-0.25000],
+              [ 0.25000,-0.25000, 0.25000,-0.25000],
+              [ 0.25000, 0.25000,-0.25000,-0.25000]],
+            "Limits": {
+              "Lower": [0.0, 0.0, 0.0, 0.0],
+              "Upper": [1.0, 1.0, 1.0, 1.0]
+            }
+```
 Where:
    * Input gives the full path of the allocator inputs / objectives (i.e. /Control/PitchMomentCmd)
    * Output gives the relative path of the allocator outputs / effector commands (i.e Elevator)
    * Effectiveness gives the control effectiveness (i.e. change in moment for a unit change in effector output)
-     The order is MxN where M is the number of outputs / effectors and N is the number of inputs / objectives. So,
+     The order is MxN where M is number of inputs / objectives and N isthe number of outputs / effectors. So,
      for a situation with 3 objectives (i.e. pitch, roll, yaw moments) and 7 control surfaces, Effectiveness would
      be given as:
-     "Effectiveness":[[PitchEff_Surf0,RollEff_Surf0,YawEff_Surf0],
-                      [PitchEff_Surf1,RollEff_Surf1,YawEff_Surf1],
-                      .
-                      .
-                      .
-                      [PitchEff_Surf6,RollEff_Surf6,YawEff_Surf6]]
+     ```
+     "Effectiveness":[[PitchEff_Surf0,...,PitchEff_Surf6],
+                      [RollEff_Surf0,...,RollEff_Surf6],
+                      [YawEff_Surf0,...,YawEff_Surf6]]
+                      ```
    * Limits gives the upper and lower limits for each output / effector command.
 ### TECS
 Implements a Total Energy Control System control law.
@@ -390,7 +402,14 @@ Where:
 Data types for all input and output values are float.
 ### Latch
 Latches the output to the initial input.
-
+```
+{
+  "Type": "Latch",
+  "Output": "OutputName",
+  "Input": "InputName",
+  }
+}
+```
 Where:
    * Output gives a convenient name for the block (i.e. SpeedControl).
    * Input is the full path name of the input signal.
