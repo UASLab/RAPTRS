@@ -414,19 +414,191 @@ Where:
    * Input is the full path name of the input signal.
 Data types for the input and output are both float.
 ## Excitation
+Excitation outputs are collected in the "/Excitation/" directory. Similar to control laws, excitation groups can be defined consisting of multiple excitation inputs. Each group can define multiple excitation levels, specifying the control law level where the excitation should be inserted, enabling excitations for reference commands and effector signals. Each group can be referenced in the mission manager test point structure, allowing different excitations for each pre-defined test point. For example, the following defines an excitation group consisting of multisine inputs on several reference commands.
+```
+{ "Name": "Aero_Med", "Components": [
+        { "Level": "Allocator", "Components": [
+          { "Waveform": "OMS_1", "Signal": "/Control/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+          { "Waveform": "OMS_2", "Signal": "/Control/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+          { "Waveform": "OMS_3", "Signal": "/Control/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
+        ]}
+      ]}
+```
 
+The basic waveforms are defined separately, enabling them to be re-used on different surfaces with different start times and scale factors.
+```
+"OMS_1": { "Type": "MultiSine", "Duration": 10,
+      "Frequency": [0.62831853071795862,4.39822971502571,8.1681408993334639,11.938052083641214,15.707963267948969,19.477874452256717,23.247785636564469,27.017696820872224,30.787608005179976,34.557519189487721,38.32743037379548,42.097341558103231,45.867252742410983,49.637163926718735],
+      "Phase": [6.1333837562683,3.7697783413786747,4.3326309124460112,5.7825002989603558,3.6123449608782874,3.8799569048390872,6.3167977328030709,4.6577199432535883,5.2790228241172983,8.05687689770693,7.08109780771917,2.4467121117324315,5.00303679294031,4.0729726069734049],
+      "Amplitude": [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    }
+```
+
+### Pulse
+Adds a pulse to the signal for the specified duration
+```
+{
+  "Type": "Pulse"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": X,
+  "Scale-Factor": X
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the pulse in seconds
+   * Amplitude is the pulse amplitude
+   * Scale factor is optional and provides another option to scale the output signal
 ### Doublet
-
+Adds a doublet to the signal for the specified duration
+```
+{
+  "Type": "Doublet"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": X
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of one pulse in seconds, the total doublet
+     time will be 2 times the duration
+   * Amplitude is the doublet amplitude
 ### Doublet 121
-
+Adds a 1-2-1 doublet to the signal for the specified duration
+```
+{
+  "Type": "Doublet121"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": X
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of one pulse in seconds, the total doublet
+     time will be 4 times the duration
+   * Amplitude is the doublet amplitude
 ### Doublet 3211
-
+Adds a 3-2-1-1 doublet to the signal for the specified duration
+```
+{
+  "Type": "Doublet3211"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": X
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of one pulse in seconds, the total doublet
+     time will be 7 times the duration
+   * Amplitude is the doublet amplitude
 ### Linear Chirp
-
+Adds a linear chirp to the signal for the specified duration
+```
+{
+  "Type": "LinearChirp"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": [start,end],
+  "Frequency": [start,end]
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the chirp
+   * Amplitude is an array specifying the starting and ending chirp amplitude
+   * Frequency is an array specifying the starting and ending frequency in rad/sec
 ### Log Chirp
-
+Adds a log chirp to the signal for the specified duration
+```
+{
+  "Type": "LogChirp"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": [start,end],
+  "Frequency": [start,end]
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the chirp
+   * Amplitude is an array specifying the starting and ending chirp amplitude
+   * Frequency is an array specifying the starting and ending frequency in rad/sec
 ### 1-Cos
-
+Adds a 1-cosine signal for the specified duration
+```
+{
+  "Type": "1-Cos"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Pause": X,
+  "Amplitude": X
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the 1-cos wave
+   * Pause is the pause time at the peak of the 1-cos wave
 ### MultiSine
+Adds a multisine to the signal for the specified duration
+```
+{
+  "Type": "MultiSine"
+  "Signal": "SignalName",
+  "Time": "Time",
+  "Start-Time": X,
+  "Duration": X,
+  "Amplitude": [X],
+  "Frequency": [X],
+  "Phase": [X]
+  }
+}
+```
+Where:
+   * Signal gives the name of the input and output
+   * Time is the full path to the current system time in us
+   * Start time is when the excitation will start after engage in seconds
+   * Duration is the duration time of the chirp
+   * Amplitude, frequency, and phase are vectors specifying the amplitude,
+     frequency, and phase of the multisine. They should all be the same length.
+## Effector
 
 ## Mission Manager
