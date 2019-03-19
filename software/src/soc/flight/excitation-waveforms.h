@@ -44,7 +44,6 @@ Example JSON configuration:
   "Start-Time": X,
   "Duration": X,
   "Amplitude": X,
-  "Scale-Factor": X
   }
 }
 Where:
@@ -53,7 +52,6 @@ Where:
    * Start time is when the excitation will start after engage in seconds
    * Duration is the duration time of the pulse in seconds
    * Amplitude is the pulse amplitude
-   * Scale factor is optional and provides another option to scale the output signal
 */
 
 class Pulse: public GenericFunction {
@@ -70,7 +68,6 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -118,7 +115,6 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -166,7 +162,6 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -214,7 +209,6 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -264,7 +258,6 @@ private:
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
     float FreqK = 0.0f;
     float AmpK = 0.0f;
   };
@@ -316,7 +309,6 @@ private:
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
     float FreqK = 0.0f;
     float FreqLogK = 0.0f;
     float AmpK = 0.0f;
@@ -369,7 +361,6 @@ private:
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
     float Pause_s = 0.0f;
-    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -421,7 +412,6 @@ private:
     Eigen::Array<float,Eigen::Dynamic,1> Phase;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
-    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
