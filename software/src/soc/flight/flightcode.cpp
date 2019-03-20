@@ -50,6 +50,7 @@ using std::endl;
 // deftree.
 float timePrev_ms = 0;
 
+
 int main(int argc, char* argv[]) {
   if (argc!=2) {
     std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
@@ -86,7 +87,11 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
 
   /* initialize simulation */
+  std::cout << "Configuring Simulation HIL..." << std::endl;
   bool sim = sim_init(AircraftConfiguration);
+  std::cout << "\tdone!" << std::endl;
+  deftree.PrettyPrint("/");
+  std::cout << std::endl;
 
   /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
@@ -145,6 +150,16 @@ int main(int argc, char* argv[]) {
     std::cout << "done!" << std::endl;
   }
 
+  /* profiling */
+  ElementPtr main_loop_node = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
+  ElementPtr sensor_proc_node = deftree.initElement("/Mission/profSencorProcssing", "Sensor processing time us", LOG_UINT32, LOG_NONE);
+  ElementPtr control_node = deftree.initElement("/Mission/profControl", "Control time us", LOG_UINT32, LOG_NONE);
+  ElementPtr response_node = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
+  uint64_t main_loop_start = 0;
+  uint64_t sensor_proc_start = 0;
+  uint64_t control_start = 0;
+  uint64_t response_start = 0;
+
   std::cout << "\tConfiguring datalog..." << std::flush;
   Datalog.RegisterGlobalData();
   std::cout << "done!" << std::endl;
@@ -157,6 +172,7 @@ int main(int argc, char* argv[]) {
 
   /* main loop */
   while(1) {
+    main_loop_start = response_start = micros();
     if (Fmu.ReceiveSensorData()) {
       if ( sim ) {
         sim_sensor_update(); // update sim sensors
@@ -169,7 +185,11 @@ int main(int argc, char* argv[]) {
         // get and set engaged sensor processing
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
+        sensor_proc_start = micros();
         SenProc.Run();
+
+        // SensorProc timer start
+        sensor_proc_node->setInt(micros()-sensor_proc_start);
 
         // run route manager
         route_mgr.update();
@@ -186,11 +206,18 @@ int main(int argc, char* argv[]) {
             // run excitation
             Excitation.RunEngaged(Control.GetActiveLevel(i));
             // run control
+            control_start = micros();
             Control.RunEngaged(i);
+            control_node->setInt(micros()-control_start);
           }
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
+
+        // Timer
+        response_node->setInt(micros()-response_start);
+
+        // Write out commands for Sim
         if ( sim ) {
           sim_cmd_update();
         }
@@ -218,6 +245,7 @@ int main(int argc, char* argv[]) {
       // run datalog
       Datalog.LogBinaryData();
       telnet.process();
+      main_loop_node->setInt(micros()-main_loop_start);
     }
   }
 

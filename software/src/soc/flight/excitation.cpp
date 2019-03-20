@@ -50,7 +50,7 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
             const rapidjson::Value& Components = (*Level)["Components"];
             // iterating through excitations
             for (auto &Component : Components.GetArray()) {
-              if (Component.HasMember("Waveform")&&Component.HasMember("Signal")&&Component.HasMember("Start-Time")&&Component.HasMember("Scale-Factor")) {
+              if (Component.HasMember("Waveform")&&Component.HasMember("Signal")&&Component.HasMember("Start-Time")) {
                 // checking whether waveform is defined
                 if (Config.HasMember(Component["Waveform"].GetString())) {
                   // grabbing the waveform definition
@@ -62,13 +62,13 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
                   Waveform.CopyFrom(WaveformValue,Allocator);
                   rapidjson::Value Time;
                   rapidjson::Value Signal;
-                  // // adding the time, signal, start-time, and scale-factor members
+                  // adding the time, signal, start-time members
                   Time.SetString(std::string(Config["Time"].GetString()).c_str(),std::string(Config["Time"].GetString()).size(),Allocator);
                   Signal.SetString(std::string(Component["Signal"].GetString()).c_str(),std::string(Component["Signal"].GetString()).size(),Allocator);
                   Waveform.AddMember("Time",Time,Allocator);
                   Waveform.AddMember("Signal",Signal,Allocator);
                   Waveform.AddMember("Start-Time",Component["Start-Time"].GetFloat(),Allocator);
-                  Waveform.AddMember("Scale-Factor",Component["Scale-Factor"].GetFloat(),Allocator);
+
                   if (WaveformValue.HasMember("Type")) {
                     // pushing back the correct waveform type
                     if (WaveformValue["Type"] == "Pulse") {
@@ -99,7 +99,7 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
                   throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform definition not found in configuration."));
                 }
               } else {
-                throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform, signal, start time or scale factor not specified in configuration."));
+                throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform, signal, or start time not specified in configuration."));
               }
             }
           } else {

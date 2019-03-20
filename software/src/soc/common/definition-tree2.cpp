@@ -17,7 +17,7 @@ ElementPtr DefinitionTree2::initElement(string name, string desc,
   def_tree_t::iterator it;
   it = data.find(name);
   if ( it != data.end() ) {
-    cout << "NOTICE: publisher found existing def-tree element: " << name << endl;
+    // cout << "NOTICE: publisher found existing def-tree element: " << name << endl;
     it->second->description = desc;
     it->second->datalog = datalog;
     it->second->telemetry = telemetry;

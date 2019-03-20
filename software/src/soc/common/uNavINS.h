@@ -51,6 +51,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 class uNavINS {
   public:
+    inline void setSig_W_A(float sig_w_a) { SIG_W_A = sig_w_a; }
+    inline void setSig_W_G(float sig_w_g) { SIG_W_G = sig_w_g; }
+    inline void setSig_A_D(float sig_a_d) { SIG_A_D = sig_a_d; }
+    inline void setTau_A(float tau_a) { TAU_A = tau_a; }
+    inline void setSig_G_D(float sig_g_d) { SIG_G_D = sig_g_d; }
+    inline void setTau_G(float tau_g) { TAU_G = tau_g; }
+    inline void setSig_GPS_P_NE(float sig_gps_p_ne) { SIG_GPS_P_NE = sig_gps_p_ne; }
+    inline void setSig_GPS_P_D(float sig_gps_p_d) { SIG_GPS_P_D = sig_gps_p_d; }
+    inline void setSig_GPS_V_NE(float sig_gps_v_ne) { SIG_GPS_V_NE = sig_gps_v_ne; }
+    inline void setSig_GPS_V_D(float sig_gps_v_d) { SIG_GPS_V_D = sig_gps_v_d; }
     void update(uint64_t time,unsigned long TOW,double vn,double ve,double vd,double lat,double lon,double alt,float p,float q,float r,float ax,float ay,float az,float hx,float hy,float hz);
     bool initialized();
     float getPitch_rad();
@@ -75,29 +85,30 @@ class uNavINS {
     // error characteristics of navigation parameters
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // Std dev of Accelerometer Wide Band Noise (m/s^2)
-    const float SIG_W_A = 1.0f;       // 1 m/s^2
+    float SIG_W_A = 0.05f;
     // Std dev of gyro output noise (rad/s)
-    const float SIG_W_G = 0.00524f;   // 0.3 deg/s
+    float SIG_W_G = 0.00175f;
     // Std dev of Accelerometer Markov Bias
-    const float SIG_A_D = 0.1f;       // 5e-2*g
+    float SIG_A_D = 0.01f;
     // Correlation time or time constant
-    const float TAU_A = 100.0f;
+    float TAU_A = 100.0f;
     // Std dev of correlated gyro bias
-    const float SIG_G_D = 0.00873f;   // 0.1 deg/s
-    // Correlation time or time constant
-    const float TAU_G = 50.0f;
+    float SIG_G_D = 0.00025;
+    // Correlati1on time or time constant
+    float TAU_G = 50.0f;
     // GPS measurement noise std dev (m)
-    const float SIG_GPS_P_NE = 3.0f;
-    const float SIG_GPS_P_D = 5.0f;
+    float SIG_GPS_P_NE = 3.0f;
+    float SIG_GPS_P_D = 6.0f;
     // GPS measurement noise std dev (m/s)
-    const float SIG_GPS_V = 0.5f;
+    float SIG_GPS_V_NE = 0.5f;
+    float SIG_GPS_V_D = 1.0f;
     // Initial set of covariance
     const float P_P_INIT = 10.0f;
     const float P_V_INIT = 1.0f;
-    const float P_A_INIT = 0.34906f;     // 20 deg
-    const float P_HDG_INIT = 3.14159f;   // 180 deg
-    const float P_AB_INIT = 0.9810f;     // 0.5*g
-    const float P_GB_INIT = 0.01745f;    // 5 deg/s
+    const float P_A_INIT = 0.34906f;
+    const float P_HDG_INIT = 3.14159f;
+    const float P_AB_INIT = 0.9810f;
+    const float P_GB_INIT = 0.01745f;
     // acceleration due to gravity
     const float G = 9.807f;
     // major eccentricity squared
