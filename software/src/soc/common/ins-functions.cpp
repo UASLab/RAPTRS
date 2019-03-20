@@ -139,6 +139,39 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPat
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time source not specified in configuration."));
   }
+  // get error characteristic config
+  if (Config.HasMember("Config")) {
+    if (Config["Config"].HasMember("sig-w-a")){
+      uNavINS_.setSig_W_A(Config["Config"]["sig-w-a"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-w-g")){
+      uNavINS_.setSig_W_G(Config["Config"]["sig-w-g"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-a-d")){
+      uNavINS_.setSig_A_D(Config["Config"]["sig-a-d"].GetFloat());
+    }
+    if (Config["Config"].HasMember("tau-a")){
+      uNavINS_.setTau_A(Config["Config"]["tau-a"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-g-d")){
+      uNavINS_.setSig_G_D(Config["Config"]["sig-g-d"].GetFloat());
+    }
+    if (Config["Config"].HasMember("tau-g")){
+      uNavINS_.setTau_G(Config["Config"]["tau-g"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-gps-p-ne")){
+      uNavINS_.setSig_GPS_P_NE(Config["Config"]["sig-gps-p-ne"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-gps-p-d")){
+      uNavINS_.setSig_GPS_P_D(Config["Config"]["sig-gps-p-d"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-gps-v-ne")){
+      uNavINS_.setSig_GPS_V_NE(Config["Config"]["sig-gps-v-ne"].GetFloat());
+    }
+    if (Config["Config"].HasMember("sig-gps-v-d")){
+      uNavINS_.setSig_GPS_V_D(Config["Config"]["sig-gps-v-d"].GetFloat());
+    }
+  }
   // pointer to log run mode data
   ModeKey_ = OutputName+"/Mode";
   data_.Mode = deftree.initElement(ModeKey_,"Run mode", LOG_UINT8, LOG_NONE);

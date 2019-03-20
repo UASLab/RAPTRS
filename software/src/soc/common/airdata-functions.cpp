@@ -18,6 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "millis.h"
 #include "airdata-functions.h"
 
 void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string RootPath) {
@@ -55,7 +56,7 @@ void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string Roo
   ModeKey_ = OutputName+"/Mode";
   data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
-  
+
   // pointer to log ias data
   OutputKey_ = OutputName+"/"+Config["Output"].GetString();
   data_.ias_ms_node = deftree.initElement(OutputKey_, "Indicated airspeed, m/s", LOG_FLOAT, LOG_NONE);
@@ -115,12 +116,6 @@ void IndicatedAirspeed::Clear() {
   OutputKey_.clear();
 }
 
-uint64_t IndicatedAirspeed::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
-}
-
 void AglAltitude::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // get output name
   std::string OutputName;
@@ -154,7 +149,7 @@ void AglAltitude::Configure(const rapidjson::Value& Config,std::string RootPath)
   ModeKey_ = OutputName+"/Mode";
   data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
-  
+
   // pointer to log ias data
   OutputKey_ = OutputName+"/"+Config["Output"].GetString();
   data_.agl_m_node = deftree.initElement(OutputKey_, "Altitude above ground, m", LOG_FLOAT, LOG_NONE);
@@ -218,12 +213,6 @@ void AglAltitude::Clear() {
   OutputKey_.clear();
 }
 
-uint64_t AglAltitude::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
-}
-
 /* Pitot-Static System */
 void PitotStatic::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // get PitotStatic name
@@ -248,7 +237,6 @@ void PitotStatic::Configure(const rapidjson::Value& Config,std::string RootPath)
   } else {
     throw std::runtime_error(std::string("ERROR")+SysName+std::string(": OutputAltitude not specified in configuration."));
   }
-
 
   // get differential pressure source
   if (Config.HasMember("Differential-Pressure")) {
@@ -357,16 +345,9 @@ void PitotStatic::Clear() {
   OutputAglKey_.clear();
 }
 
-uint64_t PitotStatic::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
-}
-
-
 /* 5-Hole Probe - Method 1 */
 // Assume that all 5 pressure sensors are measuring relative to the static ring
-void FiveHole::Configure(const rapidjson::Value& Config,std::string RootPath) {
+void FiveHole1::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // get FiveHole name
   std::string SysName;
   if (Config.HasMember("Output")) {
@@ -499,7 +480,7 @@ void FiveHole::Configure(const rapidjson::Value& Config,std::string RootPath) {
   ModeKey_ = SysName+"/Mode";
   data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
   data_.mode_node->setInt(kStandby);
-  
+
   // pointer to log ias data
   OutputAglKey_ = SysName+"/"+OutputAglName;
   data_.agl_m_node = deftree.initElement(OutputAglKey_,"Altitude above ground, m",LOG_FLOAT, LOG_NONE);
@@ -511,7 +492,7 @@ void FiveHole::Configure(const rapidjson::Value& Config,std::string RootPath) {
   data_.Beta_rad_node = deftree.initElement(OutputBetaKey_,"Sideslip angle, rad",LOG_FLOAT, LOG_NONE);
 }
 
-void FiveHole::Initialize() {
+void FiveHole1::Initialize() {
   // grab the starting time
   if (!TimeLatch_) {
     T0_us_ = micros();
@@ -537,11 +518,11 @@ void FiveHole::Initialize() {
   }
 }
 
-bool FiveHole::Initialized() {
+bool FiveHole1::Initialized() {
   return Initialized_;
 }
 
-void FiveHole::Run(Mode mode) {
+void FiveHole1::Run(Mode mode) {
   data_.mode_node->setInt(mode);
   if (mode!=kStandby) {
     // compute indicated airspeed
@@ -554,7 +535,7 @@ void FiveHole::Run(Mode mode) {
     // if the airspeed is low, the non-dimensionalizing pressures on the side port will be very small and result in huge angles
     if (data_.ias_ms_node->getFloat() > 2.0f) {
       // compute alpha
-      data_.Alpha_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.kAlpha) );
+      data_.Alpha_rad_node->setFloat( AirData_.getAngle1(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.kAlpha) );
 
       // limit alpha to +/-45 deg
       if (data_.Alpha_rad_node->getFloat() > 0.7854f) {
@@ -564,7 +545,7 @@ void FiveHole::Run(Mode mode) {
       }
 
       // compute beta
-      data_.Beta_rad_node->setFloat( AirData_.getAngle(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.kBeta) );
+      data_.Beta_rad_node->setFloat( AirData_.getAngle1(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.Beta1Pressure_node->getFloat() - data_.Beta1PressureBias, config_.Beta2Pressure_node->getFloat() - data_.Beta2PressureBias, config_.Alpha1Pressure_node->getFloat() - data_.Alpha1PressureBias, config_.Alpha2Pressure_node->getFloat() - data_.Alpha2PressureBias, config_.kBeta) );
 
       // limit beta to +/-45 deg
       if (data_.Beta_rad_node->getFloat() > 0.7854f) {
@@ -580,7 +561,7 @@ void FiveHole::Run(Mode mode) {
   }
 }
 
-void FiveHole::Clear() {
+void FiveHole1::Clear() {
   config_.InitTime = 0.0f;
 
   data_.mode_node->setInt(kStandby);
@@ -623,8 +604,235 @@ void FiveHole::Clear() {
   OutputBetaKey_.clear();
 }
 
-uint64_t FiveHole::micros() {
-  struct timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
+
+/* 5-Hole Probe - Method 2 */
+// Tip pressure sensor measures relative to the static ring
+// Alpha pressure sensor measures Alpha2 - Alpha1
+// Beta pressure sensor measures Beta2 - Beta1
+void FiveHole2::Configure(const rapidjson::Value& Config,std::string RootPath) {
+  // get FiveHole name
+  std::string SysName;
+  if (Config.HasMember("Output")) {
+    SysName = RootPath + "/" + Config["Output"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
+  }
+
+  // get Airspeed output name
+  std::string OutputIasName;
+  if (Config.HasMember("OutputIas")) {
+    OutputIasName = Config["OutputIas"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": OutputIas not specified in configuration."));
+  }
+
+  // get Altitude output name
+  std::string OutputAglName;
+  if (Config.HasMember("OutputAltitude")) {
+    OutputAglName = Config["OutputAltitude"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": OutputAltitude not specified in configuration."));
+  }
+
+  // get Alpha output name
+  std::string OutputAlphaName;
+  if (Config.HasMember("OutputAlpha")) {
+    OutputAlphaName = Config["OutputAlpha"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": OutputAlpha not specified in configuration."));
+  }
+
+  // get Beta output name
+  std::string OutputBetaName;
+  if (Config.HasMember("OutputBeta")) {
+    OutputBetaName = Config["OutputBeta"].GetString();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": OutputBeta not specified in configuration."));
+  }
+
+  // get Tip pressure source
+  if (Config.HasMember("Tip-Pressure")) {
+    TipPressureKey_ = Config["Tip-Pressure"].GetString();
+    config_.TipPressure_node = deftree.getElement(TipPressureKey_);
+    if ( !config_.TipPressure_node ) {
+      throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Tip-Pressure ")+TipPressureKey_+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Tip-Pressure not specified in configuration."));
+  }
+
+  // get static pressure source
+  if (Config.HasMember("Static-Pressure")) {
+    StaticPressureKey_ = Config["Static-Pressure"].GetString();
+    config_.StaticPressure_node =  deftree.getElement(StaticPressureKey_);
+    if ( !config_.StaticPressure_node ) {
+      throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Static-Pressure ")+StaticPressureKey_+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Static-Pressure not specified in configuration."));
+  }
+
+  // get Alpha pressure source
+  if (Config.HasMember("Alpha-Pressure")) {
+    AlphaPressureKey_ = Config["Alpha-Pressure"].GetString();
+    config_.AlphaPressure_node = deftree.getElement(AlphaPressureKey_);
+    if ( !config_.AlphaPressure_node ) {
+      throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Alpha-Pressure ")+AlphaPressureKey_+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Alpha-Pressure not specified in configuration."));
+  }
+
+  // get Beta pressure source
+  if (Config.HasMember("Beta-Pressure")) {
+    BetaPressureKey_ = Config["Beta-Pressure"].GetString();
+    config_.BetaPressure_node = deftree.getElement(BetaPressureKey_);
+    if ( !config_.BetaPressure_node ) {
+      throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Beta-Pressure ")+BetaPressureKey_+std::string(" not found in global data."));
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Beta-Pressure not specified in configuration."));
+  }
+
+  // get Alpha Calibration constant
+  if (Config.HasMember("Alpha-Calibration")) {
+    config_.kAlpha = Config["Alpha-Calibration"].GetFloat();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Alpha-Calibration not specified in configuration."));
+  }
+
+  // get Beta Calibration constant
+  if (Config.HasMember("Beta-Calibration")) {
+    config_.kBeta = Config["Beta-Calibration"].GetFloat();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Beta-Calibration not specified in configuration."));
+  }
+
+  // get initialization time
+  if (Config.HasMember("Initialization-Time")) {
+    config_.InitTime = Config["Initialization-Time"].GetFloat();
+  } else {
+    throw std::runtime_error(std::string("ERROR")+SysName+std::string(": Initialization time not specified in configuration."));
+  }
+
+  // pointer to log run mode data
+  ModeKey_ = SysName+"/Mode";
+  data_.mode_node = deftree.initElement(ModeKey_, "Run mode", LOG_UINT8, LOG_NONE);
+  data_.mode_node->setInt(kStandby);
+
+  // pointer to log ias data
+  OutputAglKey_ = SysName+"/"+OutputAglName;
+  data_.agl_m_node = deftree.initElement(OutputAglKey_,"Altitude above ground, m",LOG_FLOAT, LOG_NONE);
+  OutputIasKey_ = SysName+"/"+OutputIasName;
+  data_.ias_ms_node = deftree.initElement(OutputIasKey_,"Indicated airspeed, m/s",LOG_FLOAT, LOG_NONE);
+  OutputAlphaKey_ = SysName+"/"+OutputAlphaName;
+  data_.Alpha_rad_node = deftree.initElement(OutputAlphaKey_,"Angle of attack, rad",LOG_FLOAT, LOG_NONE);
+  OutputBetaKey_ = SysName+"/"+OutputBetaName;
+  data_.Beta_rad_node = deftree.initElement(OutputBetaKey_,"Sideslip angle, rad",LOG_FLOAT, LOG_NONE);
+}
+
+void FiveHole2::Initialize() {
+  // grab the starting time
+  if (!TimeLatch_) {
+    T0_us_ = micros();
+    TimeLatch_ = true;
+  }
+
+  // compute the elapsed time
+  float ElapsedTime = ((float)(micros()-T0_us_))/1e6;
+
+  // if less than init time, compute bias
+  if (ElapsedTime < config_.InitTime) {
+    // compute pressure biases, using Welford's algorithm
+    data_.PressAlt0 += (AirData_.getPressureAltitude(config_.StaticPressure_node->getFloat()) - data_.PressAlt0) / (float)NumberSamples_;
+    data_.TipPressureBias += (config_.TipPressure_node->getFloat() - data_.TipPressureBias) / (float)NumberSamples_;
+    data_.AlphaPressureBias += (config_.AlphaPressure_node->getFloat() - data_.AlphaPressureBias) / (float)NumberSamples_;
+    data_.BetaPressureBias += (config_.BetaPressure_node->getFloat() - data_.BetaPressureBias) / (float)NumberSamples_;
+
+    NumberSamples_++;
+  } else {
+    Initialized_ = true;
+  }
+}
+
+bool FiveHole2::Initialized() {
+  return Initialized_;
+}
+
+void FiveHole2::Run(Mode mode) {
+  data_.mode_node->setInt(mode);
+  if (mode!=kStandby) {
+    // compute indicated airspeed
+    data_.ias_ms_node->setFloat( AirData_.getIAS(config_.TipPressure_node->getFloat() - data_.TipPressureBias) );
+
+    // compute altitude above ground level
+    data_.agl_m_node->setFloat( AirData_.getAGL(config_.StaticPressure_node->getFloat(), data_.PressAlt0) );
+
+    // compute Alpha and Beta
+    // if the airspeed is low, the non-dimensionalizing pressures on the side port will be very small and result in huge angles
+    if (data_.ias_ms_node->getFloat() > 2.0f) {
+      // compute alpha
+      data_.Alpha_rad_node->setFloat( AirData_.getAngle2(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.AlphaPressure_node->getFloat() - data_.AlphaPressureBias, config_.kAlpha) );
+
+      // limit alpha to +/-45 deg
+      if (data_.Alpha_rad_node->getFloat() > 0.7854f) {
+        data_.Alpha_rad_node->setFloat( 0.7854f );
+      } else if (data_.Alpha_rad_node->getFloat() < -0.7854f) {
+        data_.Alpha_rad_node->setFloat( -0.7854f );
+      }
+
+      // compute beta
+      data_.Beta_rad_node->setFloat( AirData_.getAngle2(config_.TipPressure_node->getFloat() - data_.TipPressureBias, config_.BetaPressure_node->getFloat() - data_.BetaPressureBias, config_.kBeta) );
+
+      // limit beta to +/-45 deg
+      if (data_.Beta_rad_node->getFloat() > 0.7854f) {
+        data_.Beta_rad_node->setFloat( 0.7854f );
+      } else if (data_.Beta_rad_node->getFloat() < -0.7854f) {
+        data_.Beta_rad_node->setFloat( -0.7854f );
+      }
+
+    } else { // airspeed < theshold
+      data_.Alpha_rad_node->setFloat( 0.0f );
+      data_.Beta_rad_node->setFloat( 0.0f );
+    }
+  }
+}
+
+void FiveHole2::Clear() {
+  config_.InitTime = 0.0f;
+
+  data_.mode_node->setInt(kStandby);
+
+  data_.TipPressureBias = 0.0f;
+  data_.ias_ms_node->setFloat( 0.0f );
+
+  data_.agl_m_node->setFloat( 0.0f );
+  data_.PressAlt0 = 0.0f;
+
+  data_.AlphaPressureBias = 0.0f;
+  data_.Alpha_rad_node->setFloat( 0.0f );
+
+  data_.BetaPressureBias = 0.0f;
+  data_.Beta_rad_node->setFloat( 0.0f );
+
+  TimeLatch_ = false;
+  Initialized_ = false;
+  T0_us_ = 0;
+  NumberSamples_ = 1;
+  deftree.Erase(ModeKey_);
+  deftree.Erase(OutputIasKey_);
+  deftree.Erase(OutputAglKey_);
+  deftree.Erase(OutputAlphaKey_);
+  deftree.Erase(OutputBetaKey_);
+
+  TipPressureKey_.clear();
+  StaticPressureKey_.clear();
+  AlphaPressureKey_.clear();
+  BetaPressureKey_.clear();
+
+  ModeKey_.clear();
+  OutputIasKey_.clear();
+  OutputAglKey_.clear();
+  OutputAlphaKey_.clear();
+  OutputBetaKey_.clear();
 }

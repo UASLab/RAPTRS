@@ -30,9 +30,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "telemetry.h"
 #include "datalog.h"
 #include "netSocket.h"
-#include "telnet.hxx"
-#include "FGFS.h"
-#include "route_mgr.hxx"
+#include "telnet.h"
+#include "sim-interface.h"
+#include "circle_mgr.h"
+#include "route_mgr.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
@@ -47,7 +48,8 @@ using std::endl;
 // (and initialized) globally in common/definitiontree2.cpp.  Any
 // source file that includes definitiontree2.h may reference and use
 // deftree.
-float timePrev_s = 0;
+float timePrev_ms = 0;
+
 
 int main(int argc, char* argv[]) {
   if (argc!=2) {
@@ -68,7 +70,8 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-  FGRouteMgr route_mgr;
+  CircleMgr circle_mgr;
+  RouteMgr route_mgr;
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
@@ -83,6 +86,14 @@ int main(int argc, char* argv[]) {
   Config.LoadConfiguration(argv[1], &AircraftConfiguration);
   std::cout << "done!" << std::endl;
 
+  /* initialize simulation */
+  std::cout << "Configuring Simulation HIL..." << std::endl;
+  bool sim = sim_init(AircraftConfiguration);
+  std::cout << "\tdone!" << std::endl;
+  deftree.PrettyPrint("/");
+  std::cout << std::endl;
+
+  /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
@@ -99,6 +110,9 @@ int main(int argc, char* argv[]) {
     if (AircraftConfiguration.HasMember("Route")) {
       std::cout << "\tConfiguring route following..." << std::endl;
       route_mgr.init(AircraftConfiguration["Route"]);
+    } else if (AircraftConfiguration.HasMember("Circle")) {
+      std::cout << "\tConfiguring circle hold..." << std::endl;
+      circle_mgr.init(AircraftConfiguration["Circle"]);
     }
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
@@ -136,6 +150,16 @@ int main(int argc, char* argv[]) {
     std::cout << "done!" << std::endl;
   }
 
+  /* profiling */
+  ElementPtr main_loop_node = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
+  ElementPtr sensor_proc_node = deftree.initElement("/Mission/profSencorProcssing", "Sensor processing time us", LOG_UINT32, LOG_NONE);
+  ElementPtr control_node = deftree.initElement("/Mission/profControl", "Control time us", LOG_UINT32, LOG_NONE);
+  ElementPtr response_node = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
+  uint64_t main_loop_start = 0;
+  uint64_t sensor_proc_start = 0;
+  uint64_t control_start = 0;
+  uint64_t response_start = 0;
+
   std::cout << "\tConfiguring datalog..." << std::flush;
   Datalog.RegisterGlobalData();
   std::cout << "done!" << std::endl;
@@ -146,27 +170,31 @@ int main(int argc, char* argv[]) {
   telnet.open();
   std::cout << "Telnet interface opened on port 6500" << std::endl;
 
-  bool fgfs = fgfs_init(AircraftConfiguration);
-
   /* main loop */
   while(1) {
+    main_loop_start = response_start = micros();
     if (Fmu.ReceiveSensorData()) {
-      if ( fgfs ) {
-        // insert flightgear sim data calls
-        fgfs_imu_update();
-        fgfs_gps_update();
+      if ( sim ) {
+        sim_sensor_update(); // update sim sensors
       }
+      float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+
       if (SenProc.Configured()&&SenProc.Initialized()) {
         // run mission
         Mission.Run();
         // get and set engaged sensor processing
         SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
         // run sensor processing
+        sensor_proc_start = micros();
         SenProc.Run();
-        if ( fgfs ) {
-          fgfs_airdata_update(); // overwrite processed air data
-        }
+
+        // SensorProc timer start
+        sensor_proc_node->setInt(micros()-sensor_proc_start);
+
+        // run route manager
         route_mgr.update();
+        circle_mgr.update();
+
         // get and set engaged and armed controllers
         Control.SetEngagedController(Mission.GetEngagedController());
         Control.SetArmedController(Mission.GetArmedController());
@@ -178,13 +206,20 @@ int main(int argc, char* argv[]) {
             // run excitation
             Excitation.RunEngaged(Control.GetActiveLevel(i));
             // run control
+            control_start = micros();
             Control.RunEngaged(i);
+            control_node->setInt(micros()-control_start);
           }
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
-        if ( fgfs ) {
-          fgfs_act_update();
+
+        // Timer
+        response_node->setInt(micros()-response_start);
+
+        // Write out commands for Sim
+        if ( sim ) {
+          sim_cmd_update();
         }
         // run armed excitations
         Excitation.RunArmed();
@@ -193,14 +228,15 @@ int main(int argc, char* argv[]) {
 
         // Print some status
         std::string CtrlEngaged = Mission.GetEngagedController();
+        std::string SenProcEngaged = Mission.GetEngagedSensorProcessing();
         std::string ExcitEngaged = Mission.GetEngagedExcitation();
 
-        float timeCurr_s = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
-        float dt = timeCurr_s - timePrev_s;
-        timePrev_s = timeCurr_s;
+        float timeCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+        float dt_ms = timeCurr_ms - timePrev_ms;
+        timePrev_ms = timeCurr_ms;
 
-        std::cout << CtrlEngaged << "\t" << ExcitEngaged
-                  << "\tdt:  " << dt
+        std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
+                  << "\tdt (ms):  " << dt_ms
                   << std::endl;
 
       }
@@ -209,6 +245,7 @@ int main(int argc, char* argv[]) {
       // run datalog
       Datalog.LogBinaryData();
       telnet.process();
+      main_loop_node->setInt(micros()-main_loop_start);
     }
   }
 

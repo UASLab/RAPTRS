@@ -74,7 +74,6 @@ class IndicatedAirspeed: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
@@ -123,7 +122,6 @@ class AglAltitude: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
@@ -182,15 +180,14 @@ class PitotStatic: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
     AirData AirData_;
 };
 
 /*
-PitotStatic Class - Computes indicated airspeed and altitude above ground level from pitot-static pressures.
+5Hole1 Class - Computes indicated airspeed and altitude above ground level from pitot-static pressures.
 Example JSON configuration:
 {
-  "Type": "FiveHole",
+  "Type": "FiveHole1",
   "Output": "OutputName",
   "OutputIas": "OutputIasName",
   "OutputAlt": "OutputAglName",
@@ -211,7 +208,7 @@ Where:
      bias estimation.
 Pressures are expected to be in Pa and airspeed is in m/s
 */
-class FiveHole: public GenericFunction {
+class FiveHole1: public GenericFunction {
   public:
     void Configure(const rapidjson::Value& Config,std::string RootPath);
     void Initialize();
@@ -259,7 +256,76 @@ class FiveHole: public GenericFunction {
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
     size_t NumberSamples_ = 1;
-    uint64_t micros();
+    AirData AirData_;
+};
+
+/*
+5Hole2 Class - Computes indicated airspeed and altitude above ground level from pitot-static pressures.
+Example JSON configuration:
+{
+  "Type": "FiveHole2",
+  "Output": "OutputName",
+  "OutputIas": "OutputIasName",
+  "OutputAlt": "OutputAglName",
+  "OutputAlpha": "OutputAlphaName",
+  "OutputBeta": "OutputBetaName",
+  "Static-Pressure": X,
+  "Tip-Pressure": X,
+  "Alpha-Pressure": X,
+  "Beta-Pressure": X,
+  "Initialization-Time": X
+}
+Where:
+   * Output gives a convenient name for the block (i.e. 5Hole).
+   * Tip pressure is tip pressure source, etc.
+   * Initialization time is the amount of time used during initialization for
+     bias estimation.
+Pressures are expected to be in Pa and airspeed is in m/s
+*/
+class FiveHole2: public GenericFunction {
+  public:
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Initialize();
+    bool Initialized();
+    void Run(Mode mode);
+    void Clear();
+  private:
+    struct Config {
+      ElementPtr StaticPressure_node;
+      ElementPtr TipPressure_node;
+      ElementPtr AlphaPressure_node;
+      ElementPtr BetaPressure_node;
+      float InitTime = 0.0f;
+      float kAlpha = 0.0f;
+      float kBeta = 0.0f;
+    };
+    struct Data {
+      ElementPtr mode_node;
+
+      float PressAlt0 = 0.0f;
+      ElementPtr agl_m_node;
+
+      float TipPressureBias = 0.0f;
+      ElementPtr ias_ms_node;
+
+      float AlphaPressureBias = 0.0f;
+      ElementPtr Alpha_rad_node;
+
+      float BetaPressureBias = 0.0f;
+      ElementPtr Beta_rad_node;
+    };
+
+    Config config_;
+    Data data_;
+    std::string ModeKey_;
+    std::string TipPressureKey_, StaticPressureKey_, AlphaPressureKey_, BetaPressureKey_;
+    std::string AlphaCalKey_, BetaCalKey_;
+    std::string OutputIasKey_, OutputAglKey_, OutputAlphaKey_, OutputBetaKey_;
+
+    bool TimeLatch_ = false;
+    bool Initialized_ = false;
+    uint64_t T0_us_ = 0;
+    size_t NumberSamples_ = 1;
     AirData AirData_;
 };
 

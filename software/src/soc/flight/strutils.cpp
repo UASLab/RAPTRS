@@ -22,7 +22,7 @@
 
 #include <ctype.h>
 #include <string.h>
-#include "strutils.hxx"
+#include "strutils.h"
 
 /**
  * 

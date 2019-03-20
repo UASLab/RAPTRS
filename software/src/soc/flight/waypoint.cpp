@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-#include "wgs84.hxx"
-#include "waypoint.hxx"
+#include "wgs84.h"
+#include "waypoint.h"
 
 
 // Constructor
