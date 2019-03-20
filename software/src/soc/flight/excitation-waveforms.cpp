@@ -871,10 +871,8 @@ void MultiSine::Run(Mode mode) {
       // do nothing
       data_.excitation_node->setFloat(0.0);
     } else if (ExciteTime_s < config_.Duration_s) {
-      // Scale the waveform to preserve unity
-      float scale = sqrtf(0.5f/((float)config_.Amplitude.size()));
-      // Compute the Waveform - scale * sum(amp .* cos(freq * t + phase))
-      data_.excitation_node->setFloat( scale*(config_.Amplitude*(config_.Frequency*ExciteTime_s + config_.Phase).cos()).sum() );
+      // Compute the Waveform: sum(amp .* cos(freq * t + phase))
+      data_.excitation_node->setFloat( (config_.Amplitude*(config_.Frequency*ExciteTime_s + config_.Phase).cos()).sum() );
     } else {
       // do nothing
       data_.excitation_node->setFloat(0.0);
