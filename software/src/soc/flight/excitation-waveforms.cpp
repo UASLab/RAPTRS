@@ -23,9 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 void Pulse::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -95,13 +93,11 @@ void Pulse::Run(Mode mode) {
     data_.excitation_node->setFloat(0.0);
   }
 
-  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat(config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void Pulse::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
@@ -115,9 +111,7 @@ void Pulse::Clear() {
 void Doublet::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -190,13 +184,11 @@ void Doublet::Run(Mode mode) {
     data_.excitation_node->setFloat(0);
   }
 
-  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat() );
 }
 
 void Doublet::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
@@ -210,9 +202,7 @@ void Doublet::Clear() {
 void Doublet121::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -288,13 +278,11 @@ void Doublet121::Run(Mode mode) {
     data_.excitation_node->setFloat(0.0);
   }
 
-  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void Doublet121::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
@@ -308,9 +296,7 @@ void Doublet121::Clear() {
 void Doublet3211::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -389,13 +375,11 @@ void Doublet3211::Run(Mode mode) {
     data_.excitation_node->setFloat(0.0);
   }
 
-  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat(config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void Doublet3211::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.StartTime_s = 0.0f;
   config_.Duration_s = 0.0f;
@@ -409,9 +393,7 @@ void Doublet3211::Clear() {
 void LinearChirp::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -521,13 +503,11 @@ void LinearChirp::Run(Mode mode) {
     data_.excitation_node->setFloat(0.0);
   }
 
-  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale);
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void LinearChirp::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude[0] = 0.0f;
   config_.Amplitude[1] = 0.0f;
   config_.Frequency[0] = 0.0f;
@@ -546,9 +526,7 @@ void LinearChirp::Clear() {
 void LogChirp::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -658,13 +636,11 @@ void LogChirp::Run(Mode mode) {
     data_.excitation_node->setFloat(0.0);
   }
 
-  data_.excitation_node->setFloat(data_.excitation_node->getFloat() * config_.Scale);
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void LogChirp::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude[0] = 0.0f;
   config_.Amplitude[1] = 0.0f;
   config_.Frequency[0] = 0.0f;
@@ -684,9 +660,7 @@ void LogChirp::Clear() {
 void Pulse_1_Cos::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -768,13 +742,11 @@ void Pulse_1_Cos::Run(Mode mode) {
     data_.excitation_node->setFloat(0.0);
   }
 
-  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void Pulse_1_Cos::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude = 0.0f;
   config_.Frequency = 0.0f;
   config_.StartTime_s = 0.0f;
@@ -790,9 +762,7 @@ void Pulse_1_Cos::Clear() {
 void MultiSine::Configure(const rapidjson::Value& Config,std::string RootPath) {
   std::string SignalName;
   std::string OutputName;
-  if (Config.HasMember("Scale-Factor")) {
-    config_.Scale = Config["Scale-Factor"].GetFloat();
-  }
+
   if (Config.HasMember("Signal")) {
     SignalName = Config["Signal"].GetString();
     OutputName = RootPath + SignalName.substr(SignalName.rfind("/"));
@@ -883,13 +853,12 @@ void MultiSine::Run(Mode mode) {
     // do nothing
     data_.excitation_node->setFloat(0.0);
   }
-  data_.excitation_node->setFloat( data_.excitation_node->getFloat() * config_.Scale );
+
   data_.Mode = (uint8_t)mode;
   config_.signal_node->setFloat( config_.signal_node->getFloat() + data_.excitation_node->getFloat());
 }
 
 void MultiSine::Clear() {
-  config_.Scale = 1.0f;
   config_.Amplitude.resize(0,1);
   config_.Frequency.resize(0,1);
   config_.Phase.resize(0,1);
