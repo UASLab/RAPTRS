@@ -51,6 +51,10 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftSensors *Aircr
       AircraftEffectorsPtr->UpdateConfig(buffer.data());
     }
   }
+  else {
+    Serial.println("ERROR: Node Config Message Failed to Parse: ");
+    Serial.println(JsonString);
+  }
 }
 
 /* Returns the BFS address */

@@ -58,7 +58,10 @@ void ImuInterrupt() {
   Mission.SetImuDataReady();
 }
 
-int main() 
+uint64_t ts;
+uint64_t t;
+
+int main()
 {
   // serial port for debug messages
   Serial.begin(kDebugBaud);
@@ -83,6 +86,8 @@ int main()
     Mission.UpdateMode(&Sensors,&Control,&Effectors,&GlobalData);
     Mission.GetMode(&MissionMode);
     if (MissionMode == AircraftMission::Run) {
+      ts = micros_64();
+
       // update the mission state
       Mission.UpdateState();
       Mission.GetState(&MissionState);
@@ -90,11 +95,18 @@ int main()
         Mission.ClearImuDataReady();
         // read synchronous sensors
         Sensors.ReadSyncSensors();
+// Serial.print("\tRead: ");
+// Serial.print(float(micros_64() - ts) * 1e-3, 2);
         // buffer for transmitting data
         std::vector<uint8_t> DataBuffer;
         Sensors.GetDataBuffer(&DataBuffer);
+// Serial.print("\tDataBuffer: ");
+// Serial.print(DataBuffer.size());
         // transmit data to SOC
         SocComms.SendSensorData(DataBuffer);
+// Serial.print("\tSync: ");
+// Serial.print(float(micros_64() - ts) * 1e-3, 2);
+
       }
       if (MissionState == AircraftMission::AsyncDataCollection) {
         // read the asynchronous sensors
@@ -108,11 +120,15 @@ int main()
         }
         // compute effector PWM and SBUS commands from angles
         Effectors.ComputeOutputs(Mission.ThrottleSafed());
+// Serial.print("\tControl: ");
+// Serial.print(float(micros_64() - ts) * 1e-3, 2);
       }
       if (MissionState == AircraftMission::EffectorOutput) {
         Mission.ClearEffectorOutputFlag();
         // command the effectors to move
         Effectors.CommandEffectors();
+// Serial.print("\tEffectors: ");
+// Serial.println(float(micros_64() - ts) * 1e-3, 2);
       }
       // effector commands from SOC
       if (SocComms.ReceiveEffectorCommand(&EffectorCommands)) {
@@ -120,7 +136,11 @@ int main()
           // set the received commands to be used
           Effectors.SetCommands(EffectorCommands,Mission.ThrottleSafed());
         }
+// Serial.print("\tSOC: ");
+// Serial.println(float(micros_64() - ts) * 1e-3, 2);
       }
+// Serial.print("\tDone: ");
+// Serial.print(float(micros_64() - ts) * 1e-3, 2);
     }
     if (MissionMode == AircraftMission::Configuration) {
       // buffer for receiving configurations

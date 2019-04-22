@@ -34,8 +34,16 @@ void AircraftConfiguration::Load() {
 void AircraftConfiguration::Update(const char* JsonString,AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
   DynamicJsonBuffer ConfigBuffer;
   std::vector<char> buffer;
+
+  Serial.print("AircraftConfiguration Parsing: ");
+  Serial.print(JsonString);
+
   JsonObject &Config = ConfigBuffer.parseObject(JsonString);
   buffer.resize(ConfigBuffer.size());
+
+  Serial.print("\tSuccess: ");
+  Serial.println(Config.success());
+
   if (Config.success()) {
     if (Config.containsKey("Sensors")) {
       JsonArray &Sensors = Config["Sensors"];
@@ -60,5 +68,9 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
       Mission.printTo(buffer.data(),buffer.size());
       AircraftMissionPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
     }
+  }
+  else {
+    Serial.println("ERROR: FMU Config Message Failed to Parse: ");
+    Serial.println(JsonString);
   }
 }

@@ -146,36 +146,37 @@ void Mpu9250Sensor::Begin() {
     }
     Mpu_ = new MPU9250(*_i2c,config_.Addr);
   }
-  if (Mpu_->begin() < 0) {
-    while(1){
-      Serial.println("ERROR: Failed to initialize MPU9250.");
-    }
+  while (Mpu_->begin() < 0) {
+    Serial.print("ERROR: Failed to initialize MPU9250...");
+    delay(100);
+    Serial.println("\t retry...");
   }
   // set DLPF
-  if (Mpu_->setDlpfBandwidth(config_.Bandwidth) < 0) {
-    while(1){
-      Serial.println("ERROR: Failed to set MPU9250 bandwidth.");
-    }
+  while (Mpu_->setDlpfBandwidth(config_.Bandwidth) < 0) {
+    Serial.println("ERROR: Failed to set MPU9250 bandwidth.");
+    delay(100);
+    Serial.println("\t retry...");
   }
   // set SRD
-  if (Mpu_->setSrd(config_.SRD) < 0) {
-    while(1){
-      Serial.println("ERROR: Failed to set MPU9250 SRD.");
-    }
+  while (Mpu_->setSrd(config_.SRD) < 0) {
+    Serial.println("ERROR: Failed to set MPU9250 SRD.");
+    delay(100);
+    Serial.println("\t retry...");
   }
   // enable data ready interrupt
-  if (Mpu_->enableDataReadyInterrupt() < 0) {
-    while(1){
-      Serial.println("ERROR: Failed to enable MPU9250 data ready interrupt.");
-    }
+  while (Mpu_->enableDataReadyInterrupt() < 0) {
+    Serial.println("ERROR: Failed to enable MPU9250 data ready interrupt.");
+    delay(100);
+    Serial.println("\t retry...");
   }
 }
 
 /* get the MPU9250 sensor data */
 int Mpu9250Sensor::GetData(Data *DataPtr) {
-  Eigen::Matrix<float,3,1>Accel_Imu_mss;
-  Eigen::Matrix<float,3,1>Gyro_Imu_rads;
-  Eigen::Matrix<float,3,1>Mag_Imu_uT;
+  Eigen::Matrix<float,3,1> Accel_Imu_mss;
+  Eigen::Matrix<float,3,1> Gyro_Imu_rads;
+  Eigen::Matrix<float,3,1> Mag_Imu_uT;
+
   status_ = Mpu_->readSensor();
   Accel_Imu_mss(0,0) = Mpu_->getAccelX_mss();
   Accel_Imu_mss(1,0) = Mpu_->getAccelY_mss();
@@ -186,11 +187,27 @@ int Mpu9250Sensor::GetData(Data *DataPtr) {
   Mag_Imu_uT(0,0) = Mpu_->getMagX_uT();
   Mag_Imu_uT(1,0) = Mpu_->getMagY_uT();
   Mag_Imu_uT(2,0) = Mpu_->getMagZ_uT();
-  data_.Accel_mss = config_.Rotation * Accel_Imu_mss;
-  data_.Gyro_rads = config_.Rotation * Gyro_Imu_rads;
-  data_.Mag_uT = config_.Rotation * Mag_Imu_uT;
-  data_.Temperature_C = Mpu_->getTemperature_C();
+
+  Accel_mss_ = config_.Rotation * Accel_Imu_mss;
+  Gyro_rads_ = config_.Rotation * Gyro_Imu_rads;
+  Mag_uT_ = config_.Rotation * Mag_Imu_uT;
+
+  const float G = 9.807f;
+  const float d2r = 3.14159265359f/180.0f;
+  float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+  float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+
   data_.ReadStatus = status_;
+  data_.AccelX_ct = (int) (Accel_mss_(0,0) / accelScale);
+  data_.AccelY_ct = (int) (Accel_mss_(1,0) / accelScale);
+  data_.AccelZ_ct = (int) (Accel_mss_(2,0) / accelScale);
+  data_.GyroX_ct = (int) (Gyro_rads_(0,0) / gyroScale);
+  data_.GyroY_ct = (int) (Gyro_rads_(1,0) / gyroScale);
+  data_.GyroZ_ct = (int) (Gyro_rads_(2,0) / gyroScale);
+  // data_.MagX_ct = Mag_uT(0,0);
+  // data_.MagY_ct = Mag_uT(1,0);
+  // data_.MagZ_ct = Mag_uT(2,0);
+  // data_.Temperature_ct = Mpu_->getTemperature_C();
   *DataPtr = data_;
   return status_;
 }
@@ -390,15 +407,15 @@ void uBloxSensor::UpdateData() {
     data_.Hour = uBloxData_.utcHour;
     data_.Min = uBloxData_.utcMin;
     data_.Sec = uBloxData_.utcSec;
-    data_.LLA(0,0) = uBloxData_.lat*kD2R;
-    data_.LLA(1,0) = uBloxData_.lon*kD2R;
-    data_.LLA(2,0) = uBloxData_.hMSL;
-    data_.NEDVelocity_ms(0,0) = uBloxData_.velN;
-    data_.NEDVelocity_ms(1,0) = uBloxData_.velE;
-    data_.NEDVelocity_ms(2,0) = uBloxData_.velD;
-    data_.Accuracy(0,0) = uBloxData_.hAcc;
-    data_.Accuracy(1,0) = uBloxData_.vAcc;
-    data_.Accuracy(2,0) = uBloxData_.sAcc;
+    data_.Latitude_rad = uBloxData_.lat*kD2R;
+    data_.Longitude_rad = uBloxData_.lon*kD2R;
+    data_.Altitude_m = uBloxData_.hMSL;
+    data_.NorthVelocity_ms = uBloxData_.velN;
+    data_.EastVelocity_ms = uBloxData_.velE;
+    data_.DownVelocity_ms = uBloxData_.velD;
+    data_.HorizontalAccuracy_m = uBloxData_.hAcc;
+    data_.VerticalAccuracy_m = uBloxData_.vAcc;
+    data_.VelocityAccuracy_ms = uBloxData_.sAcc;
     data_.pDOP = uBloxData_.pDOP;
   }
 }
@@ -731,8 +748,8 @@ void AnalogSensor::Begin() {
 
 /* get analog sensor data */
 void AnalogSensor::GetData(Data *DataPtr) {
-  data_.Voltage_V = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
-  data_.CalibratedValue = PolyVal(config_.Calibration,data_.Voltage_V);
+  Voltage_V_ = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
+  data_.CalibratedValue = PolyVal(config_.Calibration, Voltage_V_);
   *DataPtr = data_;
 }
 
@@ -745,16 +762,12 @@ void AircraftSensors::UpdateConfig(const char *JsonString) {
   std::vector<char> buffer;
   delayMicroseconds(10);
   Serial.println("Updating sensor configuration...");
-
-  Serial.print("Parsing: ");
+  Serial.print("\tParsing: ");
   Serial.println(JsonString);
-  JsonObject &Sensor = ConfigBuffer.parseObject(JsonString);
 
-  Serial.print("Parsed Size: ");
+  JsonObject &Sensor = ConfigBuffer.parseObject(JsonString);
   buffer.resize(ConfigBuffer.size());
 
-  Serial.print("\tParsed Size: ");
-  Serial.print(buffer.size());
   Serial.print("\tSuccess: ");
   Serial.println(Sensor.success());
 
@@ -929,7 +942,7 @@ void AircraftSensors::ReadSyncSensors() {
     data_.SbusVoltage_V[0] = ((float)analogRead(kSbusVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
   }
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Mpu9250[i].GetData(&data_.Mpu9250[i]);
     if (status < 0) {
       Mpu9250Sensor::Config TempConfig;
@@ -944,7 +957,7 @@ void AircraftSensors::ReadSyncSensors() {
     }
   }
   for (size_t i=0; i < classes_.Bme280.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Bme280[i].GetData(&data_.Bme280[i]);
     if (status < 0) {
       Bme280Sensor::Config TempConfig;
@@ -962,7 +975,7 @@ void AircraftSensors::ReadSyncSensors() {
     classes_.uBlox[i].GetData(&data_.uBlox[i]);
   }
   for (size_t i=0; i < classes_.Swift.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Swift[i].GetData(&data_.Swift[i]);
     if (status < 0) {
       SwiftSensor::Config TempConfig;
@@ -975,7 +988,7 @@ void AircraftSensors::ReadSyncSensors() {
     }
   }
   for (size_t i=0; i < classes_.Ams5915.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Ams5915[i].GetData(&data_.Ams5915[i]);
     if (status < 0) {
       Ams5915Sensor::Config TempConfig;

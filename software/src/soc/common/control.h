@@ -41,12 +41,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <stdexcept>
 #include <vector>
 #include <cstring>
-#include <Eigen/Dense>
 #include <memory>
 
 /* Class to manage control laws
 Example JSON configuration:
-{ 
+{
   "Control": {
     "Fmu": "FmuGroup",
     "Soc": ["SocGroup1","SocGroup2",...],
@@ -54,7 +53,7 @@ Example JSON configuration:
       { "Level": "1",
         "Components": [
           { "Type": "Gain",
-            "Input": 
+            "Input":
             "Output":
             "Gain":
           }
@@ -65,7 +64,7 @@ Example JSON configuration:
       { "Level": "1",
         "Components": [
           { "Type": "Gain",
-            "Input": 
+            "Input":
             "Output":
             "Gain":
           }
