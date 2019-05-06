@@ -68,6 +68,7 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -90,6 +91,7 @@ Example JSON configuration:
   "Start-Time": X,
   "Duration": X,
   "Amplitude": X
+  "Scale-Factor": X
   }
 }
 Where:
@@ -115,6 +117,7 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -162,6 +165,7 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -209,6 +213,7 @@ private:
     float Amplitude = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;
@@ -258,6 +263,7 @@ private:
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
     float FreqK = 0.0f;
     float AmpK = 0.0f;
   };
@@ -309,6 +315,7 @@ private:
     float Frequency[2] = {0.0f};
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
     float FreqK = 0.0f;
     float FreqLogK = 0.0f;
     float AmpK = 0.0f;
@@ -360,6 +367,7 @@ private:
     float Frequency = 0.0f;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
     float Pause_s = 0.0f;
   };
   struct Data {
@@ -412,6 +420,7 @@ private:
     Eigen::Array<float,Eigen::Dynamic,1> Phase;
     float StartTime_s = 0.0f;
     float Duration_s = 0.0f;
+    float Scale = 1.0f;
   };
   struct Data {
     uint8_t Mode = kStandby;

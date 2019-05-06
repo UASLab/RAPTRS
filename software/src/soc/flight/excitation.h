@@ -44,7 +44,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 /* Class to manage excitations
 Example JSON configuration:
-{ 
+{
   "Excitation": {
     "Time": "",
     "Groups": [
@@ -52,7 +52,7 @@ Example JSON configuration:
         "Components": [
           { "Level": "1",
             "Components": [
-              {"Waveform": "0_5-Sec-Pulse","Signal": "","Start-Time": 1,,"Amplitude": 0.2}
+              {"Waveform": "0_5-Sec-Pulse","Signal": "","Start-Time": 1,"Scale-Factor": 0.2}
             ]
           }
         ]
