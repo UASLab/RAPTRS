@@ -766,7 +766,7 @@ bool sim_cmd_update() {
     response += std::to_string(cmdTE2R_rad) + ",";
     response += std::to_string(cmdTE3L_rad) + ",";
     response += std::to_string(cmdTE3R_rad) + ",";
-    response += std::to_string(cmdTE4R_rad) + ",";
+    response += std::to_string(cmdTE4L_rad) + ",";
     response += std::to_string(cmdTE4R_rad) + ",";
     response += std::to_string(cmdTE5L_rad) + ",";
     response += std::to_string(cmdTE5R_rad) + ",";

@@ -148,25 +148,25 @@ void Mpu9250Sensor::Begin() {
   }
   while (Mpu_->begin() < 0) {
     Serial.print("ERROR: Failed to initialize MPU9250...");
-    delay(100);
+    delay(400);
     Serial.println("\t retry...");
   }
   // set DLPF
   while (Mpu_->setDlpfBandwidth(config_.Bandwidth) < 0) {
     Serial.println("ERROR: Failed to set MPU9250 bandwidth.");
-    delay(100);
+    delay(400);
     Serial.println("\t retry...");
   }
   // set SRD
   while (Mpu_->setSrd(config_.SRD) < 0) {
     Serial.println("ERROR: Failed to set MPU9250 SRD.");
-    delay(100);
+    delay(400);
     Serial.println("\t retry...");
   }
   // enable data ready interrupt
   while (Mpu_->enableDataReadyInterrupt() < 0) {
     Serial.println("ERROR: Failed to enable MPU9250 data ready interrupt.");
-    delay(100);
+    delay(400);
     Serial.println("\t retry...");
   }
 }
