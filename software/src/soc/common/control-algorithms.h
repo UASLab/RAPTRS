@@ -8,21 +8,23 @@
 class __PID2Class {
   public:
     void Configure(float Kp, float Ki, float Kd, float Tf, float b, float c, bool SatFlag, float OutMax, float OutMin);
-    void Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *Output, int8_t *Saturated);
+    void Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *Output, float *ff, float *fb, int8_t *Saturated);
     void Clear();
   private:
     uint8_t mode_ = GenericFunction::Mode::kStandby;
 
-    float Kp_, Ki_, Kd_, Tf_, b_, c_, Output_, OutMax_, OutMin_;
+    float Kp_, Ki_, Kd_, Tf_, b_, c_, Output_, ff_, fb_, OutMax_, OutMin_;
     bool SatFlag_;
     bool initLatch_ = false;
 
-    float ProportionalError_, DerivativeError_, IntegralError_, DerivativeErrorState_;
-    float PreviousDerivativeError_, PreviousDerivativeErrorState_, IntegralErrorState_;
+    float ffProportionalError_, ffDerivativeError_, ffIntegralError_, ffDerivativeErrorState_;
+    float fbProportionalError_, fbDerivativeError_, fbIntegralError_, fbDerivativeErrorState_;
+    float ffPreviousDerivativeError_, ffPreviousDerivativeErrorState_, ffIntegralErrorState_;
+    float fbPreviousDerivativeError_, fbPreviousDerivativeErrorState_, fbIntegralErrorState_;
 
     int8_t Saturated_;
 
-    void InitializeState(float Command);
+    void InitializeState(float ff, float fb);
     void ComputeDerivative(float dt);
     void UpdateState(float dt);
     void CalculateCommand();

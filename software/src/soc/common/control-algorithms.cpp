@@ -15,16 +15,19 @@ void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, floa
   OutMin_ = OutMin;
 }
 
-void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,float dt,float *Output,int8_t *Saturated) {
+void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,float dt, float *Output, float *ff, float *fb, int8_t *Saturated) {
 
   // error for proportional
-  ProportionalError_ = b_ * Reference - Feedback;
+  ffProportionalError_ = b_ * Reference;
+  fbProportionalError_ = Feedback;
 
   // error for integral
-  IntegralError_ = Reference - Feedback;
+  ffIntegralError_ = Reference;
+  fbIntegralError_ = Feedback;
 
   // error for derivative
-  DerivativeError_ = c_ * Reference - Feedback;
+  ffDerivativeError_ = c_ * Reference;
+  fbDerivativeError_ = Feedback;
 
   mode_ = mode;
   switch(mode_) {
@@ -35,7 +38,7 @@ void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,
     case GenericFunction::Mode::kArm: {
       Reset();
       ComputeDerivative(dt);
-      InitializeState(0.0f);
+      InitializeState(0.0f, 0.0f);
       initLatch_ = true;
       CalculateCommand();
       break;
@@ -48,7 +51,7 @@ void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,
     case GenericFunction::Mode::kEngage: {
       ComputeDerivative(dt);
       if (initLatch_ == false) {
-        InitializeState(0.0f);
+        InitializeState(0.0f, 0.0f);
         initLatch_ = true;
       }
       UpdateState(dt);
@@ -57,62 +60,78 @@ void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,
     }
   }
   *Output = Output_;
+  *ff = ff_;
+  *fb = fb_;
   *Saturated = Saturated_;
 }
 
-void __PID2Class::InitializeState(float Output) {
+void __PID2Class::InitializeState(float ff, float fb) {
   // Protect for Ki == 0
   if (Ki_ != 0.0f) {
     // IntegralErrorState_ = (Output - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
-    IntegralErrorState_ = (Output - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
+    // IntegralErrorState_ = (Output - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
+    ffIntegralErrorState_ = (ff - (Kp_*ffProportionalError_)) / Ki_;
+    fbIntegralErrorState_ = (fb - (Kp_*fbProportionalError_)) / Ki_;
   } else {
-    IntegralErrorState_ = 0.0f;
+    ffIntegralErrorState_ = 0.0f;
+    fbIntegralErrorState_ = 0.0f;
   }
 }
 
 void __PID2Class::ComputeDerivative(float dt) {
 
-  float ErrorChange = DerivativeError_ - PreviousDerivativeError_;
-  float DerivativeFiltVal = 0.0f;
+  float ffErrorChange = ffDerivativeError_ - ffPreviousDerivativeError_;
+  float fbErrorChange = fbDerivativeError_ - fbPreviousDerivativeError_;
 
   if ((Tf_ + dt) != 0) {
-    DerivativeErrorState_ = Tf_ * (PreviousDerivativeErrorState_ + ErrorChange) / (Tf_ + dt);
+    ffDerivativeErrorState_ = Tf_ * (ffPreviousDerivativeErrorState_ + ffErrorChange) / (Tf_ + dt);
+    fbDerivativeErrorState_ = Tf_ * (fbPreviousDerivativeErrorState_ + fbErrorChange) / (Tf_ + dt);
   } else {
-    DerivativeErrorState_ = 0.0f;
+    ffDerivativeErrorState_ = 0.0f;
+    fbDerivativeErrorState_ = 0.0f;
   }
 
-  PreviousDerivativeError_ = DerivativeError_;
-  PreviousDerivativeErrorState_ = DerivativeErrorState_;
+  ffPreviousDerivativeError_ = ffDerivativeError_;
+  ffPreviousDerivativeErrorState_ = ffDerivativeErrorState_;
+
+  fbPreviousDerivativeError_ = fbDerivativeError_;
+  fbPreviousDerivativeErrorState_ = fbDerivativeErrorState_;
 }
 
 void __PID2Class::UpdateState(float dt) {
   // Protect for unlimited windup when Ki == 0
   if (Ki_ != 0.0f) {
-    IntegralErrorState_ += (dt*IntegralError_);
+    ffIntegralErrorState_ += (dt*ffIntegralError_);
+    fbIntegralErrorState_ += (dt*fbIntegralError_);
   } else {
-    IntegralErrorState_ = 0.0;
+    ffIntegralErrorState_ = 0.0;
+    fbIntegralErrorState_ = 0.0;
   }
 }
 
 void __PID2Class::CalculateCommand() {
-  float ProportionalCommand = Kp_*ProportionalError_;
-  float IntegralCommand = Ki_*IntegralErrorState_;
-  float DerivativeCommand = Kd_*DerivativeErrorState_;
-  Output_ = ProportionalCommand + IntegralCommand + DerivativeCommand;
+  ff_ = Kp_*ffProportionalError_ + Ki_*ffIntegralErrorState_ + Kd_*ffDerivativeErrorState_;
+  fb_ = Kp_*fbProportionalError_ + Ki_*fbIntegralErrorState_ + Kd_*fbDerivativeErrorState_;
+
+  Output_ = ff_ - fb_;
 
   // saturate cmd, set iErr to limit that produces saturated cmd
   // saturate command
   if (SatFlag_) {
     if (Output_ <= OutMin_) {
       Output_ = OutMin_;
+      ff_ = Output_ + fb_;
       Saturated_ = -1;
       // Re-compute the integrator state
-      InitializeState(Output_);
+      // InitializeState(Output_);
+      InitializeState(ff_, fb_);
     } else if (Output_ >= OutMax_) {
       Output_ = OutMax_;
+      ff_ = Output_ + fb_;
       Saturated_ = 1;
       // Re-compute the integrator state
-      InitializeState(Output_);
+      // InitializeState(Output_);
+      InitializeState(ff_, fb_);
     } else {
       Saturated_ = 0;
     }
@@ -121,14 +140,20 @@ void __PID2Class::CalculateCommand() {
 
 void __PID2Class::Reset() {
   // Reset internal values
-  ProportionalError_ = 0.0f;
-  DerivativeError_ = 0.0f;
-  IntegralError_ = 0.0f;
-  DerivativeErrorState_ = 0.0f;
+  ffProportionalError_ = 0.0f;
+  fbProportionalError_ = 0.0f;
+  ffDerivativeError_ = 0.0f;
+  fbDerivativeError_ = 0.0f;
+  ffIntegralError_ = 0.0f;
+  fbIntegralError_ = 0.0f;
+  ffDerivativeErrorState_ = 0.0f;
+  fbDerivativeErrorState_ = 0.0f;
 
   // Reset States
-  PreviousDerivativeError_ = 0.0f;
-  IntegralErrorState_ = 0.0f;
+  ffPreviousDerivativeError_ = 0.0f;
+  fbPreviousDerivativeError_ = 0.0f;
+  ffIntegralErrorState_ = 0.0f;
+  fbIntegralErrorState_ = 0.0f;
 
   // reset mode
   mode_ = GenericFunction::Mode::kStandby;

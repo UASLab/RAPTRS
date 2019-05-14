@@ -89,6 +89,8 @@ class PID2Class: public GenericFunction {
     struct Data {
       ElementPtr mode_node;
       ElementPtr output_node;
+      ElementPtr ff_node;
+      ElementPtr fb_node;
       ElementPtr saturated_node;
     };
     __PID2Class PID2Class_;
@@ -145,6 +147,8 @@ class PIDClass: public GenericFunction {
     struct Data {
         ElementPtr mode_node;
         ElementPtr output_node;
+        ElementPtr ff_node;
+        ElementPtr fb_node;
         ElementPtr saturated_node;
     };
     __PID2Class PID2Class_;
