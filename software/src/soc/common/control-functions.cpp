@@ -44,6 +44,8 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
     // pointer to log command data
     data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
+    data_.ff_node = deftree.initElement(RootPath + "/" + OutputName + "FF", "Control law output, feedforward component", LOG_FLOAT, LOG_NONE);
+    data_.fb_node = deftree.initElement(RootPath + "/" + OutputName + "FB", "Control law output, feedback component", LOG_FLOAT, LOG_NONE);
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
@@ -137,12 +139,16 @@ void PID2Class::Run(Mode mode) {
 
   // Run
   float Output = 0.0f;
+  float ff = 0.0f;
+  float fb = 0.0f;
   int8_t Saturated = 0;
   PID2Class_.Run(mode,
                  config_.reference_node->getFloat(),
                  config_.feedback_node->getFloat(),
-                 config_.SampleTime, &Output, &Saturated);
+                 config_.SampleTime, &Output, &ff, &fb, &Saturated);
   data_.output_node->setFloat(Output);
+  data_.ff_node->setFloat(ff);
+  data_.fb_node->setFloat(fb);
   data_.saturated_node->setInt(Saturated);
 }
 
@@ -151,6 +157,8 @@ void PID2Class::Clear() {
   data_.mode_node->setInt(kStandby);
   data_.saturated_node->setInt(0);
   data_.output_node->setFloat(0.0f);
+  data_.ff_node->setFloat(0.0f);
+  data_.fb_node->setFloat(0.0f);
   ReferenceKey_.clear();
   FeedbackKey_.clear();
   PID2Class_.Clear();
@@ -177,6 +185,8 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
     // pointer to log command data
     data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
+    data_.ff_node = deftree.initElement(RootPath + "/" + OutputName + "FF", "Control law output, feedforward component", LOG_FLOAT, LOG_NONE);
+    data_.fb_node = deftree.initElement(RootPath + "/" + OutputName + "FB", "Control law output, feedback component", LOG_FLOAT, LOG_NONE);
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
@@ -253,9 +263,13 @@ void PIDClass::Run(Mode mode) {
 
   // Run
   float Output = 0.0f;
+  float ff = 0.0f;
+  float fb = 0.0f;
   int8_t Saturated = 0;
-  PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.SampleTime, &Output, &Saturated);
+  PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.SampleTime, &Output, &ff, &fb, &Saturated);
   data_.output_node->setFloat(Output);
+  data_.ff_node->setFloat(ff);
+  data_.fb_node->setFloat(fb);
   data_.saturated_node->setInt(Saturated);
 }
 
@@ -264,6 +278,8 @@ void PIDClass::Clear() {
   data_.mode_node->setInt(kStandby);
   data_.saturated_node->setInt(0);
   data_.output_node->setFloat(0.0f);
+  data_.ff_node->setFloat(0.0f);
+  data_.fb_node->setFloat(0.0f);
   ReferenceKey_.clear();
   PID2Class_.Clear();
 }
