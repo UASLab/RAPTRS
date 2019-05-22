@@ -10,14 +10,14 @@ The following steps are used to create a development environment:
 4. Install [Arudino](https://www.arduino.cc/en/Main/Software) and [Teensyduino](https://www.pjrc.com/teensy/td_download.html)
 
 ### BeagleBone Black Image
-1. Download the BeagleBone Black [image](https://www.dropbox.com/s/yodt8tj4s9jyjuw/SOC_v9.5.img.xz?dl=0).
+1. Download the BeagleBone Black [image](https://www.dropbox.com/s/plqvbqe4fgw76vp/SOC.img.xz?dl=0).
 2. Install [xz-utils](https://packages.debian.org/stretch/xz-utils) and extract the compressed image.
 ```
-$ xz -d SOC_v9.5.img.xz
+$ xz -d SOC.img.xz
 ```
 3. Insert a micro-sd and write the image to the micro-sd card, where /dev/sdX is the drive for your micro-sd. You can use a utility like [GParted](https://gparted.org/) to inspect your machine's drives and ensure that you are writing to the correct location.
 ```
-$ sudo dd if=SOC_v9.5.img of=/dev/sdX
+$ sudo dd if=SOC.img of=/dev/sdX
 ```
 4. Insert the micro-sd in the BeagleBone Black and power on the device while holding down the "User Boot" button. Power can be supplied by plugging the BeagleBone Black into your computer with a USB micro plug. You should see all 4 LEDs lightup before lighting sequentially. This is flashing the image to the BeagleBone Black EMMC non-volatile memory. When the lights all turn off, you can remove the micro-sd and boot the BeagleBone Black.
 
