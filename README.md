@@ -10,7 +10,7 @@ The following steps are used to create a development environment:
 4. Install [Arudino](https://www.arduino.cc/en/Main/Software) and [Teensyduino](https://www.pjrc.com/teensy/td_download.html)
 
 ### BeagleBone Black Image
-1. Download the BeagleBone Black [image](https://www.dropbox.com/s/iflf17w17z6j3wi/SOC_v9.5_B.img.xz?dl=0).
+1. Download the BeagleBone Black [image](https://www.dropbox.com/s/yodt8tj4s9jyjuw/SOC_v9.5.img.xz?dl=0).
 2. Install [xz-utils](https://packages.debian.org/stretch/xz-utils) and extract the compressed image.
 ```
 $ xz -d SOC_v9.5_B.img.xz
