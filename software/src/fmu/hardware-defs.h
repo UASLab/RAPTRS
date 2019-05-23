@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "Arduino.h"
 
 // FMU Software Version
-const String SoftwareVersion = "0.8.1";
+const String SoftwareVersion = "0.8.3";
 
 // Debug port
 const uint32_t kDebugBaud = 115200;                           // Baudrate for status and debug messages

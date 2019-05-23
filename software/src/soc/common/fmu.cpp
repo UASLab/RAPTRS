@@ -107,7 +107,8 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
   Message message;
   std::vector<uint8_t> Payload;
   size_t PayloadLocation = 0;
-  if (ReceiveMessage(&message,&Payload)) {
+  bool freshdata = 0;
+  while (ReceiveMessage(&message,&Payload)) {
     if (message == kSensorData) {
       // meta data
       uint8_t AcquireInternalData,NumberPwmVoltageSensor,NumberSbusVoltageSensor,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
@@ -197,7 +198,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
         cout << "WARNING: RESIZING Analog size to: "<< (int)NumberAnalogSensor << endl;
         SensorNodes_.Analog.resize(NumberAnalogSensor);
       }
-      
+
       // sensor data
       memcpy(SensorData_.Time_us.data(),Payload.data()+PayloadLocation,SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]));
       PayloadLocation += SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]);
@@ -232,14 +233,13 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
           // copy the incoming sensor data into the definition tree
           PublishSensors();
       }
-      
+
       return true;
-    } else {
-      return false;
+      freshdata = 1;
     }
-  } else {
-    return false;
   }
+  return freshdata;
+
 }
 
 /* Sends effector commands to FMU */
@@ -380,10 +380,10 @@ void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config) {
     SensorNodes_.Mpu9250[i].p = deftree.initElement(Path+"/GyroX_rads", "MPU-9250_" + to_string(i) + " X gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
     SensorNodes_.Mpu9250[i].q = deftree.initElement(Path+"/GyroY_rads", "MPU-9250_" + to_string(i) + " Y gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
     SensorNodes_.Mpu9250[i].r = deftree.initElement(Path+"/GyroZ_rads", "MPU-9250_" + to_string(i) + " Z gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.Mpu9250[i].hx = deftree.initElement(Path+"/MagX_uT", "MPU-9250_" + to_string(i) + " X magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.Mpu9250[i].hy = deftree.initElement(Path+"/MagY_uT", "MPU-9250_" + to_string(i) + " Y magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.Mpu9250[i].hz = deftree.initElement(Path+"/MagZ_uT", "MPU-9250_" + to_string(i) + " Z magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.Mpu9250[i].temp = deftree.initElement(Path+"/Temperature_C", "MPU-9250_" + to_string(i) + " temperature, C", LOG_FLOAT, LOG_NONE);
+    // SensorNodes_.Mpu9250[i].hx = deftree.initElement(Path+"/MagX_uT", "MPU-9250_" + to_string(i) + " X magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+    // SensorNodes_.Mpu9250[i].hy = deftree.initElement(Path+"/MagY_uT", "MPU-9250_" + to_string(i) + " Y magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+    // SensorNodes_.Mpu9250[i].hz = deftree.initElement(Path+"/MagZ_uT", "MPU-9250_" + to_string(i) + " Z magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+    // SensorNodes_.Mpu9250[i].temp = deftree.initElement(Path+"/Temperature_C", "MPU-9250_" + to_string(i) + " temperature, C", LOG_FLOAT, LOG_NONE);
   }
   for (size_t i=0; i < SensorData_.Bme280.size(); i++) {
     string Path = RootPath_+"/"+GetSensorOutputName(Config,"Bme280",i);
@@ -409,9 +409,9 @@ void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config) {
     SensorNodes_.uBlox[i].vn = deftree.initElement(Path+"/NorthVelocity_ms", "uBlox_" + to_string(i) + " north velocity, m/s", LOG_FLOAT, LOG_NONE);
     SensorNodes_.uBlox[i].ve = deftree.initElement(Path+"/EastVelocity_ms", "uBlox_" + to_string(i) + " east velocity, m/s", LOG_FLOAT, LOG_NONE);
     SensorNodes_.uBlox[i].vd = deftree.initElement(Path+"/DownVelocity_ms", "uBlox_" + to_string(i) + " down velocity, m/s", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.uBlox[i].horiz_acc = deftree.initElement(Path+"/HorizontalAccuracy_m", "uBlox_" + to_string(i) + " horizontal accuracy estimate, m", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.uBlox[i].vert_acc = deftree.initElement(Path+"/VerticalAccuracy_m", "uBlox_" + to_string(i) + " vertical accuracy estimate, m", LOG_FLOAT, LOG_NONE);
-    SensorNodes_.uBlox[i].vel_acc = deftree.initElement(Path+"/VelocityAccuracy_ms", "uBlox_" + to_string(i) + " velocity accuracy estimate, m/s", LOG_FLOAT, LOG_NONE);
+    SensorNodes_.uBlox[i].horiz_acc = deftree.initElement(Path+"/AccuracyH_m", "uBlox_" + to_string(i) + " horizontal accuracy estimate, m", LOG_FLOAT, LOG_NONE);
+    SensorNodes_.uBlox[i].vert_acc = deftree.initElement(Path+"/AccuracyV_m", "uBlox_" + to_string(i) + " vertical accuracy estimate, m", LOG_FLOAT, LOG_NONE);
+    SensorNodes_.uBlox[i].vel_acc = deftree.initElement(Path+"/AccuracyS_ms", "uBlox_" + to_string(i) + " velocity accuracy estimate, m/s", LOG_FLOAT, LOG_NONE);
     SensorNodes_.uBlox[i].pdop = deftree.initElement(Path+"/pDOP", "uBlox_" + to_string(i) + " position dilution of precision", LOG_FLOAT, LOG_NONE);
   }
   for (size_t i=0; i < SensorData_.Swift.size(); i++) {
@@ -439,7 +439,7 @@ void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config) {
   }
   for (size_t i=0; i < SensorData_.Analog.size(); i++) {
     string Path = RootPath_+"/"+GetSensorOutputName(Config,"Analog",i);
-    SensorNodes_.Analog[i].volt = deftree.initElement(Path+"/Voltage_V", "Analog_" + to_string(i) + " measured voltage, V", LOG_FLOAT, LOG_NONE);
+    // SensorNodes_.Analog[i].volt = deftree.initElement(Path+"/Voltage_V", "Analog_" + to_string(i) + " measured voltage, V", LOG_FLOAT, LOG_NONE);
     SensorNodes_.Analog[i].val = deftree.initElement(Path+"/CalibratedValue", "Analog_" + to_string(i) + " calibrated value", LOG_FLOAT, LOG_NONE);
   }
 }
@@ -511,15 +511,15 @@ void FlightManagementUnit::PublishSensors() {
     SensorNodes_.Time_us[i]->setLong(SensorData_.Time_us[i]);
   }
   for (size_t i=0; i < SensorData_.InternalMpu9250.size(); i++) {
-    SensorNodes_.InternalMpu9250[i].ax->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(0,0));
-    SensorNodes_.InternalMpu9250[i].ay->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(1,0));
-    SensorNodes_.InternalMpu9250[i].az->setFloat(SensorData_.InternalMpu9250[i].Accel_mss(2,0));
-    SensorNodes_.InternalMpu9250[i].p->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(0,0));
-    SensorNodes_.InternalMpu9250[i].q->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(1,0));
-    SensorNodes_.InternalMpu9250[i].r->setFloat(SensorData_.InternalMpu9250[i].Gyro_rads(2,0));
-    SensorNodes_.InternalMpu9250[i].hx->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(0,0));
-    SensorNodes_.InternalMpu9250[i].hy->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(1,0));
-    SensorNodes_.InternalMpu9250[i].hz->setFloat(SensorData_.InternalMpu9250[i].Mag_uT(2,0));
+    SensorNodes_.InternalMpu9250[i].ax->setFloat(SensorData_.InternalMpu9250[i].AccelX_mss);
+    SensorNodes_.InternalMpu9250[i].ay->setFloat(SensorData_.InternalMpu9250[i].AccelY_mss);
+    SensorNodes_.InternalMpu9250[i].az->setFloat(SensorData_.InternalMpu9250[i].AccelZ_mss);
+    SensorNodes_.InternalMpu9250[i].p->setFloat(SensorData_.InternalMpu9250[i].GyroX_rads);
+    SensorNodes_.InternalMpu9250[i].q->setFloat(SensorData_.InternalMpu9250[i].GyroY_rads);
+    SensorNodes_.InternalMpu9250[i].r->setFloat(SensorData_.InternalMpu9250[i].GyroZ_rads);
+    SensorNodes_.InternalMpu9250[i].hx->setFloat(SensorData_.InternalMpu9250[i].MagX_uT);
+    SensorNodes_.InternalMpu9250[i].hy->setFloat(SensorData_.InternalMpu9250[i].MagY_uT);
+    SensorNodes_.InternalMpu9250[i].hz->setFloat(SensorData_.InternalMpu9250[i].MagZ_uT);
     SensorNodes_.InternalMpu9250[i].temp->setFloat(SensorData_.InternalMpu9250[i].Temperature_C);
   }
   for (size_t i=0; i < SensorData_.InternalBme280.size(); i++) {
@@ -540,17 +540,23 @@ void FlightManagementUnit::PublishSensors() {
     SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
   }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
+
+    const float G = 9.807f;
+    const float d2r = 3.14159265359f/180.0f;
+    float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+    float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+
     SensorNodes_.Mpu9250[i].status->setInt(SensorData_.Mpu9250[i].status);
-    SensorNodes_.Mpu9250[i].ax->setFloat(SensorData_.Mpu9250[i].Accel_mss(0,0));
-    SensorNodes_.Mpu9250[i].ay->setFloat(SensorData_.Mpu9250[i].Accel_mss(1,0));
-    SensorNodes_.Mpu9250[i].az->setFloat(SensorData_.Mpu9250[i].Accel_mss(2,0));
-    SensorNodes_.Mpu9250[i].p->setFloat(SensorData_.Mpu9250[i].Gyro_rads(0,0));
-    SensorNodes_.Mpu9250[i].q->setFloat(SensorData_.Mpu9250[i].Gyro_rads(1,0));
-    SensorNodes_.Mpu9250[i].r->setFloat(SensorData_.Mpu9250[i].Gyro_rads(2,0));
-    SensorNodes_.Mpu9250[i].hx->setFloat(SensorData_.Mpu9250[i].Mag_uT(0,0));
-    SensorNodes_.Mpu9250[i].hy->setFloat(SensorData_.Mpu9250[i].Mag_uT(1,0));
-    SensorNodes_.Mpu9250[i].hz->setFloat(SensorData_.Mpu9250[i].Mag_uT(2,0));
-    SensorNodes_.Mpu9250[i].temp->setFloat(SensorData_.Mpu9250[i].Temperature_C);
+    SensorNodes_.Mpu9250[i].ax->setFloat((float) (SensorData_.Mpu9250[i].AccelX_ct) * accelScale);
+    SensorNodes_.Mpu9250[i].ay->setFloat((float) (SensorData_.Mpu9250[i].AccelY_ct) * accelScale);
+    SensorNodes_.Mpu9250[i].az->setFloat((float) (SensorData_.Mpu9250[i].AccelZ_ct) * accelScale);
+    SensorNodes_.Mpu9250[i].p->setFloat((float) (SensorData_.Mpu9250[i].GyroX_ct) * gyroScale);
+    SensorNodes_.Mpu9250[i].q->setFloat((float) (SensorData_.Mpu9250[i].GyroY_ct) * gyroScale);
+    SensorNodes_.Mpu9250[i].r->setFloat((float) (SensorData_.Mpu9250[i].GyroZ_ct) * gyroScale);
+    // SensorNodes_.Mpu9250[i].hx->setFloat(SensorData_.Mpu9250[i].MagX_uT);
+    // SensorNodes_.Mpu9250[i].hy->setFloat(SensorData_.Mpu9250[i].MagY_uT;
+    // SensorNodes_.Mpu9250[i].hz->setFloat(SensorData_.Mpu9250[i].MagZ_uT);
+    // SensorNodes_.Mpu9250[i].temp->setFloat(SensorData_.Mpu9250[i].Temperature_C);
   }
   for (size_t i=0; i < SensorData_.Bme280.size(); i++) {
     SensorNodes_.Bme280[i].status->setInt(SensorData_.Bme280[i].status);
@@ -568,15 +574,15 @@ void FlightManagementUnit::PublishSensors() {
     SensorNodes_.uBlox[i].hour->setInt(SensorData_.uBlox[i].Hour);
     SensorNodes_.uBlox[i].min->setInt(SensorData_.uBlox[i].Min);
     SensorNodes_.uBlox[i].sec->setInt(SensorData_.uBlox[i].Sec);
-    SensorNodes_.uBlox[i].lat->setDouble(SensorData_.uBlox[i].LLA(0,0));
-    SensorNodes_.uBlox[i].lon->setDouble(SensorData_.uBlox[i].LLA(1,0));
-    SensorNodes_.uBlox[i].alt->setFloat(SensorData_.uBlox[i].LLA(2,0));
-    SensorNodes_.uBlox[i].vn->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(0,0));
-    SensorNodes_.uBlox[i].ve->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(1,0));
-    SensorNodes_.uBlox[i].vd->setFloat(SensorData_.uBlox[i].NEDVelocity_ms(2,0));
-    SensorNodes_.uBlox[i].horiz_acc->setFloat(SensorData_.uBlox[i].Accuracy(0,0));
-    SensorNodes_.uBlox[i].vert_acc->setFloat(SensorData_.uBlox[i].Accuracy(1,0));
-    SensorNodes_.uBlox[i].vel_acc->setFloat(SensorData_.uBlox[i].Accuracy(2,0));
+    SensorNodes_.uBlox[i].lat->setDouble(SensorData_.uBlox[i].Latitude_rad);
+    SensorNodes_.uBlox[i].lon->setDouble(SensorData_.uBlox[i].Longitude_rad);
+    SensorNodes_.uBlox[i].alt->setFloat(SensorData_.uBlox[i].Altitude_m);
+    SensorNodes_.uBlox[i].vn->setFloat(SensorData_.uBlox[i].NorthVelocity_ms);
+    SensorNodes_.uBlox[i].ve->setFloat(SensorData_.uBlox[i].EastVelocity_ms);
+    SensorNodes_.uBlox[i].vd->setFloat(SensorData_.uBlox[i].DownVelocity_ms);
+    SensorNodes_.uBlox[i].horiz_acc->setFloat(SensorData_.uBlox[i].HorizontalAccuracy_m);
+    SensorNodes_.uBlox[i].vert_acc->setFloat(SensorData_.uBlox[i].VerticalAccuracy_m);
+    SensorNodes_.uBlox[i].vel_acc->setFloat(SensorData_.uBlox[i].VelocityAccuracy_ms);
     SensorNodes_.uBlox[i].pdop->setFloat(SensorData_.uBlox[i].pDOP);
   }
   for (size_t i=0; i < SensorData_.Swift.size(); i++) {
@@ -600,7 +606,7 @@ void FlightManagementUnit::PublishSensors() {
     }
   }
   for (size_t i=0; i < SensorData_.Analog.size(); i++) {
-    SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
+    // SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
     SensorNodes_.Analog[i].val->setFloat(SensorData_.Analog[i].CalibratedValue);
   }
 }

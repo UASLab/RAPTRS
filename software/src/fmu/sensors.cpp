@@ -66,15 +66,15 @@ void InternalMpu9250Sensor::UpdateConfig(const char *JsonString,std::string Root
       }
     }
     std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.Accel_mss(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.Accel_mss(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.Accel_mss(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.Gyro_rads(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.Gyro_rads(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.Gyro_rads(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.Mag_uT(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.Mag_uT(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.Mag_uT(2,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.AccelX_mss);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.AccelY_mss);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.AccelZ_mss);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.GyroX_rads);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.GyroY_rads);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.GyroZ_rads);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.MagX_uT);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.MagY_uT);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.MagZ_uT);
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
   } else {
     while(1){
@@ -145,9 +145,20 @@ void InternalMpu9250Sensor::GetData(Data *DataPtr) {
   Mag_Imu_uT(0,0) = Mpu_->getMagX_uT();
   Mag_Imu_uT(1,0) = Mpu_->getMagY_uT();
   Mag_Imu_uT(2,0) = Mpu_->getMagZ_uT();
-  data_.Accel_mss = config_.Rotation * config_.Orientation * Accel_Imu_mss;
-  data_.Gyro_rads = config_.Rotation * config_.Orientation * Gyro_Imu_rads;
-  data_.Mag_uT = config_.Rotation * config_.Orientation * Mag_Imu_uT;
+
+  Accel_mss_ = config_.Rotation * config_.Orientation * Accel_Imu_mss;
+  Gyro_rads_ = config_.Rotation * config_.Orientation * Gyro_Imu_rads;
+  Mag_uT_ = config_.Rotation * config_.Orientation * Mag_Imu_uT;
+
+  data_.AccelX_mss = Accel_mss_(0,0);
+  data_.AccelY_mss = Accel_mss_(1,0);
+  data_.AccelZ_mss = Accel_mss_(2,0);
+  data_.GyroX_rads = Gyro_rads_(0,0);
+  data_.GyroY_rads = Gyro_rads_(1,0);
+  data_.GyroZ_rads = Gyro_rads_(2,0);
+  data_.MagX_uT = Mag_uT_(0,0);
+  data_.MagY_uT = Mag_uT_(1,0);
+  data_.MagZ_uT = Mag_uT_(2,0);
   data_.Temperature_C = Mpu_->getTemperature_C();
   *DataPtr = data_;
 }
@@ -229,16 +240,16 @@ void Mpu9250Sensor::UpdateConfig(const char *JsonString,std::string RootPath,Def
     }
     std::string Output = (std::string) Config.get<String>("Output").c_str();
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.ReadStatus);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.Accel_mss(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.Accel_mss(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.Accel_mss(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.Gyro_rads(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.Gyro_rads(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.Gyro_rads(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.Mag_uT(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.Mag_uT(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.Mag_uT(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&Accel_mss_(0,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&Accel_mss_(1,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&Accel_mss_(2,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&Gyro_rads_(0,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&Gyro_rads_(1,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&Gyro_rads_(2,0));
+    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.MagX_uT);
+    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.MagY_uT);
+    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.MagZ_uT);
+    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
   } else {
     while(1){
       Serial.println("ERROR: Mpu9250 sensor failed to parse.");
@@ -291,9 +302,10 @@ void Mpu9250Sensor::Begin() {
 
 /* get the MPU9250 sensor data */
 int Mpu9250Sensor::GetData(Data *DataPtr) {
-  Eigen::Matrix<float,3,1>Accel_Imu_mss;
-  Eigen::Matrix<float,3,1>Gyro_Imu_rads;
-  Eigen::Matrix<float,3,1>Mag_Imu_uT;
+  Eigen::Matrix<float,3,1> Accel_Imu_mss;
+  Eigen::Matrix<float,3,1> Gyro_Imu_rads;
+  Eigen::Matrix<float,3,1> Mag_Imu_uT;
+
   status_ = Mpu_->readSensor();
   Accel_Imu_mss(0,0) = Mpu_->getAccelX_mss();
   Accel_Imu_mss(1,0) = Mpu_->getAccelY_mss();
@@ -304,11 +316,28 @@ int Mpu9250Sensor::GetData(Data *DataPtr) {
   Mag_Imu_uT(0,0) = Mpu_->getMagX_uT();
   Mag_Imu_uT(1,0) = Mpu_->getMagY_uT();
   Mag_Imu_uT(2,0) = Mpu_->getMagZ_uT();
-  data_.Accel_mss = config_.Rotation * Accel_Imu_mss;
-  data_.Gyro_rads = config_.Rotation * Gyro_Imu_rads;
-  data_.Mag_uT = config_.Rotation * Mag_Imu_uT;
-  data_.Temperature_C = Mpu_->getTemperature_C();
+
+  Accel_mss_ = config_.Rotation * Accel_Imu_mss;
+  Gyro_rads_ = config_.Rotation * Gyro_Imu_rads;
+  Mag_uT_ = config_.Rotation * Mag_Imu_uT;
+
+  const float G = 9.807f;
+  const float d2r = 3.14159265359f/180.0f;
+  float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+  float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+
   data_.ReadStatus = status_;
+  data_.AccelX_ct = (int) (Accel_mss_(0,0) / accelScale);
+  data_.AccelY_ct = (int) (Accel_mss_(1,0) / accelScale);
+  data_.AccelZ_ct = (int) (Accel_mss_(2,0) / accelScale);
+  data_.GyroX_ct = (int) (Gyro_rads_(0,0) / gyroScale);
+  data_.GyroY_ct = (int) (Gyro_rads_(1,0) / gyroScale);
+  data_.GyroZ_ct = (int) (Gyro_rads_(2,0) / gyroScale);
+
+  // data_.MagX_ct = Mag_uT(0,0);
+  // data_.MagY_ct = Mag_uT(1,0);
+  // data_.MagZ_ct = Mag_uT(2,0);
+  // data_.Temperature_ct = Mpu_->getTemperature_C();
   *DataPtr = data_;
   return status_;
 }
@@ -478,15 +507,15 @@ void uBloxSensor::UpdateConfig(const char *JsonString,std::string RootPath,Defin
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Hour",&data_.Hour);
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Minute",&data_.Min);
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Second",&data_.Sec);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Latitude_rad",&data_.LLA(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Longitude_rad",&data_.LLA(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Altitude_m",&data_.LLA(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NorthVelocity_ms",&data_.NEDVelocity_ms(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/EastVelocity_ms",&data_.NEDVelocity_ms(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/DownVelocity_ms",&data_.NEDVelocity_ms(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/HorizontalAccuracy_m",&data_.Accuracy(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VerticalAccuracy_m",&data_.Accuracy(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VelocityAccuracy_ms",&data_.Accuracy(2,0));
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Latitude_rad",&data_.Longitude_rad);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Longitude_rad",&data_.Latitude_rad);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Altitude_m",&data_.Altitude_m);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NorthVelocity_ms",&data_.NorthVelocity_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/EastVelocity_ms",&data_.EastVelocity_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/DownVelocity_ms",&data_.DownVelocity_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/HorizontalAccuracy_m",&data_.HorizontalAccuracy_m);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VerticalAccuracy_m",&data_.VerticalAccuracy_m);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VelocityAccuracy_ms",&data_.VelocityAccuracy_ms);
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/pDOP",&data_.pDOP);
   } else {
     while(1){
@@ -553,15 +582,15 @@ void uBloxSensor::UpdateData() {
     data_.Hour = uBloxData_.utcHour;
     data_.Min = uBloxData_.utcMin;
     data_.Sec = uBloxData_.utcSec;
-    data_.LLA(0,0) = uBloxData_.lat*kD2R;
-    data_.LLA(1,0) = uBloxData_.lon*kD2R;
-    data_.LLA(2,0) = uBloxData_.hMSL;
-    data_.NEDVelocity_ms(0,0) = uBloxData_.velN;
-    data_.NEDVelocity_ms(1,0) = uBloxData_.velE;
-    data_.NEDVelocity_ms(2,0) = uBloxData_.velD;
-    data_.Accuracy(0,0) = uBloxData_.hAcc;
-    data_.Accuracy(1,0) = uBloxData_.vAcc;
-    data_.Accuracy(2,0) = uBloxData_.sAcc;
+    data_.Latitude_rad = uBloxData_.lat*kD2R;
+    data_.Longitude_rad = uBloxData_.lon*kD2R;
+    data_.Altitude_m = uBloxData_.hMSL;
+    data_.NorthVelocity_ms = uBloxData_.velN;
+    data_.EastVelocity_ms = uBloxData_.velE;
+    data_.DownVelocity_ms = uBloxData_.velD;
+    data_.HorizontalAccuracy_m = uBloxData_.hAcc;
+    data_.VerticalAccuracy_m = uBloxData_.vAcc;
+    data_.VelocityAccuracy_ms = uBloxData_.sAcc;
     data_.pDOP = uBloxData_.pDOP;
   }
 }
@@ -874,7 +903,7 @@ void AnalogSensor::UpdateConfig(const char *JsonString,std::string RootPath,Defi
       }
     }
     std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Voltage_V",(uint8_t*)&data_.Voltage_V);
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Voltage_V",(uint8_t*)&Voltage_V_);
     DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/CalibratedValue",&data_.CalibratedValue);
   } else {
     while(1){
@@ -901,8 +930,8 @@ void AnalogSensor::Begin() {
 
 /* get analog sensor data */
 void AnalogSensor::GetData(Data *DataPtr) {
-  data_.Voltage_V = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
-  data_.CalibratedValue = PolyVal(config_.Calibration,data_.Voltage_V);
+  Voltage_V_ = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
+  data_.CalibratedValue = PolyVal(config_.Calibration, Voltage_V_);
   *DataPtr = data_;
 }
 
@@ -913,8 +942,16 @@ void AnalogSensor::End() {}
 void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
   DynamicJsonBuffer ConfigBuffer;
   std::vector<char> buffer;
+
+  Serial.print("SensorNodes Parsing: ");
+  Serial.print(JsonString);
+
   JsonObject &Config = ConfigBuffer.parseObject(JsonString);
   buffer.resize(ConfigBuffer.size());
+
+  Serial.print("\tSuccess: ");
+  Serial.println(Config.success());
+
   if (Config.success()) {
     if (Config.containsKey("Address")) {
       // get the BFS address
@@ -944,19 +981,25 @@ void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,Defin
               DefinitionTreePtr->InitMember(RootPath+"/"+Output,&data_.SbusVoltage_V[0]);
             }
             if (Sensor["Type"] == "Mpu9250") {
+
+              const float G = 9.807f;
+              const float d2r = 3.14159265359f/180.0f;
+              float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+              float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+
               data_.Mpu9250.resize(data_.Mpu9250.size()+1);
               std::string Output = (std::string) Sensor.get<String>("Output").c_str();
               DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.Mpu9250.back().ReadStatus);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.Mpu9250.back().Accel_mss(0,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.Mpu9250.back().Accel_mss(1,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.Mpu9250.back().Accel_mss(2,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.Mpu9250.back().Gyro_rads(0,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.Mpu9250.back().Gyro_rads(1,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.Mpu9250.back().Gyro_rads(2,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.Mpu9250.back().Mag_uT(0,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.Mpu9250.back().Mag_uT(1,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.Mpu9250.back().Mag_uT(2,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Mpu9250.back().Temperature_C);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.Mpu9250.back().AccelX_ct);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.Mpu9250.back().AccelY_ct);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.Mpu9250.back().AccelZ_ct);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.Mpu9250.back().GyroX_ct);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.Mpu9250.back().GyroY_ct);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.Mpu9250.back().GyroZ_ct);
+              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&(data_.Mpu9250.back().MagX_uT));
+              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&(data_.Mpu9250.back().MagY_uT));
+              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&(data_.Mpu9250.back().MagZ_uT));
+              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Mpu9250.back().Temperature_C);
             }
             if (Sensor["Type"] == "Bme280") {
               data_.Bme280.resize(data_.Bme280.size()+1);
@@ -978,15 +1021,15 @@ void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,Defin
               DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Hour",&data_.uBlox.back().Hour);
               DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Minute",&data_.uBlox.back().Min);
               DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Second",&data_.uBlox.back().Sec);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Latitude_rad",&data_.uBlox.back().LLA(0,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Longitude_rad",&data_.uBlox.back().LLA(1,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Altitude_m",&data_.uBlox.back().LLA(2,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NorthVelocity_ms",&data_.uBlox.back().NEDVelocity_ms(0,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/EastVelocity_ms",&data_.uBlox.back().NEDVelocity_ms(1,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/DownVelocity_ms",&data_.uBlox.back().NEDVelocity_ms(2,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/HorizontalAccuracy_m",&data_.uBlox.back().Accuracy(0,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VerticalAccuracy_m",&data_.uBlox.back().Accuracy(1,0));
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VelocityAccuracy_ms",&data_.uBlox.back().Accuracy(2,0));
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Latitude_rad",&data_.uBlox.back().Latitude_rad);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Longitude_rad",&data_.uBlox.back().Longitude_rad);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Altitude_m",&data_.uBlox.back().Altitude_m);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NorthVelocity_ms",&data_.uBlox.back().NorthVelocity_ms);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/EastVelocity_ms",&data_.uBlox.back().EastVelocity_ms);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/DownVelocity_ms",&data_.uBlox.back().DownVelocity_ms);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/HorizontalAccuracy_m",&data_.uBlox.back().HorizontalAccuracy_m);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VerticalAccuracy_m",&data_.uBlox.back().VerticalAccuracy_m);
+              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VelocityAccuracy_ms",&data_.uBlox.back().VelocityAccuracy_ms);
               DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/pDOP",&data_.uBlox.back().pDOP);
             }
             if (Sensor["Type"] == "Swift") {
@@ -1018,7 +1061,7 @@ void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,Defin
             if (Sensor["Type"] == "Analog") {
               data_.Analog.resize(data_.Analog.size()+1);
               std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Voltage_V",(uint8_t*)&data_.Analog.back().Voltage_V);
+              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Voltage_V",(uint8_t*)&data_.Analog.back().Voltage_V);
               DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/CalibratedValue",&data_.Analog.back().CalibratedValue);
             }
           }
@@ -1026,9 +1069,14 @@ void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,Defin
       }
     } else {
       while(1){
-        Serial.println("ERROR: Sensor Node parse fail.");
+        Serial.println("ERROR: Sensor Node Address required.");
         Serial.println(JsonString);
       }
+    }
+  } else {
+    while(1){
+      Serial.println("ERROR: Sensor Configuration failed to parse.");
+      Serial.println(JsonString);
     }
   }
 }
@@ -1128,13 +1176,10 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
 
   Serial.print("Parsing: ");
   Serial.println(JsonString);
-  JsonObject &Sensor = ConfigBuffer.parseObject(JsonString);
 
-  Serial.print("Parsed Size: ");
+  JsonObject &Sensor = ConfigBuffer.parseObject(JsonString);
   buffer.resize(ConfigBuffer.size());
 
-  Serial.print("\tParsed Size: ");
-  Serial.print(buffer.size());
   Serial.print("\tSuccess: ");
   Serial.println(Sensor.success());
 
@@ -1462,7 +1507,7 @@ void AircraftSensors::ReadSyncSensors() {
     data_.SbusVoltage_V[0] = ((float)analogRead(kSbusVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
   }
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Mpu9250[i].GetData(&data_.Mpu9250[i]);
     if (status < 0) {
       Mpu9250Sensor::Config TempConfig;
@@ -1473,7 +1518,7 @@ void AircraftSensors::ReadSyncSensors() {
     }
   }
   for (size_t i=0; i < classes_.Bme280.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Bme280[i].GetData(&data_.Bme280[i]);
     if (status < 0) {
       Bme280Sensor::Config TempConfig;
@@ -1487,14 +1532,14 @@ void AircraftSensors::ReadSyncSensors() {
     classes_.uBlox[i].GetData(&data_.uBlox[i]);
   }
   for (size_t i=0; i < classes_.Swift.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Swift[i].GetData(&data_.Swift[i]);
     if (status < 0) {
       ResetI2cBus_ = true;
     }
   }
   for (size_t i=0; i < classes_.Ams5915.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Ams5915[i].GetData(&data_.Ams5915[i]);
     if (status < 0) {
       ResetI2cBus_ = true;
@@ -1507,7 +1552,7 @@ void AircraftSensors::ReadSyncSensors() {
     classes_.Analog[i].GetData(&data_.Analog[i]);
   }
   for (size_t i=0; i < classes_.Nodes.size(); i++) {
-    int status;
+    int8_t status;
     status = classes_.Nodes[i].GetData(&data_.Nodes[i]);
     if (status < 0) {
       ResetBfsBus_ = true;

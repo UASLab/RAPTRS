@@ -53,11 +53,17 @@ class Mpu9250Sensor {
       uint8_t SRD = 0;                                                              // Sample rate divider
     };
     struct Data {
-      int ReadStatus = -1;                                                          // positive if a good read or negative if not
-      Eigen::Matrix<float,3,1>Accel_mss = Eigen::Matrix<float,3,1>::Zero();         // x,y,z accelerometers, m/s/s
-      Eigen::Matrix<float,3,1>Gyro_rads = Eigen::Matrix<float,3,1>::Zero();         // x,y,z gyros, rad/s
-      Eigen::Matrix<float,3,1>Mag_uT = Eigen::Matrix<float,3,1>::Zero();            // x,y,z magnetometers, uT
-      float Temperature_C = 0.0f;                                                   // Temperature, C
+      int8_t ReadStatus = -1;
+      int16_t AccelX_ct = 0; // x,y,z accelerometers, counts
+      int16_t AccelY_ct = 0;
+      int16_t AccelZ_ct = 0;
+      int16_t GyroX_ct = 0; // x,y,z gyros, counts
+      int16_t GyroY_ct = 0;
+      int16_t GyroZ_ct = 0;
+      // int16_t MagX_ct = 0;    // x,y,z magnetometers, counts
+      // int16_t MagY_ct = 0;
+      // int16_t MagZ_ct = 0;
+      // int16_t Temperature_ct = 0.0f;   // Temperature, counts
     };
     void UpdateConfig(const char *JsonString);
     void SetConfig(const Config &ConfigRef);
@@ -71,7 +77,10 @@ class Mpu9250Sensor {
     Data data_;
     SPIClass *_spi;
     i2c_t3 *_i2c;
-    int status_;
+    int8_t status_;
+    Eigen::Matrix<float,3,1> Accel_mss_;
+    Eigen::Matrix<float,3,1> Gyro_rads_;
+    Eigen::Matrix<float,3,1> Mag_uT_;
 };
 
 /* class for external BME-280 sensors */
@@ -88,7 +97,7 @@ class Bme280Sensor {
       uint8_t SckPin = 14;
     };
     struct Data {
-      int ReadStatus = -1;                                                          // positive if a good read or negative if not
+      int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
       float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
       float Temperature_C = 0.0f;                                                   // Temperature, C
       float Humidity_RH = 0.0f;                                                     // Relative humidity
@@ -105,7 +114,7 @@ class Bme280Sensor {
     Data data_;
     SPIClass *_spi;
     i2c_t3 *_i2c;
-    int status_;
+    int8_t status_;
 };
 
 /* class for uBlox sensors */
@@ -116,19 +125,25 @@ class uBloxSensor {
       uint32_t Baud;                                                                // Baudrate
     };
     struct Data {
-      bool Fix = false;                                                             // True for 3D fix only
-      uint8_t NumberSatellites = 0;                                                 // Number of satellites used in solution
-      uint32_t TOW = 0;                                                             // GPS time of the navigation epoch
-      uint16_t Year = 0;                                                            // UTC year
-      uint8_t Month = 0;                                                            // UTC month
-      uint8_t Day = 0;                                                              // UTC day
-      uint8_t Hour = 0;                                                             // UTC hour
-      uint8_t Min = 0;                                                              // UTC minute
-      uint8_t Sec = 0;                                                              // UTC second
-      Eigen::Matrix<double,3,1>LLA = Eigen::Matrix<double,3,1>::Zero();             // Latitude (rad), Longitude (rad), Altitude (m)
-      Eigen::Matrix<double,3,1>NEDVelocity_ms  = Eigen::Matrix<double,3,1>::Zero(); // NED Velocity, m/s
-      Eigen::Matrix<double,3,1>Accuracy  = Eigen::Matrix<double,3,1>::Zero();       // Horizontal (m), vertical (m), and speed (m/s) accuracy estimates
-      double pDOP = 0.0;                                                            // Position DOP
+      bool Fix;                                 // True for 3D fix only
+      uint8_t NumberSatellites;                 // Number of satellites used in solution
+      uint32_t TOW;                             // GPS time of the navigation epoch
+      uint16_t Year;                            // UTC year
+      uint8_t Month;                            // UTC month
+      uint8_t Day;                              // UTC day
+      uint8_t Hour;                             // UTC hour
+      uint8_t Min;                              // UTC minute
+      uint8_t Sec;                              // UTC second
+      double Latitude_rad;                      // Latitude (rad), Longitude (rad), Altitude (m)
+      double Longitude_rad;
+      double Altitude_m;
+      float NorthVelocity_ms;                   // NED Velocity, m/s
+      float EastVelocity_ms;
+      float DownVelocity_ms;
+      float HorizontalAccuracy_m;               // Accuracy Horizontal (m)
+      float VerticalAccuracy_m;                 // Accuracy Vertical (m)
+      float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
+      double pDOP;                              // Position DOP
     };
     void UpdateConfig(const char *JsonString);
     void SetConfig(const Config &ConfigRef);
@@ -154,7 +169,7 @@ class Ams5915Sensor {
       AMS5915::Transducer Transducer;                                               // Transducer type
     };
     struct Data {
-      int ReadStatus = -1;                                                          // positive if a good read or negative if not
+      int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
       float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
       float Temperature_C = 0.0f;                                                   // Temperature, C
     };
@@ -169,7 +184,7 @@ class Ams5915Sensor {
     Config config_;
     Data data_;
     i2c_t3 *_i2c;
-    int status_;
+    int8_t status_;
 };
 
 /* class for Swift sensors */
@@ -193,8 +208,8 @@ class SwiftSensor {
     Ams5915Sensor StaticAms, DiffAms;
     Config config_;
     Data data_;
-    int StaticStatus_;
-    int DiffStatus_;
+    int8_t StaticStatus_;
+    int8_t DiffStatus_;
 };
 
 /* class for SBUS sensors */
@@ -230,7 +245,7 @@ class AnalogSensor {
       std::vector<float> Calibration;
     };
     struct Data {
-      float Voltage_V = 0.0f;
+      // float Voltage_V = 0.0f;
       float CalibratedValue = 0.0f;
     };
     void UpdateConfig(const char *JsonString);
@@ -242,6 +257,7 @@ class AnalogSensor {
   private:
     Config config_;
     Data data_;
+    float Voltage_V_;
 };
 
 /* aircraft sensors class wrapping the individual sensor classes */

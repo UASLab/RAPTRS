@@ -37,7 +37,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <stdexcept>
 #include <vector>
 #include <cstring>
-#include <Eigen/Dense>
 #include <string>
 #include <vector>
 using std::vector;
@@ -61,9 +60,15 @@ class FlightManagementUnit {
     void SendEffectorCommands(std::vector<float> Commands);
   private:
     struct InternalMpu9250SensorData {
-      Eigen::Matrix<float,3,1>Accel_mss;        // x,y,z accelerometers, m/s/s
-      Eigen::Matrix<float,3,1>Gyro_rads;        // x,y,z gyros, rad/s
-      Eigen::Matrix<float,3,1>Mag_uT;           // x,y,z magnetometers, uT
+      float AccelX_mss;        // x,y,z accelerometers, m/s/s
+      float AccelY_mss;
+      float AccelZ_mss;
+      float GyroX_rads;        // x,y,z gyros, rad/s
+      float GyroY_rads;
+      float GyroZ_rads;
+      float MagX_uT;           // x,y,z magnetometers, uT
+      float MagY_uT;
+      float MagZ_uT;
       float Temperature_C;                      // Temperature, C
     };
     struct InternalMpu9250SensorNodes {
@@ -83,21 +88,27 @@ class FlightManagementUnit {
       ElementPtr hum;
     };
     struct Mpu9250SensorData {
-      int status;
-      Eigen::Matrix<float,3,1>Accel_mss;        // x,y,z accelerometers, m/s/s
-      Eigen::Matrix<float,3,1>Gyro_rads;        // x,y,z gyros, rad/s
-      Eigen::Matrix<float,3,1>Mag_uT;           // x,y,z magnetometers, uT
-      float Temperature_C;                      // Temperature, C
+      int8_t status;
+      int16_t AccelX_ct = 0; // x,y,z accelerometers, m/s/s
+      int16_t AccelY_ct = 0;
+      int16_t AccelZ_ct = 0;
+      int16_t GyroX_ct = 0; // x,y,z gyros, rad/s
+      int16_t GyroY_ct = 0;
+      int16_t GyroZ_ct = 0;
+      // int16_t MagX_ct = 0; // x,y,z magnetometers, uT
+      // int16_t MagY_ct = 0;
+      // int16_t MagZ_ct = 0;
+      // int16_t Temperature_ct = 0.0f; // Temperature, C
     };
     struct Mpu9250SensorNodes {
       ElementPtr status;
       ElementPtr ax, ay, az;
       ElementPtr p, q, r;
-      ElementPtr hx, hy, hz;
-      ElementPtr temp;
+      // ElementPtr hx, hy, hz;
+      // ElementPtr temp;
     };
     struct Bme280SensorData {
-      int status;
+      int8_t status;
       float Pressure_Pa;                        // Pressure, Pa
       float Temperature_C;                      // Temperature, C
       float Humidity_RH;                        // Relative humidity
@@ -118,9 +129,15 @@ class FlightManagementUnit {
       uint8_t Hour;                             // UTC hour
       uint8_t Min;                              // UTC minute
       uint8_t Sec;                              // UTC second
-      Eigen::Matrix<double,3,1>LLA;             // Latitude (rad), Longitude (rad), Altitude (m)
-      Eigen::Matrix<double,3,1>NEDVelocity_ms;  // NED Velocity, m/s
-      Eigen::Matrix<double,3,1>Accuracy;        // Horizontal (m), vertical (m), and speed (m/s) accuracy estimates
+      double Latitude_rad;                      // Latitude (rad), Longitude (rad), Altitude (m)
+      double Longitude_rad;
+      double Altitude_m;
+      float NorthVelocity_ms;                   // NED Velocity, m/s
+      float EastVelocity_ms;
+      float DownVelocity_ms;
+      float HorizontalAccuracy_m;               // Accuracy Horizontal (m)
+      float VerticalAccuracy_m;                 // Accuracy Vertical (m)
+      float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
       double pDOP;                              // Position DOP
     };
     struct uBloxSensorNodes {
@@ -139,7 +156,7 @@ class FlightManagementUnit {
       ElementPtr pdop;
     };
     struct Ams5915SensorData {
-      int status;
+      int8_t status;
       float Pressure_Pa;                        // Pressure, Pa
       float Temperature_C;                      // Temperature, C
     };
@@ -167,11 +184,11 @@ class FlightManagementUnit {
       ElementPtr lost_frames;
     };
     struct AnalogSensorData {
-      float Voltage_V;
+      // float Voltage_V;
       float CalibratedValue;
     };
     struct AnalogSensorNodes {
-      ElementPtr volt;
+      // ElementPtr volt;
       ElementPtr val;
     };
     struct SensorData {
@@ -213,7 +230,7 @@ class FlightManagementUnit {
     SerialLink *_bus;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
-    // static const 
+    // static const
     void ConfigureSensors(const rapidjson::Value& Config);
     void ConfigureMissionManager(const rapidjson::Value& Config);
     void ConfigureControlLaws(const rapidjson::Value& Config);
