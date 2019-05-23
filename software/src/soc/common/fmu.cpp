@@ -576,7 +576,7 @@ void FlightManagementUnit::PublishSensors() {
     SensorNodes_.uBlox[i].sec->setInt(SensorData_.uBlox[i].Sec);
     SensorNodes_.uBlox[i].lat->setDouble(SensorData_.uBlox[i].Latitude_rad);
     SensorNodes_.uBlox[i].lon->setDouble(SensorData_.uBlox[i].Longitude_rad);
-    SensorNodes_.uBlox[i].alt->setFloat(SensorData_.uBlox[i].Altitude_m);
+    SensorNodes_.uBlox[i].alt->setDouble(SensorData_.uBlox[i].Altitude_m);
     SensorNodes_.uBlox[i].vn->setFloat(SensorData_.uBlox[i].NorthVelocity_ms);
     SensorNodes_.uBlox[i].ve->setFloat(SensorData_.uBlox[i].EastVelocity_ms);
     SensorNodes_.uBlox[i].vd->setFloat(SensorData_.uBlox[i].DownVelocity_ms);

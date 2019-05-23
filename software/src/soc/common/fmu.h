@@ -138,7 +138,7 @@ class FlightManagementUnit {
       float HorizontalAccuracy_m;               // Accuracy Horizontal (m)
       float VerticalAccuracy_m;                 // Accuracy Vertical (m)
       float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
-      double pDOP;                              // Position DOP
+      float pDOP;                               // Position DOP
     };
     struct uBloxSensorNodes {
       ElementPtr fix;
