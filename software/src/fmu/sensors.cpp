@@ -590,7 +590,7 @@ void uBloxSensor::UpdateData() {
     data_.DownVelocity_ms = uBloxData_.velD;
     data_.HorizontalAccuracy_m = uBloxData_.hAcc;
     data_.VerticalAccuracy_m = uBloxData_.vAcc;
-    data_.DownVelocity_ms = uBloxData_.sAcc;
+    data_.VelocityAccuracy_ms = uBloxData_.sAcc;
     data_.pDOP = uBloxData_.pDOP;
   }
 }
