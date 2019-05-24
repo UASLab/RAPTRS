@@ -42,7 +42,7 @@
 #define SERIAL4_TX_BUFFER_SIZE     40 // number of outgoing bytes to buffer
 #endif
 #ifndef SERIAL4_RX_BUFFER_SIZE
-#define SERIAL4_RX_BUFFER_SIZE     64 // number of incoming bytes to buffer
+#define SERIAL4_RX_BUFFER_SIZE     255 // number of incoming bytes to buffer
 #endif
 #define RTS_HIGH_WATERMARK (SERIAL4_RX_BUFFER_SIZE-24) // RTS requests sender to pause
 #define RTS_LOW_WATERMARK  (SERIAL4_RX_BUFFER_SIZE-38) // RTS allows sender to resume

@@ -40,7 +40,7 @@
 #define SERIAL3_TX_BUFFER_SIZE     40 // number of outgoing bytes to buffer
 #endif
 #ifndef SERIAL3_RX_BUFFER_SIZE
-#define SERIAL3_RX_BUFFER_SIZE     64 // number of incoming bytes to buffer
+#define SERIAL3_RX_BUFFER_SIZE     255 // number of incoming bytes to buffer
 #endif
 #define RTS_HIGH_WATERMARK (SERIAL3_RX_BUFFER_SIZE-24) // RTS requests sender to pause
 #define RTS_LOW_WATERMARK  (SERIAL3_RX_BUFFER_SIZE-38) // RTS allows sender to resume
@@ -195,7 +195,7 @@ void serial3_end(void)
 		case 8:  CORE_PIN8_CONFIG = PORT_PCR_PE | PORT_PCR_PS | PORT_PCR_MUX(1); break;
 		case 20: CORE_PIN20_CONFIG = PORT_PCR_PE | PORT_PCR_PS | PORT_PCR_MUX(1); break;
 	}
-	#endif	
+	#endif
 	rx_buffer_head = 0;
 	rx_buffer_tail = 0;
 	if (rts_pin) rts_deassert();
@@ -451,5 +451,3 @@ void uart2_status_isr(void)
 		UART2_C2 = C2_TX_INACTIVE;
 	}
 }
-
-

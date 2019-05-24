@@ -651,4 +651,3 @@ void serial_phex32(uint32_t n)
 	serial_phex(n >> 8);
 	serial_phex(n);
 }
-

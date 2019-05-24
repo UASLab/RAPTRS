@@ -179,7 +179,7 @@ class uBloxSensor {
       uint8_t Sec;                              // UTC second
       double Latitude_rad;                      // Latitude (rad), Longitude (rad), Altitude (m)
       double Longitude_rad;
-      double Altitude_m;
+      float Altitude_m;
       float NorthVelocity_ms;                   // NED Velocity, m/s
       float EastVelocity_ms;
       float DownVelocity_ms;
