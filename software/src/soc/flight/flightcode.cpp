@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
 
   /* profiling */
   ElementPtr main_loop_node = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
-  ElementPtr sensor_proc_node = deftree.initElement("/Mission/profSencorProcssing", "Sensor processing time us", LOG_UINT32, LOG_NONE);
+  ElementPtr sensor_proc_node = deftree.initElement("/Mission/profSenProc", "Sensor processing time us", LOG_UINT32, LOG_NONE);
   ElementPtr control_node = deftree.initElement("/Mission/profControl", "Control time us", LOG_UINT32, LOG_NONE);
   ElementPtr response_node = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
   uint64_t main_loop_start = 0;
