@@ -1,7 +1,7 @@
 
 #include "control-algorithms.h"
 
-void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, float Tf, bool SatFlag, float OutMax, float OutMin) {
+void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, float Tf, float yMin, float yMax) {
   Clear();  // Set Defaults
 
   Kp_ = Kp;
@@ -10,12 +10,11 @@ void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, floa
   Tf_ = Tf;
   b_ = b;
   c_ = c;
-  SatFlag_ = SatFlag;
-  OutMax_ = OutMax;
-  OutMin_ = OutMin;
+  yMin_ = yMin;
+  yMax_ = yMax;
 }
 
-void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,float dt, float *Output, float *ff, float *fb, int8_t *Saturated) {
+void __PID2Class::Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y, float *ff, float *fb) {
 
   // error for proportional
   ffProportionalError_ = b_ * Reference;
@@ -59,17 +58,16 @@ void __PID2Class::Run(GenericFunction::Mode mode,float Reference,float Feedback,
       break;
     }
   }
-  *Output = Output_;
+  *y = y_;
   *ff = ff_;
   *fb = fb_;
-  *Saturated = Saturated_;
 }
 
 void __PID2Class::InitializeState(float ff, float fb) {
   // Protect for Ki == 0
   if (Ki_ != 0.0f) {
-    // IntegralErrorState_ = (Output - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
-    // IntegralErrorState_ = (Output - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
+    // IntegralErrorState_ = (y - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
+    // IntegralErrorState_ = (y - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
     ffIntegralErrorState_ = (ff - (Kp_*ffProportionalError_)) / Ki_;
     fbIntegralErrorState_ = (fb - (Kp_*fbProportionalError_)) / Ki_;
   } else {
@@ -113,28 +111,22 @@ void __PID2Class::CalculateCommand() {
   ff_ = Kp_*ffProportionalError_ + Ki_*ffIntegralErrorState_ + Kd_*ffDerivativeErrorState_;
   fb_ = Kp_*fbProportionalError_ + Ki_*fbIntegralErrorState_ + Kd_*fbDerivativeErrorState_;
 
-  Output_ = ff_ - fb_;
+  y_ = ff_ - fb_;
 
   // saturate cmd, set iErr to limit that produces saturated cmd
   // saturate command
-  if (SatFlag_) {
-    if (Output_ <= OutMin_) {
-      Output_ = OutMin_;
-      ff_ = Output_ + fb_;
-      Saturated_ = -1;
-      // Re-compute the integrator state
-      // InitializeState(Output_);
-      InitializeState(ff_, fb_);
-    } else if (Output_ >= OutMax_) {
-      Output_ = OutMax_;
-      ff_ = Output_ + fb_;
-      Saturated_ = 1;
-      // Re-compute the integrator state
-      // InitializeState(Output_);
-      InitializeState(ff_, fb_);
-    } else {
-      Saturated_ = 0;
-    }
+  if (y_ <= yMin_) {
+    y_ = yMin_;
+    ff_ = y_ + fb_;
+    // Re-compute the integrator state
+    // InitializeState(y_);
+    InitializeState(ff_, fb_);
+  } else if (y_ >= yMax_) {
+    y_ = yMax_;
+    ff_ = y_ + fb_;
+    // Re-compute the integrator state
+    // InitializeState(y_);
+    InitializeState(ff_, fb_);
   }
 }
 
@@ -169,26 +161,23 @@ void __PID2Class::Clear() {
   Tf_ = 0.0f;
   b_ = 1.0f;
   c_ = 1.0f;
-  SatFlag_ = false;
-  OutMax_ = 0.0f;
-  OutMin_ = 0.0f;
+  yMin_ = 0.0f;
+  yMax_ = 0.0f;
 
-  Saturated_ = 0;
-  Output_ = 0.0f;
+  y_ = 0.0f;
 }
 
 
 /* State Space */
-void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, bool SatFlag, Eigen::VectorXf yMax, Eigen::VectorXf yMin) {
+void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf yMin, Eigen::VectorXf yMax) {
   Clear(); // Clear and set to defaults
 
   A_ = A;
   B_ = B;
   C_ = C;
   D_ = D;
-  SatFlag_ = SatFlag;
-  yMax_ = yMax;
   yMin_ = yMin;
+  yMax_ = yMax;
 
   uint8_t numU = B_.cols();
   uint8_t numX = A_.rows();
@@ -197,7 +186,6 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
   y_.resize(numY);
   yMax_.resize(numY);
   yMin_.resize(numY);
-  ySat_.resize(numY);
 
   Reset(); // Initialize states and output
 
@@ -212,7 +200,7 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
   CB_.resize(numY, numU);
 }
 
-void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eigen::VectorXf *y, Eigen::VectorXi *ySat) {
+void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eigen::VectorXf *y) {
   mode_ = mode;
 
   switch(mode_) {
@@ -243,7 +231,6 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
     }
   }
   *y = y_;
-  *ySat = ySat_;
 }
 
 void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) {
@@ -261,29 +248,20 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
   y_ = C_*x_ + D_*u;
 
   // saturate output
-  if (SatFlag_ == true){
-    for (int i=0; i < y_.size(); i++) {
-      if (y_(i) <= yMin_(i)) {
-        y_(i) = yMin_(i);
-        ySat_(i) = -1;
-      } else if (y_(i) >= yMax_(i)) {
-        y_(i) = yMax_(i);
-        ySat_(i) = 1;
-      } else {
-        ySat_(i) = 0;
-      }
-    }
-
-    if (ySat_.cwiseAbs().any()) { // check if any of the outputs are saturated
-      InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
+  for (int i=0; i < y_.size(); i++) {
+    if (y_(i) <= yMin_(i)) {
+      y_(i) = yMin_(i);
+    } else if (y_(i) >= yMax_(i)) {
+      y_(i) = yMax_(i);
     }
   }
+
+  //InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
 }
 
 void __SSClass::Reset() {
   x_.Zero(A_.rows()); // Reset to Zero
   y_.Zero(C_.cols()); // Reset to Zero
-  ySat_.Zero(C_.cols()); // Reset to Zero
 
   mode_ = GenericFunction::Mode::kStandby;
   initLatch_ = false;
@@ -295,10 +273,8 @@ void __SSClass::Clear() {
   C_.resize(0,0);
   D_.resize(0,0);
 
-  yMin_.resize(0);
   yMax_.resize(0);
-
-  SatFlag_ = false;
+  yMin_.resize(0);
 
   CA_inv_.resize(0,0);
   CB_.resize(0,0);

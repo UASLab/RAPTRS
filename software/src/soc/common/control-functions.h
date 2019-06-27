@@ -37,37 +37,26 @@ PID2 Class - PID2 control law
 Example JSON configuration:
 {
   "Type": "PID2",
-  "Output": "OutputName",
   "Reference": "ReferenceName",
   "Feedback": "FeedbackName",
-  "Sample-Time": "SampleTime" or X,
-  "Time-Constant": X,
-  "Gains": {
-    "Proportional": Kp,
-    "Integral": Ki,
-    "Derivative": Kd,
-  },
-  "Setpoint-Weights": {
-    "Proportional": b,
-    "Derivative": c
-  },
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Output": "OutputName",
+  "dt": "dt" or X,
+  "Kp": Kp, "Ki": Ki, "Kd": Kd, "Tf": Tf,
+  "b": b, "c": c
+  "Max": X, "Min": X
 }
 Where:
-   * Output gives a convenient name for the block (i.e. PitchControl).
    * Reference is the full path name of the reference signal.
    * Feedback is the full path name of the feedback signal.
-   * Sample-Time is either: the full path name of the sample time signal in seconds,
+   * Output gives a convenient name for the block (i.e. cmdPitch).
+   * dt is either: the full path name of the sample time signal in seconds,
      or a fixed value sample time in seconds.
-   * Time-Constant is the time constant for the derivative filter.
+   * Tf is the time constant for the derivative filter.
      If a time constant is not specified, then no filtering is used.
-   * Gains specifies the proportional derivative and integral gains.
-   * Setpoint weights optionally specifies the proportional and derivative setpoint
-     weights used in the filter.
-   * Limits are optional and saturate the output if defined.
+   * Gains specifies the proportional, derivative, and integral gains.
+   * Setpoint weights (b and c) optionally specifies the setpoint
+     weights (proportional and derivative) used in the controller.
+   * Limits (Max and Min) are optional.
 Data types for all input and output values are float.
 */
 
@@ -80,7 +69,7 @@ class PID2Class: public GenericFunction {
     void Clear();
   private:
     struct Config {
-      float SampleTime;
+      float dt;
       bool UseFixedTimeSample = false;
       ElementPtr reference_node;
       ElementPtr feedback_node;
@@ -91,12 +80,11 @@ class PID2Class: public GenericFunction {
       ElementPtr output_node;
       ElementPtr ff_node;
       ElementPtr fb_node;
-      ElementPtr saturated_node;
     };
     __PID2Class PID2Class_;
     Config config_;
     Data data_;
-    std::string ReferenceKey_,FeedbackKey_,SampleTimeKey_;
+    std::string ReferenceKey_,FeedbackKey_,dtKey_;
 };
 
 /*
@@ -104,29 +92,21 @@ PID Class - PID control law
 Example JSON configuration:
 {
   "Type": "PID",
-  "Output": "OutputName",
   "Reference": "ReferenceName",
-  "Sample-Time": "SampleTime" or X,
-  "Time-Constant": X,
-  "Gains": {
-    "Proportional": Kp,
-    "Integral": Ki,
-    "Derivative": Kd,
-  },
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Output": "OutputName",
+  "dt": "dt" or X,
+  "Kp": Kp, "Ki": Ki, "Kd": Kd, "Tf": Tf,
+  "Max": X, "Min": X
 }
 Where:
-   * Output gives a convenient name for the block (i.e. PitchControl).
    * Reference is the full path name of the reference signal.
-   * Sample-Time is either: the full path name of the sample time signal in seconds,
+   * Output gives a convenient name for the block (i.e. cmdPitch).
+   * dt is either: the full path name of the sample time signal in seconds,
      or a fixed value sample time in seconds.
-   * Time-Constant is the time constant for the derivative filter.
+   * Tf is the time constant for the derivative filter.
      If a time constant is not specified, then no filtering is used.
-   * Gains specifies the proportional derivative and integral gains.
-   * Limits are optional and saturate the output if defined.
+   * Gains specifies the proportional, derivative, and integral gains.
+   * Limits (Max and Min) are optional.
 Data types for all input and output values are float.
 */
 
@@ -139,22 +119,20 @@ class PIDClass: public GenericFunction {
     void Clear();
   private:
     struct Config {
-        float SampleTime;
+        float dt;
         bool UseFixedTimeSample = false;
         ElementPtr reference_node;
         ElementPtr dt_node;
     };
     struct Data {
-        ElementPtr mode_node;
         ElementPtr output_node;
         ElementPtr ff_node;
         ElementPtr fb_node;
-        ElementPtr saturated_node;
     };
     __PID2Class PID2Class_;
     Config config_;
     Data data_;
-    std::string ReferenceKey_,SampleTimeKey_;
+    std::string ReferenceKey_,dtKey_;
 };
 
 /*
@@ -162,27 +140,22 @@ SS Class - State Space
 Example JSON configuration:
 {
   "Type": "SS",
-  "Name": "Name",
   "Inputs": ["InputNames"],
   "Outputs": ["OutputNames"],
-  "Sample-Time": "SampleTime" or X,
+  "dt": "dt" or X,
   "A": [[X]],
   "B": [[X]],
   "C": [[X]],
   "D": [[X]],
-  "Limits": {
-    "Upper": [X],
-    "Lower": [X]
-  }
+  "Max": [X],
+  "Min": [X]
 }
 Where:
-   * Name gives a convenient name for the block (i.e. PitchControl).
    * Inputs is the full path name of the input signals.
    * Outputs is the full path name of the output signals.
-   * Sample-Time is either: the full path name of the sample time signal in seconds,
+   * dt is either: the full path name of the sample time signal in seconds,
      or a fixed value sample time in seconds.
-   * Gains specifies the proportional derivative and integral gains.
-   * Limits are optional and saturate the output if defined.
+   * Limits (Max and Min) are optional.
 
 Data types for all input and output values are float.
 
@@ -221,10 +194,7 @@ class SSClass: public GenericFunction {
     };
     struct Data {
         Eigen::VectorXf y;
-        Eigen::VectorXi ySat;
-        ElementPtr mode_node;
         vector<ElementPtr>y_node;
-        vector<ElementPtr>ySat_node;
     };
     __SSClass SSClass_;
     Config config_;
@@ -240,8 +210,8 @@ Example JSON configuration:
   "Type": "Tecs",
   "mass_kg": x,
   "weight_bal": x,
-  "max_mps": x,
-  "min_mps": x,
+  "vMax_mps": x,
+  "vMin_mps": x,
   "RefSpeed": "RefSpeed",
   "RefAltitude": "RefAltitude",
   "FeedbackSpeed": "FeedbackSpeed",
@@ -291,7 +261,6 @@ class TecsClass: public GenericFunction {
     float min_mps = 0.0;
     float max_mps;
     //uint8_t mode = kStandby;
-    ElementPtr mode_node;
     int8_t error_totalSat = 0;
     int8_t error_diffSat = 0;
 };

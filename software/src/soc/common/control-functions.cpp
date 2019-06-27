@@ -25,22 +25,17 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float Kp = 1;
   float Ki = 0;
   float Kd = 0;
+  float Tf = 0;
   float b = 1;
   float c = 1;
-  float Tf = 0;
-  float UpperLimit = 0;
-  float LowerLimit = 0;
-  bool SaturateOutput = false;
+  float yMin = 0;
+  float yMax = 0;
   std::string OutputName;
   std::string SystemName;
 
   if (Config.HasMember("Output")) {
     OutputName = Config["Output"].GetString();
     SystemName = RootPath;
-
-    // pointer to log run mode data
-    data_.mode_node = deftree.initElement(RootPath + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
-    data_.mode_node->setInt(kStandby);
 
     // pointer to log command data
     data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
@@ -64,98 +59,77 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Feedback not specified in configuration."));
   }
 
-  if (Config.HasMember("Gains")) {
-    const rapidjson::Value& Gains = Config["Gains"];
-    if (Gains.HasMember("Proportional")) {
-      Kp = Gains["Proportional"].GetFloat();
-    }
-    if (Gains.HasMember("Derivative")) {
-      Kd = Gains["Derivative"].GetFloat();
-
-      if (Config.HasMember("Time-Constant")) {
-        Tf = Config["Time-Constant"].GetFloat();
-      }
-    }
-    if (Gains.HasMember("Integral")) {
-      Ki = Gains["Integral"].GetFloat();
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Gains not specified in configuration."));
-  }
-
-  if (Config.HasMember("Sample-Time")) {
-    if (Config["Sample-Time"].IsString()) {
-      SampleTimeKey_ = Config["Sample-Time"].GetString();
-      config_.dt_node = deftree.getElement(SampleTimeKey_);
+  if (Config.HasMember("dt")) {
+    if (Config["dt"].IsString()) {
+      dtKey_ = Config["dt"].GetString();
+      config_.dt_node = deftree.getElement(dtKey_);
       if ( !config_.dt_node ) {
-        throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time ")+SampleTimeKey_+std::string(" not found in global data."));
+        throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time ")+dtKey_+std::string(" not found in global data."));
       }
     } else {
       config_.UseFixedTimeSample = true;
-      config_.SampleTime = Config["Sample-Time"].GetFloat();
+      config_.dt = Config["dt"].GetFloat();
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time not specified in configuration."));
   }
 
-  if (Config.HasMember("Setpoint-Weights")) {
-    const rapidjson::Value& Weights = Config["Setpoint-Weights"];
-    if (Weights.HasMember("Proportional")) {
-      b = Weights["Proportional"].GetFloat();
-    }
-    if (Weights.HasMember("Derivative")) {
-      c = Weights["Derivative"].GetFloat();
+  if (Config.HasMember("Kp")) {
+    Kp = Config["Kp"].GetFloat();
+  }
+  if (Config.HasMember("Ki")) {
+    Ki = Config["Ki"].GetFloat();
+  }
+  if (Config.HasMember("Kd")) {
+    Kd = Config["Kd"].GetFloat();
+    if (Config.HasMember("Tf")) {
+      Tf = Config["Tf"].GetFloat();
     }
   }
 
-  if (Config.HasMember("Limits")) {
-    SaturateOutput = true;
-    // pointer to log saturation data
-    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
+  if (Config.HasMember("b")) {
+    b = Config["b"].GetFloat();
+  }
+  if (Config.HasMember("c")) {
+    c = Config["c"].GetFloat();
+  }
 
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      UpperLimit = Config["Limits"]["Upper"].GetFloat();
-      LowerLimit = Config["Limits"]["Lower"].GetFloat();
-    } else {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Either upper or lower limit not specified in configuration."));
-    }
+  if (Config.HasMember("Min")) {
+    yMin = Config["Min"].GetFloat();
+  }
+  if (Config.HasMember("Max")) {
+    yMax = Config["Max"].GetFloat();
   }
 
   // configure PID2 Class
-  PID2Class_.Configure(Kp,Ki,Kd,b,c,Tf,SaturateOutput,UpperLimit,LowerLimit);
+  PID2Class_.Configure(Kp,Ki,Kd,Tf,b,c,yMin,yMax);
 }
 
 void PID2Class::Initialize() {}
 bool PID2Class::Initialized() {return true;}
 
 void PID2Class::Run(Mode mode) {
-  // mode
-  data_.mode_node->setInt(mode);
-
   // sample time
   if(!config_.UseFixedTimeSample) {
-    config_.SampleTime = config_.dt_node->getFloat();
+    config_.dt = config_.dt_node->getFloat();
   }
 
   // Run
-  float Output = 0.0f;
+  float y = 0.0f;
   float ff = 0.0f;
   float fb = 0.0f;
-  int8_t Saturated = 0;
   PID2Class_.Run(mode,
                  config_.reference_node->getFloat(),
                  config_.feedback_node->getFloat(),
-                 config_.SampleTime, &Output, &ff, &fb, &Saturated);
-  data_.output_node->setFloat(Output);
+                 config_.dt, &y, &ff, &fb);
+  data_.output_node->setFloat(y);
   data_.ff_node->setFloat(ff);
   data_.fb_node->setFloat(fb);
-  data_.saturated_node->setInt(Saturated);
 }
 
 void PID2Class::Clear() {
   config_.UseFixedTimeSample = false;
   data_.mode_node->setInt(kStandby);
-  data_.saturated_node->setInt(0);
   data_.output_node->setFloat(0.0f);
   data_.ff_node->setFloat(0.0f);
   data_.fb_node->setFloat(0.0f);
@@ -170,18 +144,14 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float Ki = 0;
   float Kd = 0;
   float Tf = 0;
-  float UpperLimit = 0;
-  float LowerLimit = 0;
-  bool SaturateOutput = false;
+  float yMin = 0;
+  float yMax = 0;
   std::string OutputName;
   std::string SystemName;
 
   if (Config.HasMember("Output")) {
     OutputName = Config["Output"].GetString();
     SystemName = RootPath;
-
-    // pointer to log run mode data
-    data_.mode_node = deftree.initElement(RootPath + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
 
     // pointer to log command data
     data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
@@ -198,85 +168,32 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference not specified in configuration."));
   }
 
-  if (Config.HasMember("Gains")) {
-    const rapidjson::Value& Gains = Config["Gains"];
-    if (Gains.HasMember("Proportional")) {
-      Kp = Gains["Proportional"].GetFloat();
-    }
-    if (Gains.HasMember("Derivative")) {
-      Kd = Gains["Derivative"].GetFloat();
-
-      if (Config.HasMember("Time-Constant")) {
-        Tf = Config["Time-Constant"].GetFloat();
-      }
-    }
-    if (Gains.HasMember("Integral")) {
-      Ki = Gains["Integral"].GetFloat();
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Gains not specified in configuration."));
-  }
-
-  if (Config.HasMember("Sample-Time")) {
-    if (Config["Sample-Time"].IsString()) {
-      SampleTimeKey_ = Config["Sample-Time"].GetString();
-      config_.dt_node = deftree.getElement(SampleTimeKey_);
-      if ( !config_.dt_node ) {
-        throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time ")+SampleTimeKey_+std::string(" not found in global data."));
-      }
-    } else {
-      config_.UseFixedTimeSample = true;
-      config_.SampleTime = Config["Sample-Time"].GetFloat();
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time not specified in configuration."));
-  }
-
-  if (Config.HasMember("Limits")) {
-    SaturateOutput = true;
-    // pointer to log saturation data
-    data_.saturated_node = deftree.initElement(SystemName + "/Saturated", "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
-
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      UpperLimit = Config["Limits"]["Upper"].GetFloat();
-      LowerLimit = Config["Limits"]["Lower"].GetFloat();
-    } else {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Either upper or lower limit not specified in configuration."));
-    }
-  }
 
   // configure using PID2 algorithm Class
-  PID2Class_.Configure(Kp,Ki,Kd,1.0,1.0,Tf,SaturateOutput,UpperLimit,LowerLimit);
+  PID2Class_.Configure(Kp,Ki,Kd,Tf,1.0,1.0,yMin,yMax);
 }
 
 void PIDClass::Initialize() {}
 bool PIDClass::Initialized() {return true;}
 
 void PIDClass::Run(Mode mode) {
-  // mode
-  data_.mode_node->setInt( mode );
-
   // sample time
   if(!config_.UseFixedTimeSample) {
-    config_.SampleTime = config_.dt_node->getFloat();
+    config_.dt = config_.dt_node->getFloat();
   }
 
   // Run
-  float Output = 0.0f;
+  float y = 0.0f;
   float ff = 0.0f;
   float fb = 0.0f;
-  int8_t Saturated = 0;
-  PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.SampleTime, &Output, &ff, &fb, &Saturated);
-  data_.output_node->setFloat(Output);
+  PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.dt, &y, &ff, &fb);
+  data_.output_node->setFloat(y);
   data_.ff_node->setFloat(ff);
   data_.fb_node->setFloat(fb);
-  data_.saturated_node->setInt(Saturated);
 }
 
 void PIDClass::Clear() {
   config_.UseFixedTimeSample = false;
-  data_.mode_node->setInt(kStandby);
-  data_.saturated_node->setInt(0);
   data_.output_node->setFloat(0.0f);
   data_.ff_node->setFloat(0.0f);
   data_.fb_node->setFloat(0.0f);
@@ -287,19 +204,12 @@ void PIDClass::Clear() {
 
 /* SS class methods, see control-functions.hxx for more information */
 void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  bool SatFlag = false;
   std::string OutputName;
   std::string SystemName;
-
 
   // grab sytem Name
   if (Config.HasMember("Name")) {
     SystemName = Config["Name"].GetString();
-
-    // pointer to log run mode data
-    data_.mode_node = deftree.initElement(RootPath + SystemName + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
-    data_.mode_node->setInt(kStandby);
-
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Name not specified in configuration."));
   }
@@ -325,18 +235,12 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     // resize output matrix
     data_.y.resize(Config["Outputs"].Size());
     data_.y_node.resize(Config["Outputs"].Size());
-    data_.ySat.resize(Config["Outputs"].Size());
-    data_.ySat_node.resize(Config["Outputs"].Size());
     for (size_t i=0; i < Config["Outputs"].Size(); i++) {
-      const rapidjson::Value& Output = Config["Outputs"][i];
-      OutputName = Output.GetString();
+      const rapidjson::Value& y = Config["Outputs"][i];
+      OutputName = y.GetString();
 
       // pointer to log output
       data_.y_node[i] = deftree.initElement(RootPath + SystemName + "/" + OutputName, "SS output", LOG_FLOAT, LOG_NONE);
-
-      // pointer to log saturation data
-      data_.ySat_node[i] = deftree.initElement(RootPath + SystemName + "/Saturated" + "/" + OutputName, "Output saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
-
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Outputs not specified in configuration."));
@@ -388,6 +292,11 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": C not specified in configuration."));
   }
 
+  // Resize output vector
+  data_.y.resize(config_.C.rows());
+  config_.yMin.resize(config_.C.rows());
+  config_.yMax.resize(config_.C.rows());
+
   // grab D
   if (Config.HasMember("D")) {
     // resize D matrix
@@ -420,37 +329,28 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
 
   // grab limits
-  if (Config.HasMember("Limits")) {
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      SatFlag = true;
+  if (Config.HasMember("Min")) {
+    config_.yMin.resize(Config["Min"].Size());
+    for (size_t i=0; i < Config["Min"].Size(); i++) {
+      config_.yMin(i) = Config["Min"][i].GetFloat();
+    }
+  }
 
-      // resize limit vectors
-      config_.yMin.resize(Config["Limits"]["Lower"].Size());
-      config_.yMax.resize(Config["Limits"]["Upper"].Size());
-      for (size_t i=0; i < Config["Limits"]["Lower"].Size(); i++) {
-        config_.yMin(i) = Config["Limits"]["Lower"][i].GetFloat();
-      }
-      for (size_t i=0; i < Config["Limits"]["Upper"].Size(); i++) {
-        config_.yMax(i) = Config["Limits"]["Upper"][i].GetFloat();
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Either upper or lower limit not specified in configuration."));
+  if (Config.HasMember("Max")) {
+    config_.yMax.resize(Config["Max"].Size());
+    for (size_t i=0; i < Config["Max"].Size(); i++) {
+      config_.yMax(i) = Config["Max"][i].GetFloat();
     }
   }
 
   // configure SS Class
-  data_.y.resize(config_.C.rows());
-  data_.ySat.resize(config_.C.rows());
-  SSClass_.Configure(config_.A, config_.B, config_.C, config_.D, config_.dt, SatFlag, config_.yMax, config_.yMin);
+  SSClass_.Configure(config_.A, config_.B, config_.C, config_.D, config_.dt, config_.yMin, config_.yMax);
 }
 
 void SSClass::Initialize() {}
 bool SSClass::Initialized() {return true;}
 
 void SSClass::Run(Mode mode) {
-  // mode
-  data_.mode_node->setInt(mode);
-
   // sample time computation
   float dt = 0;
   if (config_.UseFixedTimeSample == false) {
@@ -468,16 +368,14 @@ void SSClass::Run(Mode mode) {
   }
 
   // Call Algorithm
-  SSClass_.Run(mode, config_.u, dt, &data_.y, &data_.ySat);
+  SSClass_.Run(mode, config_.u, dt, &data_.y);
   for (size_t i=0; i < data_.y_node.size(); i++) {
     data_.y_node[i]->setFloat(data_.y(i));
-    data_.ySat_node[i]->setInt(data_.ySat(i));
   }
 }
 
 void SSClass::Clear() {
   config_.UseFixedTimeSample = false;
-  data_.mode_node->setInt(kStandby);
   config_.A.resize(0,0);
   config_.B.resize(0,0);
   config_.C.resize(0,0);
@@ -495,11 +393,6 @@ void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // grab sytem Name
   if (Config.HasMember("Name")) {
     SystemName = Config["Name"].GetString();
-
-    // pointer to log run mode data
-    mode_node = deftree.initElement(RootPath + "/" + SystemName + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
-    mode_node->setInt(kStandby);
-
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Name not specified in configuration."));
   }
