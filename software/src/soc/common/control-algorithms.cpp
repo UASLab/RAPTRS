@@ -1,7 +1,7 @@
 
 #include "control-algorithms.h"
 
-void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, float Tf, float yMin, float yMax) {
+void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, float Tf, float Min, float Max) {
   Clear();  // Set Defaults
 
   Kp_ = Kp;
@@ -10,8 +10,8 @@ void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, floa
   Tf_ = Tf;
   b_ = b;
   c_ = c;
-  yMin_ = yMin;
-  yMax_ = yMax;
+  Min_ = Min;
+  Max_ = Max;
 }
 
 void __PID2Class::Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y, float *ff, float *fb) {
@@ -115,14 +115,14 @@ void __PID2Class::CalculateCommand() {
 
   // saturate cmd, set iErr to limit that produces saturated cmd
   // saturate command
-  if (y_ <= yMin_) {
-    y_ = yMin_;
+  if (y_ <= Min_) {
+    y_ = Min_;
     ff_ = y_ + fb_;
     // Re-compute the integrator state
     // InitializeState(y_);
     InitializeState(ff_, fb_);
-  } else if (y_ >= yMax_) {
-    y_ = yMax_;
+  } else if (y_ >= Max_) {
+    y_ = Max_;
     ff_ = y_ + fb_;
     // Re-compute the integrator state
     // InitializeState(y_);
@@ -161,31 +161,31 @@ void __PID2Class::Clear() {
   Tf_ = 0.0f;
   b_ = 1.0f;
   c_ = 1.0f;
-  yMin_ = 0.0f;
-  yMax_ = 0.0f;
+  Min_ = 0.0f;
+  Max_ = 0.0f;
 
   y_ = 0.0f;
 }
 
 
 /* State Space */
-void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf yMin, Eigen::VectorXf yMax) {
+void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max) {
   Clear(); // Clear and set to defaults
 
   A_ = A;
   B_ = B;
   C_ = C;
   D_ = D;
-  yMin_ = yMin;
-  yMax_ = yMax;
+  Min_ = Min;
+  Max_ = Max;
 
   uint8_t numU = B_.cols();
   uint8_t numX = A_.rows();
   uint8_t numY = C_.rows();
 
   y_.resize(numY);
-  yMax_.resize(numY);
-  yMin_.resize(numY);
+  Max_.resize(numY);
+  Min_.resize(numY);
 
   Reset(); // Initialize states and output
 
@@ -249,10 +249,10 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
 
   // saturate output
   for (int i=0; i < y_.size(); i++) {
-    if (y_(i) <= yMin_(i)) {
-      y_(i) = yMin_(i);
-    } else if (y_(i) >= yMax_(i)) {
-      y_(i) = yMax_(i);
+    if (y_(i) <= Min_(i)) {
+      y_(i) = Min_(i);
+    } else if (y_(i) >= Max_(i)) {
+      y_(i) = Max_(i);
     }
   }
 
@@ -273,8 +273,8 @@ void __SSClass::Clear() {
   C_.resize(0,0);
   D_.resize(0,0);
 
-  yMax_.resize(0);
-  yMin_.resize(0);
+  Max_.resize(0);
+  Min_.resize(0);
 
   CA_inv_.resize(0,0);
   CB_.resize(0,0);

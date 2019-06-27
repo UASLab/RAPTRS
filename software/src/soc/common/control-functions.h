@@ -74,6 +74,8 @@ class PID2Class: public GenericFunction {
       ElementPtr reference_node;
       ElementPtr feedback_node;
       ElementPtr dt_node;
+      float Min = std::numeric_limits<float>::lowest();
+      float Max = std::numeric_limits<float>::max();
     };
     struct Data {
       ElementPtr mode_node;
@@ -123,6 +125,8 @@ class PIDClass: public GenericFunction {
         bool UseFixedTimeSample = false;
         ElementPtr reference_node;
         ElementPtr dt_node;
+        float Min = std::numeric_limits<float>::lowest();
+        float Max = std::numeric_limits<float>::max();
     };
     struct Data {
         ElementPtr output_node;
@@ -184,8 +188,8 @@ class SSClass: public GenericFunction {
       Eigen::MatrixXf B;
       Eigen::MatrixXf C;
       Eigen::MatrixXf D;
-      Eigen::VectorXf yMin;
-      Eigen::VectorXf yMax;
+      Eigen::VectorXf Min;
+      Eigen::VectorXf Max;
       float dt = 0;
       float* TimeSource = 0;
       float timePrev = 0;
@@ -208,16 +212,16 @@ Tecs Class - Total Energy Control System
 Example JSON configuration:
 {
   "Type": "Tecs",
-  "mass_kg": x,
-  "weight_bal": x,
-  "vMax_mps": x,
-  "vMin_mps": x,
   "RefSpeed": "RefSpeed",
   "RefAltitude": "RefAltitude",
   "FeedbackSpeed": "FeedbackSpeed",
   "FeedbackAltitude": "FeedbackAltitude",
   "OutputTotal": "OutputTotal",
-  "OutputDiff": "OutputDiff"
+  "OutputDiff": "OutputDiff",
+  "mass_kg": x,
+  "weight_bal": x,
+  "vMax_mps": x,
+  "vMin_mps": x
 }
 Where:
    * mass_kg is the total aircraft weight in kg

@@ -20,20 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "filter-algorithms.h"
 
-void __GeneralFilter::Configure(std::vector<float> b,std::vector<float> a) {
-  config_.b = b;
-  config_.a = a;
-  states_.x.resize(config_.b.size());
-  states_.y.resize(config_.a.size());
-  // scale all a and b by a[0] if available
-  if (config_.a.size() > 0) {
+void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) {
+  config_.num = num;
+  config_.den = den;
+  states_.x.resize(config_.num.size());
+  states_.y.resize(config_.den.size());
+  // scale all den and num by den[0] if available
+  if (config_.den.size() > 0) {
     // prevent divide by zero
-    if (config_.a[0] != 0.0f) {
-      for (size_t i=0; i < config_.b.size(); i++) {
-        config_.b[i] = config_.b[i]/config_.a[0];
+    if (config_.den[0] != 0.0f) {
+      for (size_t i=0; i < config_.num.size(); i++) {
+        config_.num[i] = config_.num[i]/config_.den[0];
       }
-      for (size_t i=1; i < config_.a.size(); i++) {
-        config_.a[i] = config_.a[i]/config_.a[0];
+      for (size_t i=1; i < config_.den.size(); i++) {
+        config_.den[i] = config_.den[i]/config_.den[0];
       }
     }
   }
@@ -49,15 +49,15 @@ float __GeneralFilter::Run(float input) {
   }
   // grab the newest x value
   states_.x[0] = input;
-  // apply all b coefficients
+  // apply all num coefficients
   float FeedForward = 0.0f;
-  for (size_t i=0; i < config_.b.size(); i++) {
-    FeedForward += config_.b[i]*states_.x[i];
+  for (size_t i=0; i < config_.num.size(); i++) {
+    FeedForward += config_.num[i]*states_.x[i];
   }
-  // apply all a coefficients
+  // apply all den coefficients
   float FeedBack = 0.0f;
-  for (size_t i=1; i < config_.a.size(); i++) {
-    FeedBack += config_.a[i]*states_.y[i];
+  for (size_t i=1; i < config_.den.size(); i++) {
+    FeedBack += config_.den[i]*states_.y[i];
   }
   // get the output
   data_.Output = FeedForward - FeedBack;
@@ -69,8 +69,8 @@ float __GeneralFilter::Run(float input) {
 }
 
 void __GeneralFilter::Clear() {
-  config_.a.clear();
-  config_.b.clear();
+  config_.den.clear();
+  config_.num.clear();
   states_.x.clear();
   states_.y.clear();
   data_.Output = 0.0f;

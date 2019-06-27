@@ -26,7 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/writer.h"
 #include "definition-tree2.h"
 #include "generic-function.h"
+
 #include <Eigen/Dense>
+#include <limits>
 
 /*
 Pseudo Inverse Allocation - Implements a pseudo inverse control allocation
@@ -37,10 +39,8 @@ Example JSON configuration:
   "Inputs": [N],
   "Outputs": [M],
   "Effectiveness": [[N],[N],...],
-  "Limits": {
-    "Lower": [M],
-    "Upper": [M]
-  }
+  "Min": [M],
+  "Max": [M]
 }
 Where:
    * Input gives the full path of the allocator inputs / objectives (i.e. /Control/PitchMomentCmd)
@@ -70,15 +70,14 @@ class PseudoInverseAllocation: public GenericFunction {
       vector<ElementPtr> input_nodes;
       Eigen::VectorXf Objectives;
       Eigen::MatrixXf Effectiveness;
-      Eigen::VectorXf LowerLimit;
-      Eigen::VectorXf UpperLimit;
+      Eigen::VectorXf Min;
+      Eigen::VectorXf Max;
     };
     struct Data {
-      ElementPtr Mode;
       Eigen::VectorXf uCmd;
       vector<ElementPtr> uCmd_nodes;
-      Eigen::VectorXi uSat;
     };
+    int numIn, numOut;
     Config config_;
     Data data_;
     std::vector<std::string> InputKeys_;

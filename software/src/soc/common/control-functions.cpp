@@ -28,8 +28,8 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float Tf = 0;
   float b = 1;
   float c = 1;
-  float yMin = 0;
-  float yMax = 0;
+  float Min = 0;
+  float Max = 0;
   std::string OutputName;
   std::string SystemName;
 
@@ -45,6 +45,7 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
   }
 
+  // Get Input Signal - Reference, Required
   if (Config.HasMember("Reference")) {
     ReferenceKey_ = Config["Reference"].GetString();
     config_.reference_node = deftree.getElement(ReferenceKey_, true);
@@ -95,14 +96,14 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
 
   if (Config.HasMember("Min")) {
-    yMin = Config["Min"].GetFloat();
+    Min = Config["Min"].GetFloat();
   }
   if (Config.HasMember("Max")) {
-    yMax = Config["Max"].GetFloat();
+    Max = Config["Max"].GetFloat();
   }
 
   // configure PID2 Class
-  PID2Class_.Configure(Kp,Ki,Kd,Tf,b,c,yMin,yMax);
+  PID2Class_.Configure(Kp,Ki,Kd,Tf,b,c,Min,Max);
 }
 
 void PID2Class::Initialize() {}
@@ -144,8 +145,8 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float Ki = 0;
   float Kd = 0;
   float Tf = 0;
-  float yMin = 0;
-  float yMax = 0;
+  float Min = 0;
+  float Max = 0;
   std::string OutputName;
   std::string SystemName;
 
@@ -170,7 +171,7 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
 
 
   // configure using PID2 algorithm Class
-  PID2Class_.Configure(Kp,Ki,Kd,Tf,1.0,1.0,yMin,yMax);
+  PID2Class_.Configure(Kp,Ki,Kd,Tf,1.0,1.0,Min,Max);
 }
 
 void PIDClass::Initialize() {}
@@ -293,9 +294,9 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
 
   // Resize output vector
-  data_.y.resize(config_.C.rows());
-  config_.yMin.resize(config_.C.rows());
-  config_.yMax.resize(config_.C.rows());
+  int numY = config_.C.rows();
+  data_.y.resize(numY);
+  data_.y.setZero(numY);
 
   // grab D
   if (Config.HasMember("D")) {
@@ -329,22 +330,28 @@ void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
   }
 
   // grab limits
+  config_.Min.resize(numY);
+  config_.Min.setConstant(numY, std::numeric_limits<float>::lowest());
+
   if (Config.HasMember("Min")) {
-    config_.yMin.resize(Config["Min"].Size());
+    config_.Min.resize(Config["Min"].Size());
     for (size_t i=0; i < Config["Min"].Size(); i++) {
-      config_.yMin(i) = Config["Min"][i].GetFloat();
+      config_.Min(i) = Config["Min"][i].GetFloat();
     }
   }
 
+  config_.Max.resize(numY);
+  config_.Max.setConstant(numY, std::numeric_limits<float>::max());
+
   if (Config.HasMember("Max")) {
-    config_.yMax.resize(Config["Max"].Size());
+    config_.Max.resize(Config["Max"].Size());
     for (size_t i=0; i < Config["Max"].Size(); i++) {
-      config_.yMax(i) = Config["Max"][i].GetFloat();
+      config_.Max(i) = Config["Max"][i].GetFloat();
     }
   }
 
   // configure SS Class
-  SSClass_.Configure(config_.A, config_.B, config_.C, config_.D, config_.dt, config_.yMin, config_.yMax);
+  SSClass_.Configure(config_.A, config_.B, config_.C, config_.D, config_.dt, config_.Min, config_.Max);
 }
 
 void SSClass::Initialize() {}

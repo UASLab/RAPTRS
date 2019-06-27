@@ -23,7 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::string RootPath) {
   // grab inputs
   if (Config.HasMember("Inputs")) {
-    for (size_t i=0; i < Config["Inputs"].Size(); i++) {
+    numIn = Config["Inputs"].Size();
+    for (size_t i=0; i < numIn; i++) {
       const rapidjson::Value& Input = Config["Inputs"][i];
       InputKeys_.push_back(Input.GetString());
       ElementPtr ele = deftree.getElement(InputKeys_.back());
@@ -36,24 +37,19 @@ void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::stri
   } else {
     throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Inputs not specified in configuration."));
   }
+
   // resize objective matrix
-  config_.Objectives.resize(config_.input_nodes.size(),1);
+  config_.Objectives.resize(numIn,1);
+
   // grab outputs
   if (Config.HasMember("Outputs")) {
     // resize output matrix
-    data_.uCmd.resize(Config["Outputs"].Size(),1);
-    data_.uCmd_nodes.resize(Config["Outputs"].Size());
-    data_.uSat.resize(Config["Outputs"].Size(),1);
-    for (size_t i=0; i < Config["Outputs"].Size(); i++) {
+    numOut = Config["Outputs"].Size();
+    data_.uCmd.resize(numOut,1);
+    data_.uCmd_nodes.resize(numOut);
+    for (size_t i=0; i < numOut; i++) {
       const rapidjson::Value& Output = Config["Outputs"][i];
       std::string OutputName = Output.GetString();
-
-      // pointer to log run mode data
-      data_.Mode = deftree.initElement(RootPath + "/Mode", "Run mode", LOG_UINT8, LOG_NONE);
-      data_.Mode->setInt(kStandby);
-
-      // pointer to log saturation data
-      //deftree.initElement(RootPath + "/Saturated" + "/" + OutputName, &data_.uSat(i), "Allocation saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", true, false);
 
       // pointer to log output
       data_.uCmd_nodes[i] = deftree.initElement(RootPath + "/" + OutputName, "Allocator output", LOG_FLOAT, LOG_NONE);
@@ -76,30 +72,32 @@ void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::stri
   }
 
   // grab limits
-  if (Config.HasMember("Limits")) {
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      // resize limit vectors
-      config_.LowerLimit.resize(Config["Limits"]["Lower"].Size(),1);
-      config_.UpperLimit.resize(Config["Limits"]["Upper"].Size(),1);
-      for (size_t i=0; i < Config["Limits"]["Lower"].Size(); i++) {
-        config_.LowerLimit(i) = Config["Limits"]["Lower"][i].GetFloat();
-      }
-      for (size_t i=0; i < Config["Limits"]["Upper"].Size(); i++) {
-        config_.UpperLimit(i) = Config["Limits"]["Upper"][i].GetFloat();
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Either upper or lower limit not specified in configuration."));
+  config_.Min.resize(numOut);
+  config_.Min.setConstant(numOut, std::numeric_limits<float>::lowest());
+
+  if (Config.HasMember("Min")) {
+    config_.Min.resize(Config["Min"].Size());
+    for (size_t i=0; i < Config["Min"].Size(); i++) {
+      config_.Min(i) = Config["Min"][i].GetFloat();
     }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Limits not specified in configuration."));
   }
+
+  config_.Max.resize(numOut);
+  config_.Max.setConstant(numOut, std::numeric_limits<float>::max());
+
+  if (Config.HasMember("Max")) {
+    config_.Max.resize(Config["Max"].Size());
+    for (size_t i=0; i < Config["Max"].Size(); i++) {
+      config_.Max(i) = Config["Max"][i].GetFloat();
+    }
+  }
+
 }
 
 void PseudoInverseAllocation::Initialize() {}
 bool PseudoInverseAllocation::Initialized() {return true;}
 
 void PseudoInverseAllocation::Run(Mode mode) {
-  data_.Mode->setInt(mode);
   // grab inputs
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
     config_.Objectives(i) = config_.input_nodes[i]->getFloat();
@@ -111,14 +109,10 @@ void PseudoInverseAllocation::Run(Mode mode) {
 
   // saturate output
   for (int i=0; i < data_.uCmd.rows(); i++) {
-    if (data_.uCmd(i) <= config_.LowerLimit(i)) {
-      data_.uCmd(i) = config_.LowerLimit(i);
-      data_.uSat(i) = -1;
-    } else if (data_.uCmd(i) >= config_.UpperLimit(i)) {
-      data_.uCmd(i) = config_.UpperLimit(i);
-      data_.uSat(i) = 1;
-    } else {
-      data_.uSat(i) = 0;
+    if (data_.uCmd(i) <= config_.Min(i)) {
+      data_.uCmd(i) = config_.Min(i);
+    } else if (data_.uCmd(i) >= config_.Max(i)) {
+      data_.uCmd(i) = config_.Max(i);
     }
     data_.uCmd_nodes[i]->setFloat( data_.uCmd(i) );
   }
@@ -127,11 +121,9 @@ void PseudoInverseAllocation::Run(Mode mode) {
 void PseudoInverseAllocation::Clear() {
   config_.Objectives.resize(0);
   config_.Effectiveness.resize(0,0);
-  config_.LowerLimit.resize(0);
-  config_.UpperLimit.resize(0);
-  data_.Mode->setInt(kStandby);
+  config_.Min.resize(0);
+  config_.Max.resize(0);
   data_.uCmd.resize(0);
   data_.uCmd_nodes.resize(0);
-  data_.uSat.resize(0);
   InputKeys_.clear();
 }

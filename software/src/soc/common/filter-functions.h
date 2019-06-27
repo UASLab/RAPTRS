@@ -32,23 +32,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 General Filter - Implements a general discrete time filter using the
 general filter difference equation.
 
-a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
+den[0]y[n] = num[0]x[n]+num[1]x[n-1]+num[2]x[n-2]+...-den[1]y[n-1]-den[2]y[n-2]-...
 
 Example JSON configuration:
 {
   "Type": "Filter",
   "Input": "InputPath",
   "Output": "OutputName",
-  "b": [X],
-  "a": [X]
+  "num": [X],
+  "den": [X]
 }
 Where:
    * Input gives the full path of the input to the filter
    * Output gives a convenient name for the block (i.e. SpeedReference).
-   * a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given.
+   * den is a vector of denominator coefficients. den[0] scales all den and num coefficients if given.
      Denominator coefficients are optional and, if none are provided, a FIR filter is implemented.
-   * b is a vector of numerator coefficients. At least one feedforward coefficient must be given.
-The order of the filter is given by the length of the b and a vectors.
+   * num is a vector of numerator coefficients. At least one feedforward coefficient must be given.
+The order of the filter is given by the length of the num and den vectors.
 */
 class GeneralFilter: public GenericFunction {
   public:
@@ -62,13 +62,12 @@ class GeneralFilter: public GenericFunction {
       ElementPtr input_node;
     };
     struct Data {
-      ElementPtr Mode;
       ElementPtr output_node;
     };
     __GeneralFilter filter_;
     Config config_;
     Data data_;
-    std::string InputKey_,ModeKey_,OutputKey_;
+    std::string InputKey_,OutputKey_;
 };
 
 #endif

@@ -30,13 +30,13 @@ general filter difference equation. Matches the MATLAB filter function.
 */
 class __GeneralFilter {
   public:
-    void Configure(std::vector<float> b,std::vector<float> a);
+    void Configure(std::vector<float> num,std::vector<float> den);
     float Run(float input);
     void Clear();
   private:
     struct Config {
-      std::vector<float> b;
-      std::vector<float> a;
+      std::vector<float> num;
+      std::vector<float> den;
     };
     struct Data {
       float Output = 0.0f;

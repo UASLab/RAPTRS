@@ -47,13 +47,11 @@ void ConstantClass::Initialize() {}
 bool ConstantClass::Initialized() {return true;}
 
 void ConstantClass::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
   data_.output_node->setFloat(config_.Constant);
 }
 
 void ConstantClass::Clear() {
   config_.Constant = 0.0f;
-  data_.Mode = kStandby;
   data_.output_node->setFloat(0.0f);
   deftree.Erase(OutputKey_);
   OutputKey_.clear();
@@ -84,18 +82,11 @@ void GainClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input not specified in configuration."));
   }
 
-  if (Config.HasMember("Limits")) {
-    config_.SaturateOutput = true;
-
-    // pointer to log saturation data
-    SaturatedKey_ = RootPath+"/Saturated";
-    data_.saturated_node = deftree.initElement(SaturatedKey_, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      config_.UpperLimit = Config["Limits"]["Upper"].GetFloat();
-      config_.LowerLimit = Config["Limits"]["Lower"].GetFloat();
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Either upper or lower limit not specified in configuration."));
-    }
+  if (Config.HasMember("Min")) {
+    config_.Min = Config["Min"].GetFloat();
+  }
+  if (Config.HasMember("Max")) {
+    config_.Max = Config["Max"].GetFloat();
   }
 
   // pointer to log command data
@@ -107,35 +98,25 @@ void GainClass::Initialize() {}
 bool GainClass::Initialized() {return true;}
 
 void GainClass::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
   float val = config_.input_node->getFloat()*config_.Gain;
+
   // saturate command
-  if (config_.SaturateOutput) {
-    if (val <= config_.LowerLimit) {
-      val = config_.LowerLimit;
-      data_.saturated_node->setInt(-1);
-    } else if (val >= config_.UpperLimit) {
-      val = config_.UpperLimit;
-      data_.saturated_node->setInt(1);
-    } else {
-      data_.saturated_node->setInt(0);
-    }
+  if (val <= config_.Min) {
+    val = config_.Min;
+  } else if (val >= config_.Max) {
+    val = config_.Max;
   }
+
   data_.output_node->setFloat( val );
 }
 
 void GainClass::Clear() {
   config_.Gain = 1.0f;
-  config_.LowerLimit = 0.0f;
-  config_.UpperLimit = 0.0f;
-  config_.SaturateOutput = false;
-  data_.Mode = kStandby;
+  config_.Min = 0.0f;
+  config_.Max = 0.0f;
   data_.output_node->setFloat(0.0f);
-  data_.saturated_node->setFloat(0.0f);
-  deftree.Erase(SaturatedKey_);
   deftree.Erase(OutputKey_);
   InputKey_.clear();
-  SaturatedKey_.clear();
   OutputKey_.clear();
 }
 
@@ -164,17 +145,12 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Inputs not specified in configuration."));
   }
 
-  if (Config.HasMember("Limits")) {
-    config_.SaturateOutput = true;
-    // pointer to log saturation data
-    SaturatedKey_ = RootPath+"/Saturated";
-    data_.saturated_node = deftree.initElement(SaturatedKey_, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      config_.UpperLimit = Config["Limits"]["Upper"].GetFloat();
-      config_.LowerLimit = Config["Limits"]["Lower"].GetFloat();
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Either upper or lower limit not specified in configuration."));
-    }
+
+  if (Config.HasMember("Min")) {
+    config_.Min = Config["Min"].GetFloat();
+  }
+  if (Config.HasMember("Max")) {
+    config_.Max = Config["Max"].GetFloat();
   }
 
   // pointer to log command data
@@ -192,24 +168,16 @@ void SumClass::Initialize() {}
 bool SumClass::Initialized() {return true;}
 
 void SumClass::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-
   float sum = 0.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
     sum += config_.input_nodes[i]->getFloat();
   }
 
   // saturate command
-  if (config_.SaturateOutput) {
-    if (sum <= config_.LowerLimit) {
-      sum = config_.LowerLimit;
-      data_.saturated_node->setInt(-1);
-    } else if (sum >= config_.UpperLimit) {
-      sum = config_.UpperLimit;
-      data_.saturated_node->setInt(1);
-    } else {
-      data_.saturated_node->setInt(0);
-    }
+  if (sum <= config_.Min) {
+    sum = config_.Min;
+  } else if (sum >= config_.Max) {
+    sum = config_.Max;
   }
 
   data_.output_node->setFloat(sum);
@@ -217,16 +185,11 @@ void SumClass::Run(Mode mode) {
 
 void SumClass::Clear() {
   config_.input_nodes.clear();
-  config_.LowerLimit = 0.0f;
-  config_.UpperLimit = 0.0f;
-  config_.SaturateOutput = false;
-  data_.Mode = kStandby;
+  config_.Min = 0.0f;
+  config_.Max = 0.0f;
   data_.output_node->setFloat(0.0f);
-  data_.saturated_node->setInt(0.0f);
-  deftree.Erase(SaturatedKey_);
   deftree.Erase(OutputKey_);
   InputKeys_.clear();
-  SaturatedKey_.clear();
   OutputKey_.clear();
 }
 
@@ -255,17 +218,11 @@ void ProductClass::Configure(const rapidjson::Value& Config,std::string RootPath
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Inputs not specified in configuration."));
   }
 
-  if (Config.HasMember("Limits")) {
-    config_.SaturateOutput = true;
-    // pointer to log saturation data
-    SaturatedKey_ = RootPath+"/Saturated";
-    data_.saturated_node = deftree.initElement(SaturatedKey_, "Control law saturation, 0 if not saturated, 1 if saturated on the upper limit, and -1 if saturated on the lower limit", LOG_UINT8, LOG_NONE);
-    if (Config["Limits"].HasMember("Lower")&&Config["Limits"].HasMember("Upper")) {
-      config_.UpperLimit = Config["Limits"]["Upper"].GetFloat();
-      config_.LowerLimit = Config["Limits"]["Lower"].GetFloat();
-    } else {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Either upper or lower limit not specified in configuration."));
-    }
+  if (Config.HasMember("Min")) {
+    config_.Min = Config["Min"].GetFloat();
+  }
+  if (Config.HasMember("Max")) {
+    config_.Max = Config["Max"].GetFloat();
   }
 
   // pointer to log command data
@@ -277,40 +234,28 @@ void ProductClass::Initialize() {}
 bool ProductClass::Initialized() {return true;}
 
 void ProductClass::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-
   float product = 1.0;
   for (size_t i=0; i < config_.input_nodes.size(); i++) {
     product *= config_.input_nodes[i]->getFloat();
   }
 
   // saturate command
-  if (config_.SaturateOutput) {
-    if (product <= config_.LowerLimit) {
-      product = config_.LowerLimit;
-      data_.saturated_node->setInt(-1);
-    } else if (product >= config_.UpperLimit) {
-      product = config_.UpperLimit;
-      data_.saturated_node->setInt(1);
-    } else {
-      data_.saturated_node->setInt(0);
-    }
+  if (product <= config_.Min) {
+    product = config_.Min;
+  } else if (product >= config_.Max) {
+    product = config_.Max;
   }
+
   data_.output_node->setFloat(product);
 }
 
 void ProductClass::Clear() {
   config_.input_nodes.clear();
-  config_.LowerLimit = 0.0f;
-  config_.UpperLimit = 0.0f;
-  config_.SaturateOutput = false;
-  data_.Mode = kStandby;
+  config_.Min = 0.0f;
+  config_.Max = 0.0f;
   data_.output_node->setFloat(0.0f);
-  data_.saturated_node->setInt(0.0f);
-  deftree.Erase(SaturatedKey_);
   deftree.Erase(OutputKey_);
   InputKeys_.clear();
-  SaturatedKey_.clear();
   OutputKey_.clear();
 }
 
@@ -352,8 +297,6 @@ void DelayClass::Initialize() {
 bool DelayClass::Initialized() { return true; }
 
 void DelayClass::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-
   data_.buffer.push_back( config_.input_node->getFloat() );
   float val = 0.0;
   while ( data_.buffer.size() > 0 && data_.buffer.size() > config_.delay_frames ) {
@@ -365,7 +308,6 @@ void DelayClass::Run(Mode mode) {
 
 void DelayClass::Clear() {
   config_.delay_frames = 0;
-  data_.Mode = kStandby;
   data_.buffer.clear();
   data_.output_node->setFloat(0.0f);
   deftree.Erase(OutputKey_);
@@ -402,9 +344,7 @@ void LatchClass::Initialize() {}
 bool LatchClass::Initialized() {return true;}
 
 void LatchClass::Run(Mode mode) {
-  data_.Mode = (uint8_t) mode;
-
-  switch(data_.Mode) {
+  switch(mode) {
     case GenericFunction::Mode::kEngage: {
       if (initLatch_ == false) {
         initLatch_ = true;
@@ -419,7 +359,6 @@ void LatchClass::Run(Mode mode) {
 }
 
 void LatchClass::Clear() {
-  data_.Mode = kStandby;
   data_.output_node->setFloat(0.0f);
   deftree.Erase(OutputKey_);
   InputKey_.clear();

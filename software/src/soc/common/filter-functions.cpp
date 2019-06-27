@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "filter-functions.h"
 
 void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  std::vector<float> a,b;
+  std::vector<float> den,num;
   // get output name
   std::string OutputName;
   if (Config.HasMember("Output")) {
@@ -40,31 +40,26 @@ void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPat
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input not specified in configuration."));
   }
   // get the feedforward coefficients
-  if (Config.HasMember("b")) {
-    for (size_t i=0; i < Config["b"].Size(); i++) {
-      b.push_back(Config["b"][i].GetFloat());
+  if (Config.HasMember("num")) {
+    for (size_t i=0; i < Config["num"].Size(); i++) {
+      num.push_back(Config["num"][i].GetFloat());
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Numerator coefficients not specified in configuration."));
   }
   // get feedback coefficients, if any
-  if (Config.HasMember("a")) {
-    for (size_t i=0; i < Config["a"].Size(); i++) {
-      a.push_back(Config["a"][i].GetFloat());
+  if (Config.HasMember("den")) {
+    for (size_t i=0; i < Config["den"].Size(); i++) {
+      den.push_back(Config["den"][i].GetFloat());
     }
   }
 
-  // pointer to log run mode data
-  ModeKey_ = RootPath+"/Mode";
-  data_.Mode = deftree.initElement(ModeKey_,"Control law mode", LOG_UINT8, LOG_NONE);
-  data_.Mode->setInt(kStandby);
-  
   // pointer to log command data
   OutputKey_ = RootPath+"/"+Config["Output"].GetString();
   data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
 
   // configure filter
-  filter_.Configure(b,a);
+  filter_.Configure(num,den);
 }
 
 void GeneralFilter::Initialize() {}
@@ -74,17 +69,13 @@ bool GeneralFilter::Initialized() {
 }
 
 void GeneralFilter::Run(Mode mode) {
-  data_.Mode->setInt(mode);
   data_.output_node->setFloat( filter_.Run(config_.input_node->getFloat()) );
 }
 
 void GeneralFilter::Clear() {
   filter_.Clear();
-  data_.Mode->setInt(kStandby);
   data_.output_node->setFloat(0.0f);
-  deftree.Erase(ModeKey_);
   deftree.Erase(OutputKey_);
   InputKey_.clear();
-  ModeKey_.clear();
   OutputKey_.clear();
 }

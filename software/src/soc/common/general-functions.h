@@ -27,6 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "definition-tree2.h"
 #include "generic-function.h"
 
+#include <limits>
 #include <deque>
 using std::deque;
 
@@ -55,7 +56,6 @@ class ConstantClass: public GenericFunction {
       float Constant = 0.0f;
     };
     struct Data {
-      uint8_t Mode = kStandby;
       ElementPtr output_node;
     };
     Config config_;
@@ -94,17 +94,15 @@ class GainClass: public GenericFunction {
     struct Config {
       ElementPtr input_node;
       float Gain = 1.0f;
-      bool SaturateOutput = false;
-      float UpperLimit, LowerLimit = 0.0f;
+      float Min = std::numeric_limits<float>::lowest();
+      float Max = std::numeric_limits<float>::max();
     };
     struct Data {
-      uint8_t Mode = kStandby;
       ElementPtr output_node;
-      ElementPtr saturated_node;
     };
     Config config_;
     Data data_;
-    std::string InputKey_,SaturatedKey_,OutputKey_;
+    std::string InputKey_,OutputKey_;
 };
 
 /*
@@ -136,18 +134,16 @@ class SumClass: public GenericFunction {
   private:
     struct Config {
       std::vector<ElementPtr > input_nodes;
-      bool SaturateOutput = false;
-      float UpperLimit, LowerLimit = 0.0f;
+      float Min = std::numeric_limits<float>::lowest();
+      float Max = std::numeric_limits<float>::max();
     };
     struct Data {
-      uint8_t Mode = kStandby;
       ElementPtr output_node;
-      ElementPtr saturated_node;
     };
     Config config_;
     Data data_;
     std::vector<std::string> InputKeys_;
-    std::string SaturatedKey_,OutputKey_;
+    std::string OutputKey_;
 };
 
 /*
@@ -179,18 +175,16 @@ class ProductClass: public GenericFunction {
   private:
     struct Config {
       std::vector<ElementPtr > input_nodes;
-      bool SaturateOutput = false;
-      float UpperLimit, LowerLimit = 0.0f;
+      float Min = std::numeric_limits<float>::lowest();
+      float Max = std::numeric_limits<float>::max();
     };
     struct Data {
-      uint8_t Mode = kStandby;
       ElementPtr output_node;
-      ElementPtr saturated_node;
     };
     Config config_;
     Data data_;
     std::vector<std::string> InputKeys_;
-    std::string SaturatedKey_,OutputKey_;
+    std::string OutputKey_;
 };
 
 /*
@@ -221,7 +215,6 @@ class DelayClass: public GenericFunction {
       int delay_frames = 0;
     };
     struct Data {
-      uint8_t Mode = kStandby;
       ElementPtr output_node;
       deque<float> buffer;
     };
@@ -257,7 +250,6 @@ class LatchClass: public GenericFunction {
       ElementPtr input_node;
     };
     struct Data {
-      uint8_t Mode = kStandby;
       ElementPtr output_node;
     };
     bool initLatch_ = false;

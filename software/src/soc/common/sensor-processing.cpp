@@ -58,8 +58,6 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
           BaselineSensorProcessing_.push_back(std::make_shared<Ekf15StateIns>());
         } else if (Func["Type"] == "Filter") {
           BaselineSensorProcessing_.push_back(std::make_shared<GeneralFilter>());
-        } else if (Func["Type"] == "If") {
-          BaselineSensorProcessing_.push_back(std::make_shared<If>());
         } else if (Func["Type"] == "MinCellVolt") {
           BaselineSensorProcessing_.push_back(std::make_shared<MinCellVolt>());
         } else {
@@ -129,8 +127,6 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<Ekf15StateIns>());
             } else if (Func["Type"] == "Filter") {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<GeneralFilter>());
-            } else if (Func["Type"] == "If") {
-              ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<If>());
             } else if (Func["Type"] == "MinCellVolt") {
               ResearchSensorProcessingGroups_[ResearchGroupKeys.back()].push_back(std::make_shared<MinCellVolt>());
             } else {
