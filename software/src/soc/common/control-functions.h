@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "definition-tree2.h"
+
+#include "configuration.h"
 #include "generic-function.h"
 #include "control-algorithms.h"
 
@@ -62,7 +64,7 @@ Data types for all input and output values are float.
 
 class PID2Class: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
@@ -73,12 +75,11 @@ class PID2Class: public GenericFunction {
       bool UseFixedTimeSample = false;
       ElementPtr reference_node;
       ElementPtr feedback_node;
-      ElementPtr dt_node;
+      ElementPtr time_node;
       float Min = std::numeric_limits<float>::lowest();
       float Max = std::numeric_limits<float>::max();
     };
     struct Data {
-      ElementPtr mode_node;
       ElementPtr output_node;
       ElementPtr ff_node;
       ElementPtr fb_node;
@@ -86,7 +87,7 @@ class PID2Class: public GenericFunction {
     __PID2Class PID2Class_;
     Config config_;
     Data data_;
-    std::string ReferenceKey_,FeedbackKey_,dtKey_;
+    std::string OutputKey_, ReferenceKey_, FeedbackKey_, TimeKey_;
 };
 
 /*
@@ -114,7 +115,7 @@ Data types for all input and output values are float.
 
 class PIDClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);

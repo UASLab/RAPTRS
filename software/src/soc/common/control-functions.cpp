@@ -1,4 +1,4 @@
-/*
+Configuration::/*
 control-functions.cc
 Brian R Taylor
 brian.taylor@bolderflight.com
@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "control-functions.h"
 
 /* PID2 class methods, see control-functions.hxx for more information */
-void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
+void PID2Class::Configure(const rapidjson::Value& Config, std::string RootPath) {
   float Kp = 1;
   float Ki = 0;
   float Kd = 0;
@@ -30,77 +30,35 @@ void PID2Class::Configure(const rapidjson::Value& Config,std::string RootPath) {
   float c = 1;
   float Min = 0;
   float Max = 0;
-  std::string OutputName;
-  std::string SystemName;
 
-  if (Config.HasMember("Output")) {
-    OutputName = Config["Output"].GetString();
-    SystemName = RootPath;
+  std::string SystemName = RootPath;
 
-    // pointer to log command data
-    data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
-    data_.ff_node = deftree.initElement(RootPath + "/" + OutputName + "FF", "Control law output, feedforward component", LOG_FLOAT, LOG_NONE);
-    data_.fb_node = deftree.initElement(RootPath + "/" + OutputName + "FB", "Control law output, feedback component", LOG_FLOAT, LOG_NONE);
+  OutputKey_ = Configuration.LoadOutput(Config, SystemName, "Output", data_.output_node);
+  data_.ff_node = deftree.initElement(SystemName + "/" + OutputKey_ + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
+  data_.fb_node = deftree.initElement(SystemName + "/" + OutputKey_ + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
+
+  ReferenceKey_ = Configuration.LoadInput(Config, SystemName, "Reference", config_.reference_node);
+  FeedbackKey_ = Configuration.LoadInput(Config, SystemName, "Feedback", config_.feedback_node);
+
+  config_.dt = Configuration.LoadValue(Config, "dt");
+  if (config_.dt > 0.0) {
+    config_.UseFixedTimeSample = true;
   } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
+    TimeKey_ = Configuration.LoadTime(Config, SystemName, "dt", config_.time_node);
   }
 
-  // Get Input Signal - Reference, Required
-  if (Config.HasMember("Reference")) {
-    ReferenceKey_ = Config["Reference"].GetString();
-    config_.reference_node = deftree.getElement(ReferenceKey_, true);
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference not specified in configuration."));
+  Kp = Configuration.LoadValue(Config, "Kp");
+  Ki = Configuration.LoadValue(Config, "Ki");
+  Kd = Configuration.LoadValue(Config, "Kd");
+  if (Kd != 0.0){
+    Tf = Configuration.LoadValue(Config, "Tf");
   }
 
-  if (Config.HasMember("Feedback")) {
-    FeedbackKey_ = Config["Feedback"].GetString();
-    config_.feedback_node = deftree.getElement(FeedbackKey_, true);
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Feedback not specified in configuration."));
-  }
+  b = Configuration.LoadValue(Config, "b");
+  c = Configuration.LoadValue(Config, "c");
 
-  if (Config.HasMember("dt")) {
-    if (Config["dt"].IsString()) {
-      dtKey_ = Config["dt"].GetString();
-      config_.dt_node = deftree.getElement(dtKey_);
-      if ( !config_.dt_node ) {
-        throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time ")+dtKey_+std::string(" not found in global data."));
-      }
-    } else {
-      config_.UseFixedTimeSample = true;
-      config_.dt = Config["dt"].GetFloat();
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Sample time not specified in configuration."));
-  }
-
-  if (Config.HasMember("Kp")) {
-    Kp = Config["Kp"].GetFloat();
-  }
-  if (Config.HasMember("Ki")) {
-    Ki = Config["Ki"].GetFloat();
-  }
-  if (Config.HasMember("Kd")) {
-    Kd = Config["Kd"].GetFloat();
-    if (Config.HasMember("Tf")) {
-      Tf = Config["Tf"].GetFloat();
-    }
-  }
-
-  if (Config.HasMember("b")) {
-    b = Config["b"].GetFloat();
-  }
-  if (Config.HasMember("c")) {
-    c = Config["c"].GetFloat();
-  }
-
-  if (Config.HasMember("Min")) {
-    Min = Config["Min"].GetFloat();
-  }
-  if (Config.HasMember("Max")) {
-    Max = Config["Max"].GetFloat();
-  }
+  Min = Configuration.LoadValue(Config, "Min");
+  Max = Configuration.LoadValue(Config, "Max");
 
   // configure PID2 Class
   PID2Class_.Configure(Kp,Ki,Kd,Tf,b,c,Min,Max);
@@ -112,17 +70,20 @@ bool PID2Class::Initialized() {return true;}
 void PID2Class::Run(Mode mode) {
   // sample time
   if(!config_.UseFixedTimeSample) {
-    config_.dt = config_.dt_node->getFloat();
+    config_.dt = config_.time_node->getFloat();
   }
 
   // Run
   float y = 0.0f;
   float ff = 0.0f;
   float fb = 0.0f;
-  PID2Class_.Run(mode,
-                 config_.reference_node->getFloat(),
-                 config_.feedback_node->getFloat(),
-                 config_.dt, &y, &ff, &fb);
+  float ref;
+  float feedback;
+
+  ref = config_.reference_node->getFloat();
+  feedback = config_.feedback_node->getFloat();
+  PID2Class_.Run(mode, ref, feedback, config_.dt, &y, &ff, &fb);
+
   data_.output_node->setFloat(y);
   data_.ff_node->setFloat(ff);
   data_.fb_node->setFloat(fb);
@@ -130,7 +91,6 @@ void PID2Class::Run(Mode mode) {
 
 void PID2Class::Clear() {
   config_.UseFixedTimeSample = false;
-  data_.mode_node->setInt(kStandby);
   data_.output_node->setFloat(0.0f);
   data_.ff_node->setFloat(0.0f);
   data_.fb_node->setFloat(0.0f);

@@ -18,12 +18,13 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef CONFIGURATION_HXX_
-#define CONFIGURATION_HXX_
+#pragma once
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "definition-tree2.h"
+
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
@@ -33,4 +34,7 @@ class Configuration {
     void LoadConfiguration(std::string FileName,rapidjson::Document *Configuration);
 };
 
-#endif
+std::string LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node);
+std::string LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node);
+std::string LoadTime(const rapidjson::Value& Config, std::string SystemName, std::string TimeName, ElementPtr Node);
+float LoadValue(const rapidjson::Value& Config, std::string ValName);

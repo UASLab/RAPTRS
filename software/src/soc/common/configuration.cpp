@@ -29,3 +29,43 @@ void Configuration::LoadConfiguration(std::string FileName,rapidjson::Document *
   Configuration->ParseStream(JsonConfig);
   assert(Configuration->IsObject());
 }
+
+
+// Helpers to Read Config
+std::string Configuration::LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node) {
+  if (Config.HasMember(OutputName)) {
+    std::string OutputKey = Config[OutputName].GetString();
+    Node = deftree.initElement(SystemName + "/" + OutputName, ": System output", LOG_FLOAT, LOG_NONE);
+  } else {
+    throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + OutputName + std::string(" not specified in configuration."));
+  }
+  return OutputKey;
+}
+
+std::string Configuration::LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node) {
+  if (Config.HasMember(InputName)) {
+    std::string InputKey = Config[InputName].GetString();
+    Node = deftree.getElement(InputKey, true);
+  } else {
+    throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + InputName + std::string(" not specified in configuration."));
+  }
+  return InputKey;
+}
+
+std::string Configuration::LoadTime(const rapidjson::Value& Config, std::string SystemName, std::string TimeName, ElementPtr Node) {
+  if (Config.HasMember(TimeName)) {
+    std::string TimeKey = Config[TimeName].GetString();
+    Node = deftree.getElement(TimeKey);
+  } else {
+    throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + TimeName + std::string(" not specified in configuration."));
+  }
+  return TimeKey;
+}
+
+float Configuration::LoadValue(const rapidjson::Value& Config, std::string ValName) {
+  float Val;
+  if (Config.HasMember(ValName)) {
+    Val = Config[ValName].GetFloat();
+  }
+  return Val;
+}
