@@ -27,7 +27,7 @@ class TelemetryClient {
     TelemetryClient();
     void Configure(const rapidjson::Value& Config);
     void Send();
-    void End();
+    // void End();
   private:
     std::string _RootPath = "/Telemetry";
     std::string Uart;
@@ -98,12 +98,6 @@ class TelemetryClient {
       ElementPtr MinCellVolt;
     } PowerNodes;
     int count = 0;
-    const uint8_t header_[2] = {0x42,0x46};
-    const uint8_t headerLength_ = 5;
-    const uint8_t checksumLength_ = 2;
-    uint8_t LengthBuffer_[2];
-    uint16_t Length_ = 0;
-    uint8_t Checksum_[2];
     void SendPacket(uint16_t pkt_id, uint8_t *Buffer, uint16_t len);
 };
 
@@ -111,7 +105,7 @@ class TelemetryServer {
   public:
     TelemetryServer();
     void ReceivePacket();
-    void End();
+    // void End();
   private:
     int FileDesc_;
     bool rxUart = false;
@@ -128,13 +122,7 @@ class TelemetryServer {
     struct sockaddr_in TelemetryServer_;
     std::vector<uint8_t> Buffer;
     uint8_t Buffer_[kUartBufferMaxSize];
-    const uint8_t header_[2] = {0x42,0x46};
-    const uint8_t headerLength_ = 5;
-    const uint8_t checksumLength_ = 2;
     uint8_t RxByte_;
-    uint8_t LengthBuffer_[2];
-    uint16_t Length_ = 0;
-    uint8_t Checksum_[2];
 
     void generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, uint8_t & cksum0, uint8_t &cksum1);
     void send_packet(uint8_t id, uint8_t *payload, uint8_t len);
