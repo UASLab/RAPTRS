@@ -128,7 +128,7 @@ void TelemetryClient::Send() {
   count++;		// counts and updates assumes a 50hz loop rate
 
   float timestamp_sec = 0.0;
-  if (useTime) {
+  if ( useTime ) {
     timestamp_sec = TimeNodes.Time_us->getLong() / 1000000.0;
   }
   // cout << count << " " << timestamp_sec << endl;
