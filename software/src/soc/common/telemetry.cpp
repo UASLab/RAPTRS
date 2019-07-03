@@ -153,7 +153,7 @@ void TelemetryClient::Send() {
     SendPacket(gps.id, gps.payload, gps.len);
   }
   
-  if ( (count+1)%10 == 0 ) {
+  if ( (count+1)%10 == 0 ) {	// 5hz
     message_airdata_v7_t air;
     air.index = 0;
     air.timestamp_sec = timestamp_sec;
@@ -257,14 +257,14 @@ void TelemetryClient::Send() {
 }
 
 /* Sends byte buffer given meta data */
-void TelemetryClient::SendPacket(uint16_t pkt_id, uint8_t *Buffer, uint16_t len ) {
+void TelemetryClient::SendPacket(uint16_t pkt_id, uint8_t *buf, uint16_t len ) {
   // cout << "-> " << pkt_id << endl;
   std::vector<uint8_t> TelemBuffer;
   TelemBuffer.resize(sizeof(pkt_id) + len);
   // header
   *(TelemBuffer.data()) = pkt_id;
   // payload
-  std::memcpy(TelemBuffer.data()+sizeof(pkt_id), Buffer, len);
+  std::memcpy(TelemBuffer.data()+sizeof(pkt_id), buf, len);
   // write to UDP
   sendto(TelemetrySocket_,TelemBuffer.data(),TelemBuffer.size(),0,(struct sockaddr *)&TelemetryServer_,sizeof(TelemetryServer_));
 }
