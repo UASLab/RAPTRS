@@ -40,20 +40,20 @@ class TelemetryClient {
     int TelemetryPort_ = 8020;
     struct sockaddr_in TelemetryServer_;
   bool useTime, useStaticPressure, useAirspeed, useAlt, useGps, useSbus, useImu, useAttitude, usePower;
-    struct TimeNodes{
+    struct {
       ElementPtr Time_us;
-    };
-    struct StaticPressNodes{
+    } TimeNodes;
+    struct {
       ElementPtr Pressure_Pa;
       ElementPtr Temperature_C;
-    };
-    struct AirspeedNodes{
+    } StaticPressNodes;
+    struct {
       ElementPtr Airspeed_ms;
-    };
-    struct AltNodes{
+    } AirspeedNodes;
+    struct {
       ElementPtr Alt_m;
-    };
-    struct GpsNodes{
+    } AltNodes;
+    struct {
       ElementPtr Fix;                                 // True for 3D fix only
       ElementPtr NumberSatellites;                 // Number of satellites used in solution
       ElementPtr TOW;                             // GPS time of the navigation epoch
@@ -73,19 +73,19 @@ class TelemetryClient {
       ElementPtr VAcc;
       ElementPtr SAcc;
       ElementPtr pDOP;                              // Position DOP
-    };
-    struct SbusNodes{
+    } GpsNodes;
+    struct {
       ElementPtr Channels[16];
       ElementPtr FailSafe;
       ElementPtr LostFrames;
-    };
-    struct ImuNodes{
+    } SbusNodes;
+    struct {
       ElementPtr Ax, Ay, Az;
       ElementPtr Gx, Gy, Gz;
       ElementPtr Hx, Hy, Hz;
       ElementPtr Temperature_C;                      // Temperature, C
-    };
-    struct AttitudeNodes{
+    } ImuNodes;
+    struct {
       ElementPtr Ax, Ay, Az;
       ElementPtr Gx, Gy, Gz;
       ElementPtr Axb, Ayb, Azb;
@@ -93,22 +93,10 @@ class TelemetryClient {
       ElementPtr Pitch, Roll, Yaw, Heading, Track;
       ElementPtr Lat, Lon, Alt;
       ElementPtr Vn, Ve, Vd;
-    };
-  struct PowerNodes{
-    ElementPtr MinCellVolt;
-  };
-    struct DataNodes{
-      TimeNodes Time;
-      StaticPressNodes StaticPress;
-      AirspeedNodes Airspeed;
-      AltNodes Alt;
-      GpsNodes Gps;
-      SbusNodes Sbus;
-      ImuNodes Imu;
-      AttitudeNodes Attitude;
-      PowerNodes Power;
-    };
-    DataNodes Nodes_;
+    } AttitudeNodes;
+    struct {
+      ElementPtr MinCellVolt;
+    } PowerNodes;
     int count = 0;
     const uint8_t header_[2] = {0x42,0x46};
     const uint8_t headerLength_ = 5;
