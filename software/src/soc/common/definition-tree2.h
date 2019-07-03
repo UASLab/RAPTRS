@@ -157,8 +157,8 @@ class DefinitionTree2 {
   ~DefinitionTree2() {}
 
   ElementPtr initElement(string name, string desc,
-                       log_tag_t datalog,
-                       log_tag_t telemetry);
+			 log_tag_t datalog,
+			 log_tag_t telemetry);
   ElementPtr getElement(string name, bool create=true);
 
   void GetKeys(string Name, vector<string> *KeysPtr);
