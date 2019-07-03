@@ -4,6 +4,10 @@ using std::endl;
 
 #include "telemetry.h"
 
+#include "aura_messages.h"
+
+static const double mps2kt = 1.9438444924406046432;
+
 /* Opens a socket for telemetry */
 TelemetryClient::TelemetryClient() {
   TelemetrySocket_ = socket(AF_INET, SOCK_DGRAM, 0);
@@ -13,20 +17,15 @@ TelemetryClient::TelemetryClient() {
 }
 
 void TelemetryClient::Configure(const rapidjson::Value& Config) {
-  std::vector<uint8_t> Buffer;
   if (Config.HasMember("Uart")) {
     Uart = Config["Uart"].GetString();
-    Buffer.resize(Uart.size());
-    memcpy(Buffer.data(),Uart.data(),Buffer.size());
-    SendPacket(UartPacket,Buffer);
+    SendPacket(UartPacket, (uint8_t *)(Uart.c_str()), Uart.length());
   } else {
     throw std::runtime_error(std::string("ERROR")+_RootPath+std::string(": Uart not specified in configuration."));
   }
   if (Config.HasMember("Baud")) {
-    Baud = Config["Baud"].GetUint64();
-    Buffer.resize(sizeof(Baud));
-    memcpy(Buffer.data(),&Baud,Buffer.size());
-    SendPacket(BaudPacket,Buffer);
+    Baud = Config["Baud"].GetUint();
+    SendPacket(BaudPacket, (uint8_t *)(&Baud), sizeof(Baud));
   } else {
     throw std::runtime_error(std::string("ERROR")+_RootPath+std::string(": Baud not specified in configuration."));
   }
@@ -70,7 +69,7 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
     Nodes_.Attitude.Lon = deftree.getElement(Sensor+"/Longitude_rad");
     Nodes_.Attitude.Lat = deftree.getElement(Sensor+"/Latitude_rad");
     Nodes_.Attitude.Alt = deftree.getElement(Sensor+"/Altitude_m");
-    Nodes_.Attitude.Vn= deftree.getElement(Sensor+"/NorthVelocity_ms");
+    Nodes_.Attitude.Vn = deftree.getElement(Sensor+"/NorthVelocity_ms");
     Nodes_.Attitude.Ve = deftree.getElement(Sensor+"/EastVelocity_ms");
     Nodes_.Attitude.Vd = deftree.getElement(Sensor+"/DownVelocity_ms");
     useAttitude = true;
@@ -126,120 +125,148 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
 }
 
 void TelemetryClient::Send() {
-  std::vector<uint8_t> DataPayload;
+  count++;		// counts and updates assumes a 50hz loop rate
+
+  float timestamp_sec = 0.0;
   if (useTime) {
-    Data_.Time.Time_us = Nodes_.Time.Time_us->getLong();
+    timestamp_sec = Nodes_.Time.Time_us->getLong() / 1000000.0;
   }
-  if (useStaticPressure) {
-    Data_.StaticPress.Pressure_Pa = Nodes_.StaticPress.Pressure_Pa->getFloat();
-    Data_.StaticPress.Temperature_C = Nodes_.StaticPress.Temperature_C->getFloat();
+  // cout << count << " " << timestamp_sec << endl;
+  
+  if ( useGps && (count+0)%10 == 0 ) { // 5hz
+    message_gps_v4_t gps;
+    gps.index = 0;
+    gps.timestamp_sec = timestamp_sec;
+    gps.latitude_deg = Nodes_.Gps.Lat->getDouble() * (180/M_PI);
+    gps.longitude_deg = Nodes_.Gps.Lon->getDouble() * (180/M_PI);
+    gps.altitude_m = Nodes_.Gps.Alt->getFloat();
+    gps.vn_ms = Nodes_.Gps.Vn->getFloat();
+    gps.ve_ms = Nodes_.Gps.Ve->getFloat();
+    gps.vd_ms = Nodes_.Gps.Vd->getFloat();
+    gps.unixtime_sec = timestamp_sec;
+    gps.satellites = Nodes_.Gps.NumberSatellites->getInt();
+    gps.horiz_accuracy_m = Nodes_.Gps.HAcc->getFloat();
+    gps.vert_accuracy_m = Nodes_.Gps.VAcc->getFloat();
+    gps.pdop = Nodes_.Gps.pDOP->getFloat();
+    gps.fix_type = Nodes_.Gps.Fix->getInt();
+    gps.pack();
+    SendPacket(gps.id, gps.payload, gps.len);
   }
-  if (useAirspeed) {
-    Data_.Airspeed.Airspeed_ms = Nodes_.Airspeed.Airspeed_ms->getFloat();
-  }
-  if (useAlt) {
-    Data_.Alt.Alt_m = Nodes_.Alt.Alt_m->getFloat();
-  }
-  if (useAttitude) {
-    Data_.Attitude.Ax = Nodes_.Attitude.Ax->getFloat();
-    Data_.Attitude.Axb = Nodes_.Attitude.Axb->getFloat();
-    Data_.Attitude.Ay = Nodes_.Attitude.Ay->getFloat();
-    Data_.Attitude.Ayb = Nodes_.Attitude.Ayb->getFloat();
-    Data_.Attitude.Az = Nodes_.Attitude.Az->getFloat();
-    Data_.Attitude.Azb = Nodes_.Attitude.Azb->getFloat();
-    Data_.Attitude.Gx = Nodes_.Attitude.Gx->getFloat();
-    Data_.Attitude.Gxb = Nodes_.Attitude.Gxb->getFloat();
-    Data_.Attitude.Gy = Nodes_.Attitude.Gy->getFloat();
-    Data_.Attitude.Gyb = Nodes_.Attitude.Gyb->getFloat();
-    Data_.Attitude.Gz = Nodes_.Attitude.Gz->getFloat();
-    Data_.Attitude.Gzb = Nodes_.Attitude.Gzb->getFloat();
-    Data_.Attitude.Pitch = Nodes_.Attitude.Pitch->getFloat();
-    Data_.Attitude.Roll = Nodes_.Attitude.Roll->getFloat();
-    Data_.Attitude.Yaw = Nodes_.Attitude.Yaw->getFloat();
-    Data_.Attitude.Heading = Nodes_.Attitude.Heading->getFloat();
-    Data_.Attitude.Track = Nodes_.Attitude.Track->getFloat();
-    Data_.Attitude.Lon = Nodes_.Attitude.Lon->getDouble();
-    Data_.Attitude.Lat = Nodes_.Attitude.Lat->getDouble();
-    Data_.Attitude.Alt = Nodes_.Attitude.Alt->getFloat();
-    Data_.Attitude.Vn= Nodes_.Attitude.Vn->getFloat();
-    Data_.Attitude.Ve = Nodes_.Attitude.Ve->getFloat();
-    Data_.Attitude.Vd = Nodes_.Attitude.Vd->getFloat();
-  }
-  if (useGps) {
-    Data_.Gps.Fix = Nodes_.Gps.Fix->getInt();
-    Data_.Gps.NumberSatellites = Nodes_.Gps.NumberSatellites->getInt();
-    Data_.Gps.TOW = Nodes_.Gps.TOW->getInt();
-    Data_.Gps.Year = Nodes_.Gps.Year->getInt();
-    Data_.Gps.Month = Nodes_.Gps.Month->getInt();
-    Data_.Gps.Day = Nodes_.Gps.Day->getInt();
-    Data_.Gps.Hour = Nodes_.Gps.Hour->getInt();
-    Data_.Gps.Min = Nodes_.Gps.Min->getInt();
-    Data_.Gps.Sec = Nodes_.Gps.Sec->getInt();
-    Data_.Gps.Lat = Nodes_.Gps.Lat->getDouble();
-    Data_.Gps.Lon = Nodes_.Gps.Lon->getDouble();
-    Data_.Gps.Alt = Nodes_.Gps.Alt->getFloat();
-    Data_.Gps.Vn = Nodes_.Gps.Vn->getFloat();
-    Data_.Gps.Ve = Nodes_.Gps.Ve->getFloat();
-    Data_.Gps.Vd = Nodes_.Gps.Vd->getFloat();
-    Data_.Gps.HAcc = Nodes_.Gps.HAcc->getFloat();
-    Data_.Gps.VAcc = Nodes_.Gps.VAcc->getFloat();
-    Data_.Gps.SAcc = Nodes_.Gps.SAcc->getFloat();
-    Data_.Gps.pDOP = Nodes_.Gps.pDOP->getFloat();
-  }
-  if (useImu) {
-    Data_.Imu.Ax = Nodes_.Imu.Ax->getFloat();
-    Data_.Imu.Ay = Nodes_.Imu.Ay->getFloat();
-    Data_.Imu.Az = Nodes_.Imu.Az->getFloat();
-    Data_.Imu.Gx = Nodes_.Imu.Gx->getFloat();
-    Data_.Imu.Gy = Nodes_.Imu.Gy->getFloat();
-    Data_.Imu.Gz = Nodes_.Imu.Gz->getFloat();
-    Data_.Imu.Temperature_C = Nodes_.Imu.Temperature_C->getFloat();
-  }
-  if (useSbus) {
-    Data_.Sbus.FailSafe = Nodes_.Sbus.FailSafe->getInt();
-    Data_.Sbus.LostFrames = Nodes_.Sbus.LostFrames->getLong();
-    for (size_t j=0; j < 16; j++) {
-      Data_.Sbus.Channels[j] = Nodes_.Sbus.Channels[j]->getFloat();
+  
+  if ( (count+1)%10 == 0 ) {
+    message_airdata_v7_t air;
+    air.index = 0;
+    air.timestamp_sec = timestamp_sec;
+    if ( useStaticPressure ) {
+      air.pressure_mbar = Nodes_.StaticPress.Pressure_Pa->getFloat();
+      air.temp_C = Nodes_.StaticPress.Temperature_C->getFloat();
+    } else {
+      air.pressure_mbar = 0.0;
+      air.temp_C = 0.0;
     }
+    if ( useAirspeed ) {
+      air.airspeed_smoothed_kt = Nodes_.Airspeed.Airspeed_ms->getFloat() * mps2kt;
+    } else {
+      air.airspeed_smoothed_kt = 0.0;
+    }
+    if ( useAlt ) {
+      air.altitude_smoothed_m = Nodes_.Alt.Alt_m->getFloat();
+      air.altitude_true_m = Nodes_.Alt.Alt_m->getFloat();
+    } else {
+      air.altitude_smoothed_m = 0.0;
+      air.altitude_true_m = 0.0;
+    }
+    air.pressure_vertical_speed_fps = 0.0; // not used
+    air.wind_dir_deg = 0.0; //no
+    air.wind_speed_kt = 0.0; //no
+    air.pitot_scale_factor = 1; //no
+    air.status = 0;
+    air.pack();
+    SendPacket(air.id, air.payload, air.len);
   }
-  if (usePower) {
-    Data_.Power.MinCellVolt = Nodes_.Power.MinCellVolt->getFloat();
+  
+  if ( useImu && (count+2)%10 == 0) { // 5hz
+    message_imu_v4_t imu;
+    imu.index = 0;
+    imu.timestamp_sec = timestamp_sec;
+    imu.p_rad_sec = Nodes_.Imu.Gx->getFloat();
+    imu.q_rad_sec = Nodes_.Imu.Gy->getFloat();
+    imu.r_rad_sec = Nodes_.Imu.Gz->getFloat();
+    imu.ax_mps_sec = Nodes_.Imu.Ax->getFloat();
+    imu.ay_mps_sec = Nodes_.Imu.Ay->getFloat();
+    imu.az_mps_sec = Nodes_.Imu.Az->getFloat();
+    imu.hx = 0.0;
+    imu.hy = 0.0;
+    imu.hz = 0.0;
+    imu.temp_C = Nodes_.Imu.Temperature_C->getFloat();
+    imu.status = 0;
+    imu.pack();
+    SendPacket(imu.id, imu.payload, imu.len);
   }
-  DataPayload.resize(sizeof(Data));
-  memcpy(DataPayload.data(),&Data_,DataPayload.size());
-  SendPacket(DataPacket,DataPayload);
+  
+  if ( useAttitude && (count+3)%5 == 0 ) { // 10hz
+    message_filter_v4_t nav;
+    nav.index = 0;
+    nav.timestamp_sec = timestamp_sec;
+    nav.latitude_deg = Nodes_.Attitude.Lat->getDouble() * (180/M_PI);
+    nav.longitude_deg = Nodes_.Attitude.Lon->getDouble() * (180/M_PI);
+    nav.altitude_m = Nodes_.Attitude.Alt->getFloat();
+    nav.vn_ms = Nodes_.Attitude.Vn->getFloat();
+    nav.ve_ms = Nodes_.Attitude.Ve->getFloat();
+    nav.vd_ms = Nodes_.Attitude.Vd->getFloat();
+    nav.roll_deg = Nodes_.Attitude.Roll->getFloat() * (180/M_PI);
+    nav.pitch_deg = Nodes_.Attitude.Pitch->getFloat() * (180/M_PI);
+    nav.yaw_deg = Nodes_.Attitude.Heading->getFloat() * (180/M_PI);
+    nav.p_bias = Nodes_.Attitude.Gxb->getFloat();
+    nav.q_bias = Nodes_.Attitude.Gyb->getFloat();
+    nav.r_bias = Nodes_.Attitude.Gzb->getFloat();
+    nav.ax_bias = Nodes_.Attitude.Axb->getFloat();
+    nav.ay_bias = Nodes_.Attitude.Ayb->getFloat();
+    nav.az_bias = Nodes_.Attitude.Azb->getFloat();
+    nav.sequence_num = 0;
+    nav.status = 0;
+    nav.pack();
+    SendPacket(nav.id, nav.payload, nav.len);
+  }
+  
+  if ( useSbus && (count+4)%10 == 0 ) { // 5hz
+    message_pilot_v3_t pilot;
+    pilot.index = 0;
+    pilot.timestamp_sec = timestamp_sec;
+    for ( size_t j = 0; j < 8; j++ ) {
+      pilot.channel[j] = Nodes_.Sbus.Channels[j]->getFloat();
+    }
+    pilot.status = 0;
+    pilot.pack();
+    SendPacket(pilot.id, pilot.payload, pilot.len);
+  }
+  
+  if ( usePower && (count+5)%10 == 0 ) { // 5hz
+    message_system_health_v5_t health;
+    health.index;
+    health.timestamp_sec = timestamp_sec;
+    health.system_load_avg = 0.0;
+    health.avionics_vcc = 0.0;
+    health.main_vcc = 0.0;
+    health.cell_vcc = Nodes_.Power.MinCellVolt->getFloat();
+    health.main_amps = 0.0;
+    health.total_mah = 0.0;
+    health.pack();
+    SendPacket(health.id, health.payload, health.len);
+  }
 }
 
 /* Sends byte buffer given meta data */
-void TelemetryClient::SendPacket(PacketType_ Type, std::vector<uint8_t> &Buffer) {
+void TelemetryClient::SendPacket(uint16_t pkt_id, uint8_t *Buffer, uint16_t len ) {
+  // cout << "-> " << pkt_id << endl;
   std::vector<uint8_t> TelemBuffer;
-  TelemBuffer.resize(headerLength_ + Buffer.size() + checksumLength_);
+  TelemBuffer.resize(sizeof(pkt_id) + len);
   // header
-  TelemBuffer[0] = header_[0];
-  TelemBuffer[1] = header_[1];
-  // data source
-  TelemBuffer[2] = (uint8_t) Type;
-  // data length
-  TelemBuffer[3] = Buffer.size() & 0xff;
-  TelemBuffer[4] = Buffer.size() >> 8;
+  *(TelemBuffer.data()) = pkt_id;
   // payload
-  std::memcpy(TelemBuffer.data()+headerLength_,Buffer.data(),Buffer.size());
-  // checksum
-  CalcChecksum((size_t)(Buffer.size()+headerLength_),TelemBuffer.data(),Checksum_);
-  TelemBuffer[Buffer.size()+headerLength_] = Checksum_[0];
-  TelemBuffer[Buffer.size()+headerLength_+1] = Checksum_[1];
+  std::memcpy(TelemBuffer.data()+sizeof(pkt_id), Buffer, len);
   // write to UDP
   sendto(TelemetrySocket_,TelemBuffer.data(),TelemBuffer.size(),0,(struct sockaddr *)&TelemetryServer_,sizeof(TelemetryServer_));
-}
-
-/* Computes a two byte checksum. */
-void TelemetryClient::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum) {
-  Checksum[0] = 0;
-  Checksum[1] = 0;
-  for (size_t i = 0; i < ArraySize; i++) {
-    Checksum[0] += ByteArray[i];
-    Checksum[1] += Checksum[0];
-  }
 }
 
 TelemetryServer::TelemetryServer() {
@@ -254,28 +281,23 @@ TelemetryServer::TelemetryServer() {
 }
 
 void TelemetryServer::ReceivePacket() {
-  PacketType_ Type;
   std::vector<uint8_t> Payload;
   ssize_t MessageSize = recv(TelemetrySocket_,Buffer.data(),Buffer.size(),0);
   if (MessageSize > 0) {
-    for (ssize_t i=0; i < MessageSize; i++) {
-      if (ParseMessage(Buffer[i],&Type,&Payload)) {
-        if (Type == UartPacket) {
-          Uart.resize(Payload.size());
-          for (size_t j=0; j < Payload.size(); j++) {
-            Uart[j] = (char) Payload[j];
-          }
-          rxUart = true;
-        }
-        if (Type == BaudPacket) {
-          memcpy(&Baud,Payload.data(),sizeof(Baud));
-          rxBaud = true;
-        }
-        if (Type == DataPacket) {
-          memcpy(&Data_,Payload.data(),sizeof(Data_));
-          update(Data_);
-        }
+    uint16_t pkt_id = *(uint16_t *)(Buffer.data());
+    uint16_t len = MessageSize - sizeof(pkt_id);
+    uint8_t *payload = Buffer.data() + sizeof(pkt_id);
+    if ( pkt_id == UartPacket ) {
+      Uart = std::string((char *)payload, len);
+      for (size_t j=0; j < Payload.size(); j++) {
+	Uart[j] = (char) Payload[j];
       }
+      rxUart = true;
+    } else if ( pkt_id == BaudPacket ) {
+      Baud = *(uint32_t *)payload;
+      rxBaud = true;
+    } else {
+      send_packet(pkt_id, payload, len);
     }
   }
   if ((rxUart)&&(rxBaud)&&(!uartLatch)) {
@@ -306,90 +328,6 @@ void TelemetryServer::ReceivePacket() {
   }
 }
 
-bool TelemetryServer::ParseMessage(uint8_t byte,PacketType_ *message,std::vector<uint8_t> *Payload) {
-    RxByte_ = byte;
-    // header
-    if (ParserState_ < 2) {
-      if (RxByte_ == header_[ParserState_]) {
-        Buffer_[ParserState_] = RxByte_;
-        ParserState_++;
-      }
-    // length
-    } else if (ParserState_ == 3) {
-      LengthBuffer_[0] = RxByte_;
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ == 4) {
-      LengthBuffer_[1] = RxByte_;
-      Length_ = ((uint16_t)LengthBuffer_[1] << 8) | LengthBuffer_[0];
-      if (Length_ > (kUartBufferMaxSize-headerLength_-checksumLength_)) {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    // message ID and payload
-    } else if (ParserState_ < (Length_ + headerLength_)) {
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    // checksum 0
-    } else if (ParserState_ == (Length_ + headerLength_)) {
-      CalcChecksum(Length_ + headerLength_,Buffer_,Checksum_);
-      if (RxByte_ == Checksum_[0]) {
-        ParserState_++;
-      } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-    // checksum 1
-    } else if (ParserState_ == (Length_ + headerLength_ + 1)) {
-      if (RxByte_ == Checksum_[1]) {
-        // message ID
-        *message = (PacketType_) Buffer_[2];
-        // payload size
-        Payload->resize(Length_);
-        // payload
-        std::memcpy(Payload->data(),Buffer_+headerLength_,Length_);
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return true;
-      } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
-        return false;
-      }
-    }
-  return false;
-}
-
-/* Computes a two byte checksum. */
-void TelemetryServer::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum) {
-  Checksum[0] = 0;
-  Checksum[1] = 0;
-  for (size_t i = 0; i < ArraySize; i++) {
-    Checksum[0] += ByteArray[i];
-    Checksum[1] += Checksum[0];
-  }
-}
-
 void TelemetryServer :: generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, uint8_t & cksum0, uint8_t & cksum1)
 {
   cksum0 = 0;
@@ -407,218 +345,24 @@ void TelemetryServer :: generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, 
   }
 }
 
-void TelemetryServer :: send_packet(uint8_t * package, uint8_t IDnum, uint8_t size)
+void TelemetryServer :: send_packet(uint8_t id, uint8_t *payload, uint8_t len)
 {
   uint8_t buf[4];
   uint8_t checksum0;
   uint8_t checksum1;
 
-  generate_cksum(IDnum, size, package, checksum0, checksum1);
+  generate_cksum(id, len, payload, checksum0, checksum1);
 
   buf[0] = 147;
   buf[1] = 224;
-  buf[2] = IDnum;
-  buf[3] = size;
+  buf[2] = id;
+  buf[3] = len;
 
   write(FileDesc_, buf, 4);
-  write(FileDesc_, package, size);
+  write(FileDesc_, payload, len);
 
   buf[0] = checksum0;
   buf[1] = checksum1;
 
   write(FileDesc_, buf, 2);
 }
-
-void TelemetryServer :: update(const Data &DataRef) {
-
-  count = count+1;
-
-  if (count < 10) {
-    return;
-  }
-
-  count = 0;
-
-  gpsPacket gps;
-  gps.index = 0;
-  gps.timestamp = DataRef.Time.Time_us/1000000.0;
-  gps.lat_deg = DataRef.Gps.Lat*(180/M_PI);//pi?
-  gps.long_deg = DataRef.Gps.Lon*(180/M_PI);
-  gps.alt_m = DataRef.Gps.Alt;
-  gps.vn_ms = DataRef.Gps.Vn*100;
-  gps.ve_ms = DataRef.Gps.Ve*100;
-  gps.vd_ms = DataRef.Gps.Vd*100;
-  gps.unix_time_sec = DataRef.Time.Time_us/1000000.0;
-  gps.satellites = DataRef.Gps.NumberSatellites;
-  gps.horiz_accuracy_m = DataRef.Gps.HAcc*100;
-  gps.vert_accuracy_m = DataRef.Gps.VAcc*100;
-  gps.pdop = DataRef.Gps.pDOP*100;
-  gps.fixType = DataRef.Gps.Fix;
-
-  airPacket air;
-  air.index = 0;
-  air.timestamp = DataRef.Time.Time_us/1000000.0;
-  air.pressure_mbar = DataRef.StaticPress.Pressure_Pa/10.0;
-  air.temp_degC = DataRef.StaticPress.Temperature_C*100;
-  const double mps2kt = 1.9438444924406046432;
-  air.airspeed_smoothed_kt = DataRef.Airspeed.Airspeed_ms * mps2kt * 100;
-  air.altitude_smoothed_m = DataRef.Alt.Alt_m;
-  air.altitude_true_m = DataRef.Alt.Alt_m;
-  air.pressure_vertical_speed_fps=1;//maybe find?
-  air.wind_dir_deg=1;//no
-  air.wind_speed_kt=1;//no
-  air.pitot_scale_factor=1;//no
-  air.status = 0;
-
-  pilotPacket pilot;
-  pilot.index = 0;
-  pilot.time = DataRef.Time.Time_us/1000000.0;
-  pilot.chan[0] = DataRef.Sbus.Channels[0]*20000;
-  pilot.chan[1] = DataRef.Sbus.Channels[1]*20000;
-  pilot.chan[2] = DataRef.Sbus.Channels[2]*20000;
-  pilot.chan[3] = DataRef.Sbus.Channels[3]*20000;
-  pilot.chan[4] = DataRef.Sbus.Channels[4]*20000;
-  pilot.chan[5] = DataRef.Sbus.Channels[5]*20000;
-  pilot.chan[6] = DataRef.Sbus.Channels[6]*20000;
-  pilot.chan[7] = 0;
-  pilot.status = 0;
-
-  ImunodePacket imu;
-  imu.index = 0;
-  imu.imu_timestamp = DataRef.Time.Time_us/1000000.0;
-  imu.p_rad_sec = DataRef.Imu.Gx;
-  imu.q_rad_sec = DataRef.Imu.Gy;
-  imu.r_rad_sec = DataRef.Imu.Gz;
-  imu.ax_mps_sec = DataRef.Imu.Ax;
-  imu.ay_mps_sec = DataRef.Imu.Ay;
-  imu.az_mps_sec = DataRef.Imu.Az;
-  imu.hx = DataRef.Imu.Hx;
-  imu.hy = DataRef.Imu.Hy;
-  imu.hz = DataRef.Imu.Hz;
-  imu.temp_C = DataRef.Imu.Temperature_C;
-  imu.status = 0;
-
-  filterPacket filter;
-  filter.index = 0;
-  filter.timestamp = DataRef.Time.Time_us/1000000.0;
-  filter.latitude_deg = DataRef.Attitude.Lat*(180/M_PI);
-  filter.longitude_deg = DataRef.Attitude.Lon*(180/M_PI);
-  filter.altitude_m = DataRef.Attitude.Alt;
-  filter.vn_ms = DataRef.Attitude.Vn*100;
-  filter.ve_ms = DataRef.Attitude.Ve*100;
-  filter.vd_ms = DataRef.Attitude.Vd*100;
-  filter.roll_deg = DataRef.Attitude.Roll*10*(180/M_PI);
-  filter.pitch_deg = DataRef.Attitude.Pitch*10*(180/M_PI);
-  filter.heading_deg = DataRef.Attitude.Heading*10*(180/M_PI);
-  filter.p_bias = DataRef.Attitude.Gxb*1000;
-  filter.q_bias = DataRef.Attitude.Gyb*1000;
-  filter.r_bias = DataRef.Attitude.Gzb*1000;
-  filter.ax_bias = DataRef.Attitude.Axb*1000;
-  filter.ay_bias = DataRef.Attitude.Ayb*1000;
-  filter.az_bias = DataRef.Attitude.Azb*1000;
-  filter.sequence_num = 1;
-  filter.status = 0;
-
-  ap_status ap;
-  ap.index;
-  ap.frame_time;
-  ap.flags; //?
-  ap.groundtrack_deg;
-  ap.roll_deg;
-  ap.Target_msl_ft;
-  ap.ground_m;
-  ap.pitch_deg;
-  ap.airspeed_kt;
-  ap.flight_timer;
-  ap.target_waypoint_idx;
-  if( sizeof(filter.latitude_deg) != 0 && num2 !=0) {
-    ap.wp_lon = DataRef.Attitude.Lon*(180/M_PI);
-    ap.wp_lat = DataRef.Attitude.Lat*(180/M_PI);;
-    num2 = 0;
-  }
-  ap.wp_index;
-  ap.routesize = 1;
-  ap.sequence_num;
-
- /*  ap.timestamp = fmuData.Time_us/1000000.0;
-   ap.master_switch;
-   ap.pilot_pass_through;
-   ap.groundtrack_deg;
-   ap.roll_deg;
-   ap.altitude_msl_ft;
-   ap.altitude_ground_m;
-   ap.pitch_deg;
-   ap.airspeed_kt;
-   ap.flight_timer;
-   ap.target_waypoint_idx;
-if (filter.latitude_deg != 0 && num2 != 0) {
-   ap.longitude_deg = navOut.LLA[0]*(180/M_PI);
-   ap.latitude_deg = navOut.LLA[0]*(180/M_PI);
-   num2 = 0;
-}
-   ap.route_size;
-   ap.sequence_num;
-   ap.index = 65535;
-
-
-   numactPacket numact1;
-   numact1.index;
-   numact1.timestamp = fmuData.Time_us;
-   numact1.aileron;
-   numact1.elevator;
-   numact1.throttle;
-   numact1.rudder;
-   numact1.channel5;
-   numact1.flaps;
-   numact1.channel7;
-   numact1.channel8;
-   numact1.status;
- */
-   
-  healthPacket health;
-  health.index;
-  health.frame_time = DataRef.Time.Time_us/1000000.0;
-  health.system_load_avg;
-  health.board_vcc;
-  health.extern_volts;
-  health.extern_cell_volts = (int)(DataRef.Power.MinCellVolt * 1000.0);
-  health.extern_amps;
-  health.dekamah;
-
-  uint8_t IDnum;
-  uint8_t size;
-//ap
-  IDnum = 32;
-  size = sizeof(ap);
-  send_packet((uint8_t *)(&ap), IDnum, size);
-//GPS BdddfhhhdBHHHB
-  IDnum = 26;
-  size = sizeof(gps);
-  send_packet((uint8_t *)(&gps), IDnum, size);
-//airdata BdHhhffhHBBB
-  IDnum = 18;
-  size = sizeof(air);
-  send_packet((uint8_t *)(&air), IDnum, size);
-//pilotcontrol BdhhhhhhhhB
-  IDnum = 20;
-  size = sizeof(pilot);
-  send_packet((uint8_t *)(&pilot), IDnum, size);
-//imudata BdfffffffffhB
-  IDnum = 17;
-  size = sizeof(imu);
-  send_packet((uint8_t *)(&imu), IDnum, size);
-//filterdata BdddfhhhhhhhhhhhhBB
-  IDnum = 31;
-  size = sizeof(filter);
-  send_packet((uint8_t *)(&filter), IDnum, size);
-/*
-//actdata BdhhHhhhhhB
-   size = sizeof(numact1);
-   IDnum = 21;
-   send_packet((uint8_t *)(&numact1), IDnum, size);
-*/
-//health BfHHHHHH
-  size = sizeof(health);
-  IDnum = 41;
-  send_packet((uint8_t *)(&health), IDnum, size);
-};
