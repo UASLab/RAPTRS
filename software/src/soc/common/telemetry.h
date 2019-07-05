@@ -95,6 +95,8 @@ class TelemetryClient {
       ElementPtr Vn, Ve, Vd;
     } AttitudeNodes;
     struct {
+      ElementPtr InputVolt;
+      ElementPtr AvionicsVolt;
       ElementPtr MinCellVolt;
     } PowerNodes;
     int count = 0;
@@ -124,8 +126,23 @@ class TelemetryServer {
     uint8_t Buffer_[kUartBufferMaxSize];
     uint8_t RxByte_;
 
-    void generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, uint8_t & cksum0, uint8_t &cksum1);
-    void send_packet(uint8_t id, uint8_t *payload, uint8_t len);
+    // external serial port link
+    int state = 0;
+    int counter = 0;
+    uint8_t cksum_lo = 0, cksum_hi = 0;
+    static const uint8_t MAX_MESSAGE_LEN = 200;
+    static const uint8_t START_OF_MSG0 = 147;
+    static const uint8_t START_OF_MSG1 = 224;
+    uint32_t parse_errors = 0;
+    uint8_t pkt_id = 0;
+    uint8_t pkt_len = 0;
+    uint8_t payload[MAX_MESSAGE_LEN];
+    uint8_t sequence_num;
+    void generate_cksum(uint8_t id, uint8_t size, uint8_t *buf, uint8_t & cksum0, uint8_t &cksum1);
+    void send_message(uint8_t id, uint8_t *payload, uint8_t len);
+    bool read_message();
+    bool process_message();
+    vector<string> split( const string& str, const char* sep, int maxsplit=0 );
 };
 
 #endif

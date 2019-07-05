@@ -2,6 +2,11 @@
 using std::cout;
 using std::endl;
 
+#include <vector>
+#include <string>
+using std::vector;
+using std:: string;
+
 #include "telemetry.h"
 
 #include "aura_messages.h"
@@ -119,6 +124,8 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
   }
   if (Config.HasMember("Power")) {
     std::string Power = Config["Power"].GetString();
+    PowerNodes.InputVolt = deftree.getElement("/Sensors/Fmu/Voltage/Input_V");
+    PowerNodes.AvionicsVolt = deftree.getElement("/Sensors/Fmu/Voltage/Regulated_V");
     PowerNodes.MinCellVolt = deftree.getElement(Power+"/MinCellVolt_V");
     usePower = true;
   }
@@ -246,8 +253,8 @@ void TelemetryClient::Send() {
     health.index;
     health.timestamp_sec = timestamp_sec;
     health.system_load_avg = 0.0;
-    health.avionics_vcc = 0.0;
-    health.main_vcc = 0.0;
+    health.avionics_vcc = PowerNodes.AvionicsVolt->getFloat();
+    health.main_vcc = PowerNodes.InputVolt->getFloat();
     health.cell_vcc = PowerNodes.MinCellVolt->getFloat();
     health.main_amps = 0.0;
     health.total_mah = 0.0;
@@ -297,7 +304,14 @@ void TelemetryServer::ReceivePacket() {
       Baud = *(uint32_t *)payload;
       rxBaud = true;
     } else {
-      send_packet(pkt_id, payload, len);
+      if (uartLatch) {
+	send_message(pkt_id, payload, len);
+      }
+    }
+  }
+  if (uartLatch) {
+    if (read_message()) {
+      process_message();
     }
   }
   if ((rxUart)&&(rxBaud)&&(!uartLatch)) {
@@ -345,7 +359,7 @@ void TelemetryServer :: generate_cksum(uint8_t id, uint8_t size, uint8_t * buf, 
   }
 }
 
-void TelemetryServer :: send_packet(uint8_t id, uint8_t *payload, uint8_t len)
+void TelemetryServer :: send_message(uint8_t id, uint8_t *payload, uint8_t len)
 {
   uint8_t buf[4];
   uint8_t checksum0;
@@ -353,8 +367,8 @@ void TelemetryServer :: send_packet(uint8_t id, uint8_t *payload, uint8_t len)
 
   generate_cksum(id, len, payload, checksum0, checksum1);
 
-  buf[0] = 147;
-  buf[1] = 224;
+  buf[0] = START_OF_MSG0;
+  buf[1] = START_OF_MSG1;
   buf[2] = id;
   buf[3] = len;
 
@@ -365,4 +379,189 @@ void TelemetryServer :: send_packet(uint8_t id, uint8_t *payload, uint8_t len)
   buf[1] = checksum1;
 
   write(FileDesc_, buf, 2);
+}
+
+bool TelemetryServer::read_message() {
+    int len;
+    uint8_t input[2];
+    int giveup_counter = 0;
+
+    bool new_data = false;
+
+    if ( state == 0 ) {
+        counter = 0;
+        len = read( FileDesc_, input, 1 );
+        giveup_counter = 0;
+        while ( len > 0 && input[0] != START_OF_MSG0 && giveup_counter < 100 ) {
+            // printf("state0: len = %d val = %2X (%c)\n", len, input[0] , input[0]);
+            len = read( FileDesc_, input, 1 );
+            giveup_counter++;
+            // fprintf( stderr, "giveup_counter = %d\n", giveup_counter);
+        }
+        if ( len > 0 && input[0] == START_OF_MSG0 ) {
+            // fprintf( stderr, "read START_OF_MSG0\n");
+            state++;
+        }
+    }
+    if ( state == 1 ) {
+        len = read( FileDesc_, input, 1 );
+        if ( len > 0 ) {
+            if ( input[0] == START_OF_MSG1 ) {
+                //fprintf( stderr, "read START_OF_MSG1\n");
+                state++;
+            } else if ( input[0] == START_OF_MSG0 ) {
+                //fprintf( stderr, "read START_OF_MSG0\n");
+            } else {
+                parse_errors++;
+                state = 0;
+            }
+        }
+    }
+    if ( state == 2 ) {
+        len = read( FileDesc_, input, 1 );
+        if ( len > 0 ) {
+            pkt_id = input[0];
+            //fprintf( stderr, "pkt_id = %d\n", pkt_id );
+            state++;
+        }
+    }
+    if ( state == 3 ) {
+        len = read( FileDesc_, input, 1 );
+        if ( len > 0 ) {
+            pkt_len = input[0];
+            if ( pkt_len < 256 ) {
+                //fprintf( stderr, "pkt_len = %d\n", pkt_len );
+                state++;
+            } else {
+                parse_errors++;
+                state = 0;
+            }
+        }
+    }
+    if ( state == 4 ) {
+        len = read( FileDesc_, input, 1 );
+        while ( len > 0 ) {
+            payload[counter++] = input[0];
+            // fprintf( stderr, "%02X ", input[0] );
+            if ( counter >= pkt_len ) {
+                break;
+            }
+            len = read( FileDesc_, input, 1 );
+        }
+
+        if ( counter >= pkt_len ) {
+            state++;
+            // fprintf( stderr, "\n" );
+        }
+    }
+    if ( state == 5 ) {
+        len = read( FileDesc_, input, 1 );
+        if ( len > 0 ) {
+            cksum_lo = input[0];
+            state++;
+        }
+    }
+    if ( state == 6 ) {
+        len = read( FileDesc_, input, 1 );
+        if ( len > 0 ) {
+            cksum_hi = input[0];
+            uint8_t cksum0, cksum1;
+            generate_cksum( pkt_id, pkt_len, &(payload[0]), cksum0, cksum1 );
+            if ( cksum0 == cksum_lo && cksum1 == cksum_hi ) {
+                // printf( "checksum passes (%d)\n", pkt_id );
+                new_data = true;
+            } else {
+                parse_errors++;
+            }
+            // This is the end of a record, reset state to 0 to start
+            // looking for next record
+            state = 0;
+        }
+    }
+
+    return new_data;
+}
+
+bool TelemetryServer::process_message() {
+  // printf("received: %d %d\n", pkt_id, pkt_len);
+  if ( pkt_id == message_command_v1_id ) {
+    message_command_v1_t cmd;
+    message_event_v2_t response;
+    cmd.unpack(payload, pkt_len);
+    sequence_num = cmd.sequence_num;
+    // printf("  command: %s\n", cmd.message.c_str());
+    vector<string> tokens = split(cmd.message, ",");
+    if ( tokens[0] == "hb" ) {
+      // heart beat
+      response.timestamp_sec = 0.0;
+      response.sequence_num = sequence_num;
+      response.message = "hb";
+      response.pack();
+      send_message(response.id, response.payload, response.len);
+    } else if ( tokens[0] == "get" ) {
+      response.timestamp_sec = 0.0;
+      response.sequence_num = sequence_num;
+      if ( tokens[1] == "/config/identity/call_sign" ) {
+	printf("    call_sign");
+	response.message = "get: " + tokens[1] + "," + "Goldy3";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      } else if ( tokens[1] == "/config/specs/display_units" ) {
+	response.message = "get: " + tokens[1] + "," + "mps";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      } else if ( tokens[1] == "/config/autopilot/TECS/max_kt" ) {
+	response.message = "get: " + tokens[1] + "," + "60";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      } else if ( tokens[1] == "/config/autopilot/TECS/min_kt" ) {
+	response.message = "get: " + tokens[1] + "," + "33";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      } else if ( tokens[1] == "/config/autopilot/TECS/mass_kg" ) {
+	response.message = "get: " + tokens[1] + "," + "3";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      } else if ( tokens[1] == "/config/autopilot/TECS/weight_bal" ) {
+	response.message = "get: " + tokens[1] + "," + "1.0";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      } else {
+	// unknown/not handled
+	response.message = "get: " + tokens[1] + "," + "unknown";
+	response.pack();
+	send_message(response.id, response.payload, response.len);
+      }
+    }
+  }
+}
+
+vector<string> TelemetryServer::split( const string& str, const char* sep, int maxsplit )
+{
+    vector<string> result;
+    int n = strlen( sep );
+    if (n == 0) {
+        // Error: empty separator string
+        return result;
+    }
+    const char* s = str.c_str();
+    string::size_type len = str.length();
+    string::size_type i = 0;
+    string::size_type j = 0;
+    int splitcount = 0;
+
+    while (i+n <= len) {
+        if (s[i] == sep[0] && (n == 1 || memcmp(s+i, sep, n) == 0)) {
+            result.push_back( str.substr(j,i-j) );
+            i = j = i + n;
+            ++splitcount;
+            if (maxsplit && (splitcount >= maxsplit))
+                break;
+        } else {
+            ++i;
+        }
+    }
+
+    result.push_back( str.substr(j,len-j) );
+    return result;
 }
