@@ -40,6 +40,7 @@ class AircraftSocComms {
     AircraftSocComms(HardwareSerial& bus,uint32_t baud);
     void Begin();
     void SendSensorData(std::vector<uint8_t> &DataBuffer);
+    bool ReceiveOtherMessage(uint8_t *message, std::vector<uint8_t> *Payload);
     bool ReceiveModeCommand(AircraftMission::Mode *mode);
     bool ReceiveConfigMessage(std::vector<char> *ConfigString);
     bool ReceiveEffectorCommand(std::vector<float> *EffectorCommands);
@@ -47,6 +48,8 @@ class AircraftSocComms {
     void SendMessage(Message message, std::vector<uint8_t> &Payload);
     void SendMessage(uint8_t message, uint8_t *Payload, int len);
     bool ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload);
+    void ClearReceived();
+    void SendAck(uint8_t id, uint8_t subid);
   private:
     SerialLink *bus_;
     uint32_t baud_;
@@ -55,8 +58,6 @@ class AircraftSocComms {
     std::vector<uint8_t> ReceivedPayload_;
     message_mode_command_t cmd_msg;
     message_effector_command_t effector_msg;
-    message_config_ack_t config_ack_msg;
-    message_config_time_t config_time_msg;    
 };
 
 #endif

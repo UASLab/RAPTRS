@@ -363,6 +363,7 @@ class AircraftSensors {
       std::vector<SensorNodes::Data> Nodes;
     };
     void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
     void ReadSyncSensors();
     void ReadAsyncSensors();

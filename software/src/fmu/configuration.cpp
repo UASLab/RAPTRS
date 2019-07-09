@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "configuration.h"
+#include "fmu_messages.h"
 
 /* Load configuration from EEPROM */
 void AircraftConfiguration::Load() {
@@ -73,4 +74,43 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
     Serial.println("ERROR: FMU Config Message Failed to Parse: ");
     Serial.println(JsonString);
   }
+}
+
+/* Update configuration structure from JSON payloads */
+bool AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
+  if ( id == message_config_time_id ) {
+    return AircraftSensorsPtr->UpdateConfig(id, Payload, DefinitionTreePtr);
+  }
+#if 0
+  if (Config.success()) {
+    if (Config.containsKey("Sensors")) {
+      JsonArray &Sensors = Config["Sensors"];
+      for (size_t j=0; j < Sensors.size(); j++) {
+        JsonObject &Sensor = Sensors[j];
+        Sensor.printTo(buffer.data(),buffer.size());
+        AircraftSensorsPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
+      }
+    }
+    if (Config.containsKey("Control")) {
+      JsonObject &Control = Config["Control"];
+      Control.printTo(buffer.data(),buffer.size());
+      ControlLawsPtr->Configure(buffer.data(),DefinitionTreePtr);
+    }
+    if (Config.containsKey("Effectors")) {
+      JsonArray &Effectors = Config["Effectors"];
+      Effectors.printTo(buffer.data(),buffer.size());
+      AircraftEffectorsPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
+    }
+    if (Config.containsKey("Mission-Manager")) {
+      JsonObject &Mission = Config["Mission-Manager"];
+      Mission.printTo(buffer.data(),buffer.size());
+      AircraftMissionPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
+    }
+  }
+  else {
+    Serial.println("ERROR: FMU Config Message Failed to Parse: ");
+    Serial.println(JsonString);
+  }
+#endif
+  return false;
 }

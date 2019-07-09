@@ -145,9 +145,16 @@ int main()
     if (MissionMode == AircraftMission::Configuration) {
       // buffer for receiving configurations
       std::vector<char> ConfigBuffer;
+      std::vector<uint8_t> Payload;
+      uint8_t id;
       // update configuration
       if (SocComms.ReceiveConfigMessage(&ConfigBuffer)) {
-        Config.Update(ConfigBuffer.data(),&Mission,&Sensors,&Control,&Effectors,&GlobalData);
+        Config.Update(ConfigBuffer.data(), &Mission, &Sensors, &Control, &Effectors, &GlobalData);
+      } else if (SocComms.ReceiveOtherMessage(&id, &Payload)) {
+	if ( Config.Update(id, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {
+	  SocComms.SendAck(id, 0);
+	  SocComms.ClearReceived();
+	}
       }
     }
     // request mode

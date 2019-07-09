@@ -276,14 +276,17 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
 }
 
 /* Generate sensor config messages */
-void FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
+bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
   if ( Sensor["Type"] == "Time" ) {
     printf("sending new time config message");
     config_time_msg.output = Sensor["Output"].GetString();
     config_time_msg.pack();
     SendMessage(config_time_msg.id, config_time_msg.payload, config_time_msg.len);
-    WaitForAck(config_time_msg.id, 0, 2000);
+    if ( WaitForAck(config_time_msg.id, 0, 500) ) {
+      return true;
+    }
   }
+  return false;
 }
 
 /* Configures the FMU sensors */
@@ -293,18 +296,21 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config) {
   for (size_t i=0; i < Config.Size(); i++) {
     const rapidjson::Value& Sensor = Config[i];
     if (Sensor.HasMember("Type")) {
-      GenConfigMessage(Sensor);
-      printf("config message: %s\n", Sensor["Type"].GetString() );
-      Payload.clear();
-      rapidjson::StringBuffer StringBuff;
-      rapidjson::Writer<rapidjson::StringBuffer> Writer(StringBuff);
-      Sensor.Accept(Writer);
-      std::string OutputString = StringBuff.GetString();
-      std::string ConfigString = std::string("{\"Sensors\":[") + OutputString + std::string("]}");
-      for (size_t j=0; j < ConfigString.size(); j++) {
-        Payload.push_back((uint8_t)ConfigString[j]);
+      if ( GenConfigMessage(Sensor) ) {
+	// new way succeeded!
+      } else {
+	printf("config message: %s\n", Sensor["Type"].GetString() );
+	Payload.clear();
+	rapidjson::StringBuffer StringBuff;
+	rapidjson::Writer<rapidjson::StringBuffer> Writer(StringBuff);
+	Sensor.Accept(Writer);
+	std::string OutputString = StringBuff.GetString();
+	std::string ConfigString = std::string("{\"Sensors\":[") + OutputString + std::string("]}");
+	for (size_t j=0; j < ConfigString.size(); j++) {
+	  Payload.push_back((uint8_t)ConfigString[j]);
+	}
+	SendMessage(Message::kConfigMesg, Payload);
       }
-      SendMessage(Message::kConfigMesg, Payload);
     }
   }
 }

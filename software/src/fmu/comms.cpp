@@ -38,6 +38,17 @@ void AircraftSocComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
   SendMessage(SensorData,DataBuffer);
 }
 
+/* parses BFS messages returning message ID and payload on success */
+bool AircraftSocComms::ReceiveOtherMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
+  if (MessageReceived_) {
+    *message = ReceivedMessage_;
+    Payload->resize(ReceivedPayload_.size());
+    memcpy(Payload->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
+    return true;
+  }
+  return false;
+}
+
 /* returns mode command if a mode command message has been received */
 bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
   if (MessageReceived_) {
@@ -67,19 +78,6 @@ bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
       ConfigString->resize(ReceivedPayload_.size());
       memcpy(ConfigString->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
       return true;
-    } else if ( ReceivedMessage_ == message_config_time_id ) {
-      // fixme, temporary, this should be up a level or two?
-      MessageReceived_ = false;
-      Serial.println("before unpack()");
-      config_time_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
-      Serial.print("after unpack() len="); Serial.println(ReceivedPayload_.size());
-      Serial.print("output: "); Serial.println(config_time_msg.output_path.c_str());
-      config_ack_msg.ack_id = ReceivedMessage_;
-      config_ack_msg.ack_subid = 0;
-      config_ack_msg.pack();
-      SendMessage(config_ack_msg.id, config_ack_msg.payload, config_ack_msg.len);
-      Serial.println("after SendMessage(ack)");
-      return false;
     } else {
       return false;
     }
@@ -137,4 +135,17 @@ bool AircraftSocComms::ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Pa
   } else {
     return false;
   }
+}
+
+void AircraftSocComms::ClearReceived() {
+  MessageReceived_ = false;
+}
+
+void AircraftSocComms::SendAck(uint8_t id, uint8_t subid) {
+  message_config_ack_t config_ack_msg;
+  config_ack_msg.ack_id = id;
+  config_ack_msg.ack_subid = subid;
+  config_ack_msg.pack();
+  SendMessage(config_ack_msg.id, config_ack_msg.payload, config_ack_msg.len);
+  Serial.print("SendAck: "); Serial.println(id);
 }

@@ -237,7 +237,7 @@ class FlightManagementUnit {
     SensorNodes SensorNodes_;
     // static const
     bool WaitForAck(uint8_t id, uint8_t subid, float timeout_millis=500);
-    void GenConfigMessage(const rapidjson::Value& Sensor);
+    bool GenConfigMessage(const rapidjson::Value& Sensor);
     void ConfigureSensors(const rapidjson::Value& Config);
     void ConfigureMissionManager(const rapidjson::Value& Config);
     void ConfigureControlLaws(const rapidjson::Value& Config);

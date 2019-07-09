@@ -162,13 +162,13 @@ struct message_config_ack_t {
 // Message: config_time (id: 21)
 struct message_config_time_t {
     // public fields
-    string output_path;
+    string output;
 
     // internal structure for packing
     uint8_t payload[message_max_len];
     #pragma pack(push, 1)
     struct _compact_t {
-        uint8_t output_path_len;
+        uint8_t output_len;
     };
     #pragma pack(pop)
 
@@ -180,15 +180,15 @@ struct message_config_time_t {
         len = sizeof(_compact_t);
         // size sanity check
         int size = len;
-        size += output_path.length();
+        size += output.length();
         if ( size > message_max_len ) {
             return false;
         }
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
-        _buf->output_path_len = output_path.length();
-        memcpy(&(payload[len]), output_path.c_str(), output_path.length());
-        len += output_path.length();
+        _buf->output_len = output.length();
+        memcpy(&(payload[len]), output.c_str(), output.length());
+        len += output.length();
         return true;
     }
 
@@ -199,8 +199,8 @@ struct message_config_time_t {
         memcpy(payload, external_message, message_size);
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
-        output_path = string((char *)&(payload[len]), _buf->output_path_len);
-        len += _buf->output_path_len;
+        output = string((char *)&(payload[len]), _buf->output_len);
+        len += _buf->output_len;
         return true;
     }
 };

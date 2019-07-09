@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "sensors.h"
+#include "fmu_messages.h"
 
 /* update internal MPU9250 sensor configuration */
 void InternalMpu9250Sensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
@@ -1186,17 +1187,10 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
   if (Sensor.success()) {
     if (Sensor.containsKey("Type")) {
       if (Sensor["Type"] == "Time") {
-        Serial.print("\tTime: ");
-        if (AcquireTimeData_) {
-          while(1){
-            Serial.println("ERROR: Time already initialized.");
-          }
-        }
-        AcquireTimeData_ = true;
-        data_.Time_us.resize(1);
-        std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-        DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.Time_us[0]);
-        Serial.println("done.");
+        Serial.print("\tError ime configuration attempt wrong way: ");
+	while(1){
+	  Serial.println("ERROR: Time already initialized.");
+	}
       }
       if (Sensor["Type"] == "InternalMpu9250") {
         if (AcquireInternalMpu9250Data_) {
@@ -1331,6 +1325,157 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
     }
   }
   Serial.println("done!");
+}
+
+/* updates the sensor configuration */
+bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
+  std::vector<char> buffer;
+  delayMicroseconds(10);
+  Serial.println("Updating sensor configuration...");
+  if ( id == message_config_time_id ) {
+    message_config_time_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    Serial.print("\tTime: ");
+    if (AcquireTimeData_) {
+      while(1){
+	Serial.println("ERROR: Time already initialized.");
+      }
+    }
+    AcquireTimeData_ = true;
+    data_.Time_us.resize(1);
+    std::string Output = msg.output;
+    DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.Time_us[0]);
+    Serial.println("done.");
+    return true;
+  }
+  #if 0
+    if (Sensor["Type"] == "InternalMpu9250") {
+      if (AcquireInternalMpu9250Data_) {
+	while(1){
+	  Serial.println("ERROR: Internal MPU9250 already initialized.");
+	}
+      }
+      AcquireInternalMpu9250Data_ = true;
+      data_.InternalMpu9250.resize(1);
+      Sensor.printTo(buffer.data(),buffer.size());
+      classes_.InternalMpu9250.UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "InternalBme280") {
+      if (classes_.InternalBme280.size() > 0) {
+	while(1){
+	  Serial.println("ERROR: Internal BME280 already initialized.");
+	}
+      }
+      Sensor.printTo(buffer.data(),buffer.size());
+      InternalBme280Sensor TempSensor;
+      classes_.InternalBme280.push_back(TempSensor);
+      data_.InternalBme280.resize(classes_.InternalBme280.size());
+      classes_.InternalBme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "InputVoltage") {
+      if (AcquireInputVoltageData_) {
+	while(1){
+	  Serial.println("ERROR: Input voltage already initialized.");
+	}
+      }
+      AcquireInputVoltageData_ = true;
+      data_.InputVoltage_V.resize(1);
+      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
+      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.InputVoltage_V[0]);
+    }
+    if (Sensor["Type"] == "RegulatedVoltage") {
+      if (AcquireRegulatedVoltageData_) {
+	while(1){
+	  Serial.println("ERROR: Regulated voltage already initialized.");
+	}
+      }
+      AcquireRegulatedVoltageData_ = true;
+      data_.RegulatedVoltage_V.resize(1);
+      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
+      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.RegulatedVoltage_V[0]);
+    }
+    if (Sensor["Type"] == "PwmVoltage") {
+      if (AcquirePwmVoltageData_) {
+	while(1){
+	  Serial.println("ERROR: Pwm voltage already initialized.");
+	}
+      }
+      AcquirePwmVoltageData_ = true;
+      data_.PwmVoltage_V.resize(1);
+      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
+      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.PwmVoltage_V[0]);
+    }
+    if (Sensor["Type"] == "SbusVoltage") {
+      if (AcquireSbusVoltageData_) {
+	while(1){
+	  Serial.println("ERROR: Sbus voltage already initialized.");
+	}
+      }
+      AcquireSbusVoltageData_ = true;
+      data_.SbusVoltage_V.resize(1);
+      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
+      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.SbusVoltage_V[0]);
+    }
+    if (Sensor["Type"] == "Mpu9250") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      Mpu9250Sensor TempSensor;
+      classes_.Mpu9250.push_back(TempSensor);
+      data_.Mpu9250.resize(classes_.Mpu9250.size());
+      classes_.Mpu9250.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "Bme280") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      Bme280Sensor TempSensor;
+      classes_.Bme280.push_back(TempSensor);
+      data_.Bme280.resize(classes_.Bme280.size());
+      classes_.Bme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+
+    }
+    if (Sensor["Type"] == "uBlox") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      uBloxSensor TempSensor;
+      classes_.uBlox.push_back(TempSensor);
+      data_.uBlox.resize(classes_.uBlox.size());
+      classes_.uBlox.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+
+    }
+    if (Sensor["Type"] == "Swift") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      SwiftSensor TempSensor;
+      classes_.Swift.push_back(TempSensor);
+      data_.Swift.resize(classes_.Swift.size());
+      classes_.Swift.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "Ams5915") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      Ams5915Sensor TempSensor;
+      classes_.Ams5915.push_back(TempSensor);
+      data_.Ams5915.resize(classes_.Ams5915.size());
+      classes_.Ams5915.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "Sbus") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      SbusSensor TempSensor;
+      classes_.Sbus.push_back(TempSensor);
+      data_.Sbus.resize(classes_.Sbus.size());
+      classes_.Sbus.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "Analog") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      AnalogSensor TempSensor;
+      classes_.Analog.push_back(TempSensor);
+      data_.Analog.resize(classes_.Analog.size());
+      classes_.Analog.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+    if (Sensor["Type"] == "Node") {
+      Sensor.printTo(buffer.data(),buffer.size());
+      SensorNodes TempSensor;
+      classes_.Nodes.push_back(TempSensor);
+      data_.Nodes.resize(classes_.Nodes.size());
+      classes_.Nodes.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+    }
+#endif
+    return false;
 }
 
 /* begin communication with all sensors */
