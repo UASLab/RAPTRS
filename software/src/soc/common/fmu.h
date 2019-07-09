@@ -232,7 +232,6 @@ class FlightManagementUnit {
     message_mode_command_t cmd_msg;
     message_effector_command_t effector_msg;
     message_config_ack_t config_ack_msg;
-    message_config_time_t config_time_msg;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const

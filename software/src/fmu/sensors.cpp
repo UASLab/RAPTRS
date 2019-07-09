@@ -1187,10 +1187,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
   if (Sensor.success()) {
     if (Sensor.containsKey("Type")) {
       if (Sensor["Type"] == "Time") {
-        Serial.print("\tError ime configuration attempt wrong way: ");
-	while(1){
-	  Serial.println("ERROR: Time already initialized.");
-	}
+	while (true) Serial.println("ERROR: Time configured wrong way.");
       }
       if (Sensor["Type"] == "InternalMpu9250") {
         if (AcquireInternalMpu9250Data_) {
@@ -1216,15 +1213,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
         classes_.InternalBme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
       }
       if (Sensor["Type"] == "InputVoltage") {
-        if (AcquireInputVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Input voltage already initialized.");
-          }
-        }
-        AcquireInputVoltageData_ = true;
-        data_.InputVoltage_V.resize(1);
-        std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-        DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.InputVoltage_V[0]);
+	while (true) Serial.println("ERROR: InputVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "RegulatedVoltage") {
         if (AcquireRegulatedVoltageData_) {
@@ -1346,6 +1335,18 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
     std::string Output = msg.output;
     DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.Time_us[0]);
     Serial.println("done.");
+    return true;
+  } else if ( id == message_config_input_voltage_id ) {
+    message_config_input_voltage_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if (AcquireInputVoltageData_) {
+      while(1){
+	Serial.println("ERROR: Input voltage already initialized.");
+      }
+    }
+    AcquireInputVoltageData_ = true;
+    data_.InputVoltage_V.resize(1);
+    DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.InputVoltage_V[0]);
     return true;
   }
   #if 0

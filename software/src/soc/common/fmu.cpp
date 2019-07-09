@@ -278,11 +278,21 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
 /* Generate sensor config messages */
 bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
   if ( Sensor["Type"] == "Time" ) {
-    printf("sending new time config message");
-    config_time_msg.output = Sensor["Output"].GetString();
-    config_time_msg.pack();
-    SendMessage(config_time_msg.id, config_time_msg.payload, config_time_msg.len);
-    if ( WaitForAck(config_time_msg.id, 0, 500) ) {
+    printf("Configuring Time\n");
+    message_config_time_t msg;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "InputVoltage" ) {
+    printf("Configuring InputVoltage\n");
+    message_config_input_voltage_t msg;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
       return true;
     }
   }

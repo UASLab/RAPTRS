@@ -534,6 +534,7 @@ bool TelemetryServer::process_message() {
       }
     }
   }
+  return false;
 }
 
 vector<string> TelemetryServer::split( const string& str, const char* sep, int maxsplit )
