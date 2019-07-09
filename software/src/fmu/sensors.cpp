@@ -1431,8 +1431,10 @@ void AircraftSensors::Begin() {
 
   Serial.println("Initializing Nodes...");
   for (size_t i=0; i < classes_.Nodes.size(); i++) {
+    Serial.println("\tBegin().. ");
     classes_.Nodes[i].Begin(&data_.Nodes[i]);
 
+    Serial.println("\tGetConfig().. ");
     SensorNodes::Config TempConfig;
     classes_.Nodes[i].GetConfig(&TempConfig);
 

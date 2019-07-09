@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "fmu.h"
+#include "millis.h"
 
 #include <string>
 using std::to_string;
@@ -97,18 +98,20 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
 
 /* Sends a mode command to the FMU */
 void FlightManagementUnit::SendModeCommand(Mode mode) {
-  std::vector<uint8_t> Payload;
-  Payload.push_back((uint8_t)mode);
-  SendMessage(Message::kModeCommand,Payload);
+  printf("sending mode change: %d\n", mode);
+  cmd_msg.mode = mode;
+  cmd_msg.pack();
+  SendMessage(cmd_msg.id, cmd_msg.payload, cmd_msg.len);
 }
 
 /* Receive sensor data from FMU */
 bool FlightManagementUnit::ReceiveSensorData(bool publish) {
-  Message message;
+  uint8_t message;
   std::vector<uint8_t> Payload;
   size_t PayloadLocation = 0;
   bool freshdata = 0;
   while (ReceiveMessage(&message,&Payload)) {
+    printf("received msg: %d\n", message);
     if (message == kSensorData) {
       // meta data
       uint8_t AcquireInternalData,NumberPwmVoltageSensor,NumberSbusVoltageSensor,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
@@ -244,10 +247,43 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
 
 /* Sends effector commands to FMU */
 void FlightManagementUnit::SendEffectorCommands(std::vector<float> Commands) {
+  effector_msg.num_active = Commands.size();
+  for ( size_t i = 0; i < Commands.size(); i++ ) {
+    effector_msg.command[i] = Commands[i];
+  }
+  effector_msg.pack();
+  SendMessage(effector_msg.id, effector_msg.payload, effector_msg.len);
+}
+
+/* Wait for Ack message */
+bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_millis) {
+  uint8_t msg_id;
   std::vector<uint8_t> Payload;
-  Payload.resize(Commands.size()*sizeof(float));
-  memcpy(Payload.data(),Commands.data(),Payload.size());
-  SendMessage(kEffectorCommand,Payload);
+  uint64_t start = millis();
+  while ( millis() < start + timeout_millis ) {
+    if ( ReceiveMessage(&msg_id, &Payload) ) {
+      printf("  received: %d while waiting for ack\n", msg_id);
+      if ( msg_id == message_config_ack_id ) {
+	config_ack_msg.unpack(Payload.data(), Payload.size());
+	if ( id == config_ack_msg.ack_id and subid == config_ack_msg.ack_subid ) {
+	  return true;
+	}
+      }
+    }
+  }
+  printf("Timeout waiting for ack: %d (%d)\n", id, subid);
+  return false;
+}
+
+/* Generate sensor config messages */
+void FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
+  if ( Sensor["Type"] == "Time" ) {
+    printf("sending new time config message");
+    config_time_msg.output = Sensor["Output"].GetString();
+    config_time_msg.pack();
+    SendMessage(config_time_msg.id, config_time_msg.payload, config_time_msg.len);
+    WaitForAck(config_time_msg.id, 0, 2000);
+  }
 }
 
 /* Configures the FMU sensors */
@@ -257,6 +293,8 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config) {
   for (size_t i=0; i < Config.Size(); i++) {
     const rapidjson::Value& Sensor = Config[i];
     if (Sensor.HasMember("Type")) {
+      GenConfigMessage(Sensor);
+      printf("config message: %s\n", Sensor["Type"].GetString() );
       Payload.clear();
       rapidjson::StringBuffer StringBuff;
       rapidjson::Writer<rapidjson::StringBuffer> Writer(StringBuff);
@@ -266,7 +304,7 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config) {
       for (size_t j=0; j < ConfigString.size(); j++) {
         Payload.push_back((uint8_t)ConfigString[j]);
       }
-      SendMessage(Message::kConfigMesg,Payload);
+      SendMessage(Message::kConfigMesg, Payload);
     }
   }
 }
@@ -482,9 +520,14 @@ std::string FlightManagementUnit::GetSensorOutputName(const rapidjson::Value& Co
 
 /* Send a BFS Bus message. */
 void FlightManagementUnit::SendMessage(Message message,std::vector<uint8_t> &Payload) {
+  SendMessage(message, Payload.data(), Payload.size());
+}
+
+/* Send a BFS Bus message. */
+void FlightManagementUnit::SendMessage(uint8_t message, uint8_t *Payload, int len) {
   _bus->beginTransmission();
-  _bus->write((uint8_t) message);
-  _bus->write(Payload.data(),Payload.size());
+  _bus->write(message);
+  _bus->write(Payload, len);
   if ((message == kModeCommand)||(message == kConfigMesg)) {
     _bus->endTransmission();
   } else {
@@ -493,9 +536,10 @@ void FlightManagementUnit::SendMessage(Message message,std::vector<uint8_t> &Pay
 }
 
 /* Receive a BFS Bus message. */
-bool FlightManagementUnit::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
+bool FlightManagementUnit::ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
   if (_bus->checkReceived()) {
-    *message = (Message) _bus->read();
+    *message = _bus->read();
+    printf("receving msg: %d (size = %d)\n", *message, _bus->available());
     Payload->resize(_bus->available());
     _bus->read(Payload->data(),Payload->size());
     _bus->sendStatus(true);

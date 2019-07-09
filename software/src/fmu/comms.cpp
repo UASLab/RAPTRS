@@ -41,10 +41,12 @@ void AircraftSocComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
 /* returns mode command if a mode command message has been received */
 bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
   if (MessageReceived_) {
-    if (ReceivedMessage_ == ModeCommand) {
+    if (ReceivedMessage_ == message_mode_command_id) {
       MessageReceived_ = false;
-      if (ReceivedPayload_.size() == 1) {
-        *mode = (AircraftMission::Mode)ReceivedPayload_[0];
+      cmd_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
+      Serial.print("new mode: "); Serial.println(cmd_msg.mode);
+      if (cmd_msg.len == 1) {
+        *mode = (AircraftMission::Mode)cmd_msg.mode;
         return true;
       } else {
         return false;
@@ -65,6 +67,19 @@ bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
       ConfigString->resize(ReceivedPayload_.size());
       memcpy(ConfigString->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
       return true;
+    } else if ( ReceivedMessage_ == message_config_time_id ) {
+      // fixme, temporary, this should be up a level or two?
+      MessageReceived_ = false;
+      Serial.println("before unpack()");
+      config_time_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
+      Serial.print("after unpack() len="); Serial.println(ReceivedPayload_.size());
+      Serial.print("output: "); Serial.println(config_time_msg.output_path.c_str());
+      config_ack_msg.ack_id = ReceivedMessage_;
+      config_ack_msg.ack_subid = 0;
+      config_ack_msg.pack();
+      SendMessage(config_ack_msg.id, config_ack_msg.payload, config_ack_msg.len);
+      Serial.println("after SendMessage(ack)");
+      return false;
     } else {
       return false;
     }
@@ -76,10 +91,13 @@ bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
 /* returns effector command if a mode command message has been received */
 bool AircraftSocComms::ReceiveEffectorCommand(std::vector<float> *EffectorCommands) {
   if (MessageReceived_) {
-    if (ReceivedMessage_ == EffectorCommand) {
+    if (ReceivedMessage_ == message_effector_command_id) {
       MessageReceived_ = false;
-      EffectorCommands->resize(ReceivedPayload_.size()/sizeof(float));
-      memcpy(EffectorCommands->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
+      effector_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
+      EffectorCommands->resize(effector_msg.num_active);
+      for ( size_t i = 0; i < effector_msg.num_active; i++ ) {
+	(*EffectorCommands)[i] = effector_msg.command[i];
+      }
       return true;
     } else {
       return false;
@@ -96,16 +114,22 @@ void AircraftSocComms::CheckMessages() {
 
 /* builds and sends a BFS message given a message ID and payload */
 void AircraftSocComms::SendMessage(Message message,std::vector<uint8_t> &Payload) {
+  SendMessage(message, Payload.data(), Payload.size());
+}
+
+/* builds and sends a BFS message given a message ID and payload */
+void AircraftSocComms::SendMessage(uint8_t message, uint8_t *Payload, int len) {
   bus_->beginTransmission();
-  bus_->write((uint8_t) message);
-  bus_->write(Payload.data(),Payload.size());
+  bus_->write(message);
+  bus_->write(Payload, len);
   bus_->sendTransmission();
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftSocComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
+bool AircraftSocComms::ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
   if (bus_->checkReceived()) {
-    *message = (Message) bus_->read();
+    *message = (uint8_t) bus_->read();
+    Serial.print("received msg: "); Serial.println(*message);
     Payload->resize(bus_->available());
     bus_->read(Payload->data(),Payload->size());
     bus_->sendStatus(true);

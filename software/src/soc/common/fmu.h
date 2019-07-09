@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "hardware-defs.h"
 #include "definition-tree2.h"
+#include "fmu_messages.h"
 #include "SerialLink.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -228,17 +229,24 @@ class FlightManagementUnit {
     const uint32_t Baud_ = FmuBaud;
     HardwareSerial *_serial;
     SerialLink *_bus;
+    message_mode_command_t cmd_msg;
+    message_effector_command_t effector_msg;
+    message_config_ack_t config_ack_msg;
+    message_config_time_t config_time_msg;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const
+    bool WaitForAck(uint8_t id, uint8_t subid, float timeout_millis=500);
+    void GenConfigMessage(const rapidjson::Value& Sensor);
     void ConfigureSensors(const rapidjson::Value& Config);
     void ConfigureMissionManager(const rapidjson::Value& Config);
     void ConfigureControlLaws(const rapidjson::Value& Config);
     void ConfigureEffectors(const rapidjson::Value& Config);
     void RegisterSensors(const rapidjson::Value& Config);
     std::string GetSensorOutputName(const rapidjson::Value& Config,std::string Key,size_t index);
-    void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
+    void SendMessage(Message message, std::vector<uint8_t> &Payload);
+    void SendMessage(uint8_t message, uint8_t *Payload, int len);
+    bool ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload);
     void PublishSensors();
 };
 

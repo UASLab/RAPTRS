@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define COMMS_H_
 
 #include "mission.h"
+#include "fmu_messages.h"
 #include "SerialLink.h"
 #include "Vector.h"
 #include "i2c_t3.h"
@@ -43,14 +44,19 @@ class AircraftSocComms {
     bool ReceiveConfigMessage(std::vector<char> *ConfigString);
     bool ReceiveEffectorCommand(std::vector<float> *EffectorCommands);
     void CheckMessages();
-    void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
+    void SendMessage(Message message, std::vector<uint8_t> &Payload);
+    void SendMessage(uint8_t message, uint8_t *Payload, int len);
+    bool ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload);
   private:
     SerialLink *bus_;
     uint32_t baud_;
     bool MessageReceived_ = false;
-    Message ReceivedMessage_;
+    uint8_t ReceivedMessage_;
     std::vector<uint8_t> ReceivedPayload_;
+    message_mode_command_t cmd_msg;
+    message_effector_command_t effector_msg;
+    message_config_ack_t config_ack_msg;
+    message_config_time_t config_time_msg;    
 };
 
 #endif
