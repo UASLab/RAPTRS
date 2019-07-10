@@ -18,8 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef FILTER_ALGORITHMS_HXX_
-#define FILTER_ALGORITHMS_HXX_
+#pragma once
 
 #include <algorithm>
 #include <vector>
@@ -34,20 +33,12 @@ class __GeneralFilter {
     float Run(float input);
     void Clear();
   private:
-    struct Config {
-      std::vector<float> num;
-      std::vector<float> den;
-    };
-    struct Data {
-      float Output = 0.0f;
-    };
-    struct States {
-      std::vector<float> x;
-      std::vector<float> y;
-    };
-    Config config_;
-    Data data_;
-    States states_;
-};
+    std::vector<float> num;
+    std::vector<float> den;
 
-#endif
+    float Output = 0.0f;
+
+    std::vector<float> x;
+    std::vector<float> y;
+
+};

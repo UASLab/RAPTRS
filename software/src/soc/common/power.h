@@ -16,13 +16,12 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef POWER_HXX_
-#define POWER_HXX_
+#pragma once
 
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
 #include "definition-tree2.h"
+
+#include "configuration.h"
 #include "generic-function.h"
 
 /*
@@ -43,26 +42,16 @@ Where:
 */
 class MinCellVolt: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemName);
     void Initialize();
     bool Initialized();
-    void Run(Mode mode);
+    void Run(GenericFunction::Mode mode);
     void Clear();
   private:
-    struct Config {
-      vector<ElementPtr> input_nodes;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-    };
+    uint8_t mode = kStandby;
+    vector<ElementPtr> input_nodes_;
+    ElementPtr output_node_;
 
-    std::vector<float> numCells;
-
-    Config config_;
-    Data data_;
-
+    std::vector<float> numCells_;
     std::vector<std::string> InputKeys_;
 };
-
-#endif // POWER_HXX_

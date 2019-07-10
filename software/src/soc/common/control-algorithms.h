@@ -1,6 +1,5 @@
 
-#ifndef CONTROL_ALGORITHMS_HXX_
-#define CONTROL_ALGORITHMS_HXX_
+#pragma once
 
 #include "generic-function.h"
 #include <Eigen/Dense>
@@ -49,5 +48,3 @@ class __SSClass {
     void OutputEquation(Eigen::VectorXf u, float dt);
     void Reset();
 };
-
-#endif

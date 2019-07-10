@@ -21,19 +21,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "filter-algorithms.h"
 
 void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) {
-  config_.num = num;
-  config_.den = den;
-  states_.x.resize(config_.num.size());
-  states_.y.resize(config_.den.size());
+
+  x.resize(num.size());
+  y.resize(den.size());
+  
   // scale all den and num by den[0] if available
-  if (config_.den.size() > 0) {
+  if (den.size() > 0) {
     // prevent divide by zero
-    if (config_.den[0] != 0.0f) {
-      for (size_t i=0; i < config_.num.size(); i++) {
-        config_.num[i] = config_.num[i]/config_.den[0];
+    if (den[0] != 0.0f) {
+      for (size_t i=0; i < num.size(); i++) {
+        num[i] = num[i]/den[0];
       }
-      for (size_t i=1; i < config_.den.size(); i++) {
-        config_.den[i] = config_.den[i]/config_.den[0];
+      for (size_t i=1; i < den.size(); i++) {
+        den[i] = den[i]/den[0];
       }
     }
   }
@@ -41,37 +41,42 @@ void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) 
 
 float __GeneralFilter::Run(float input) {
   // shift all x and y values to the right 1
-  if (states_.x.size()>0) {
-    std::rotate(states_.x.data(), states_.x.data()+states_.x.size()-1, states_.x.data()+states_.x.size());
+  if (x.size()>0) {
+    std::rotate(x.data(), x.data()+x.size()-1, x.data()+x.size());
   }
-  if (states_.y.size() > 0) {
-    std::rotate(states_.y.data(), states_.y.data()+states_.y.size()-1, states_.y.data()+states_.y.size());
+  if (y.size() > 0) {
+    std::rotate(y.data(), y.data()+y.size()-1, y.data()+y.size());
   }
+
   // grab the newest x value
-  states_.x[0] = input;
+  x[0] = input;
+
   // apply all num coefficients
   float FeedForward = 0.0f;
-  for (size_t i=0; i < config_.num.size(); i++) {
-    FeedForward += config_.num[i]*states_.x[i];
+  for (size_t i=0; i < num.size(); i++) {
+    FeedForward += num[i]*x[i];
   }
+
   // apply all den coefficients
   float FeedBack = 0.0f;
-  for (size_t i=1; i < config_.den.size(); i++) {
-    FeedBack += config_.den[i]*states_.y[i];
+  for (size_t i=1; i < den.size(); i++) {
+    FeedBack += den[i]*y[i];
   }
+
   // get the output
-  data_.Output = FeedForward - FeedBack;
+  Output = FeedForward - FeedBack;
+
   // grab the newest y value
-  if (states_.y.size() > 0) {
-    states_.y[0] = data_.Output;
+  if (y.size() > 0) {
+    y[0] = Output;
   }
-  return data_.Output;
+  return Output;
 }
 
 void __GeneralFilter::Clear() {
-  config_.den.clear();
-  config_.num.clear();
-  states_.x.clear();
-  states_.y.clear();
-  data_.Output = 0.0f;
+  den.clear();
+  num.clear();
+  x.clear();
+  y.clear();
+  Output = 0.0f;
 }

@@ -18,16 +18,11 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef ALLOCATION_FUNCTIONS_HXX_
-#define ALLOCATION_FUNCTIONS_HXX_
+#pragma once
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
+#include "configuration.h"
 #include "generic-function.h"
 
-#include <Eigen/Dense>
 #include <limits>
 
 /*
@@ -66,21 +61,17 @@ class PseudoInverseAllocation: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      vector<ElementPtr> input_nodes;
-      Eigen::VectorXf Objectives;
-      Eigen::MatrixXf Effectiveness;
-      Eigen::VectorXf Min;
-      Eigen::VectorXf Max;
-    };
-    struct Data {
-      Eigen::VectorXf uCmd;
-      vector<ElementPtr> uCmd_nodes;
-    };
+    Eigen::VectorXf Objectives;
+    Eigen::MatrixXf Effectiveness;
+    Eigen::VectorXf uCmd;
+
+    Eigen::VectorXf Min;
+    Eigen::VectorXf Max;
+
+    vector<ElementPtr> input_nodes;
+    vector<ElementPtr> uCmd_nodes;
+
     int numIn, numOut;
-    Config config_;
-    Data data_;
+
     std::vector<std::string> InputKeys_;
 };
-
-#endif

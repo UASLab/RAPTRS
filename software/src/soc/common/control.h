@@ -18,19 +18,17 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef CONTROL_HXX_
-#define CONTROL_HXX_
+#pragma once
 
-#include "hardware-defs.h"
+#include "configuration.h"
 #include "definition-tree2.h"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+
 #include "generic-function.h"
 #include "general-functions.h"
 #include "control-functions.h"
 #include "allocation-functions.h"
 #include "filter-functions.h"
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -45,34 +43,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 /* Class to manage control laws
 Example JSON configuration:
-{
-  "Control": {
-    "Fmu": "FmuGroup",
-    "Soc": ["SocGroup1","SocGroup2",...],
-    "FmuGroup": [
-      { "Level": "1",
-        "Components": [
-          { "Type": "Gain",
-            "Input":
-            "Output":
-            "Gain":
-          }
-        ]
-      }
-    ]
-    "SocGroup1": [
-      { "Level": "1",
-        "Components": [
-          { "Type": "Gain",
-            "Input":
-            "Output":
-            "Gain":
-          }
-        ]
-      }
-    ]
-  }
+
+"Control": {
+    "Fmu": "Group1",
+    "Baseline": ["Group2", "Group3"], // Selected is always Armed or Engaged
+    "Test": ["Group2", "Group3", "Group4", "Group5"], // Only one is either Armed or Engaged by Command
+
+    "GroupDef": {
+      "Group1": {
+        "Level1": "Controller1"},
+      "Group2": {
+        "Level1": "Controller2", "Level2": "Controller3"}
+    },
+
+    "ControlDef": {
+      "Controller1": [{Component1}, {Component2}, ... ],
+      "Controller2": [... ],
+      "Controller3": [... ]
+    }
 }
+
 
 Where:
    * FMU is a vector of control law group names for the Flight Management Unit to use.
@@ -83,25 +73,59 @@ Where:
      level are objects configuring the specific control law.
 */
 
-class ControlLaws {
+// Wrapper to contain all the Components defined in a Controller
+class ComponentWrapper {
   public:
-    void Configure(const rapidjson::Value& Config);
-    void SetEngagedController(std::string ControlGroupName);
-    void SetArmedController(std::string ControlGroupName);
-    size_t ActiveControlLevels();
-    std::string GetActiveLevel(size_t ControlLevel);
-    void RunEngaged(size_t ControlLevel);
-    void RunArmed();
-  private:
-    string RootPath_ = "/Control";
-    string EngagedGroup_ = "Fmu";
-    string ArmedGroup_ = "Fmu";
-    std::map<std::string,std::vector<std::vector<std::shared_ptr<GenericFunction>>>> SocControlGroups_;
-    std::vector<std::string> SocGroupKeys_;
-    std::map<std::string,std::vector<std::string>> SocLevelNames_;
-    std::map<std::string,std::vector<std::vector<std::string>>> SocDataKeys_;
-    map<string, map<string, ElementPtr>> SocDataPtr_;
-    map<string, ElementPtr> OutputDataPtr_;
+     void Configure (std::string ControllerPath, const rapidjson::Value& Controller);
+     void Run (GenericFunction::Mode mode);
+   private:
+     std::vector<std::shared_ptr<GenericFunction>> ComponentVec_;
 };
 
-#endif
+class ControlSystem {
+  public:
+     // Vector listing the Groups within a set.
+    typedef std::vector<std::string> SetVec;
+
+    // Create a Map of Controller Groups
+    struct GroupStruct {
+      std::string Level;
+      std::string Controller;
+    } ;
+    typedef std::vector<GroupStruct> GroupVec;
+    typedef std::map<std::string, GroupVec> GroupMap;
+
+    // Create a Map of Controller Objects (Wrapped in Component Wrapper)
+    typedef std::shared_ptr<ComponentWrapper> ComponentWrapperPtr ;
+    typedef std::map<std::string, ComponentWrapperPtr> ControlMap;
+
+    void Configure(const rapidjson::Value& Config);
+    void ConfigureSet(std::string SetPath, const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef, GroupMap *SetGroupMap, ControlMap *SetControlMap);
+    
+    // Baseline Controller
+    std::string GetBaseline();
+    void SetBaseline(std::string GroupSel);
+
+    void RunTest(GenericFunction::Mode mode);
+
+    // Test Controller
+    std::string GetTest();
+    void SetTest(std::string TestGroupSel);
+
+    std::vector<std::string> GetTestLevels();
+    std::string GetLevel();
+    void SetLevel(std::string TestLevelSel);
+
+    void RunBaseline(GenericFunction::Mode mode);
+
+  private:
+    std::string RootPath_ = "/Control";
+    std::string BaselinePath_, TestPath_;
+    std::string EngagedSet_ = "Fmu";
+    std::string ArmedSet_ = "Fmu";
+    GroupMap BaselineGroupMap_, TestGroupMap_;
+    ControlMap BaselineControlMap_, TestControlMap_;
+    std::string BaselineGroupSel_;
+    std::string TestGroupSel_;
+    std::string TestLevelSel_;
+};

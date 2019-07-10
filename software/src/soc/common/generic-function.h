@@ -18,18 +18,14 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef GENERIC_FUNCTION_HXX_
-#define GENERIC_FUNCTION_HXX_
+#pragma once
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
+#include "configuration.h"
 
 /*
 Generic Function Class
 This is the base function for the Bolder Flight Systems
-Flight Control System components. Airdata, filters, 
+Flight Control System components. Airdata, filters,
 allocators, and control laws are derived from this class.
 
 The following methods are defined:
@@ -63,11 +59,9 @@ class GenericFunction {
       kHold,
       kEngage
     };
-    virtual void Configure(const rapidjson::Value& Config,std::string RootPath);
-    virtual void Initialize();
-    virtual bool Initialized();
-    virtual void Run(Mode mode);
-    virtual void Clear();
+    virtual void Configure(const rapidjson::Value& Config,std::string RootPath) {};
+    virtual void Initialize() {};
+    virtual bool Initialized() { return true; };
+    virtual void Run(Mode mode) {};
+    virtual void Clear() {};
 };
-
-#endif

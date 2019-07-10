@@ -18,61 +18,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "power.h"
 
-void MinCellVolt::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  // grab inputs
-  if (Config.HasMember("Inputs")) {
-    for (size_t i=0; i < Config["Inputs"].Size(); i++) {
-      const rapidjson::Value& Input = Config["Inputs"][i];
-      InputKeys_.push_back(Input.GetString());
-      ElementPtr ele = deftree.getElement(InputKeys_.back());
-      if ( ele ) {
-        config_.input_nodes.push_back(ele);
-      } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR") + RootPath + std::string(": Inputs not specified in configuration."));
-  }
+void MinCellVolt::Configure(const rapidjson::Value& Config, std::string SystemName) {
+  // I/O signals
+  LoadInput(Config, SystemName, "Inputs", input_nodes_, &InputKeys_);
+  LoadOutput(Config, SystemName, "Output", output_node_);
 
-  // get output name
-  std::string OutputName;
-  if (Config.HasMember("Output")) {
-    OutputName = RootPath + "/" + Config["Output"].GetString();
-    data_.output_node = deftree.initElement(OutputName, "Min Cell Voltage output", LOG_FLOAT, LOG_NONE);
-  } else {
-    throw std::runtime_error(std::string("ERROR") + RootPath + std::string(": Output not specified in configuration."));
-  }
+  // Number of cells
+  LoadVal(Config, "NumCells", &numCells_, true);
 
-  // grab number of cells
-  if (Config.HasMember("NumCells")) {
-    for (size_t i=0; i < Config["NumCells"].Size(); i++) {
-      numCells.push_back(Config["NumCells"][i].GetFloat());
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR") + OutputName + std::string(": NumCells not specified in configuration."));
-  }
 }
 
 void MinCellVolt::Initialize() {}
 bool MinCellVolt::Initialized() {return true;}
 
-void MinCellVolt::Run(Mode mode) {
+void MinCellVolt::Run(GenericFunction::Mode mode) {
   float MinVoltPerCell;
   float VoltPerCell;
 
   // Compute the Minimum Voltage per Cell
   MinVoltPerCell = 4.3;
-  for (size_t i=0; i < config_.input_nodes.size(); i++) {
-    VoltPerCell = config_.input_nodes[i]->getFloat() / numCells[i];
+  for (size_t i=0; i < input_nodes_.size(); i++) {
+    VoltPerCell = input_nodes_[i]->getFloat() / numCells_[i];
 
     if (VoltPerCell < MinVoltPerCell) {
       MinVoltPerCell = VoltPerCell;
     }
   }
-  data_.output_node->setFloat(MinVoltPerCell);
+  output_node_->setFloat(MinVoltPerCell);
 }
 
 void MinCellVolt::Clear() {
-  data_.Mode = (uint8_t) kStandby;
+  GenericFunction::Mode Mode = kStandby;
 }

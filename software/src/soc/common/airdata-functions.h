@@ -18,14 +18,10 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef AIRDATA_FUNCTIONS_HXX_
-#define AIRDATA_FUNCTIONS_HXX_
+#pragma once
 
 #include "AirData.h"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
+#include "configuration.h"
 #include "generic-function.h"
 #include <sys/time.h>
 
@@ -48,28 +44,20 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class IndicatedAirspeed: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemName);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      std::vector<ElementPtr> DifferentialPressure;
-      float InitTime = 0.0f;
-    };
-    struct Data {
-      std::vector<float> DifferentialPressureBias;
-      float AvgDifferentialPressure = 0.0f;
-      //uint8_t Mode = kStandby;
-      //float Ias_ms = 0.0f;
-      ElementPtr mode_node;
-      ElementPtr ias_ms_node;
-    };
-    Config config_;
-    Data data_;
-    std::vector<std::string> DifferentialPressureKeys_;
-    std::string ModeKey_,OutputKey_;
+    std::vector<ElementPtr> DiffPress_node_;
+    float TimeInit_s_ = 0.0f;
+
+    std::vector<float> DiffPressBias_;
+    float DiffPressMean_ = 0.0f;
+    ElementPtr IAS_node_;
+
+    std::vector<std::string> DiffPressKeys_;
     bool TimeLatch_ = false;
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
@@ -96,28 +84,20 @@ Pressures are expected to be in Pa and altitude is in m
 */
 class AglAltitude: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemName);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      std::vector<ElementPtr> StaticPressure;
-      float InitTime = 0.0f;
-    };
-    struct Data {
-      float PressAlt0 = 0.0f;
-      float AvgStaticPressure = 0.0f;
-      //uint8_t Mode = kStandby;
-      //float Agl_m = 0.0f;
-      ElementPtr mode_node;
-      ElementPtr agl_m_node;
-    };
-    Config config_;
-    Data data_;
-    std::vector<std::string> StaticPressureKeys_;
-    std::string ModeKey_,OutputKey_;
+    std::vector<ElementPtr> StaticPress_node_;
+    float TimeInit_s_ = 0.0f;
+
+    float PressAltBias_;
+    float StaticPressMean_ = 0.0f;
+    ElementPtr AltAgl_node_;
+
+    std::vector<std::string> StaticPressKeys_;
     bool TimeLatch_ = false;
     bool Initialized_ = false;
     uint64_t T0_us_ = 0;
@@ -147,34 +127,24 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class PitotStatic: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemName);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      //float* StaticPressure;
-      //float* DifferentialPressure;
-      float InitTime = 0.0f;
-      ElementPtr static_press_node;
-      ElementPtr diff_press_node;
-    };
-    struct Data {
-      ElementPtr mode_node;
+    float TimeInit_s_ = 0.0f;
+    ElementPtr StaticPress_node_;
+    ElementPtr DiffPress_node_;
 
-      float DifferentialPressureBias = 0.0f;
-      ElementPtr ias_ms_node;
+    float DiffPressBias_ = 0.0f;
+    ElementPtr IAS_node_;
 
-      float PressAlt0 = 0.0f;
-      ElementPtr agl_m_node;
-    };
+    float PressAltBias_ = 0.0f;
+    ElementPtr AltAgl_node_;
 
-    Config config_;
-    Data data_;
-    std::string DifferentialPressureKey_;
-    std::string StaticPressureKey_;
-    std::string ModeKey_,OutputIasKey_,OutputAglKey_;
+    std::string DiffPressKey_;
+    std::string StaticPressKey_;
 
     bool TimeLatch_ = false;
     bool Initialized_ = false;
@@ -210,47 +180,38 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class FiveHole1: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemName);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr StaticPressure_node;
-      ElementPtr TipPressure_node;
-      ElementPtr Alpha1Pressure_node;
-      ElementPtr Alpha2Pressure_node;
-      ElementPtr Beta1Pressure_node;
-      ElementPtr Beta2Pressure_node;
-      float InitTime = 0.0f;
-      float kAlpha = 0.0f;
-      float kBeta = 0.0f;
-    };
-    struct Data {
-      ElementPtr mode_node;
+    ElementPtr StaticPress_node_;
+    ElementPtr TipPress_node_;
+    ElementPtr Alpha1Press_node_;
+    ElementPtr Alpha2Press_node_;
+    ElementPtr Beta1Press_node_;
+    ElementPtr Beta2Press_node_;
+    float TimeInit_s_ = 0.0f;
+    float kAlpha_ = 0.0f;
+    float kBeta_ = 0.0f;
 
-      float PressAlt0 = 0.0f;
-      ElementPtr agl_m_node;
+    float PressAltBias_ = 0.0f;
+    ElementPtr AltAgl_node_;
 
-      float TipPressureBias = 0.0f;
-      ElementPtr ias_ms_node;
+    float TipPressBias_ = 0.0f;
+    ElementPtr IAS_node_;
 
-      float Alpha1PressureBias = 0.0f;
-      float Alpha2PressureBias = 0.0f;
-      ElementPtr Alpha_rad_node;
+    float Alpha1PressBias_ = 0.0f;
+    float Alpha2PressBias_ = 0.0f;
+    ElementPtr Alpha_rad_node_;
 
-      float Beta1PressureBias = 0.0f;
-      float Beta2PressureBias = 0.0f;
-      ElementPtr Beta_rad_node;
-    };
+    float Beta1PressBias_ = 0.0f;
+    float Beta2PressBias_ = 0.0f;
+    ElementPtr Beta_rad_node_;
 
-    Config config_;
-    Data data_;
-    std::string ModeKey_;
-    std::string TipPressureKey_, StaticPressureKey_, Alpha1PressureKey_, Alpha2PressureKey_, Beta1PressureKey_, Beta2PressureKey_;
+    std::string TipPressKey_, StaticPressKey_, Alpha1PressKey_, Alpha2PressKey_, Beta1PressKey_, Beta2PressKey_;
     std::string AlphaCalKey_, BetaCalKey_;
-    std::string OutputIasKey_, OutputAglKey_, OutputAlphaKey_, OutputBetaKey_;
 
     bool TimeLatch_ = false;
     bool Initialized_ = false;
@@ -284,43 +245,34 @@ Pressures are expected to be in Pa and airspeed is in m/s
 */
 class FiveHole2: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemName);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr StaticPressure_node;
-      ElementPtr TipPressure_node;
-      ElementPtr AlphaPressure_node;
-      ElementPtr BetaPressure_node;
-      float InitTime = 0.0f;
-      float kAlpha = 0.0f;
-      float kBeta = 0.0f;
-    };
-    struct Data {
-      ElementPtr mode_node;
+    ElementPtr StaticPress_node_;
+    ElementPtr TipPress_node_;
+    ElementPtr AlphaPress_node_;
+    ElementPtr BetaPress_node_;
+    float TimeInit_s_ = 0.0f;
+    float kAlpha_ = 0.0f;
+    float kBeta_ = 0.0f;
 
-      float PressAlt0 = 0.0f;
-      ElementPtr agl_m_node;
+    float PressAltBias_ = 0.0f;
+    ElementPtr AltAgl_node_;
 
-      float TipPressureBias = 0.0f;
-      ElementPtr ias_ms_node;
+    float TipPressBias_ = 0.0f;
+    ElementPtr IAS_node_;
 
-      float AlphaPressureBias = 0.0f;
-      ElementPtr Alpha_rad_node;
+    float AlphaPressBias_ = 0.0f;
+    ElementPtr Alpha_rad_node_;
 
-      float BetaPressureBias = 0.0f;
-      ElementPtr Beta_rad_node;
-    };
+    float BetaPressBias_ = 0.0f;
+    ElementPtr Beta_rad_node_;
 
-    Config config_;
-    Data data_;
-    std::string ModeKey_;
-    std::string TipPressureKey_, StaticPressureKey_, AlphaPressureKey_, BetaPressureKey_;
+    std::string TipPressKey_, StaticPressKey_, AlphaPressKey_, BetaPressKey_;
     std::string AlphaCalKey_, BetaCalKey_;
-    std::string OutputIasKey_, OutputAglKey_, OutputAlphaKey_, OutputBetaKey_;
 
     bool TimeLatch_ = false;
     bool Initialized_ = false;
@@ -328,6 +280,3 @@ class FiveHole2: public GenericFunction {
     size_t NumberSamples_ = 1;
     AirData AirData_;
 };
-
-
-#endif

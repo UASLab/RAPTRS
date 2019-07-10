@@ -18,13 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef CONTROL_FUNCTIONS_HXX_
-#define CONTROL_FUNCTIONS_HXX_
-
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
+#pragma once
 
 #include "configuration.h"
 #include "generic-function.h"
@@ -45,7 +39,7 @@ Example JSON configuration:
   "dt": "dt" or X,
   "Kp": Kp, "Ki": Ki, "Kd": Kd, "Tf": Tf,
   "b": b, "c": c
-  "Max": X, "Min": X
+  "Min": X, "Max": X
 }
 Where:
    * Reference is the full path name of the reference signal.
@@ -64,29 +58,26 @@ Data types for all input and output values are float.
 
 class PID2Class: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config, std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      float dt;
-      bool UseFixedTimeSample = false;
-      ElementPtr reference_node;
-      ElementPtr feedback_node;
-      ElementPtr time_node;
-      float Min = std::numeric_limits<float>::lowest();
-      float Max = std::numeric_limits<float>::max();
-    };
-    struct Data {
-      ElementPtr output_node;
-      ElementPtr ff_node;
-      ElementPtr fb_node;
-    };
+    float dt;
+    bool UseFixedTimeSample = false;
+    ElementPtr reference_node;
+    ElementPtr feedback_node;
+    ElementPtr time_node;
+    float Min = std::numeric_limits<float>::lowest();
+    float Max = std::numeric_limits<float>::max();
+
+    ElementPtr output_node;
+    ElementPtr ff_node;
+    ElementPtr fb_node;
+
     __PID2Class PID2Class_;
-    Config config_;
-    Data data_;
+
     std::string OutputKey_, ReferenceKey_, FeedbackKey_, TimeKey_;
 };
 
@@ -99,7 +90,7 @@ Example JSON configuration:
   "Output": "OutputName",
   "dt": "dt" or X,
   "Kp": Kp, "Ki": Ki, "Kd": Kd, "Tf": Tf,
-  "Max": X, "Min": X
+  "Min": X, "Max": X
 }
 Where:
    * Reference is the full path name of the reference signal.
@@ -115,29 +106,26 @@ Data types for all input and output values are float.
 
 class PIDClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config, std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-        float dt;
-        bool UseFixedTimeSample = false;
-        ElementPtr reference_node;
-        ElementPtr dt_node;
-        float Min = std::numeric_limits<float>::lowest();
-        float Max = std::numeric_limits<float>::max();
-    };
-    struct Data {
-        ElementPtr output_node;
-        ElementPtr ff_node;
-        ElementPtr fb_node;
-    };
+    float dt;
+    bool UseFixedTimeSample = false;
+    float Min = std::numeric_limits<float>::lowest();
+    float Max = std::numeric_limits<float>::max();
+
+    ElementPtr input_node;
+    ElementPtr time_node;
+    ElementPtr output_node;
+    ElementPtr ff_node;
+    ElementPtr fb_node;
+
     __PID2Class PID2Class_;
-    Config config_;
-    Data data_;
-    std::string ReferenceKey_,dtKey_;
+
+    std::string OutputKey_, InputKey_, TimeKey_;
 };
 
 /*
@@ -152,8 +140,7 @@ Example JSON configuration:
   "B": [[X]],
   "C": [[X]],
   "D": [[X]],
-  "Max": [X],
-  "Min": [X]
+  "Min": [X], "Max": [X]
 }
 Where:
    * Inputs is the full path name of the input signals.
@@ -175,37 +162,33 @@ Thus, x[k+1] = Ad*x + Bd*u;
 
 class SSClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config,std::string SystemPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      std::vector<ElementPtr> Inputs;
-      Eigen::VectorXf u;
-      Eigen::VectorXf x;
-      Eigen::MatrixXf A;
-      Eigen::MatrixXf B;
-      Eigen::MatrixXf C;
-      Eigen::MatrixXf D;
-      Eigen::VectorXf Min;
-      Eigen::VectorXf Max;
-      float dt = 0;
-      float* TimeSource = 0;
-      float timePrev = 0;
-      bool UseFixedTimeSample = false;
-        ElementPtr time_source_node;
-    };
-    struct Data {
-        Eigen::VectorXf y;
-        vector<ElementPtr>y_node;
-    };
+
+    std::vector<ElementPtr> u_node;
+    Eigen::VectorXf u;
+    Eigen::VectorXf x;
+    Eigen::VectorXf y;
+    Eigen::MatrixXf A, B, C, D;
+    Eigen::VectorXf Min, Max;
+
+    float dt = 0;
+    float* TimeSource = 0;
+    float timePrev = 0;
+
+    bool UseFixedTimeSample = false;
+    ElementPtr time_node;
+
+    std::vector<ElementPtr> y_node;
+
     __SSClass SSClass_;
-    Config config_;
-    Data data_;
-    std::vector<std::string> InputKeys_;
-    std::string TimeSourceKey_;
+
+    std::vector<std::string> InputKeys_, OutputKeys_;
+    std::string TimeKey_;
 };
 
 /*
@@ -241,22 +224,16 @@ Data types for all input and output values are float.
 
 class TecsClass: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config,std::string SystemPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    //float *ref_vel_mps;
-    //float *ref_agl_m;
-    //float *vel_mps;
-    //float *agl_m;
     ElementPtr ref_vel_node;
     ElementPtr ref_agl_node;
     ElementPtr vel_node;
     ElementPtr agl_node;
-    //float error_total;
-    //float error_diff;
     ElementPtr error_total_node;
     ElementPtr error_diff_node;
 
@@ -265,8 +242,6 @@ class TecsClass: public GenericFunction {
     float weight_bal = 1.0;
     float min_mps = 0.0;
     float max_mps;
-    //uint8_t mode = kStandby;
     int8_t error_totalSat = 0;
     int8_t error_diffSat = 0;
 };
-#endif

@@ -18,15 +18,13 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef FILTER_FUNCTIONS_HXX_
-#define FILTER_FUNCTIONS_HXX_
+#pragma once
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
+#include "configuration.h"
 #include "generic-function.h"
 #include "filter-algorithms.h"
+
+#include <Eigen/Dense>
 
 /*
 General Filter - Implements a general discrete time filter using the
@@ -52,22 +50,19 @@ The order of the filter is given by the length of the num and den vectors.
 */
 class GeneralFilter: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string RootPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr input_node;
-    };
-    struct Data {
-      ElementPtr output_node;
-    };
-    __GeneralFilter filter_;
-    Config config_;
-    Data data_;
-    std::string InputKey_,OutputKey_;
-};
+    std::vector<float> num;
+    std::vector<float> den;
 
-#endif
+    ElementPtr u_node;
+    ElementPtr y_node;
+
+    __GeneralFilter filter_;
+
+    std::string InputKey_;
+};

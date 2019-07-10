@@ -20,144 +20,124 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "mission.h"
 
+void ModeSelect::Configure(const rapidjson::Value& Config, int PersistThreshold) {
+  ModeEnt modeEnt;
+
+  for (rapidjson::Value::ConstMemberIterator ConfigEnt = Config.MemberBegin(); ConfigEnt != Config.MemberEnd(); ++ConfigEnt) {
+    // Get the (Controller, Threshold)
+    modeEnt.Name = ConfigEnt->name.GetString();
+    modeEnt.Threshold = ConfigEnt->value.GetFloat();
+
+    ModeSel_.push_back(modeEnt);
+  }
+
+  PersistThreshold_ = PersistThreshold;
+};
+
+std::string ModeSelect::Run(float val) {
+  std::string cmdReq;
+  std::string cmdSel;
+
+  for (auto const &ModeSelEnt : ModeSel_) {
+    std::string ModeSelName = ModeSelEnt.Name;
+    float ModeSelThreshold = ModeSelEnt.Threshold;
+
+    if (val >= ModeSelThreshold) {
+      cmdReq = ModeSelName;
+    }
+  }
+
+  cmdSel = cmdSel_; // Selected command is the same as previous, unless ...
+  if ((cmdSel_ != cmdReq) & (cmdReq_ == cmdReq)) { // request is different than current, and same as previous
+    PersistCounter_++;
+    if (PersistCounter_ > PersistThreshold_) {
+      cmdSel = cmdReq;
+      PersistCounter_ = 0;
+    }
+  } else {
+    PersistCounter_ = 0;
+  }
+
+  cmdReq_ = cmdSel;
+  cmdSel_ = cmdSel;
+
+  return cmdSel;
+}
+
 /* configures the mission manager given a JSON value and registers data with global defs */
 void MissionManager::Configure(const rapidjson::Value& Config) {
-  // get the engage switch configuration
-  if (Config.HasMember("Fmu-Soc-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Fmu-Soc-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.SocEngageSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.SocEngageSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Fmu-Soc-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Fmu-Soc-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.SocEngageSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.SocEngageSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
+  // SOC switch configuration
+  if (!Config.HasMember("Soc-Engage-Switch")) {
+    throw std::runtime_error(std::string("ERROR - Soc-Engage-Switch configuration not found."));
   }
+  const rapidjson::Value& SwitchSocConfig = Config["Soc-Engage-Switch"];
 
-  // get the research switch configuration
-  if (Config.HasMember("Control-Select-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Control-Select-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.CtrlSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.CtrlSelectSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Control-Select-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Control-Select-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.CtrlSelectSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.CtrlSelectSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
-  }
+  LoadInput(SwitchSocConfig, "Mission-Manager", "Source", SocEngage_.source_node, &SocEngage_.sourceKey);
+  LoadVal(SwitchSocConfig, "Gain", &SocEngage_.Gain);
+  SocEngage_.modeSelect.Configure(SwitchSocConfig, 5);
 
-  // get the excitation switch configuration
-  if (Config.HasMember("Trigger-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Trigger-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.TriggerSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.TriggerSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Trigger-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Trigger-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.TriggerSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.TriggerSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
-  }
 
-  // get the test point switch configuration
-  if (Config.HasMember("Test-Increment-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Test-Increment-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.TestSelectIncrementSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.TestSelectIncrementSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Increment-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Increment-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.TestSelectIncrementSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.TestSelectIncrementSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
+  // Throttle Safety Switch congiguration, SOC does not use
+  if (!Config.HasMember("Throttle-Safety-Switch")) {
+    throw std::runtime_error(std::string("ERROR - Throttle-Safety-Switch configuration not found."));
   }
+  const rapidjson::Value& SwitchThrottleConfig = Config["Throttle-Safety-Switch"];
 
-  if (Config.HasMember("Test-Decrement-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Test-Decrement-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.TestSelectDecrementSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.TestSelectDecrementSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Decrement-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-Decrement-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.TestSelectDecrementSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.TestSelectDecrementSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
-  }
+  LoadInput(SwitchThrottleConfig, "Mission-Manager", "Source", ThrottleSafety_.source_node, &ThrottleSafety_.sourceKey);
+  LoadVal(SwitchThrottleConfig, "Gain", &ThrottleSafety_.Gain);
+  ThrottleSafety_.modeSelect.Configure(SwitchThrottleConfig, 5);
 
-  if (Config.HasMember("Launch-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Launch-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.LaunchSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.LaunchSelectSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Launch-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Launch-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.LaunchSelectSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.LaunchSelectSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
-  }
 
-  if (Config.HasMember("Land-Switch")) {
-    const rapidjson::Value& TempSwitch = Config["Land-Switch"];
-    if (TempSwitch.HasMember("Source")) {
-      config_.LandSelectSwitch.source_node = deftree.getElement(TempSwitch["Source"].GetString());
-      if ( !config_.LandSelectSwitch.source_node ) {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Land-Switch source not found in global data."));
-      }
-    } else {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Land-Switch configuration does not define a source."));
-    }
-    if (TempSwitch.HasMember("Threshold")) {
-      config_.LandSelectSwitch.Threshold = TempSwitch["Threshold"].GetFloat();
-    }
-    if (TempSwitch.HasMember("Gain")) {
-      config_.LandSelectSwitch.Gain = TempSwitch["Gain"].GetFloat();
-    }
+  // Baseline mode select switch
+  if (!Config.HasMember("Baseline-Select-Switch")) {
+    throw std::runtime_error(std::string("ERROR - Baseline-Select-Switch configuration not found."));
   }
+  const rapidjson::Value& SwitchBaseConfig = Config["Baseline-Select-Switch"];
+
+  LoadInput(SwitchBaseConfig, "Mission-Manager", "Source", BaselineSelect_.source_node, &BaselineSelect_.sourceKey);
+  LoadVal(SwitchBaseConfig, "Gain", &BaselineSelect_.Gain);
+  BaselineSelect_.modeSelect.Configure(SwitchBaseConfig, 5);
+
+  // Test Mode switch configuration
+  if (!Config.HasMember("Test-Mode-Switch")) {
+    throw std::runtime_error(std::string("ERROR - Test-Mode-Switch configuration not found."));
+  }
+  const rapidjson::Value& SwitchTestModeConfig = Config["Test-Mode-Switch"];
+
+  LoadInput(SwitchTestModeConfig, "Mission-Manager", "Source", TestMode_.source_node, &TestMode_.sourceKey);
+  LoadVal(SwitchTestModeConfig, "Gain", &TestMode_.Gain);
+  TestMode_.modeSelect.Configure(SwitchTestModeConfig, 5);
+
+
+  // Test Select switch configuration
+  if (!Config.HasMember("Test-Select-Switch")) {
+    throw std::runtime_error(std::string("ERROR - Test-Select-Switch configuration not found."));
+  }
+  const rapidjson::Value& SwitchTestSelConfig = Config["Test-Select-Switch"];
+
+  LoadInput(SwitchTestSelConfig, "Mission-Manager", "Source", TestSelect_.source_node, &TestSelect_.sourceKey);
+  LoadVal(SwitchTestSelConfig, "Gain", &TestSelect_.Gain);
+  TestSelect_.modeSelect.Configure(SwitchTestSelConfig, 5);
+
+
+  // Trigger switch configuration
+  if (!Config.HasMember("Trigger-Switch")) {
+    throw std::runtime_error(std::string("ERROR - Trigger-Switch configuration not found."));
+  }
+  const rapidjson::Value& SwitchTrigConfig = Config["Trigger-Switch"];
+
+  LoadInput(SwitchTrigConfig, "Mission-Manager", "Source", Trigger_.source_node, &Trigger_.sourceKey);
+  LoadVal(SwitchTrigConfig, "Gain", &Trigger_.Gain);
+  Trigger_.modeSelect.Configure(SwitchTrigConfig, 5);
+
 
   // Add signals to the definition tree
-  CurrentTestPointIndex_node = deftree.initElement("/Mission/testID", "Current test point index", LOG_UINT32, LOG_NONE);
+  TestPointId_node = deftree.initElement("/Mission/testID", "Current test point index", LOG_UINT32, LOG_NONE);
   SocEngage_node = deftree.initElement("/Mission/socEngage", "SOC control flag", LOG_UINT8, LOG_NONE);
-  CtrlSelect_node = deftree.initElement("/Mission/ctrlSel", "Control selection", LOG_UINT8, LOG_NONE);
+  BaselineMode_node = deftree.initElement("/Mission/baseSel", "Baseline control mode", LOG_UINT8, LOG_NONE);
+  TestMode_node = deftree.initElement("/Mission/ctrlSel", "Test mode", LOG_UINT8, LOG_NONE);
   TestSelect_node = deftree.initElement("/Mission/testSel", "Test selection", LOG_UINT8, LOG_NONE);
-  EngagedExcitationFlag_node = deftree.initElement("/Mission/excitEngage", "Excitation engage flag", LOG_UINT8, LOG_NONE);
+  TestEngageFlag_node = deftree.initElement("/Mission/excitEngage", "Test engage flag", LOG_UINT8, LOG_NONE);
 
   // build a map of the test point data
   if (Config.HasMember("Test-Points")) {
@@ -174,26 +154,6 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
         throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-ID, Sensor-Processing, Control, or Excitation not included in test point definition."));
       }
     }
-
-    // initialize the next test point index
-    NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
-
-    if (NextTestPointIndex_ >= NumberOfTestPoints_) {
-      NextTestPointIndex_ = 0;
-    }
-  }
-
-  // setting the baseline controllers
-  if (Config.HasMember("Baseline-Controller")) {
-    config_.BaselineController = Config["Baseline-Controller"].GetString();
-  }
-
-  if (Config.HasMember("Launch-Controller")) {
-    config_.LaunchController = Config["Launch-Controller"].GetString();
-  }
-
-  if (Config.HasMember("Land-Controller")) {
-    config_.LandController = Config["Land-Controller"].GetString();
   }
 }
 
@@ -202,243 +162,152 @@ void MissionManager::Run() {
   // Switch processing
 
   // FMU / SOC switch logic
-  float SocEngageSwitchVal = (config_.SocEngageSwitch.source_node->getFloat()) * config_.SocEngageSwitch.Gain;
-  bool SocEngageCheck = (SocEngageSwitchVal > config_.SocEngageSwitch.Threshold);
-
-  if ((SocEngage_node->getBool() != true) && (SocEngageCheck == true)) {
-    SocEngagePersistenceCounter_++;
-    if (SocEngagePersistenceCounter_ > PersistenceThreshold_) {
-      SocEngage_node->setBool(true);
-      SocEngagePersistenceCounter_ = 0;
-    }
-  } else if ((SocEngage_node->getBool() != false) && (SocEngageCheck == false)) {
-    SocEngagePersistenceCounter_++;
-    if (SocEngagePersistenceCounter_ > PersistenceThreshold_) {
-      SocEngage_node->setBool(false);
-      SocEngagePersistenceCounter_ = 0;
-    }
+  std::string SocEngageName = SocEngage_.modeSelect.Run((SocEngage_.source_node->getFloat()) * SocEngage_.Gain);
+  if (SocEngageName == "Soc") {
+    SocEngage_node->setBool(true);
   } else {
-    SocEngagePersistenceCounter_ = 0;
+    SocEngage_node->setBool(false);
   }
 
-  // Control law select switch logic
-  float CtrlSelectSwitchVal = (config_.CtrlSelectSwitch.source_node->getFloat()) * config_.CtrlSelectSwitch.Gain;
-  bool CtrlSelectCheck = CtrlSelectSwitchVal > config_.CtrlSelectSwitch.Threshold;
+  // Baseline Control Select
+  std::string BaselineSelectName = BaselineSelect_.modeSelect.Run((BaselineSelect_.source_node->getFloat()) * BaselineSelect_.Gain);
 
-  if (SocEngage_node->getBool() == true) {
-    if ((CtrlSelect_node->getBool() != true) && (CtrlSelectCheck == true)) {
-      CtrlSelectPersistenceCounter_++;
-      if (CtrlSelectPersistenceCounter_ > PersistenceThreshold_) {
-        CtrlSelect_node->setBool(true);
-        CtrlSelectPersistenceCounter_ = 0;
-      }
-    } else if ((CtrlSelect_node->getBool() != false) && (CtrlSelectCheck == false)) {
-      CtrlSelectPersistenceCounter_++;
-      if (CtrlSelectPersistenceCounter_ > PersistenceThreshold_) {
-        CtrlSelect_node->setBool(false);
-        CtrlSelectPersistenceCounter_ = 0;
-      }
-    } else {
-      CtrlSelectPersistenceCounter_ = 0;
-    }
-  } else {
-    CtrlSelect_node->setBool(false);
-    CtrlSelectPersistenceCounter_ = 0;
+  // Research Control law select switch logic
+  std::string TestModeName = TestMode_.modeSelect.Run((TestMode_.source_node->getFloat()) * TestMode_.Gain);
+  if (TestModeName == "Standby") {
+    TestMode_node->setInt(0);
+  } else if (TestModeName == "Arm") {
+    TestMode_node->setInt(1);
+  } else if (TestModeName == "Engage") {
+    TestMode_node->setInt(3);
   }
 
-  // Launch and Landing switch Logic
-  float LaunchSelectSwitchVal = (config_.LaunchSelectSwitch.source_node->getFloat()) * config_.LaunchSelectSwitch.Gain;
-  bool LaunchSelectCheck = LaunchSelectSwitchVal > config_.LaunchSelectSwitch.Threshold;
-
-  float LandSelectSwitchVal = (config_.LandSelectSwitch.source_node->getFloat()) * config_.LandSelectSwitch.Gain;
-  bool LandSelectCheck = LandSelectSwitchVal > config_.LandSelectSwitch.Threshold;
-
-  bool BaselineCheck;
-
-  // If the switch is not in Launch or Landing, then set to Baseline
-  if ((LaunchSelectCheck == false) && (LandSelectCheck == false)) {
-    BaselineCheck = true;
-  } else {
-    BaselineCheck = false;
-  }
-
-  if ((LaunchSelect_ != true) && (LaunchSelectCheck == true)) {
-    LaunchSelectPersistenceCounter_++;
-    if (LaunchSelectPersistenceCounter_ > PersistenceThreshold_) {
-      LaunchSelect_ = true;
-      LandSelect_ = false;
-      BaselineSelect_ = false;
-      LaunchSelectPersistenceCounter_ = 0;
-    }
-  } else if ((LandSelect_ != true) && (LandSelectCheck == true)) {
-    LandSelectPersistenceCounter_++;
-    if (LandSelectPersistenceCounter_ > PersistenceThreshold_) {
-      LaunchSelect_ = false;
-      LandSelect_ = true;
-      BaselineSelect_ = false;
-      LandSelectPersistenceCounter_ = 0;
-    }
-  } else if ((BaselineSelect_ != true) && (BaselineCheck == true)) {
-    BaselineSelectPersistenceCounter_++;
-    if (BaselineSelectPersistenceCounter_ > PersistenceThreshold_) {
-      LaunchSelect_ = false;
-      LandSelect_ = false;
-      BaselineSelect_ = true;
-      BaselineSelectPersistenceCounter_ = 0;
-    }
-  } else {
-    LaunchSelectPersistenceCounter_ = 0;
-    LandSelectPersistenceCounter_ = 0;
-    BaselineSelectPersistenceCounter_ = 0;
-  }
 
   // Test point select logic
-  float TestSelectDecrementSwitchVal = (config_.TestSelectDecrementSwitch.source_node->getFloat()) * config_.TestSelectDecrementSwitch.Gain;
-  bool TestSelectDecrementCheck = TestSelectDecrementSwitchVal > config_.TestSelectDecrementSwitch.Threshold;
-  float TestSelectIncrementSwitchVal = (config_.TestSelectIncrementSwitch.source_node->getFloat()) * config_.TestSelectIncrementSwitch.Gain;
-  bool TestSelectIncrementCheck = TestSelectIncrementSwitchVal > config_.TestSelectIncrementSwitch.Threshold;
-
-  bool TestSelectExciteCheck;
-
-  // If the switch is not in Increment or Decrement, then set to Excite
-  if ((TestSelectIncrementCheck == false) && (TestSelectDecrementCheck == false)) {
-    TestSelectExciteCheck = true;
-  } else {
-    TestSelectExciteCheck = 0;
+  std::string TestSelectName = TestSelect_.modeSelect.Run((TestSelect_.source_node->getFloat()) * TestSelect_.Gain);
+  if (TestSelectName == "Decrement") {
+    TestSelect_node->setInt(-1);
+  } else if (TestSelectName == "Excite") {
+    TestSelect_node->setInt(0);
+  } else if (TestSelectName == "Increment") {
+    TestSelect_node->setInt(1);
   }
 
-  if ((TestSelect_node->getInt() != 1) && (TestSelectIncrementCheck == true)) {
-    TestSelectIncrementPersistenceCounter_++;
-    if (TestSelectIncrementPersistenceCounter_ > PersistenceThreshold_) {
-      TestSelect_node->setInt(1);
-      TestSelectIncrementPersistenceCounter_ = 0;
-    }
-  } else if ((TestSelect_node->getInt() != -1) && (TestSelectDecrementCheck == true)) {
-    TestSelectDecrementPersistenceCounter_++;
-    if (TestSelectDecrementPersistenceCounter_ > PersistenceThreshold_) {
-      TestSelect_node->setInt(-1);
-      TestSelectDecrementPersistenceCounter_ = 0;
-    }
-  } else if ((TestSelect_node->getInt() != 0) && (TestSelectExciteCheck == true)) {
-    TestSelectExcitePersistenceCounter_++;
-    if (TestSelectExcitePersistenceCounter_ > PersistenceThreshold_) {
-      TestSelect_node->setInt(0);
-      TestSelectExcitePersistenceCounter_ = 0;
-    }
-  } else {
-    TestSelectIncrementPersistenceCounter_ = 0;
-    TestSelectDecrementPersistenceCounter_ = 0;
-    TestSelectExcitePersistenceCounter_ = 0;
-  }
 
   // Trigger switch logic
-  float TriggerValue = (config_.TriggerSwitch.source_node->getFloat()) * config_.TriggerSwitch.Gain;
-  bool TriggerCheck = TriggerValue > config_.TriggerSwitch.Threshold;
-  // int TriggerPersistenceCounter_;
-  // bool Trigger_;
-
-  if ((Trigger_ != true) && (TriggerCheck == true)) {
-    if (TriggerLatch_ == false) {
-      TriggerPersistenceCounter_++;
-      if (TriggerPersistenceCounter_ > PersistenceThreshold_) {
-        Trigger_ = true;
-        TriggerPersistenceCounter_ = 0;
-        TriggerLatch_ = true;
-      }
-    }
-  } else { // Clear the counter, clear the latch, let the mode controller "clear" the trigger event
-    TriggerPersistenceCounter_ = 0;
-    TriggerLatch_ = false;
-    // Trigger_ = false;
+  std::string TriggerCmd = Trigger_.modeSelect.Run((Trigger_.source_node->getFloat()) * Trigger_.Gain);
+  bool TriggerAct;
+  if (TriggerCmd == "Standby") {
+    TriggerAct == false;
+  } else if (TriggerCmd == "Excite") {
+    TriggerAct == true;
+    Trigger_.modeSelect.Reset();
   }
-
 
   // Mode Control Logic
 
   // Test Selection
   if (TestSelect_node->getInt() == 0) { // Excitation selected
-    if (Trigger_ == true) {
-      if (EngagedExcitation_ == "None") { // Engage the Excitation
-        EngagedExcitation_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Excitation;
+    if (TriggerAct == true) {
+      if (ExcitationSel_ == "None") { // Engage the Excitation
+        ExcitationSel_ = TestPoints_[std::to_string(TestPointId_node->getInt())].Excitation;
       } else { // Dis-Engage the Excitation
-        EngagedExcitation_ = "None";
+        ExcitationSel_ = "None";
       }
-      Trigger_ = false;
+      TriggerAct = false;
     }
   } else if (TestSelect_node->getInt() == 1) { // Increment selected
-    EngagedExcitation_ = "None";
+    ExcitationSel_ = "None";
 
-    if (Trigger_ == true) { // Increment the Test Point, switches engaged controller
-      CurrentTestPointIndex_node->setInt(NextTestPointIndex_);
-      NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
+    if (TriggerAct == true) { // Increment the Test Point, switches engaged controller
+      int next = TestPointId_node->getInt() + 1;
 
-      if (NextTestPointIndex_ >= NumberOfTestPoints_) {
-        NextTestPointIndex_ = 0;
+      if (next >= NumberOfTestPoints_) {
+        next = 0;
       }
-      Trigger_ = false;
+
+      TestPointId_node->setInt(next);
+      TriggerAct = false;
     }
   } else if (TestSelect_node->getInt() == -1) { // Decrement selected
-    EngagedExcitation_ = "None";
+    ExcitationSel_ = "None";
 
-    if (Trigger_ == true) { // Decrement the Test Point to 0, switches engaged controller
-      CurrentTestPointIndex_node->setInt(0);
-      NextTestPointIndex_ = CurrentTestPointIndex_node->getInt() + 1;
-      Trigger_ = false;
+    if (TriggerAct == true) { // Decrement the Test Point to 0, switches engaged controller
+      TestPointId_node->setInt(0);
+      TriggerAct = false;
     }
   }
 
   // SOC Controller and SensorProcessing Mode Switching
-  if (SocEngage_node->getBool() == true) {
-    if (CtrlSelect_node->getBool() == true) { // SOC Research
-      EngagedSensorProcessing_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].SensorProcessing;
-      EngagedController_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Control;
-      ArmedController_ = TestPoints_[std::to_string(NextTestPointIndex_)].Control;
-      // EngagedExcitation_ = "None";
+  BaselineSensProcSel_ = "Baseline";
+  BaselineControlSel_ = BaselineSelectName;
 
-    } else { // In SOC Baseline, arm the next controller, no excitation
-      EngagedSensorProcessing_ = "Baseline";
-      EngagedController_ = config_.BaselineController;
-      ArmedController_ = TestPoints_[std::to_string(CurrentTestPointIndex_node->getInt())].Control;
-      EngagedExcitation_ = "None";
-      if (LaunchSelect_ == true) {  // In SOC, Launch Controller
-        EngagedController_ = config_.LaunchController;
-        ArmedController_ = config_.BaselineController;
-      } else if (LandSelect_ == true) { // In SOC, Landing Controller
-        EngagedController_ = config_.LandController;
-        ArmedController_ = config_.BaselineController;
-      }
+  if (SocEngage_node->getBool() == true) {
+    TestSensorProcessingSel_ = TestPoints_[std::to_string(TestPointId_node->getInt())].SensorProcessing;
+    TestControlSel_ = TestPoints_[std::to_string(TestPointId_node->getInt())].Control;
+
+    if (TestMode_node->getInt() == Mode::kArm) { // SOC Baseline Engaged, Test Armed
+      BaselineControlMode_ = Mode::kEngage; // Engaged
+
+      TestControlMode_ = Mode::kArm; // Armed
+      ExcitationSel_ = TestPoints_[std::to_string(TestPointId_node->getInt())].Excitation;
+
+    } else if (TestMode_node->getInt() == Mode::kEngage) {// SOC Baseline Armed, Test Engaged
+      BaselineControlMode_ = Mode::kArm; // Armed
+
+      TestControlMode_ = Mode::kEngage; // Engaged
+      ExcitationSel_ = TestPoints_[std::to_string(TestPointId_node->getInt())].Excitation;
+
+    } else { // (TestMode_node->getInt() == 0) SOC Baseline Engaged, Test Standby
+      BaselineControlMode_ = Mode::kEngage; // Engaged
+      TestControlMode_ = Mode::kStandby; // Standby
+      ExcitationSel_ = "None";
     }
 
   } else { // FMU Mode
-    EngagedSensorProcessing_ = "Baseline";
-    EngagedController_ = "Fmu";
-    ArmedController_ = config_.BaselineController;
-    EngagedExcitation_ = "None";
+    BaselineControlMode_ = Mode::kArm; // Armed
+    TestControlMode_ = Mode::kStandby; // Standby
+    ExcitationSel_ = "None";
   }
 
-  if (EngagedExcitation_ == "None") {
-    EngagedExcitationFlag_node->setBool(false);
+  if (ExcitationSel_ == "None") {
+    TestEngageFlag_node->setBool(false);
   } else {
-    EngagedExcitationFlag_node->setBool(true);
+    TestEngageFlag_node->setBool(true);
   }
 }
 
-/* returns the string of the sensor processing group that is engaged */
-std::string MissionManager::GetEngagedSensorProcessing() {
-  return EngagedSensorProcessing_;
+/* returns the string of the test sensor processing group that is selected */
+std::string MissionManager::GetBaselineSensorProcessing() {
+  return BaselineSensProcSel_;
 }
 
-/* returns the string of the control group that is engaged */
-std::string MissionManager::GetEngagedController() {
-  return EngagedController_;
+/* returns the run mode of the Baseline System */
+GenericFunction::Mode MissionManager::GetBaselineRunMode() {
+  return BaselineControlMode_;
 }
 
-/* returns the string of the control group that is armed */
-std::string MissionManager::GetArmedController() {
-  return ArmedController_;
+/* returns the string of the baseline control group that is armed */
+std::string MissionManager::GetBaselineController() {
+  return BaselineControlSel_;
+}
+
+/* returns the string of the test sensor processing group that is selected */
+std::string MissionManager::GetTestSensorProcessing() {
+  return TestSensorProcessingSel_;
+}
+
+/* returns the string of the test control group that is selected */
+std::string MissionManager::GetTestController() {
+  return TestControlSel_;
+}
+
+/* returns the run mode of the Test System */
+GenericFunction::Mode MissionManager::GetTestRunMode() {
+  return TestControlMode_;
 }
 
 /* returns the string of the excitation group that is engaged */
-std::string MissionManager::GetEngagedExcitation() {
-  return EngagedExcitation_;
+std::string MissionManager::GetExcitation() {
+  return ExcitationSel_;
 }

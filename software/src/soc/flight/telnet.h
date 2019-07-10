@@ -11,12 +11,9 @@
 // modify it under the terms of the GNU LGPL
 //
 
-#ifndef _AURA_TELNET_HXX
-#define _AURA_TELNET_HXX
-
+#pragma once
 
 #include "netChannel.h"
-
 
 /**
  * Telent server class.
@@ -38,7 +35,7 @@ public:
 
   /**
    * Create a new TCP server.
-   * 
+   *
    * @param tokens Tokenized configuration parameters
    */
   UGTelnet( const int port_num );
@@ -59,7 +56,7 @@ public:
   bool process();
 
   /**
-   * 
+   *
    */
   bool close();
 
@@ -69,6 +66,3 @@ public:
   void handleAccept();
 
 };
-
-#endif // _AURA_TELNET_HXX
-

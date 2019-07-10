@@ -18,8 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef HARDWARE_DEFS_HXX_
-#define HARDWARE_DEFS_HXX_
+#pragma once
 
 #include <unistd.h>
 #include <termios.h>
@@ -27,11 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <iostream>
 
 // Software version number
-const std::string SoftwareVersion = "0.9.3";
+const std::string SoftwareVersion = "0.10.0";
 
 // FMU port, baud, and maximum buffer size
 const char FmuPort[] = "/dev/ttyO4";
 const uint32_t FmuBaud = 1500000;
 const uint32_t kUartBufferMaxSize = 4096;
-
-#endif

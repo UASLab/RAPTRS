@@ -20,46 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "filter-functions.h"
 
-void GeneralFilter::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  std::vector<float> den,num;
-  // get output name
-  std::string OutputName;
-  if (Config.HasMember("Output")) {
-    OutputName = RootPath + "/" + Config["Output"].GetString();
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
-  }
-  // get the input
-  if (Config.HasMember("Input")) {
-    InputKey_ = Config["Input"].GetString();
-    config_.input_node = deftree.getElement(InputKey_);
-    if ( !config_.input_node ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input ")+InputKey_+std::string(" not found in global data."));
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Input not specified in configuration."));
-  }
-  // get the feedforward coefficients
-  if (Config.HasMember("num")) {
-    for (size_t i=0; i < Config["num"].Size(); i++) {
-      num.push_back(Config["num"][i].GetFloat());
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Numerator coefficients not specified in configuration."));
-  }
-  // get feedback coefficients, if any
-  if (Config.HasMember("den")) {
-    for (size_t i=0; i < Config["den"].Size(); i++) {
-      den.push_back(Config["den"][i].GetFloat());
-    }
-  }
+void GeneralFilter::Configure(const rapidjson::Value& Config,std::string SystemName) {
+  // I/O signals
+  LoadInput(Config, SystemName, "Input", u_node, &InputKey_);
+  LoadOutput(Config, SystemName, "Output", y_node);
 
-  // pointer to log command data
-  OutputKey_ = RootPath+"/"+Config["Output"].GetString();
-  data_.output_node = deftree.initElement(OutputKey_, "Control law output", LOG_FLOAT, LOG_NONE);
+  // Coefficient vectors
+  LoadVal(Config, "num", &num, true);
+  LoadVal(Config, "den", &den, true);
 
-  // configure filter
-  filter_.Configure(num,den);
+  // Configure filter
+  filter_.Configure(num, den);
 }
 
 void GeneralFilter::Initialize() {}
@@ -69,13 +40,11 @@ bool GeneralFilter::Initialized() {
 }
 
 void GeneralFilter::Run(Mode mode) {
-  data_.output_node->setFloat( filter_.Run(config_.input_node->getFloat()) );
+  y_node->setFloat( filter_.Run(u_node->getFloat()) );
 }
 
 void GeneralFilter::Clear() {
   filter_.Clear();
-  data_.output_node->setFloat(0.0f);
-  deftree.Erase(OutputKey_);
+  y_node->setFloat(0.0f);
   InputKey_.clear();
-  OutputKey_.clear();
 }

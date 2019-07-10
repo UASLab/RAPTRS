@@ -35,14 +35,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "circle_mgr.h"
 #include "route_mgr.h"
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+
 #include <iostream>
 #include <iomanip>
 #include <stdint.h>
-
-using std::cout;
-using std::endl;
+#include <vector>
+#include <cstring>
 
 // Note: deftree is defined in common/definitiontree2.h and declared
 // (and initialized) globally in common/definitiontree2.cpp.  Any
@@ -65,7 +63,7 @@ int main(int argc, char* argv[]) {
   FlightManagementUnit Fmu;
   SensorProcessing SenProc;
   MissionManager Mission;
-  ControlLaws Control;
+  ControlSystem Control;
   ExcitationSystem Excitation;
   AircraftEffectors Effectors;
   DatalogClient Datalog;
@@ -95,7 +93,7 @@ int main(int argc, char* argv[]) {
 
   /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
-  Fmu.Configure(AircraftConfiguration);
+  // Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
   deftree.PrettyPrint("/Sensors/");
   std::cout << std::endl;
@@ -107,31 +105,17 @@ int main(int argc, char* argv[]) {
     deftree.PrettyPrint("/Sensor-Processing/");
     std::cout << std::endl;
 
-    if (AircraftConfiguration.HasMember("Route")) {
-      std::cout << "\tConfiguring route following..." << std::endl;
-      route_mgr.init(AircraftConfiguration["Route"]);
-    } else if (AircraftConfiguration.HasMember("Circle")) {
-      std::cout << "\tConfiguring circle hold..." << std::endl;
-      circle_mgr.init(AircraftConfiguration["Circle"]);
-    }
-
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
-      std::cout << "\tConfiguring mission manager..." << std::flush;
-      Mission.Configure(AircraftConfiguration["Mission-Manager"]);
+      std::cout << "\tConfiguring effectors..." << std::flush;
+      Effectors.Configure(AircraftConfiguration["Effectors"]);
       std::cout << "done!" << std::endl;
-      deftree.PrettyPrint("/Mission-Manager/");
+      deftree.PrettyPrint("/Effectors/");
       std::cout << std::endl;
 
       std::cout << "\tConfiguring control laws..." << std::flush;
       Control.Configure(AircraftConfiguration["Control"]);
       std::cout << "done!" << std::endl;
       deftree.PrettyPrint("/Control/");
-      std::cout << std::endl;
-
-      std::cout << "\tConfiguring effectors..." << std::flush;
-      Effectors.Configure(AircraftConfiguration["Effectors"]);
-      std::cout << "done!" << std::endl;
-      deftree.PrettyPrint("/Effectors/");
       std::cout << std::endl;
 
       if (AircraftConfiguration.HasMember("Excitation")) {
@@ -141,6 +125,12 @@ int main(int argc, char* argv[]) {
         deftree.PrettyPrint("/Excitation/");
         std::cout << std::endl;
       }
+
+      std::cout << "\tConfiguring mission manager..." << std::flush;
+      Mission.Configure(AircraftConfiguration["Mission-Manager"]);
+      std::cout << "done!" << std::endl;
+      deftree.PrettyPrint("/Mission-Manager/");
+      std::cout << std::endl;
     }
   }
 
@@ -151,14 +141,14 @@ int main(int argc, char* argv[]) {
   }
 
   /* profiling */
-  ElementPtr main_loop_node = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
-  ElementPtr sensor_proc_node = deftree.initElement("/Mission/profSenProc", "Sensor processing time us", LOG_UINT32, LOG_NONE);
-  ElementPtr control_node = deftree.initElement("/Mission/profControl", "Control time us", LOG_UINT32, LOG_NONE);
-  ElementPtr response_node = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
-  uint64_t main_loop_start = 0;
-  uint64_t sensor_proc_start = 0;
-  uint64_t control_start = 0;
-  uint64_t response_start = 0;
+  ElementPtr profMainLoop = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profSenProc = deftree.initElement("/Mission/profSenProc", "Baseline Sensor processing time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profTest = deftree.initElement("/Mission/profTest", "Test System time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profResponse = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
+  uint64_t profMainStart_us = 0;
+  uint64_t profSenProcStart_us = 0;
+  uint64_t profTestStart_us = 0;
+  uint64_t profResponseStart_us = 0;
 
   std::cout << "\tConfiguring datalog..." << std::flush;
   Datalog.RegisterGlobalData();
@@ -172,70 +162,75 @@ int main(int argc, char* argv[]) {
 
   /* main loop */
   while(1) {
-    main_loop_start = response_start = micros();
+    profMainStart_us = profResponseStart_us = micros();
     if (Fmu.ReceiveSensorData()) {
       if ( sim ) {
         sim_sensor_update(); // update sim sensors
       }
       float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
 
-      if (SenProc.Configured()&&SenProc.Initialized()) {
-        // run mission
+      if (SenProc.Initialized()) {
+
+        // Run the Baseline Sensor Processing
+        profSenProcStart_us = micros();
+        SenProc.RunBaseline(Mode::kEngage);
+        profSenProc->setInt(micros() - profSenProcStart_us);
+
+        // Run mission
         Mission.Run();
-        // get and set engaged sensor processing
-        SenProc.SetEngagedSensorProcessing(Mission.GetEngagedSensorProcessing());
-        // run sensor processing
-        sensor_proc_start = micros();
-        SenProc.Run();
 
-        // SensorProc timer start
-        sensor_proc_node->setInt(micros()-sensor_proc_start);
+        // get and set test systems
+        SenProc.SetTest(Mission.GetTestSensorProcessing());
+        Control.SetTest(Mission.GetTestController());
+        Excitation.SetExcitation(Mission.GetExcitation());
 
-        // run route manager
-        route_mgr.update();
-        circle_mgr.update();
+        // Start Test timer
+        profTestStart_us = micros();
 
-        // get and set engaged and armed controllers
-        Control.SetEngagedController(Mission.GetEngagedController());
-        Control.SetArmedController(Mission.GetArmedController());
-        // get and set engaged excitation
-        Excitation.SetEngagedExcitation(Mission.GetEngagedExcitation());
-        if (Mission.GetEngagedController()!="Fmu") {
+        if (Mission.GetTestRunMode() > 0) {
+
+          // Run Test Sensor-Processing
+          Control.RunTest(Mission.GetTestRunMode());
+
           // loop through control levels running excitations and control laws
-          for (size_t i=0; i < Control.ActiveControlLevels(); i++) {
-            // run excitation
-            Excitation.RunEngaged(Control.GetActiveLevel(i));
-            // run control
-            control_start = micros();
-            Control.RunEngaged(i);
-            control_node->setInt(micros()-control_start);
+          std::vector<std::string> ControlLevels = Control.GetTestLevels();
+
+          for (size_t i=0; i < ControlLevels.size(); i++) {
+            // Run excitation at active level
+            Excitation.Run(ControlLevels[i]);
+
+            // Run controller at active level
+            Control.SetLevel(ControlLevels[i]);
+            Control.RunTest(Mission.GetTestRunMode());
           }
+
           // send effector commands to FMU
           Fmu.SendEffectorCommands(Effectors.Run());
         }
 
-        // Timer
-        response_node->setInt(micros()-response_start);
+        profTest->setInt(micros() - profTestStart_us);
+        profResponse->setInt(micros() - profResponseStart_us);
 
         // Write out commands for Sim
         if ( sim ) {
           sim_cmd_update();
         }
-        // run armed excitations
-        Excitation.RunArmed();
-        // run armed control laws
-        Control.RunArmed();
+
+        // run baseline control laws
+        Control.RunBaseline(Mission.GetBaselineRunMode());
+
 
         // Print some status
-        std::string CtrlEngaged = Mission.GetEngagedController();
-        std::string SenProcEngaged = Mission.GetEngagedSensorProcessing();
-        std::string ExcitEngaged = Mission.GetEngagedExcitation();
+        std::string BaseCntrl = Mission.GetTestController();
+        std::string TestCntrl = Mission.GetTestController();
+        std::string TestSens = Mission.GetTestSensorProcessing();
+        std::string ExcitEngaged = Mission.GetExcitation();
 
         float timeCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
         float dt_ms = timeCurr_ms - timePrev_ms;
         timePrev_ms = timeCurr_ms;
 
-        std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
+        std::cout << BaseCntrl << "\t" << TestCntrl << "\t" << TestSens << "\t" << ExcitEngaged
                   << "\tdt (ms):  " << dt_ms
                   << std::endl;
 
@@ -245,7 +240,7 @@ int main(int argc, char* argv[]) {
       // run datalog
       Datalog.LogBinaryData();
       telnet.process();
-      main_loop_node->setInt(micros()-main_loop_start);
+      profMainLoop->setInt(micros()-profMainStart_us);
     }
   }
 

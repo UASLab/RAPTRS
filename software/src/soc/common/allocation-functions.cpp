@@ -20,78 +20,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "allocation-functions.h"
 
-void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  // grab inputs
-  if (Config.HasMember("Inputs")) {
-    numIn = Config["Inputs"].Size();
-    for (size_t i=0; i < numIn; i++) {
-      const rapidjson::Value& Input = Config["Inputs"][i];
-      InputKeys_.push_back(Input.GetString());
-      ElementPtr ele = deftree.getElement(InputKeys_.back());
-      if ( ele ) {
-        config_.input_nodes.push_back(ele);
-      } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Inputs not specified in configuration."));
-  }
+void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::string SystemName) {
+  // I/O signals
+  LoadInput(Config, SystemName, "Inputs", input_nodes, &InputKeys_);
+  LoadOutput(Config, SystemName, "Outputs", uCmd_nodes);
 
-  // resize objective matrix
-  config_.Objectives.resize(numIn,1);
+  // Control Effectiveness
+  LoadVal(Config, "Effectiveness", &Effectiveness);
 
-  // grab outputs
-  if (Config.HasMember("Outputs")) {
-    // resize output matrix
-    numOut = Config["Outputs"].Size();
-    data_.uCmd.resize(numOut,1);
-    data_.uCmd_nodes.resize(numOut);
-    for (size_t i=0; i < numOut; i++) {
-      const rapidjson::Value& Output = Config["Outputs"][i];
-      std::string OutputName = Output.GetString();
+  // Resize the I/O vectors
+  numIn = input_nodes.size();
+  Objectives.resize(numIn,1);
 
-      // pointer to log output
-      data_.uCmd_nodes[i] = deftree.initElement(RootPath + "/" + OutputName, "Allocator output", LOG_FLOAT, LOG_NONE);
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR") + RootPath + std::string(": Outputs not specified in configuration."));
-  }
+  numOut = uCmd_nodes.size();
+  uCmd.resize(numOut,1);
 
-  // grab Effectiveness
-  if (Config.HasMember("Effectiveness")) {
-    // resize Effectiveness matrix
-    config_.Effectiveness.resize(Config["Effectiveness"].Size(), Config["Effectiveness"][0].Size());
-    for (size_t m=0; m < Config["Effectiveness"].Size(); m++) {
-      for (size_t n=0; n < Config["Effectiveness"][m].Size(); n++) {
-        config_.Effectiveness(m,n) = Config["Effectiveness"][m][n].GetFloat();
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Effectiveness not specified in configuration."));
-  }
+  // Limits
+  Min.resize(numOut);
+  Min.setConstant(numOut, std::numeric_limits<float>::lowest());
 
-  // grab limits
-  config_.Min.resize(numOut);
-  config_.Min.setConstant(numOut, std::numeric_limits<float>::lowest());
+  LoadVal(Config, "Min", &Min);
 
-  if (Config.HasMember("Min")) {
-    config_.Min.resize(Config["Min"].Size());
-    for (size_t i=0; i < Config["Min"].Size(); i++) {
-      config_.Min(i) = Config["Min"][i].GetFloat();
-    }
-  }
+  Max.resize(numOut);
+  Max.setConstant(numOut, std::numeric_limits<float>::max());
 
-  config_.Max.resize(numOut);
-  config_.Max.setConstant(numOut, std::numeric_limits<float>::max());
-
-  if (Config.HasMember("Max")) {
-    config_.Max.resize(Config["Max"].Size());
-    for (size_t i=0; i < Config["Max"].Size(); i++) {
-      config_.Max(i) = Config["Max"][i].GetFloat();
-    }
-  }
-
+  LoadVal(Config, "Max", &Max);
 }
 
 void PseudoInverseAllocation::Initialize() {}
@@ -99,31 +52,31 @@ bool PseudoInverseAllocation::Initialized() {return true;}
 
 void PseudoInverseAllocation::Run(Mode mode) {
   // grab inputs
-  for (size_t i=0; i < config_.input_nodes.size(); i++) {
-    config_.Objectives(i) = config_.input_nodes[i]->getFloat();
+  for (size_t i=0; i < input_nodes.size(); i++) {
+    Objectives(i) = input_nodes[i]->getFloat();
   }
 
   // Pseduo-Inverse solver using singular value decomposition
   // SVD Decomposition based linear algebra solver
-  data_.uCmd = config_.Effectiveness.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(config_.Objectives); // Jacobi SVD solver
+  uCmd = Effectiveness.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Objectives); // Jacobi SVD solver
 
   // saturate output
-  for (int i=0; i < data_.uCmd.rows(); i++) {
-    if (data_.uCmd(i) <= config_.Min(i)) {
-      data_.uCmd(i) = config_.Min(i);
-    } else if (data_.uCmd(i) >= config_.Max(i)) {
-      data_.uCmd(i) = config_.Max(i);
+  for (int i=0; i < uCmd.rows(); i++) {
+    if (uCmd(i) <= Min(i)) {
+      uCmd(i) = Min(i);
+    } else if (uCmd(i) >= Max(i)) {
+      uCmd(i) = Max(i);
     }
-    data_.uCmd_nodes[i]->setFloat( data_.uCmd(i) );
+    uCmd_nodes[i]->setFloat( uCmd(i) );
   }
 }
 
 void PseudoInverseAllocation::Clear() {
-  config_.Objectives.resize(0);
-  config_.Effectiveness.resize(0,0);
-  config_.Min.resize(0);
-  config_.Max.resize(0);
-  data_.uCmd.resize(0);
-  data_.uCmd_nodes.resize(0);
+  Objectives.resize(0);
+  Effectiveness.resize(0,0);
+  Min.resize(0);
+  Max.resize(0);
+  uCmd.resize(0);
+  uCmd_nodes.resize(0);
   InputKeys_.clear();
 }

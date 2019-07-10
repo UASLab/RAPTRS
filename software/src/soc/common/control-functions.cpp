@@ -1,4 +1,4 @@
-Configuration::/*
+/*
 control-functions.cc
 Brian R Taylor
 brian.taylor@bolderflight.com
@@ -21,47 +21,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "control-functions.h"
 
 /* PID2 class methods, see control-functions.hxx for more information */
-void PID2Class::Configure(const rapidjson::Value& Config, std::string RootPath) {
-  float Kp = 1;
-  float Ki = 0;
-  float Kd = 0;
-  float Tf = 0;
-  float b = 1;
-  float c = 1;
-  float Min = 0;
-  float Max = 0;
+void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+  float Kp = 1.0;
+  float Ki = 0.0;
+  float Kd = 0.0;
+  float Tf = 0.0;
+  float b = 1.0;
+  float c = 1.0;
+  float Min = std::numeric_limits<float>::lowest();
+  float Max = std::numeric_limits<float>::max();
 
-  std::string SystemName = RootPath;
+  LoadInput(Config, SystemPath, "Reference", reference_node, &ReferenceKey_);
+  LoadInput(Config, SystemPath, "Feedback", feedback_node, &FeedbackKey_);
+  LoadInput(Config, SystemPath, "Output", output_node, &OutputKey_);
 
-  OutputKey_ = Configuration.LoadOutput(Config, SystemName, "Output", data_.output_node);
-  data_.ff_node = deftree.initElement(SystemName + "/" + OutputKey_ + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
-  data_.fb_node = deftree.initElement(SystemName + "/" + OutputKey_ + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
+  ff_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
+  fb_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
 
-  ReferenceKey_ = Configuration.LoadInput(Config, SystemName, "Reference", config_.reference_node);
-  FeedbackKey_ = Configuration.LoadInput(Config, SystemName, "Feedback", config_.feedback_node);
-
-  config_.dt = Configuration.LoadValue(Config, "dt");
-  if (config_.dt > 0.0) {
-    config_.UseFixedTimeSample = true;
+  float dt = 0.0f;
+  LoadVal(Config, "dt", &dt);
+  if (dt > 0.0) {
+    UseFixedTimeSample = true;
   } else {
-    TimeKey_ = Configuration.LoadTime(Config, SystemName, "dt", config_.time_node);
+    LoadInput(Config, SystemPath, "Time-Source", time_node, &TimeKey_);
   }
 
-  Kp = Configuration.LoadValue(Config, "Kp");
-  Ki = Configuration.LoadValue(Config, "Ki");
-  Kd = Configuration.LoadValue(Config, "Kd");
+  LoadVal(Config, "Kp", &Kp);
+  LoadVal(Config, "Ki", &Ki);
+  LoadVal(Config, "Kd", &Kd);
   if (Kd != 0.0){
-    Tf = Configuration.LoadValue(Config, "Tf");
+    LoadVal(Config, "Tf", &Tf);
   }
 
-  b = Configuration.LoadValue(Config, "b");
-  c = Configuration.LoadValue(Config, "c");
-
-  Min = Configuration.LoadValue(Config, "Min");
-  Max = Configuration.LoadValue(Config, "Max");
+  LoadVal(Config, "b", &b);
+  LoadVal(Config, "c", &c);
+  LoadVal(Config, "Min", &Min);
+  LoadVal(Config, "Max", &Max);
 
   // configure PID2 Class
-  PID2Class_.Configure(Kp,Ki,Kd,Tf,b,c,Min,Max);
+  PID2Class_.Configure(Kp, Ki, Kd, Tf, b, c, Min, Max);
 }
 
 void PID2Class::Initialize() {}
@@ -69,69 +67,67 @@ bool PID2Class::Initialized() {return true;}
 
 void PID2Class::Run(Mode mode) {
   // sample time
-  if(!config_.UseFixedTimeSample) {
-    config_.dt = config_.time_node->getFloat();
+  if(!UseFixedTimeSample) {
+    dt = time_node->getFloat();
   }
 
   // Run
   float y = 0.0f;
   float ff = 0.0f;
   float fb = 0.0f;
-  float ref;
-  float feedback;
 
-  ref = config_.reference_node->getFloat();
-  feedback = config_.feedback_node->getFloat();
-  PID2Class_.Run(mode, ref, feedback, config_.dt, &y, &ff, &fb);
+  PID2Class_.Run(mode, reference_node->getFloat(), feedback_node->getFloat(), dt, &y, &ff, &fb);
 
-  data_.output_node->setFloat(y);
-  data_.ff_node->setFloat(ff);
-  data_.fb_node->setFloat(fb);
+  output_node->setFloat(y);
+  ff_node->setFloat(ff);
+  fb_node->setFloat(fb);
 }
 
 void PID2Class::Clear() {
-  config_.UseFixedTimeSample = false;
-  data_.output_node->setFloat(0.0f);
-  data_.ff_node->setFloat(0.0f);
-  data_.fb_node->setFloat(0.0f);
+  UseFixedTimeSample = false;
+  output_node->setFloat(0.0f);
+  ff_node->setFloat(0.0f);
+  fb_node->setFloat(0.0f);
   ReferenceKey_.clear();
   FeedbackKey_.clear();
+  TimeKey_.clear();
   PID2Class_.Clear();
 }
 
 /* PID class methods, see control-functions.hxx for more information */
-void PIDClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  float Kp = 1;
-  float Ki = 0;
-  float Kd = 0;
-  float Tf = 0;
-  float Min = 0;
-  float Max = 0;
-  std::string OutputName;
-  std::string SystemName;
+void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) {
+  float Kp = 1.0;
+  float Ki = 0.0;
+  float Kd = 0.0;
+  float Tf = 0.0;
+  float Min = std::numeric_limits<float>::lowest();
+  float Max = std::numeric_limits<float>::max();
 
-  if (Config.HasMember("Output")) {
-    OutputName = Config["Output"].GetString();
-    SystemName = RootPath;
+  LoadInput(Config, SystemPath, "Output", output_node, &OutputKey_);
+  ff_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
+  fb_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
 
-    // pointer to log command data
-    data_.output_node = deftree.initElement(RootPath + "/" + OutputName, "Control law output", LOG_FLOAT, LOG_NONE);
-    data_.ff_node = deftree.initElement(RootPath + "/" + OutputName + "FF", "Control law output, feedforward component", LOG_FLOAT, LOG_NONE);
-    data_.fb_node = deftree.initElement(RootPath + "/" + OutputName + "FB", "Control law output, feedback component", LOG_FLOAT, LOG_NONE);
+  LoadInput(Config, SystemPath, "Input", input_node, &InputKey_);
+
+  LoadVal(Config, "dt", &dt);
+  if (dt > 0.0) {
+    UseFixedTimeSample = true;
   } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
+    LoadInput(Config, SystemPath, "Time-Source", time_node, &TimeKey_);
   }
 
-  if (Config.HasMember("Reference")) {
-    ReferenceKey_ = Config["Reference"].GetString();
-    config_.reference_node = deftree.getElement(ReferenceKey_, true);
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Reference not specified in configuration."));
+  LoadVal(Config, "Kp", &Kp);
+  LoadVal(Config, "Ki", &Ki);
+  LoadVal(Config, "Kd", &Kd);
+  if (Kd != 0.0){
+    LoadVal(Config, "Tf", &Tf);
   }
 
+  LoadVal(Config, "Min", &Min);
+  LoadVal(Config, "Max", &Max);
 
   // configure using PID2 algorithm Class
-  PID2Class_.Configure(Kp,Ki,Kd,Tf,1.0,1.0,Min,Max);
+  PID2Class_.Configure(Kp, Ki, Kd, Tf, 1.0, 1.0, Min, Max);
 }
 
 void PIDClass::Initialize() {}
@@ -139,307 +135,145 @@ bool PIDClass::Initialized() {return true;}
 
 void PIDClass::Run(Mode mode) {
   // sample time
-  if(!config_.UseFixedTimeSample) {
-    config_.dt = config_.dt_node->getFloat();
+  if(!UseFixedTimeSample) {
+    dt = time_node->getFloat();
   }
 
   // Run
   float y = 0.0f;
   float ff = 0.0f;
   float fb = 0.0f;
-  PID2Class_.Run(mode, config_.reference_node->getFloat(), 0.0, config_.dt, &y, &ff, &fb);
-  data_.output_node->setFloat(y);
-  data_.ff_node->setFloat(ff);
-  data_.fb_node->setFloat(fb);
+
+  PID2Class_.Run(mode, input_node->getFloat(), 0.0, dt, &y, &ff, &fb);
+
+  output_node->setFloat(y);
+  ff_node->setFloat(ff);
+  fb_node->setFloat(fb);
 }
 
 void PIDClass::Clear() {
-  config_.UseFixedTimeSample = false;
-  data_.output_node->setFloat(0.0f);
-  data_.ff_node->setFloat(0.0f);
-  data_.fb_node->setFloat(0.0f);
-  ReferenceKey_.clear();
+  UseFixedTimeSample = false;
+  output_node->setFloat(0.0f);
+  ff_node->setFloat(0.0f);
+  fb_node->setFloat(0.0f);
+  InputKey_.clear();
+  TimeKey_.clear();
   PID2Class_.Clear();
 }
 
 
 /* SS class methods, see control-functions.hxx for more information */
-void SSClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  std::string OutputName;
-  std::string SystemName;
+void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+  // I/O signals
+  LoadInput(Config, SystemPath, "Inputs", u_node, &InputKeys_);
+  LoadOutput(Config, SystemPath, "Outputs", y_node);
 
-  // grab sytem Name
-  if (Config.HasMember("Name")) {
-    SystemName = Config["Name"].GetString();
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Name not specified in configuration."));
-  }
-
-  // grab inputs
-  if (Config.HasMember("Inputs")) {
-    for (size_t i=0; i < Config["Inputs"].Size(); i++) {
-      const rapidjson::Value& Input = Config["Inputs"][i];
-      InputKeys_.push_back(Input.GetString());
-      ElementPtr ele = deftree.getElement(InputKeys_.back());
-      if (ele) {
-        config_.Inputs.push_back(ele);
-      } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Input ")+InputKeys_.back()+std::string(" not found in global data."));
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Inputs not specified in configuration."));
-  }
-
-  // grab outputs
-  if (Config.HasMember("Outputs")) {
-    // resize output matrix
-    data_.y.resize(Config["Outputs"].Size());
-    data_.y_node.resize(Config["Outputs"].Size());
-    for (size_t i=0; i < Config["Outputs"].Size(); i++) {
-      const rapidjson::Value& y = Config["Outputs"][i];
-      OutputName = y.GetString();
-
-      // pointer to log output
-      data_.y_node[i] = deftree.initElement(RootPath + SystemName + "/" + OutputName, "SS output", LOG_FLOAT, LOG_NONE);
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Outputs not specified in configuration."));
-  }
-
-  // grab A
-  if (Config.HasMember("A")) {
-    // resize A matrix
-    config_.A.resize(Config["A"].Size(),Config["A"][0].Size());
-    for (size_t m=0; m < Config["A"].Size(); m++) {
-      for (size_t n=0; n < Config["A"][m].Size(); n++) {
-        config_.A(m,n) = Config["A"][m][n].GetFloat();
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": A not specified in configuration."));
-  }
-
-  // resize state vector
-  config_.x.resize(config_.A.rows());
-
-  // grab B
-  if (Config.HasMember("B")) {
-    // resize B matrix
-    config_.B.resize(Config["B"].Size(), Config["B"][0].Size());
-    for (size_t m=0; m < Config["B"].Size(); m++) {
-      for (size_t n=0; n < Config["B"][m].Size(); n++) {
-        config_.B(m,n) = Config["B"][m][n].GetFloat();
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": B not specified in configuration."));
-  }
+  // Matrices
+  LoadVal(Config, "A", &A);
+  LoadVal(Config, "B", &B);
+  LoadVal(Config, "C", &C);
+  LoadVal(Config, "D", &D);
 
   // resize input vector
-  config_.u.resize(config_.B.cols());
-  config_.u.setZero(config_.B.cols());
+  int numU = C.rows();
+  u.resize(numU);
+  u.setZero(numU);
 
-  // grab C
-  if (Config.HasMember("C")) {
-    // resize C matrix
-    config_.C.resize(Config["C"].Size(),Config["C"][0].Size());
-    for (size_t m=0; m < Config["C"].Size(); m++) {
-      for (size_t n=0; n < Config["C"][m].Size(); n++) {
-        config_.C(m,n) = Config["C"][m][n].GetFloat();
-      }
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": C not specified in configuration."));
-  }
+  // resize state vector
+  int numX = A.rows();
+  x.resize(numX);
+  x.setZero(numX);
 
   // Resize output vector
-  int numY = config_.C.rows();
-  data_.y.resize(numY);
-  data_.y.setZero(numY);
+  int numY = C.rows();
+  y.resize(numY);
+  y.setZero(numY);
 
-  // grab D
-  if (Config.HasMember("D")) {
-    // resize D matrix
-    config_.D.resize(Config["D"].Size(),Config["D"][0].Size());
-    for (size_t m=0; m < Config["D"].Size(); m++) {
-      for (size_t n=0; n < Config["D"][m].Size(); n++) {
-        config_.D(m,n) = Config["D"][m][n].GetFloat();
-      }
-    }
+  // Sample time (required)
+  LoadVal(Config, "dt", &dt);
+  if (dt > 0.0) {
+    UseFixedTimeSample = true;
   } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": D not specified in configuration."));
+    LoadInput(Config, SystemPath, "Time-Source", time_node, &TimeKey_);
   }
 
-  // grab stample time (required)
-  if (Config.HasMember("dt")) {
-    config_.dt = Config["dt"].GetFloat();
-    config_.UseFixedTimeSample = true;
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": dt not specified in configuration."));
-  }
+  // Limits
+  Min.resize(numY);
+  Min.setConstant(numY, std::numeric_limits<float>::lowest());
 
-  // grab time source input (optional)
-  if (Config.HasMember("Time-Source")) {
-    TimeSourceKey_ = Config["Time-Source"].GetString();
-    config_.time_source_node = deftree.getElement(TimeSourceKey_);
-    config_.UseFixedTimeSample = false;
-    if ( !config_.time_source_node ) {
-      throw std::runtime_error(std::string("ERROR")+SystemName+std::string(": Time-Source ")+TimeSourceKey_+std::string(" not found in global data."));
-    }
-  }
+  LoadVal(Config, "Min", &Min);
 
-  // grab limits
-  config_.Min.resize(numY);
-  config_.Min.setConstant(numY, std::numeric_limits<float>::lowest());
+  Max.resize(numY);
+  Max.setConstant(numY, std::numeric_limits<float>::max());
 
-  if (Config.HasMember("Min")) {
-    config_.Min.resize(Config["Min"].Size());
-    for (size_t i=0; i < Config["Min"].Size(); i++) {
-      config_.Min(i) = Config["Min"][i].GetFloat();
-    }
-  }
-
-  config_.Max.resize(numY);
-  config_.Max.setConstant(numY, std::numeric_limits<float>::max());
-
-  if (Config.HasMember("Max")) {
-    config_.Max.resize(Config["Max"].Size());
-    for (size_t i=0; i < Config["Max"].Size(); i++) {
-      config_.Max(i) = Config["Max"][i].GetFloat();
-    }
-  }
+  LoadVal(Config, "Max", &Max);
 
   // configure SS Class
-  SSClass_.Configure(config_.A, config_.B, config_.C, config_.D, config_.dt, config_.Min, config_.Max);
+  SSClass_.Configure(A, B, C, D, dt, Min, Max);
 }
 
 void SSClass::Initialize() {}
 bool SSClass::Initialized() {return true;}
 
 void SSClass::Run(Mode mode) {
+  float dt_curr = 0.0f;
+
   // sample time computation
   float dt = 0;
-  if (config_.UseFixedTimeSample == false) {
-    dt = *config_.TimeSource - config_.timePrev;
-    config_.timePrev = *config_.TimeSource;
-    if (dt > 2*config_.dt) {dt = config_.dt;} // Catch large dt
-    if (dt <= 0) {dt = config_.dt;} // Catch negative and zero dt
+  if (UseFixedTimeSample == false) {
+    dt_curr = *TimeSource - timePrev;
+    timePrev = *TimeSource;
+    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
+    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
   } else {
-    dt = config_.dt;
+    dt_curr = dt;
   }
 
   // inputs to Eigen3 vector
-  for (size_t i=0; i < config_.Inputs.size(); i++) {
-    config_.u(i) = config_.Inputs[i]->getFloat();
+  for (size_t i=0; i < u_node.size(); i++) {
+    u(i) = u_node[i]->getFloat();
   }
 
   // Call Algorithm
-  SSClass_.Run(mode, config_.u, dt, &data_.y);
-  for (size_t i=0; i < data_.y_node.size(); i++) {
-    data_.y_node[i]->setFloat(data_.y(i));
+  SSClass_.Run(mode, u, dt, &y);
+
+  // outputs to nodes
+  for (size_t i=0; i < y_node.size(); i++) {
+    y_node[i]->setFloat(y(i));
   }
 }
 
 void SSClass::Clear() {
-  config_.UseFixedTimeSample = false;
-  config_.A.resize(0,0);
-  config_.B.resize(0,0);
-  config_.C.resize(0,0);
-  config_.D.resize(0,0);
+  UseFixedTimeSample = false;
+  A.resize(0,0);
+  B.resize(0,0);
+  C.resize(0,0);
+  D.resize(0,0);
   InputKeys_.clear();
-  TimeSourceKey_.clear();
+  TimeKey_.clear();
   SSClass_.Clear();
 }
 
 /* Tecs class methods, see control-functions.hxx for more information */
-void TecsClass::Configure(const rapidjson::Value& Config,std::string RootPath) {
+void TecsClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+  // Inputs
+  std::string RefSpeedKey, FeedbackSpeedKey;
+  LoadInput(Config, SystemPath, "RefSpeed", ref_vel_node, &RefSpeedKey);
+  LoadInput(Config, SystemPath, "FeedbackSpeed", vel_node, &FeedbackSpeedKey);
 
-  std::string SystemName, OutputName;
+  std::string RefAltitudeKey, FeedbackAltitudeKey;
+  LoadInput(Config, SystemPath, "RefAltitude", ref_agl_node, &RefAltitudeKey);
+  LoadInput(Config, SystemPath, "FeedbackAltitude", agl_node, &FeedbackAltitudeKey);
 
-  // grab sytem Name
-  if (Config.HasMember("Name")) {
-    SystemName = Config["Name"].GetString();
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Name not specified in configuration."));
-  }
+  // Outputs
+  LoadOutput(Config, SystemPath, "OutputTotal", error_total_node);
+  LoadOutput(Config, SystemPath, "OutputDiff", error_diff_node);
 
-  if (Config.HasMember("mass_kg")) {
-    mass_kg = Config["mass_kg"].GetFloat();
-  }
-
-  if (Config.HasMember("weight_bal")) {
-    weight_bal = Config["weight_bal"].GetFloat();
-  }
-
-  if (Config.HasMember("max_mps")) {
-    max_mps = Config["max_mps"].GetFloat();
-  }
-
-  if (Config.HasMember("min_mps")) {
-    min_mps = Config["min_mps"].GetFloat();
-  }
-
-  if (Config.HasMember("RefSpeed")) {
-    string RefSpeedKey = Config["RefSpeed"].GetString();
-    ref_vel_node = deftree.getElement(RefSpeedKey);
-    if ( !ref_vel_node ){
-      throw std::runtime_error(std::string("ERROR")+std::string(": RefSpeed ")+RefSpeedKey+std::string(" not found in global data."));
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+std::string(": RefSpeed not specified in configuration."));
-  }
-
-  if (Config.HasMember("RefAltitude")) {
-    string RefAltitudeKey = Config["RefAltitude"].GetString();
-    ref_agl_node = deftree.getElement(RefAltitudeKey);
-    if ( !ref_agl_node ) {
-      throw std::runtime_error(std::string("ERROR")+std::string(": RefAltitude ")+RefAltitudeKey+std::string(" not found in global data."));
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+std::string(": RefAltitude not specified in configuration."));
-  }
-
-  if (Config.HasMember("FeedbackSpeed")) {
-    string FeedbackSpeedKey = Config["FeedbackSpeed"].GetString();
-    vel_node = deftree.getElement(FeedbackSpeedKey);
-    if ( !vel_node ) {
-      throw std::runtime_error(std::string("ERROR")+std::string(": FeedbackSpeed ")+FeedbackSpeedKey+std::string(" not found in global data."));
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+std::string(": FeedbackSpeed not specified in configuration."));
-  }
-
-  if (Config.HasMember("FeedbackAltitude")) {
-    string FeedbackAltitudeKey = Config["FeedbackAltitude"].GetString();
-    agl_node = deftree.getElement(FeedbackAltitudeKey);
-    if ( !agl_node ) {
-      throw std::runtime_error(std::string("ERROR")+std::string(": FeedbackAltitude ")+FeedbackAltitudeKey+std::string(" not found in global data."));
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+std::string(": FeedbackAltitude not specified in configuration."));
-  }
-
-  if (Config.HasMember("OutputTotal")) {
-    OutputName = Config["OutputTotal"].GetString();
-
-    // pointer to log output
-    error_total_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Total Energy Error", LOG_FLOAT, LOG_NONE);
-
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": OutputTotal not specified in configuration."));
-  }
-
-  if (Config.HasMember("OutputDiff")) {
-    OutputName = Config["OutputDiff"].GetString();
-
-    // pointer to log output
-    error_diff_node = deftree.initElement(RootPath + "/" + SystemName + "/" + OutputName, "Tecs Diff Energy Error ", LOG_FLOAT, LOG_NONE);
-
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": OutputDiff not specified in configuration."));
-  }
-
+  // Parameters
+  LoadVal(Config, "mass_kg", &mass_kg, true);
+  LoadVal(Config, "weight_bal", &weight_bal, true);
+  LoadVal(Config, "min_mps", &min_mps, true);
+  LoadVal(Config, "max_mps", &max_mps, true);
 }
 
 void TecsClass::Initialize() {

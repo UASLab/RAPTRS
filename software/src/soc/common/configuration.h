@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "rapidjson/writer.h"
 #include "definition-tree2.h"
 
+#include <Eigen/Dense>
+
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
@@ -34,7 +36,19 @@ class Configuration {
     void LoadConfiguration(std::string FileName,rapidjson::Document *Configuration);
 };
 
-std::string LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node);
-std::string LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node);
-std::string LoadTime(const rapidjson::Value& Config, std::string SystemName, std::string TimeName, ElementPtr Node);
-float LoadValue(const rapidjson::Value& Config, std::string ValName);
+
+void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node, std::string *InputKey);
+void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, std::vector<ElementPtr> Node, std::vector<std::string> *InputKey);
+
+void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node);
+void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, std::vector<ElementPtr> Node);
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, int *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, float *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::string *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string VecName, std::vector<float> *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<std::string> *Val, bool required);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::ArrayXf *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::VectorXf *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string MatName, std::vector<std::vector<float>> *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::MatrixXf *Val, bool required = 0);

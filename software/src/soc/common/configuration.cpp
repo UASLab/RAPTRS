@@ -32,40 +32,149 @@ void Configuration::LoadConfiguration(std::string FileName,rapidjson::Document *
 
 
 // Helpers to Read Config
-std::string Configuration::LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node) {
-  if (Config.HasMember(OutputName)) {
-    std::string OutputKey = Config[OutputName].GetString();
-    Node = deftree.initElement(SystemName + "/" + OutputName, ": System output", LOG_FLOAT, LOG_NONE);
+// Load an Config output and create a node in the deftree
+void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node) {
+
+  if (Config.HasMember(OutputName.c_str())) {
+    Node = deftree.initElement(SystemName + "/" + OutputName, "System output", LOG_FLOAT, LOG_NONE);
   } else {
     throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + OutputName + std::string(" not specified in configuration."));
   }
-  return OutputKey;
 }
 
-std::string Configuration::LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node) {
-  if (Config.HasMember(InputName)) {
-    std::string InputKey = Config[InputName].GetString();
-    Node = deftree.getElement(InputKey, true);
+void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, std::vector<ElementPtr> Node) {
+  if (Config.HasMember(OutputName.c_str())) {
+    Node.resize(Config[OutputName.c_str()].Size());
+
+    for (size_t i=0; i < Config[OutputName.c_str()].Size(); i++) {
+      const rapidjson::Value& Elem = Config[OutputName.c_str()][i];
+      std::string ElemName = Elem.GetString();
+
+      // pointer to log output
+      Node[i] = deftree.initElement(SystemName + "/" + ElemName, "System output", LOG_FLOAT, LOG_NONE);
+    }
+  } else {
+    throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + OutputName + std::string(" not specified in configuration."));
+  }
+}
+
+// Load an Config input to an existing node in the deftree
+void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node, std::string *InputKey) {
+  if (Config.HasMember(InputName.c_str())) {
+    (*InputKey) = Config[InputName.c_str()].GetString();
+    Node = deftree.getElement(*InputKey, true);
   } else {
     throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + InputName + std::string(" not specified in configuration."));
   }
-  return InputKey;
 }
 
-std::string Configuration::LoadTime(const rapidjson::Value& Config, std::string SystemName, std::string TimeName, ElementPtr Node) {
-  if (Config.HasMember(TimeName)) {
-    std::string TimeKey = Config[TimeName].GetString();
-    Node = deftree.getElement(TimeKey);
+void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, vector<ElementPtr> Node, vector<std::string> *InputKey) {
+  if (Config.HasMember(InputName.c_str())) {
+    for (size_t i=0; i < Config[InputName.c_str()].Size(); i++) {
+      const rapidjson::Value& Input = Config[InputName.c_str()][i];
+      (*InputKey).push_back(Input.GetString());
+
+      Node.push_back(deftree.getElement((*InputKey).back(), true));
+    }
   } else {
-    throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + TimeName + std::string(" not specified in configuration."));
+    throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + InputName + std::string(": not specified in configuration."));
   }
-  return TimeKey;
 }
 
-float Configuration::LoadValue(const rapidjson::Value& Config, std::string ValName) {
-  float Val;
-  if (Config.HasMember(ValName)) {
-    Val = Config[ValName].GetFloat();
+
+// Get a simple value, overloaded
+void LoadVal(const rapidjson::Value& Config, std::string ValName, int *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val) = Config[ValName.c_str()].GetInt();
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
   }
-  return Val;
+}
+void LoadVal(const rapidjson::Value& Config, std::string ValName, float *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val) = Config[ValName.c_str()].GetFloat();
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::string *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val) = Config[ValName.c_str()].GetString();
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<float> *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
+      (*Val).push_back(Config[ValName.c_str()][m].GetFloat());
+    }
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<std::string> *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
+      (*Val).push_back(Config[ValName.c_str()][m].GetString());
+    }
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::ArrayXf *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val).resize(Config[ValName.c_str()].Size());
+
+    for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
+      (*Val)(m) = Config[ValName.c_str()][m].GetFloat();
+    }
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::VectorXf *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val).resize(Config[ValName.c_str()].Size());
+
+    for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
+      (*Val)(m) = Config[ValName.c_str()][m].GetFloat();
+    }
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<std::vector<float>> *Val, bool required) {
+  std::vector<float> ValVec;
+  if (Config.HasMember(ValName.c_str())) {
+    for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
+      ValVec.clear();
+      for (size_t n=0; n < Config[ValName.c_str()][m].Size(); n++) {
+        ValVec.push_back(Config[ValName.c_str()][m].GetFloat());
+      }
+      (*Val).push_back(ValVec);
+    }
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
+
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::MatrixXf *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val).resize(Config[ValName.c_str()].Size(),Config[ValName.c_str()][0].Size());
+
+    for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
+      for (size_t n=0; n < Config[ValName.c_str()][m].Size(); n++) {
+        (*Val)(m,n) = Config[ValName.c_str()][m][n].GetFloat();
+      }
+    }
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
 }

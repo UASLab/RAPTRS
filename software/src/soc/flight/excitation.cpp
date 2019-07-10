@@ -20,136 +20,161 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "excitation.h"
 
-/* configures excitation system given a JSON value and registers data with global defs */
+// Excitation Definitions
 void ExcitationSystem::Configure(const rapidjson::Value& Config) {
-  // the excitation group name
-  if (Config.HasMember("Groups")) {
-    // making sure time is configured
-    if (!Config.HasMember("Time")) {
-      throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Time source not specified in configuration."));
-    }
-    // iterating through the excitation group definitions
-    const rapidjson::Value& Groups = Config["Groups"];
-    ExcitationGroups_.resize(Groups.Size());
-    ExcitationGroupLevels_.resize(Groups.Size());
-    for (rapidjson::Value::ConstValueIterator Group = Groups.Begin(); Group != Groups.End(); ++Group) {
-      auto GroupIndex = std::distance(Groups.Begin(),Group);
-      if (Group->HasMember("Name")&&Group->HasMember("Components")) {
-        // excitation group keys
-        ExcitationGroupKeys_.push_back((*Group)["Name"].GetString());
-        // path name /Excitation/GroupName/
-        std::string PathName = RootPath_+"/"+ExcitationGroupKeys_.back();
-        const rapidjson::Value& Levels = (*Group)["Components"];
-        // iterating through the excitation group levels
-        ExcitationGroups_[GroupIndex].resize(Levels.Size());
-        for (rapidjson::Value::ConstValueIterator Level = Levels.Begin(); Level != Levels.End(); ++Level) {
-          auto LevelIndex = std::distance(Levels.Begin(),Level);
-          if (Level->HasMember("Level")&&Level->HasMember("Components")) {
-            // level name keys
-            ExcitationGroupLevels_[GroupIndex].push_back((*Level)["Level"].GetString());
-            const rapidjson::Value& Components = (*Level)["Components"];
-            // iterating through excitations
-            for (auto &Component : Components.GetArray()) {
-              if (Component.HasMember("Waveform")&&Component.HasMember("Signal")&&Component.HasMember("Start-Time")&&Component.HasMember("Scale-Factor")) {
-                // checking whether waveform is defined
-                if (Config.HasMember(Component["Waveform"].GetString())) {
-                  // grabbing the waveform definition
-                  const rapidjson::Value& WaveformValue = Config[Component["Waveform"].GetString()];
-                  rapidjson::Document Waveform;
-                  rapidjson::Document::AllocatorType& Allocator = Waveform.GetAllocator();
-                  Waveform.SetObject();
-                  // copying the waveform definition into a new JSON document
-                  Waveform.CopyFrom(WaveformValue,Allocator);
-                  rapidjson::Value Time;
-                  rapidjson::Value Signal;
-                  // adding the time, signal, start-time, and scale-factor members
-                  Time.SetString(std::string(Config["Time"].GetString()).c_str(),std::string(Config["Time"].GetString()).size(),Allocator);
-                  Signal.SetString(std::string(Component["Signal"].GetString()).c_str(),std::string(Component["Signal"].GetString()).size(),Allocator);
-                  Waveform.AddMember("Time",Time,Allocator);
-                  Waveform.AddMember("Signal",Signal,Allocator);
-                  Waveform.AddMember("Start-Time",Component["Start-Time"].GetFloat(),Allocator);
-                  Waveform.AddMember("Scale-Factor",Component["Scale-Factor"].GetFloat(),Allocator);
 
-                  if (WaveformValue.HasMember("Type")) {
-                    // pushing back the correct waveform type
-                    if (WaveformValue["Type"] == "Pulse") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Pulse>());
-                    } else if (WaveformValue["Type"] == "Doublet") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Doublet>());
-                    } else if (WaveformValue["Type"] == "Doublet121") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Doublet121>());
-                    } else if (WaveformValue["Type"] == "Doublet3211") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Doublet3211>());
-                    } else if (WaveformValue["Type"] == "LinearChirp") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<LinearChirp>());
-                    } else if (WaveformValue["Type"] == "LogChirp") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<LogChirp>());
-                    } else if (WaveformValue["Type"] == "1-Cos") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<Pulse_1_Cos>());
-                    } else if (WaveformValue["Type"] == "MultiSine") {
-                      ExcitationGroups_[GroupIndex][LevelIndex].push_back(std::make_shared<MultiSine>());
-                    } else {
-                      throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform type does not match known types."));
-                    }
-                    // configuring the waveform
-                    ExcitationGroups_[GroupIndex][LevelIndex].back()->Configure(Waveform,PathName);
-                  } else {
-                    throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform type not specified in definition."));
-                  }
-                } else {
-                  throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform definition not found in configuration."));
-                }
-              } else {
-                throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Waveform, signal, start time, or scale factor not specified in configuration."));
-              }
-            }
-          } else {
-            throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Level or components not specified in configuration."));
-          }
-        }
-      } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Group name or components not specified in configuration."));
-      }
-    }
+  // Get the time signal
+  std::string TimeKey;
+  LoadInput(Config, RootPath_, "Time", time_node_, &TimeKey);
+
+  // Load Waveform Definitions
+  if (!Config.HasMember("WaveDef")) { // WaveDef not defined
+    throw std::runtime_error(std::string("ERROR - WaveDef not found in Excitation."));
+  }
+  const rapidjson::Value& WaveDef = Config["WaveDef"];
+
+  // Load Excitation Definition
+  if (!Config.HasMember("ExciteDef")) { // ExciteDef not defined
+    throw std::runtime_error(std::string("ERROR - ExciteDef not found in Excitation."));
+  }
+  const rapidjson::Value& ExciteDef = Config["ExciteDef"];
+
+
+  // Loop through each of the defined Excitations
+  for (rapidjson::Value::ConstMemberIterator ExciteDefInst = ExciteDef.MemberBegin(); ExciteDefInst != ExciteDef.MemberEnd(); ++ExciteDefInst) {
+    // Get the (Key, Object)
+    std::string ExciteDefKey = ExciteDefInst->name.GetString();
+    const rapidjson::Value& ExciteDefObj = ExciteDefInst->value;
+
+    // Complete Path for Excitation
+    std::string ExcitePath = RootPath_ + "/" + ExciteDefKey;
+
+    // Get the Controller Level Key
+    std::string ExciteLevel;
+    LoadVal(ExciteDefObj, "Level", &ExciteLevel, true);
+
+    // Insert (Key, Level) into the Map
+    ExciteLevelMap_.insert(std::make_pair(ExciteDefKey, ExciteLevel));
+
+    // Get the Waveforms Array
+    const rapidjson::Value& Waveforms = ExciteDefObj["Waveforms"];
+
+    // Create a Shared Pointer to an instance of the ExcitationWrapper
+    std::shared_ptr<ExcitationWrapper> ExcitationWrapperPtr;
+
+    // Call the Wrapper Config
+    ExcitationWrapperPtr->Configure(ExcitePath, WaveDef, Waveforms);
+
+    // Add Wrapper Pointer to Map
+    ExciteWrapMap_.insert(std::make_pair(ExciteDefKey, ExcitationWrapperPtr));
   }
 }
 
-/* sets the engaged excitation group */
-void ExcitationSystem::SetEngagedExcitation(std::string ExcitationGroupName) {
-  EngagedGroup_ = ExcitationGroupName;
+void ExcitationSystem::SetExcitation(std::string ExcitEngaged) {
+  ExcitEngaged_ = ExcitEngaged;
 }
 
-/* run all excitation functions at a given control level */
-void ExcitationSystem::RunEngaged(std::string ControlLevel) {
-  // iterate through all groups
-  for (auto Group = ExcitationGroupKeys_.begin(); Group != ExcitationGroupKeys_.end(); ++Group) {
-    auto GroupIndex = std::distance(ExcitationGroupKeys_.begin(),Group);
-    // iterate through all levels
-    for (auto Level = ExcitationGroupLevels_[GroupIndex].begin(); Level != ExcitationGroupLevels_[GroupIndex].end(); ++Level) {
-      auto LevelIndex = std::distance(ExcitationGroupLevels_[GroupIndex].begin(),Level);
-      // iterate through all excitations
-      for (auto Func : ExcitationGroups_[GroupIndex][LevelIndex]) {
-        if (((*Group)==EngagedGroup_)&&((*Level)==ControlLevel)) {
-          Func->Run(GenericFunction::kEngage);
-        }
-      }
+// Run all excitations at a given control level
+void ExcitationSystem::Run(std::string ControlLevel) {
+  float tCur_s = 0.0f;
+  float tLatch_s = 0.0f;
+
+  // Execute the excitation if the level matches
+  if (ExciteLevelMap_[ExcitEngaged_] == ControlLevel) {
+    // Get the current time, and time since latched in Engaged
+    tCur_s = time_node_->getFloat() / 1e6;
+    if (Latched_ == 0) {
+      tLatch_s = tCur_s;
     }
+
+    // Run the Excitation, using the Wrapper Class
+    ExciteWrapMap_[ExcitEngaged_]->Run(tLatch_s);
   }
 }
 
-void ExcitationSystem::RunArmed() {
-  // iterate through all groups
-  for (auto Group = ExcitationGroupKeys_.begin(); Group != ExcitationGroupKeys_.end(); ++Group) {
-    auto GroupIndex = std::distance(ExcitationGroupKeys_.begin(),Group);
-    // iterate through all levels
-    for (auto Level = ExcitationGroupLevels_[GroupIndex].begin(); Level != ExcitationGroupLevels_[GroupIndex].end(); ++Level) {
-      auto LevelIndex = std::distance(ExcitationGroupLevels_[GroupIndex].begin(),Level);
-      // iterate through all excitations
-      for (auto Func : ExcitationGroups_[GroupIndex][LevelIndex]) {
-        if ((*Group)!=EngagedGroup_) {
-          Func->Run(GenericFunction::kArm);
-        }
-      }
+
+
+
+void ExcitationWrapper::Run(float tLatch_s) {
+
+  // Loop through the Waves
+  for (size_t iWave = 0; iWave < WaveVec_.size(); ++iWave) {
+    // Excitation time
+    float tExcite_s = tLatch_s - WaveVec_[iWave].TimeStart_s;
+
+    // Excecute the Wave
+    float Excite = 0.0f;
+    WaveVec_[iWave].WaveFunc->Run(tExcite_s, &Excite);
+    float ExciteScaled = WaveVec_[iWave].Scale * Excite;
+
+    // Apply the Excitation to the Signal
+    ElementPtr NodeSignal = WaveVec_[iWave].NodeSignal;
+    NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
+
+    ElementPtr NodeExcite = WaveVec_[iWave].NodeExcite;
+    NodeExcite->setFloat( ExciteScaled );
+  }
+}
+
+
+
+// Call Wrapper to combine Excitation and Waveform elements into a vector of Wave Classes
+void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value& WaveDef, const rapidjson::Value& Waveforms) {
+  // Loop through each of the defined Waveforms
+  for (rapidjson::Value::ConstValueIterator WaveformElem = Waveforms.Begin(); WaveformElem != Waveforms.End(); ++WaveformElem) {
+    const rapidjson::Value& WaveformDef = (*WaveformElem);
+
+    WaveStruct WaveStructInst;
+
+    WaveStructInst.TimeStart_s = 0.0f;
+    LoadVal(WaveformDef, "Start-Time", &WaveStructInst.TimeStart_s);
+
+    WaveStructInst.Scale = 1.0f;
+    LoadVal(WaveformDef, "Scale-Factor", &WaveStructInst.Scale);
+
+    std::string SignalKey;
+    LoadInput(WaveformDef, ExcitePath, "Signal", WaveStructInst.NodeSignal, &SignalKey);
+
+    std::string ExciteKey = ExcitePath + "/" + SignalKey;
+    WaveStructInst.NodeExcite = deftree.initElement(ExciteKey, ": Excitation Signal", LOG_FLOAT, LOG_NONE);
+
+    // Get the Wave definition
+    std::string WaveKey;
+    LoadVal(WaveformDef, "Wave", &WaveKey, true);
+    if (!WaveDef.HasMember(WaveKey.c_str())) {
+      throw std::runtime_error(std::string("ERROR - ") + WaveKey + std::string(": Wave not found in WaveDef."));
     }
+    const rapidjson::Value& Wave = WaveDef[WaveKey.c_str()];
+
+    // Wave type
+    std::string WaveType;
+    LoadVal(Wave, "Type", &WaveType, true);
+
+    // Create the Wave Object
+    if (WaveType == "Pulse") {
+      WaveStructInst.WaveFunc = std::make_shared<Pulse>();
+    } else if (WaveType == "Doublet") {
+      WaveStructInst.WaveFunc = std::make_shared<Doublet>();
+    } else if (WaveType == "Doublet121") {
+      WaveStructInst.WaveFunc = std::make_shared<Doublet121>();
+    } else if (WaveType == "Doublet3211") {
+      WaveStructInst.WaveFunc = std::make_shared<Doublet3211>();
+    } else if (WaveType == "LinearChirp") {
+      WaveStructInst.WaveFunc = std::make_shared<LinearChirp>();
+    } else if (WaveType == "LogChirp") {
+      WaveStructInst.WaveFunc = std::make_shared<LogChirp>();
+    } else if (WaveType == "1-Cos") {
+      WaveStructInst.WaveFunc = std::make_shared<Pulse_1_Cos>();
+    } else if (WaveType == "MultiSine") {
+      WaveStructInst.WaveFunc = std::make_shared<MultiSine>();
+    } else {
+      throw std::runtime_error(std::string("ERROR - ") + WaveType + std::string(": Wave type does not match known types."));
+    }
+
+    // Call Configuration for Wave
+    WaveStructInst.WaveFunc->Configure(Wave);
+
+    // Push the working WaveStructInst into the WaveVec
+    WaveVec_.push_back(WaveStructInst);
   }
 }
