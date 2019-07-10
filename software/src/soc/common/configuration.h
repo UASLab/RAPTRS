@@ -36,7 +36,8 @@ class Configuration {
     void LoadConfiguration(std::string FileName,rapidjson::Document *Configuration);
 };
 
-
+// Configuration Helpers: Read Json, Configure definition tree
+std::string ParseInput(std::string SystemPath, std::string Key);
 void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node, std::string *InputKey);
 void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, std::vector<ElementPtr> Node, std::vector<std::string> *InputKey);
 

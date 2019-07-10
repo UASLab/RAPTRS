@@ -34,50 +34,68 @@ void Configuration::LoadConfiguration(std::string FileName,rapidjson::Document *
 // Helpers to Read Config
 // Load an Config output and create a node in the deftree
 void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node) {
-
-  if (Config.HasMember(OutputName.c_str())) {
-    Node = deftree.initElement(SystemName + "/" + OutputName, "System output", LOG_FLOAT, LOG_NONE);
-  } else {
+  if (!Config.HasMember(OutputName.c_str())) {
     throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + OutputName + std::string(" not specified in configuration."));
   }
+
+  const rapidjson::Value& Elem = Config[OutputName.c_str()];
+  std::string OutKey = Elem.GetString();
+  Node = deftree.initElement(SystemName + "/" + OutKey, "System output", LOG_FLOAT, LOG_NONE);
 }
 
 void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, std::vector<ElementPtr> Node) {
-  if (Config.HasMember(OutputName.c_str())) {
-    Node.resize(Config[OutputName.c_str()].Size());
-
-    for (size_t i=0; i < Config[OutputName.c_str()].Size(); i++) {
-      const rapidjson::Value& Elem = Config[OutputName.c_str()][i];
-      std::string ElemName = Elem.GetString();
-
-      // pointer to log output
-      Node[i] = deftree.initElement(SystemName + "/" + ElemName, "System output", LOG_FLOAT, LOG_NONE);
-    }
-  } else {
+  if (!Config.HasMember(OutputName.c_str())) {
     throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + OutputName + std::string(" not specified in configuration."));
   }
+
+  Node.resize(Config[OutputName.c_str()].Size());
+
+  for (size_t i=0; i < Config[OutputName.c_str()].Size(); i++) {
+    const rapidjson::Value& Elem = Config[OutputName.c_str()][i];
+    std::string ElemName = Elem.GetString();
+
+    // pointer to log output
+    Node[i] = deftree.initElement(SystemName + "/" + ElemName, "System output", LOG_FLOAT, LOG_NONE);
+  }
+
 }
 
 // Load an Config input to an existing node in the deftree
+std::string ParseInput(std::string SystemPath, std::string Key) {
+  // If key starts with "/" then it references a full Path (default, not checked)
+  // If key starts with "../" then it references the next higher level
+  // If key has no "/" path indicators then it references the current system
+  if (Key.find("../") != std::string::npos) { // "../" found
+    Key = Key.substr (Key.rfind("/") + 1);
+    SystemPath = SystemPath.substr (0, SystemPath.rfind("/"));
+
+    Key = SystemPath + "/" + Key;
+  } else if (Key.find("/") == std::string::npos) { // "/" not found
+    Key = Key.substr (Key.rfind("/")+1);
+
+    Key = SystemPath + "/" + Key;
+  }
+  return Key;
+}
+
 void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node, std::string *InputKey) {
-  if (Config.HasMember(InputName.c_str())) {
-    (*InputKey) = Config[InputName.c_str()].GetString();
-    Node = deftree.getElement(*InputKey, true);
-  } else {
+  if (!Config.HasMember(InputName.c_str())) {
     throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + InputName + std::string(" not specified in configuration."));
   }
+
+  (*InputKey) = ParseInput(SystemName, Config[InputName.c_str()].GetString());
+  Node = deftree.getElement(*InputKey, true);
 }
 
 void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, vector<ElementPtr> Node, vector<std::string> *InputKey) {
-  if (Config.HasMember(InputName.c_str())) {
-    for (size_t i=0; i < Config[InputName.c_str()].Size(); i++) {
-      const rapidjson::Value& Input = Config[InputName.c_str()][i];
-      (*InputKey).push_back(Input.GetString());
-
-      Node.push_back(deftree.getElement((*InputKey).back(), true));
-    }
-  } else {
+  if (!Config.HasMember(InputName.c_str())) {
     throw std::runtime_error(std::string("ERROR - ") + SystemName + std::string(" : ") + InputName + std::string(": not specified in configuration."));
+  }
+
+  for (size_t i=0; i < Config[InputName.c_str()].Size(); i++) {
+    const rapidjson::Value& Input = Config[InputName.c_str()][i];
+    (*InputKey).push_back(ParseInput(SystemName, Input.GetString()));
+    Node.push_back(deftree.getElement((*InputKey).back(), true));
   }
 }
 

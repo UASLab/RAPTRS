@@ -74,7 +74,7 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
 
   LoadInput(SwitchSocConfig, "Mission-Manager", "Source", SocEngage_.source_node, &SocEngage_.sourceKey);
   LoadVal(SwitchSocConfig, "Gain", &SocEngage_.Gain);
-  SocEngage_.modeSelect.Configure(SwitchSocConfig, 5);
+  SocEngage_.modeSelect.Configure(SwitchSocConfig["ModeSel"], 5);
 
 
   // Throttle Safety Switch congiguration, SOC does not use
@@ -85,7 +85,7 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
 
   LoadInput(SwitchThrottleConfig, "Mission-Manager", "Source", ThrottleSafety_.source_node, &ThrottleSafety_.sourceKey);
   LoadVal(SwitchThrottleConfig, "Gain", &ThrottleSafety_.Gain);
-  ThrottleSafety_.modeSelect.Configure(SwitchThrottleConfig, 5);
+  ThrottleSafety_.modeSelect.Configure(SwitchThrottleConfig["ModeSel"], 5);
 
 
   // Baseline mode select switch
@@ -96,7 +96,7 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
 
   LoadInput(SwitchBaseConfig, "Mission-Manager", "Source", BaselineSelect_.source_node, &BaselineSelect_.sourceKey);
   LoadVal(SwitchBaseConfig, "Gain", &BaselineSelect_.Gain);
-  BaselineSelect_.modeSelect.Configure(SwitchBaseConfig, 5);
+  BaselineSelect_.modeSelect.Configure(SwitchBaseConfig["ControlSel"], 5);
 
   // Test Mode switch configuration
   if (!Config.HasMember("Test-Mode-Switch")) {
@@ -106,7 +106,7 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
 
   LoadInput(SwitchTestModeConfig, "Mission-Manager", "Source", TestMode_.source_node, &TestMode_.sourceKey);
   LoadVal(SwitchTestModeConfig, "Gain", &TestMode_.Gain);
-  TestMode_.modeSelect.Configure(SwitchTestModeConfig, 5);
+  TestMode_.modeSelect.Configure(SwitchTestModeConfig["ModeSel"], 5);
 
 
   // Test Select switch configuration
@@ -117,7 +117,7 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
 
   LoadInput(SwitchTestSelConfig, "Mission-Manager", "Source", TestSelect_.source_node, &TestSelect_.sourceKey);
   LoadVal(SwitchTestSelConfig, "Gain", &TestSelect_.Gain);
-  TestSelect_.modeSelect.Configure(SwitchTestSelConfig, 5);
+  TestSelect_.modeSelect.Configure(SwitchTestSelConfig["ModeSel"], 5);
 
 
   // Trigger switch configuration
@@ -128,7 +128,7 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
 
   LoadInput(SwitchTrigConfig, "Mission-Manager", "Source", Trigger_.source_node, &Trigger_.sourceKey);
   LoadVal(SwitchTrigConfig, "Gain", &Trigger_.Gain);
-  Trigger_.modeSelect.Configure(SwitchTrigConfig, 5);
+  Trigger_.modeSelect.Configure(SwitchTrigConfig["ModeSel"], 5);
 
 
   // Add signals to the definition tree

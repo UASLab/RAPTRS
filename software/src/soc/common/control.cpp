@@ -55,7 +55,7 @@ void ControlSystem::Configure(const rapidjson::Value& Config) {
   const rapidjson::Value& BaselineDef = Config["Baseline"];
 
   BaselinePath_ = RootPath_ + "/Baseline";
-  ConfigureSet(BaselinePath_, BaselineDef, GroupDef, ControlDef, &BaselineGroupMap_, &BaselineControlMap_);
+  ConfigureSet(BaselinePath_, BaselineDef, GroupDef, ControlDef, &BaselineGroupMap_, &BaselineControlMap_, &BaselineNodeMap_);
 
 
   // Loop through Test Controller Groups
@@ -72,14 +72,14 @@ void ControlSystem::Configure(const rapidjson::Value& Config) {
   const rapidjson::Value& TestDef = Config["Test"];
 
   TestPath_ = RootPath_ + "/Test";
-  ConfigureSet(TestPath_, TestDef, GroupDef, ControlDef, &TestGroupMap_, &TestControlMap_);
+  ConfigureSet(TestPath_, TestDef, GroupDef, ControlDef, &TestGroupMap_, &TestControlMap_, &TestNodeMap_);
 
 }
 
 void ControlSystem::ConfigureSet(
   std::string SetPath,
   const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef,
-  GroupMap *SetGroupMap, ControlMap *SetControlMap) {
+  GroupMap *SetGroupMap, ControlMap *SetControlMap, NodeSetMap *SetNodeMap) {
   GroupVec GroupStructVec;
 
   // Loop through each of the Groups defined in the Set
@@ -119,7 +119,7 @@ void ControlSystem::ConfigureSet(
       // Load the Controller defintion
       const rapidjson::Value& ControlDefElem = ControlDef[ControlName.c_str()];
 
-      // Make sure Controller is not alread defined in the Map
+      // Make sure Controller is not alread defined in the Map, only want a single instance
       if ((*SetControlMap).count(ControlName) == 0) {
 
         // Create a Shared Pointer to an instance of the ComponentWrapper
@@ -133,6 +133,36 @@ void ControlSystem::ConfigureSet(
 
       // Add the Vector to the Map
       (*SetGroupMap).insert(std::make_pair(ControlName, GroupStructVec));
+
+      // Get all the Output Nodes, copy up to higher level and root
+      std::vector<std::string> KeyVec;
+      deftree.GetKeys(ControlPath, &KeyVec);
+
+      NodeVec NodeVecRoot, NodeVecSet, NodeVecCtrl;
+      NodeMap NodeMapRoot, NodeMapSet, NodeMapCtrl;
+
+      for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
+
+        std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/")+1); // Get just the Key signal name
+
+        NodeVecCtrl.push_back(deftree.getElement(ControlPath + "/" + Key));
+        NodeVecSet.push_back(deftree.getElement(SetPath + "/" + Key));
+        NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
+
+        // Copy
+        NodeVecSet.back()->copyFrom(NodeVecCtrl.back());
+        NodeVecRoot.back()->copyFrom(NodeVecCtrl.back());
+      }
+
+      // Create the Map of deftree elements, this is to make copying engaged controller outputs faster during runtime
+      NodeMapCtrl.insert(std::make_pair(ControlName, NodeVecCtrl));
+      NodeMapSet.insert(std::make_pair(ControlName, NodeVecSet));
+      NodeMapRoot.insert(std::make_pair(ControlName, NodeVecRoot));
+
+      (*SetNodeMap).insert(std::make_pair("Controller", NodeMapCtrl));
+      (*SetNodeMap).insert(std::make_pair("Set", NodeMapSet));
+      (*SetNodeMap).insert(std::make_pair("Root", NodeMapRoot));
+
     }
   }
 }
@@ -243,20 +273,16 @@ void ControlSystem::RunTest(GenericFunction::Mode mode) {
       TestControlMap_[ControlName]->Run(mode);
 
       // Copy deftree elements 1 level higher (to: /Control/Test)
-      std::vector<std::string> KeyVec;
-      deftree.GetKeys(ControlPath, &KeyVec);
+      NodeVec NodeVecCtrl = TestNodeMap_["Controller"][ControlName];
+      NodeVec NodeVecSet = TestNodeMap_["Set"][ControlName];
 
-      for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
-        std::string Key = KeyVec[iKey];
-
-        ElementPtr out_node = deftree.getElement(ControlPath + "/" + Key); // fixit - store during config
-        ElementPtr resOut_node = deftree.getElement(TestPath_ + "/" + Key); // fixit - store during config
-        resOut_node->copyFrom(out_node);
+      for (size_t iNode = 0; iNode < NodeVecCtrl.size(); ++iNode) {
+        NodeVecSet[iNode]->copyFrom(NodeVecCtrl[iNode]);
 
         // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
         if (mode == GenericFunction::kEngage) {
-          ElementPtr rootOut_node = deftree.getElement(RootPath_ + "/" + Key); // fixit - store during config
-          rootOut_node->copyFrom(resOut_node);
+          NodeVec NodeVecRoot = TestNodeMap_["Root"][ControlName];
+          NodeVecRoot[iNode]->copyFrom(NodeVecCtrl[iNode]);
         }
       }
     }

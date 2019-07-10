@@ -135,7 +135,7 @@ void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value
     std::string SignalKey;
     LoadInput(WaveformDef, ExcitePath, "Signal", WaveStructInst.NodeSignal, &SignalKey);
 
-    std::string ExciteKey = ExcitePath + "/" + SignalKey;
+    std::string ExciteKey = ExcitePath + "/" + SignalKey.substr (SignalKey.rfind("/")+1);
     WaveStructInst.NodeExcite = deftree.initElement(ExciteKey, ": Excitation Signal", LOG_FLOAT, LOG_NONE);
 
     // Get the Wave definition
@@ -173,7 +173,10 @@ void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value
 
     // Call Configuration for Wave
     WaveStructInst.WaveFunc->Configure(Wave);
-
+std::cout << WaveType << std::endl;
+std::cout << WaveStructInst.Scale << std::endl;
+std::cout << SignalKey << std::endl;
+std::cout << ExciteKey << std::endl;
     // Push the working WaveStructInst into the WaveVec
     WaveVec_.push_back(WaveStructInst);
   }

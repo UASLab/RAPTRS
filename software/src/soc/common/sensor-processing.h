@@ -108,7 +108,9 @@ class SensorProcessing {
 
     std::map<std::string, std::vector<std::string>> TestKeys;
 
-    std::map<std::string, ElementPtr> RootNodes;
-    std::map<std::string, ElementPtr> BaselineNodes;
-    std::map<std::string, map<std::string, ElementPtr> > TestNodes;
+    typedef std::vector<ElementPtr> NodeVec;
+    typedef std::map<std::string, NodeVec> NodeMap;
+    typedef std::map<std::string, NodeMap> NodeSetMap;
+    
+    NodeSetMap BaselineNodeMap_, TestNodeMap_;
 };

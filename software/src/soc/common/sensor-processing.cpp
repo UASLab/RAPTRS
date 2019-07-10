@@ -39,7 +39,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
   // System components are executed in the order defined.
   LoadVal(Config, "Baseline", &BaselineGroup_, true);
 
-  BaselinePath_ = RootPath_ + "/Baseline";
+  BaselinePath_ = RootPath_ + "/" + BaselineGroup_;
 
   // Check that the defined Group Exists in SystemDef
   if (!SystemDef.HasMember(BaselineGroup_.c_str())) {
@@ -50,6 +50,30 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
   BaselinePtr_ = std::make_shared<SystemWrapper>();
   BaselinePtr_->Configure(BaselinePath_, SystemDef[BaselineGroup_.c_str()]);
 
+  // Create a Map of nodes and Copy Outputs up a level
+  std::vector<std::string> KeyVec;
+  deftree.GetKeys(BaselinePath_, &KeyVec);
+
+  NodeVec NodeVecRoot, NodeVecSys;
+  NodeMap NodeMapRoot, NodeMapSys;
+
+  for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
+    std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/") + 1); // Get just the Key signal name
+
+    NodeVecSys.push_back(deftree.getElement(BaselinePath_ + "/" + Key));
+    NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
+
+    // Copy
+    NodeVecRoot.back()->copyFrom(NodeVecSys.back());
+  }
+
+  // Create the Map of deftree elements, this is to make copying engaged controller outputs faster during runtime
+  NodeMapSys.insert(std::make_pair(BaselineGroup_, NodeVecSys));
+  NodeMapRoot.insert(std::make_pair(BaselineGroup_, NodeVecRoot));
+
+  BaselineNodeMap_.insert(std::make_pair("System", NodeMapSys));
+  BaselineNodeMap_.insert(std::make_pair("Root", NodeMapRoot));
+
 
   // Loop through Test System Groups
   // Create new instance of each unique Group encountered
@@ -58,10 +82,10 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
   std::vector<std::string> TestGroups;
   LoadVal(Config, "Test", &TestGroups, true);
 
-  TestPath_ = RootPath_ + "/Test";
 
   for (size_t iSystem = 0; iSystem < TestGroups.size(); ++iSystem) {
     std::string GroupName = TestGroups[iSystem];
+    TestPath_ = RootPath_ + "/" + GroupName;
 
     // Check that the defined Group Exists in SystemDef
     if (!SystemDef.HasMember(GroupName.c_str())) {
@@ -76,7 +100,29 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
     if (GroupName != BaselineGroup_) {
       SystemMap_.insert(std::make_pair(GroupName, TestPtr));
     }
+
+    // Create a Map of nodes and Copy Outputs up a level
+    deftree.GetKeys(TestPath_, &KeyVec);
+
+    for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
+      std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/") + 1); // Get just the Key signal name
+
+      NodeVecSys.push_back(deftree.getElement(TestPath_ + "/" + Key));
+      NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
+
+      // Copy
+      NodeVecRoot.back()->copyFrom(NodeVecSys.back());
+    }
+
+    // Create the Map of deftree elements, this is to make copying engaged controller outputs faster during runtime
+    NodeMapSys.insert(std::make_pair(GroupName, NodeVecSys));
+    NodeMapRoot.insert(std::make_pair(GroupName, NodeVecRoot));
+
+    TestNodeMap_.insert(std::make_pair("System", NodeMapSys));
+    TestNodeMap_.insert(std::make_pair("Root", NodeMapRoot));
+
   }
+  // Copy Outputs up a level - FIXIT
 }
 
 
@@ -199,16 +245,12 @@ bool SensorProcessing::Initialized() {
 void SensorProcessing::RunBaseline(GenericFunction::Mode mode) {
   BaselinePtr_->Run(mode);
 
-  // Copy the output up one level, this may get overwritten later by a test system  (to: /Sensor-Processing)
-  std::vector<std::string> KeyVec;
-  deftree.GetKeys(BaselinePath_, &KeyVec);
+  // Copy the output up two levels, this may get overwritten later by a test system  (to: /Sensor-Processing)
+  NodeVec NodeVecSys = TestNodeMap_["System"][BaselineGroup_];
+  NodeVec NodeVecRoot = TestNodeMap_["Root"][BaselineGroup_];
 
-  for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
-    std::string Key = KeyVec[iKey];
-
-    ElementPtr base_node = deftree.getElement(BaselinePath_ + "/" + Key); // fixit - store during config
-    ElementPtr root_node = deftree.getElement(RootPath_ + "/" + Key); // fixit - store during config
-    root_node->copyFrom(base_node);
+  for (size_t iNode = 0; iNode < NodeVecSys.size(); ++iNode) {
+    NodeVecRoot[iNode]->copyFrom(NodeVecSys[iNode]);
   }
 }
 
@@ -232,27 +274,15 @@ void SensorProcessing::RunTest(GenericFunction::Mode mode) {
   // run test system
   SystemMap_[TestSel_]->Run(mode);
 
-  // If Test is Armed or Engaged copy the output up one level
-  if ((mode == GenericFunction::Mode::kArm) | (mode == GenericFunction::Mode::kEngage)) {
-
-    std::string SystemPath = TestPath_ + '/' + TestSel_;
+  // If Test is  Engaged copy the output up one level
+  if (mode == GenericFunction::Mode::kEngage) {
 
     // Copy deftree elements 1 level higher (to: /Sensor-Processing/Test)
-    std::vector<std::string> KeyVec;
-    deftree.GetKeys(SystemPath, &KeyVec);
+    NodeVec NodeVecSys = TestNodeMap_["System"][TestSel_];
+    NodeVec NodeVecRoot = TestNodeMap_["Root"][TestSel_];
 
-    for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
-      std::string Key = KeyVec[iKey];
-
-      ElementPtr sys_node = deftree.getElement(SystemPath + "/" + Key); // fixit - store during config
-      ElementPtr test_node = deftree.getElement(TestPath_ + "/" + Key); // fixit - store during config
-      test_node->copyFrom(sys_node);
-
-      // If Test is Engaged copy deftree elements 1 level higher (to: /Sensor-Processing)
-      if (mode == GenericFunction::Mode::kEngage) {
-        ElementPtr root_node = deftree.getElement(RootPath_ + "/" + Key); // fixit - store during config
-        root_node->copyFrom(test_node);
-      }
+    for (size_t iNode = 0; iNode < NodeVecSys.size(); ++iNode) {
+      NodeVecRoot[iNode]->copyFrom(NodeVecSys[iNode]);
     }
   }
 }

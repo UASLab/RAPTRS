@@ -33,10 +33,12 @@ void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath
 
   LoadInput(Config, SystemPath, "Reference", reference_node, &ReferenceKey_);
   LoadInput(Config, SystemPath, "Feedback", feedback_node, &FeedbackKey_);
-  LoadInput(Config, SystemPath, "Output", output_node, &OutputKey_);
+  LoadOutput(Config, SystemPath, "Output", output_node);
 
-  ff_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
-  fb_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
+  std::string OutputKey = Config["Output"].GetString();
+
+  ff_node = deftree.initElement(SystemPath + "/" + OutputKey + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
+  fb_node = deftree.initElement(SystemPath + "/" + OutputKey + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
 
   float dt = 0.0f;
   LoadVal(Config, "dt", &dt);
@@ -103,11 +105,14 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) 
   float Min = std::numeric_limits<float>::lowest();
   float Max = std::numeric_limits<float>::max();
 
-  LoadInput(Config, SystemPath, "Output", output_node, &OutputKey_);
-  ff_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
-  fb_node = deftree.initElement(SystemPath + "/" + OutputKey_ + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
-
   LoadInput(Config, SystemPath, "Input", input_node, &InputKey_);
+  LoadOutput(Config, SystemPath, "Output", output_node);
+
+  std::string OutputKey = Config["Output"].GetString();
+
+  ff_node = deftree.initElement(SystemPath + "/" + OutputKey + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
+  fb_node = deftree.initElement(SystemPath + "/" + OutputKey + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
+
 
   LoadVal(Config, "dt", &dt);
   if (dt > 0.0) {

@@ -99,9 +99,14 @@ class ControlSystem {
     typedef std::shared_ptr<ComponentWrapper> ComponentWrapperPtr ;
     typedef std::map<std::string, ComponentWrapperPtr> ControlMap;
 
+    // Containers for deftree nodes
+    typedef std::vector<ElementPtr> NodeVec;
+    typedef std::map<std::string, NodeVec> NodeMap;
+    typedef std::map<std::string, NodeMap> NodeSetMap;
+
     void Configure(const rapidjson::Value& Config);
-    void ConfigureSet(std::string SetPath, const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef, GroupMap *SetGroupMap, ControlMap *SetControlMap);
-    
+    void ConfigureSet(std::string SetPath, const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef, GroupMap *SetGroupMap, ControlMap *SetControlMap, NodeSetMap *SetNodeMap);
+
     // Baseline Controller
     std::string GetBaseline();
     void SetBaseline(std::string GroupSel);
@@ -128,4 +133,6 @@ class ControlSystem {
     std::string BaselineGroupSel_;
     std::string TestGroupSel_;
     std::string TestLevelSel_;
+
+    NodeSetMap BaselineNodeMap_, TestNodeMap_;
 };
