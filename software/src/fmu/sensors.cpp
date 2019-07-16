@@ -19,70 +19,55 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "sensors.h"
-#include "fmu_messages.h"
+
+static void HardFail(std::string message) {
+  while (true) {
+    Serial.println(message.c_str());
+    delay(1000);
+  }
+}
 
 /* update internal MPU9250 sensor configuration */
-void InternalMpu9250Sensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("SRD")) {
-      config_.SRD = Config["SRD"];
-    }
-    if (Config.containsKey("Rotation")) {
-      JsonArray &Rotation = Config["Rotation"];
-      if (Rotation.size() != 9) {
-        while(1){
-          Serial.println("ERROR: internal MPU9250 rotation matrix size incorrect.");
-        }
-      } else {
-        config_.Rotation(0,0) = Rotation[0];
-        config_.Rotation(0,1) = Rotation[1];
-        config_.Rotation(0,2) = Rotation[2];
-        config_.Rotation(1,0) = Rotation[3];
-        config_.Rotation(1,1) = Rotation[4];
-        config_.Rotation(1,2) = Rotation[5];
-        config_.Rotation(2,0) = Rotation[6];
-        config_.Rotation(2,1) = Rotation[7];
-        config_.Rotation(2,2) = Rotation[8];
-      }
-    }
-    if (Config.containsKey("DLPF-Bandwidth")) {
-      if (Config["DLPF-Bandwidth"] == "184Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
-      } else if (Config["DLPF-Bandwidth"] == "92Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
-      } else if (Config["DLPF-Bandwidth"] == "41Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
-      } else if (Config["DLPF-Bandwidth"] == "20Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
-      } else if (Config["DLPF-Bandwidth"] == "10Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
-      } else if (Config["DLPF-Bandwidth"] == "5Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
-      } else {
-        while(1){
-          Serial.println("ERROR: Requested internal MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
-        }
-      }
-    }
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.AccelX_mss);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.AccelY_mss);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.AccelZ_mss);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.GyroX_rads);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.GyroY_rads);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.GyroZ_rads);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.MagX_uT);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.MagY_uT);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.MagZ_uT);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
-  } else {
-    while(1){
-      Serial.println("ERROR: Internal Mpu9250 parse fail.");
-      Serial.println(JsonString);
+void InternalMpu9250Sensor::UpdateConfig(message_config_mpu9250_t *msg, std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+  if (msg->SRD > 0) {
+    config_.SRD = msg->SRD;
+  }
+  config_.Rotation(0,0) = msg->orientation[0];
+  config_.Rotation(0,1) = msg->orientation[1];
+  config_.Rotation(0,2) = msg->orientation[2];
+  config_.Rotation(1,0) = msg->orientation[3];
+  config_.Rotation(1,1) = msg->orientation[4];
+  config_.Rotation(1,2) = msg->orientation[5];
+  config_.Rotation(2,0) = msg->orientation[6];
+  config_.Rotation(2,1) = msg->orientation[7];
+  config_.Rotation(2,2) = msg->orientation[8];
+  if ( msg->DLPF_bandwidth_hz > 0 ) {
+    if (msg->DLPF_bandwidth_hz == 184) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
+    } else if (msg->DLPF_bandwidth_hz == 92) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
+    } else if (msg->DLPF_bandwidth_hz == 41) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
+    } else if (msg->DLPF_bandwidth_hz == 20) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
+    } else if (msg->DLPF_bandwidth_hz == 10) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
+    } else if (msg->DLPF_bandwidth_hz == 5) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
+    } else {
+      HardFail("ERROR: Requested internal MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
     }
   }
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/AccelX_mss",&data_.AccelX_mss);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/AccelY_mss",&data_.AccelY_mss);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/AccelZ_mss",&data_.AccelZ_mss);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroX_rads",&data_.GyroX_rads);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroY_rads",&data_.GyroY_rads);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroZ_rads",&data_.GyroZ_rads);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/MagX_uT",&data_.MagX_uT);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/MagY_uT",&data_.MagY_uT);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/MagZ_uT",&data_.MagZ_uT);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Temperature_C",&data_.Temperature_C);
 }
 
 /* set the internal MPU9250 configuration */
@@ -1148,13 +1133,6 @@ void SensorNodes::End() {
   delete node_;
 }
 
-void HardFail(std::string message) {
-  while (true) {
-    Serial.println(message.c_str());
-    delay(1000);
-  }
-}
-
 /* updates the sensor configuration */
 void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr) {
   DynamicJsonBuffer ConfigBuffer;
@@ -1177,13 +1155,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
 	HardFail("ERROR: Time configured wrong way.");
       }
       if (Sensor["Type"] == "InternalMpu9250") {
-        if (AcquireInternalMpu9250Data_) {
-          HardFail("ERROR: Internal MPU9250 already initialized.");
-        }
-        AcquireInternalMpu9250Data_ = true;
-        data_.InternalMpu9250.resize(1);
-        Sensor.printTo(buffer.data(),buffer.size());
-        classes_.InternalMpu9250.UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+	HardFail("ERROR: InternalMpu9250 configured wrong way.");
       }
       if (Sensor["Type"] == "InternalBme280") {
         if (classes_.InternalBme280.size() > 0) {
@@ -1347,17 +1319,21 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
       classes_.Sbus.back().UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
       return true;
     }
-  }
-  #if 0
-    if (Sensor["Type"] == "InternalMpu9250") {
+  } else if ( id == message_config_mpu9250_id ) {
+    message_config_mpu9250_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if ( msg.internal ) {
+      Serial.println("InternalMpu9250");
       if (AcquireInternalMpu9250Data_) {
 	HardFail("ERROR: Internal MPU9250 already initialized.");
       }
       AcquireInternalMpu9250Data_ = true;
       data_.InternalMpu9250.resize(1);
-      Sensor.printTo(buffer.data(),buffer.size());
-      classes_.InternalMpu9250.UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+      classes_.InternalMpu9250.UpdateConfig(&msg,RootPath_,DefinitionTreePtr);
+      return true;      
     }
+  }
+  #if 0
     if (Sensor["Type"] == "Mpu9250") {
       Sensor.printTo(buffer.data(),buffer.size());
       Mpu9250Sensor TempSensor;

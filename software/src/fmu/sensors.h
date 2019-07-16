@@ -36,6 +36,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "definition-tree.h"
 #include "Arduino.h"
 
+#include "fmu_messages.h"
+
 /* class for the fmu integrated MPU-9250 */
 class InternalMpu9250Sensor {
   public:
@@ -57,7 +59,7 @@ class InternalMpu9250Sensor {
       float MagZ_uT;
       float Temperature_C;     // Temperature, C
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_mpu9250_t *msg,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();

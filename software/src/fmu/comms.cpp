@@ -63,6 +63,7 @@ bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
         return false;
       }
     } else {
+      Serial.println("mode not a mode message id");
       return false;
     }
   } else {

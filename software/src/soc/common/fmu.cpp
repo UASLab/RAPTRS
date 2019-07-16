@@ -262,11 +262,14 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
   uint64_t start = millis();
   while ( millis() < start + timeout_millis ) {
     if ( ReceiveMessage(&msg_id, &Payload) ) {
-      printf("  received: %d while waiting for ack\n", msg_id);
       if ( msg_id == message_config_ack_id ) {
 	config_ack_msg.unpack(Payload.data(), Payload.size());
+	printf("  received ack: %d ", config_ack_msg.ack_id);
 	if ( id == config_ack_msg.ack_id and subid == config_ack_msg.ack_subid ) {
+	  printf("ok\n");
 	  return true;
+	} else {
+	  printf("wrong ack\n");
 	}
       }
     }
@@ -342,6 +345,40 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     message_config_basic_t msg;
     msg.device = config_basic::sbus;
     msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "InternalMpu9250" ) {
+    printf("Configuring InternalMpu9250\n");
+    message_config_mpu9250_t msg;
+    msg.output = Sensor["Output"].GetString();
+    msg.internal = true;
+    if ( Sensor.HasMember("SRD") ) {
+      msg.SRD = Sensor["SRD"].GetInt();
+    }
+    if ( Sensor.HasMember("Rotation") ) {
+      if ( Sensor["Rotation"].IsArray() and Sensor["Rotation"].Size() == 9 ) {
+	for ( int i = 0; i < 9; i++ ) {
+	  msg.orientation[i] = Sensor["Rotation"][i].GetFloat();
+	}
+      } else {
+	printf("Error: InternalMpu9250 Rotation incorrect\n");
+      }
+    }
+    if ( Sensor.HasMember("DLPF-Bandwidth") ) {
+      string bandwidth = Sensor["DLPF-Bandwidth"].GetString();
+      if ( bandwidth == "184Hz" ) msg.DLPF_bandwidth_hz = 184;
+      else if ( bandwidth == "92Hz" ) msg.DLPF_bandwidth_hz = 92;
+      else if ( bandwidth == "41Hz" ) msg.DLPF_bandwidth_hz = 41;
+      else if ( bandwidth == "20Hz" ) msg.DLPF_bandwidth_hz = 20;
+      else if ( bandwidth == "10Hz" ) msg.DLPF_bandwidth_hz = 10;
+      else if ( bandwidth == "5Hz" ) msg.DLPF_bandwidth_hz = 5;
+      else msg.DLPF_bandwidth_hz = 20;
+    } else {
+      msg.DLPF_bandwidth_hz = 20;
+    }
     msg.pack();
     SendMessage(msg.id, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 500) ) {

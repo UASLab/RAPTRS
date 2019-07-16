@@ -16,6 +16,7 @@ const uint8_t message_mode_command_id = 10;
 const uint8_t message_effector_command_id = 12;
 const uint8_t message_config_ack_id = 20;
 const uint8_t message_config_basic_id = 21;
+const uint8_t message_config_mpu9250_id = 22;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -215,6 +216,68 @@ struct message_config_basic_t {
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         device = (config_basic)_buf->device;
+        output = string((char *)&(payload[len]), _buf->output_len);
+        len += _buf->output_len;
+        return true;
+    }
+};
+
+// Message: config_mpu9250 (id: 22)
+struct message_config_mpu9250_t {
+    // public fields
+    bool internal;
+    uint8_t SRD;
+    float orientation[9];
+    int8_t DLPF_bandwidth_hz;
+    string output;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        bool internal;
+        uint8_t SRD;
+        float orientation[9];
+        int8_t DLPF_bandwidth_hz;
+        uint8_t output_len;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 22;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        size += output.length();
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->internal = internal;
+        _buf->SRD = SRD;
+        for (int _i=0; _i<9; _i++) _buf->orientation[_i] = orientation[_i];
+        _buf->DLPF_bandwidth_hz = DLPF_bandwidth_hz;
+        _buf->output_len = output.length();
+        memcpy(&(payload[len]), output.c_str(), output.length());
+        len += output.length();
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        internal = _buf->internal;
+        SRD = _buf->SRD;
+        for (int _i=0; _i<9; _i++) orientation[_i] = _buf->orientation[_i];
+        DLPF_bandwidth_hz = _buf->DLPF_bandwidth_hz;
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
