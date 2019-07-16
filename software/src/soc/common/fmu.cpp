@@ -279,7 +279,8 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
 bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
   if ( Sensor["Type"] == "Time" ) {
     printf("Configuring Time\n");
-    message_config_time_t msg;
+    message_config_basic_t msg;
+    msg.device = config_basic::time;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, msg.payload, msg.len);
@@ -288,7 +289,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     }
   } else if ( Sensor["Type"] == "InputVoltage" ) {
     printf("Configuring InputVoltage\n");
-    message_config_input_voltage_t msg;
+    message_config_basic_t msg;
+    msg.device = config_basic::input_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, msg.payload, msg.len);
@@ -297,7 +299,48 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     }
   } else if ( Sensor["Type"] == "RegulatedVoltage" ) {
     printf("Configuring RegulatedVoltage\n");
-    message_config_regulated_voltage_t msg;
+    message_config_basic_t msg;
+    msg.device = config_basic::regulated_voltage;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "PwmVoltage" ) {
+    printf("Configuring PwmVoltage\n");
+    message_config_basic_t msg;
+    msg.device = config_basic::pwm_voltage;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "SbusVoltage" ) {
+    printf("Configuring SbusVoltage\n");
+    message_config_basic_t msg;
+    msg.device = config_basic::sbus_voltage;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "InternalBme280" ) {
+    printf("Configuring InternalBme280\n");
+    message_config_basic_t msg;
+    msg.device = config_basic::internal_bme280;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "Sbus" ) {
+    printf("Configuring Sbus\n");
+    message_config_basic_t msg;
+    msg.device = config_basic::sbus;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, msg.payload, msg.len);

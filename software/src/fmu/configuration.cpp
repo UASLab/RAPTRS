@@ -78,7 +78,7 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
 
 /* Update configuration structure from JSON payloads */
 bool AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
-  if ( id == message_config_time_id ) {
+  if ( id == message_config_basic_id ) {
     return AircraftSensorsPtr->UpdateConfig(id, Payload, DefinitionTreePtr);
   }
 #if 0

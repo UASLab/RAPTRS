@@ -349,20 +349,10 @@ void Mpu9250Sensor::End() {
 }
 
 /* update the internal BME280 sensor configuration */
-void InternalBme280Sensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Pressure_Pa",&data_.Pressure_Pa);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Humidity_RH",&data_.Humidity_RH);
-  } else {
-    while(1){
-      Serial.println("ERROR: Internal Bme280 parse fail.");
-      Serial.println(JsonString);
-    }
-  }
+void InternalBme280Sensor::UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+  DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Pressure_Pa",&data_.Pressure_Pa);
+  DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
+  DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Humidity_RH",&data_.Humidity_RH);
 }
 
 /* set the internal BME280 sensor configuration */
@@ -829,21 +819,11 @@ void SwiftSensor::End(){
 }
 
 /* update the SBUS receiver configuration */
-void SbusSensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/FailSafe",(uint8_t*)&data_.FailSafe);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/LostFrames",&data_.LostFrames);
-    for (size_t j=0; j < 16; j++) {
-      DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Channels/" + std::to_string(j),&data_.Channels[j]);
-    }
-  } else {
-    while(1){
-      Serial.println("ERROR: Sbus sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+void SbusSensor::UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+  DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/FailSafe",(uint8_t*)&data_.FailSafe);
+  DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/LostFrames",&data_.LostFrames);
+  for (size_t j=0; j < 16; j++) {
+    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Channels/" + std::to_string(j),&data_.Channels[j]);
   }
 }
 
@@ -1168,6 +1148,13 @@ void SensorNodes::End() {
   delete node_;
 }
 
+void HardFail(std::string message) {
+  while (true) {
+    Serial.println(message.c_str());
+    delay(1000);
+  }
+}
+
 /* updates the sensor configuration */
 void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr) {
   DynamicJsonBuffer ConfigBuffer;
@@ -1187,13 +1174,11 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
   if (Sensor.success()) {
     if (Sensor.containsKey("Type")) {
       if (Sensor["Type"] == "Time") {
-	while (true) Serial.println("ERROR: Time configured wrong way.");
+	HardFail("ERROR: Time configured wrong way.");
       }
       if (Sensor["Type"] == "InternalMpu9250") {
         if (AcquireInternalMpu9250Data_) {
-          while(1){
-            Serial.println("ERROR: Internal MPU9250 already initialized.");
-          }
+          HardFail("ERROR: Internal MPU9250 already initialized.");
         }
         AcquireInternalMpu9250Data_ = true;
         data_.InternalMpu9250.resize(1);
@@ -1202,9 +1187,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
       }
       if (Sensor["Type"] == "InternalBme280") {
         if (classes_.InternalBme280.size() > 0) {
-          while(1){
-            Serial.println("ERROR: Internal BME280 already initialized.");
-          }
+          HardFail("ERROR: Internal BME280 already initialized.");
         }
         Sensor.printTo(buffer.data(),buffer.size());
         InternalBme280Sensor TempSensor;
@@ -1213,32 +1196,16 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
         classes_.InternalBme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
       }
       if (Sensor["Type"] == "InputVoltage") {
-	while (true) Serial.println("ERROR: InputVoltage configured wrong way.");
+	HardFail("ERROR: InputVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "RegulatedVoltage") {
-	while (true) Serial.println("ERROR: RegulatedVoltage configured wrong way.");
+	HardFail("ERROR: RegulatedVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "PwmVoltage") {
-        if (AcquirePwmVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Pwm voltage already initialized.");
-          }
-        }
-        AcquirePwmVoltageData_ = true;
-        data_.PwmVoltage_V.resize(1);
-        std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-        DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.PwmVoltage_V[0]);
+	HardFail("ERROR: PwmVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "SbusVoltage") {
-        if (AcquireSbusVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Sbus voltage already initialized.");
-          }
-        }
-        AcquireSbusVoltageData_ = true;
-        data_.SbusVoltage_V.resize(1);
-        std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-        DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.SbusVoltage_V[0]);
+	HardFail("ERROR: SbusVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "Mpu9250") {
         Sensor.printTo(buffer.data(),buffer.size());
@@ -1312,91 +1279,84 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
 bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
   std::vector<char> buffer;
   delayMicroseconds(10);
-  Serial.println("Updating sensor configuration...");
-  if ( id == message_config_time_id ) {
-    message_config_time_t msg;
+  Serial.print("Updating sensor configuration:");
+  if ( id == message_config_basic_id ) {
+    message_config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    Serial.print("\tTime: ");
-    if (AcquireTimeData_) {
-      while(1){
-	Serial.println("ERROR: Time already initialized.");
+    if ( msg.device == config_basic::time ) {
+      Serial.println("Time");
+      if (AcquireTimeData_) {
+	HardFail("ERROR: Time already initialized.");
       }
-    }
-    AcquireTimeData_ = true;
-    data_.Time_us.resize(1);
-    std::string Output = msg.output;
-    DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.Time_us[0]);
-    Serial.println("done.");
-    return true;
-  } else if ( id == message_config_input_voltage_id ) {
-    message_config_input_voltage_t msg;
-    msg.unpack(Payload->data(), Payload->size());
-    if (AcquireInputVoltageData_) {
-      while(1){
-	Serial.println("ERROR: Input voltage already initialized.");
+      AcquireTimeData_ = true;
+      data_.Time_us.resize(1);
+      std::string Output = msg.output;
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.Time_us[0]);
+      return true;
+    } else if ( msg.device == config_basic::input_voltage ) {
+      Serial.println("InputVoltage");
+      if (AcquireInputVoltageData_) {
+	HardFail("ERROR: Input voltage already initialized.");
       }
-    }
-    AcquireInputVoltageData_ = true;
-    data_.InputVoltage_V.resize(1);
-    DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.InputVoltage_V[0]);
-    return true;
-  } else if ( id == message_config_regulated_voltage_id ) {
-    message_config_regulated_voltage_t msg;
-    msg.unpack(Payload->data(), Payload->size());
-    if (AcquireRegulatedVoltageData_) {
-      while(1){
-	Serial.println("ERROR: Regulated voltage already initialized.");
+      AcquireInputVoltageData_ = true;
+      data_.InputVoltage_V.resize(1);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.InputVoltage_V[0]);
+      return true;
+    } else if ( msg.device == config_basic::regulated_voltage ) {
+      Serial.println("RegulatedVoltage");
+      if (AcquireRegulatedVoltageData_) {
+	HardFail("ERROR: Regulated voltage already initialized.");
       }
+      AcquireRegulatedVoltageData_ = true;
+      data_.RegulatedVoltage_V.resize(1);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.RegulatedVoltage_V[0]);
+      return true;
+    } else if ( msg.device == config_basic::pwm_voltage ) {
+      Serial.println("PwmVoltage");
+      if (AcquirePwmVoltageData_) {
+	HardFail("ERROR: Pwm voltage already initialized.");
+      }
+      AcquirePwmVoltageData_ = true;
+      data_.PwmVoltage_V.resize(1);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.PwmVoltage_V[0]);
+      return true;
+    } else if (msg.device == config_basic::sbus_voltage ) {
+      Serial.println("SbusVoltage");
+      if (AcquireSbusVoltageData_) {
+	HardFail("ERROR: Sbus voltage already initialized.");
+      }
+      AcquireSbusVoltageData_ = true;
+      data_.SbusVoltage_V.resize(1);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.SbusVoltage_V[0]);
+      return true;
+    } else if ( msg.device == config_basic::internal_bme280 ) {
+      Serial.println("InternalBme280");
+      if (classes_.InternalBme280.size() > 0) {
+	HardFail("ERROR: Internal BME280 already initialized.");
+      }
+      InternalBme280Sensor TempSensor;
+      classes_.InternalBme280.push_back(TempSensor);
+      data_.InternalBme280.resize(classes_.InternalBme280.size());
+      classes_.InternalBme280.back().UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
+      return true;
+    } else if ( msg.device == config_basic::sbus ) {
+      Serial.println("Sbus");
+      SbusSensor TempSensor;
+      classes_.Sbus.push_back(TempSensor);
+      data_.Sbus.resize(classes_.Sbus.size());
+      classes_.Sbus.back().UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
+      return true;
     }
-    AcquireRegulatedVoltageData_ = true;
-    data_.RegulatedVoltage_V.resize(1);
-    DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.RegulatedVoltage_V[0]);
   }
   #if 0
     if (Sensor["Type"] == "InternalMpu9250") {
       if (AcquireInternalMpu9250Data_) {
-	while(1){
-	  Serial.println("ERROR: Internal MPU9250 already initialized.");
-	}
+	HardFail("ERROR: Internal MPU9250 already initialized.");
       }
       AcquireInternalMpu9250Data_ = true;
       data_.InternalMpu9250.resize(1);
       Sensor.printTo(buffer.data(),buffer.size());
       classes_.InternalMpu9250.UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-    }
-    if (Sensor["Type"] == "InternalBme280") {
-      if (classes_.InternalBme280.size() > 0) {
-	while(1){
-	  Serial.println("ERROR: Internal BME280 already initialized.");
-	}
-      }
-      Sensor.printTo(buffer.data(),buffer.size());
-      InternalBme280Sensor TempSensor;
-      classes_.InternalBme280.push_back(TempSensor);
-      data_.InternalBme280.resize(classes_.InternalBme280.size());
-      classes_.InternalBme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-    }
-    if (Sensor["Type"] == "PwmVoltage") {
-      if (AcquirePwmVoltageData_) {
-	while(1){
-	  Serial.println("ERROR: Pwm voltage already initialized.");
-	}
-      }
-      AcquirePwmVoltageData_ = true;
-      data_.PwmVoltage_V.resize(1);
-      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.PwmVoltage_V[0]);
-    }
-    if (Sensor["Type"] == "SbusVoltage") {
-      if (AcquireSbusVoltageData_) {
-	while(1){
-	  Serial.println("ERROR: Sbus voltage already initialized.");
-	}
-      }
-      AcquireSbusVoltageData_ = true;
-      data_.SbusVoltage_V.resize(1);
-      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.SbusVoltage_V[0]);
     }
     if (Sensor["Type"] == "Mpu9250") {
       Sensor.printTo(buffer.data(),buffer.size());
@@ -1434,13 +1394,6 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
       classes_.Ams5915.push_back(TempSensor);
       data_.Ams5915.resize(classes_.Ams5915.size());
       classes_.Ams5915.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-    }
-    if (Sensor["Type"] == "Sbus") {
-      Sensor.printTo(buffer.data(),buffer.size());
-      SbusSensor TempSensor;
-      classes_.Sbus.push_back(TempSensor);
-      data_.Sbus.resize(classes_.Sbus.size());
-      classes_.Sbus.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
     }
     if (Sensor["Type"] == "Analog") {
       Sensor.printTo(buffer.data(),buffer.size());

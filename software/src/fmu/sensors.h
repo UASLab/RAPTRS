@@ -121,7 +121,7 @@ class InternalBme280Sensor {
       float Temperature_C = 0.0f;                                                   // Temperature, C
       float Humidity_RH = 0.0f;                                                     // Relative humidity
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -262,7 +262,7 @@ class SbusSensor {
       bool FailSafe = false;
       uint64_t LostFrames = 0;
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(std::string Output, std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
