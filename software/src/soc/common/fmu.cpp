@@ -295,6 +295,15 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     if ( WaitForAck(msg.id, 0, 500) ) {
       return true;
     }
+  } else if ( Sensor["Type"] == "RegulatedVoltage" ) {
+    printf("Configuring RegulatedVoltage\n");
+    message_config_regulated_voltage_t msg;
+    msg.output = Sensor["Output"].GetString();
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
   }
   return false;
 }

@@ -1216,15 +1216,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
 	while (true) Serial.println("ERROR: InputVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "RegulatedVoltage") {
-        if (AcquireRegulatedVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Regulated voltage already initialized.");
-          }
-        }
-        AcquireRegulatedVoltageData_ = true;
-        data_.RegulatedVoltage_V.resize(1);
-        std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-        DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.RegulatedVoltage_V[0]);
+	while (true) Serial.println("ERROR: RegulatedVoltage configured wrong way.");
       }
       if (Sensor["Type"] == "PwmVoltage") {
         if (AcquirePwmVoltageData_) {
@@ -1348,6 +1340,17 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
     data_.InputVoltage_V.resize(1);
     DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.InputVoltage_V[0]);
     return true;
+  } else if ( id == message_config_regulated_voltage_id ) {
+    message_config_regulated_voltage_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if (AcquireRegulatedVoltageData_) {
+      while(1){
+	Serial.println("ERROR: Regulated voltage already initialized.");
+      }
+    }
+    AcquireRegulatedVoltageData_ = true;
+    data_.RegulatedVoltage_V.resize(1);
+    DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.RegulatedVoltage_V[0]);
   }
   #if 0
     if (Sensor["Type"] == "InternalMpu9250") {
@@ -1372,28 +1375,6 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
       classes_.InternalBme280.push_back(TempSensor);
       data_.InternalBme280.resize(classes_.InternalBme280.size());
       classes_.InternalBme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-    }
-    if (Sensor["Type"] == "InputVoltage") {
-      if (AcquireInputVoltageData_) {
-	while(1){
-	  Serial.println("ERROR: Input voltage already initialized.");
-	}
-      }
-      AcquireInputVoltageData_ = true;
-      data_.InputVoltage_V.resize(1);
-      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.InputVoltage_V[0]);
-    }
-    if (Sensor["Type"] == "RegulatedVoltage") {
-      if (AcquireRegulatedVoltageData_) {
-	while(1){
-	  Serial.println("ERROR: Regulated voltage already initialized.");
-	}
-      }
-      AcquireRegulatedVoltageData_ = true;
-      data_.RegulatedVoltage_V.resize(1);
-      std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-      DefinitionTreePtr->InitMember(RootPath_+"/"+Output,&data_.RegulatedVoltage_V[0]);
     }
     if (Sensor["Type"] == "PwmVoltage") {
       if (AcquirePwmVoltageData_) {
