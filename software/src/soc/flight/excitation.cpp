@@ -63,6 +63,7 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
     std::shared_ptr<ExcitationWrapper> ExcitationWrapperPtr;
 
     // Call the Wrapper Config
+    ExcitationWrapperPtr = std::make_shared<ExcitationWrapper>();
     ExcitationWrapperPtr->Configure(ExcitePath, WaveDef, Waveforms);
 
     // Add Wrapper Pointer to Map
@@ -173,10 +174,7 @@ void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value
 
     // Call Configuration for Wave
     WaveStructInst.WaveFunc->Configure(Wave);
-std::cout << WaveType << std::endl;
-std::cout << WaveStructInst.Scale << std::endl;
-std::cout << SignalKey << std::endl;
-std::cout << ExciteKey << std::endl;
+
     // Push the working WaveStructInst into the WaveVec
     WaveVec_.push_back(WaveStructInst);
   }

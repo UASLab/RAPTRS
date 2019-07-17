@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   Configuration Config;
   FlightManagementUnit Fmu;
   MissionManager Mission;
-  ControlLaws Control;
+  ControlSystem Control;
   AircraftEffectors Effectors;
 
   /* Setup Inclinometer */

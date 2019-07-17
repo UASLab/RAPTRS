@@ -48,7 +48,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 // deftree.
 float timePrev_ms = 0;
 
-
 int main(int argc, char* argv[]) {
   if (argc!=2) {
     std::cerr << "ERROR: Incorrect number of input arguments." << std::endl;
@@ -93,7 +92,7 @@ int main(int argc, char* argv[]) {
 
   /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
-  // Fmu.Configure(AircraftConfiguration);
+  Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
   deftree.PrettyPrint("/Sensors/");
   std::cout << std::endl;
