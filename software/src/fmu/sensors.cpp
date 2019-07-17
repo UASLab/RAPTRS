@@ -700,59 +700,27 @@ void Ams5915Sensor::End() {
 }
 
 /* update the Swift sensor configuration */
-void SwiftSensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Static")&&Config.containsKey("Differential")){
-      JsonObject &Static = Config["Static"];
-      if (Static.containsKey("Address")) {
-        config_.Static.Addr = Static["Address"];
-        config_.Static.Transducer = AMS5915::AMS5915_1200_B;
-      } else {
-        while(1){
-          Serial.println("ERROR: Static pressure I2C address missing from pitot configuration.");
-        }
-      }
-      JsonObject &Diff = Config["Differential"];
-      if (Diff.containsKey("Address")&&Diff.containsKey("Transducer")) {
-        config_.Differential.Addr = Diff["Address"];
-        if (Diff["Transducer"] == "AMS5915-0020-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0020_D;
-        } else if (Diff["Transducer"] == "AMS5915-0005-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0005_D;
-        } else if (Diff["Transducer"] == "AMS5915-0010-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0010_D;
-        } else {
-          while(1){
-            Serial.println("ERROR: Incompatible differential pressure transducer in pitot configuration.");
-          }
-        }
-      } else {
-        while(1){
-          Serial.println("ERROR: Differential pressure I2C address or transducer missing from pitot configuration.");
-        }
-      }
-    } else {
-      while(1){
-        Serial.println("ERROR: Static pressure object or differential pressure object missing from pitot configuration.");
-      }
-    }
-    StaticAms.SetConfig(config_.Static);
-    DiffAms.SetConfig(config_.Differential);
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Static/Status",(int8_t*)&data_.Static.ReadStatus);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Static/Pressure_Pa",&data_.Static.Pressure_Pa);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Static/Temperature_C",&data_.Static.Temperature_C);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Differential/Status",(int8_t*)&data_.Differential.ReadStatus);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Differential/Pressure_Pa",&data_.Differential.Pressure_Pa);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Differential/Temperature_C",&data_.Differential.Temperature_C);
+void SwiftSensor::UpdateConfig(message_config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+  config_.Static.Addr = msg->static_i2c_addr;
+  config_.Static.Transducer = AMS5915::AMS5915_1200_B;
+  config_.Differential.Addr = msg->diff_i2c_addr;
+  if (msg->diff_transducer == "AMS5915-0020-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0020_D;
+  } else if (msg->diff_transducer == "AMS5915-0005-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0005_D;
+  } else if (msg->diff_transducer == "AMS5915-0010-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0010_D;
   } else {
-    while(1){
-      Serial.println("ERROR: Swift sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: Incompatible differential pressure transducer in pitot configuration.");
   }
+  StaticAms.SetConfig(config_.Static);
+  DiffAms.SetConfig(config_.Differential);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Static/Status",(int8_t*)&data_.Static.ReadStatus);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Static/Pressure_Pa",&data_.Static.Pressure_Pa);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Static/Temperature_C",&data_.Static.Temperature_C);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Differential/Status",(int8_t*)&data_.Differential.ReadStatus);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Differential/Pressure_Pa",&data_.Differential.Pressure_Pa);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Differential/Temperature_C",&data_.Differential.Temperature_C);
 }
 
 /* set the Swift sensor configuration */
@@ -892,146 +860,104 @@ void AnalogSensor::GetData(Data *DataPtr) {
 /* free resources used by the analog sensors */
 void AnalogSensor::End() {}
 
+SensorNodes::SensorNodes(uint8_t address) {
+  config_.BfsAddr = address;
+}
+
 /* updates the node configuration */
-void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  std::vector<char> buffer;
-
+void SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   Serial.print("SensorNodes Parsing: ");
-  Serial.print(JsonString);
-
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  buffer.resize(ConfigBuffer.size());
-
-  Serial.print("\tSuccess: ");
-  Serial.println(Config.success());
-
-  if (Config.success()) {
-    if (Config.containsKey("Address")) {
-      // get the BFS address
-      config_.BfsAddr = Config["Address"];
-      // create a new node
-      node_ = new Node(kBfsPort,config_.BfsAddr,kBfsRate);
-      // start communication with node
-      node_->Begin();
-      if (Config.containsKey("Sensors")) {
-        // send config messages
-        node_->SetConfigurationMode();
-        JsonArray &Sensors = Config["Sensors"];
-        for (size_t i=0; i < Sensors.size(); i++) {
-          JsonObject &Sensor = Sensors[i];
-          Sensor.printTo(buffer.data(),buffer.size());
-          String ConfigString = String("{\"Sensors\":[") + buffer.data() + String("]}");
-          node_->Configure(ConfigString);
-          if (Sensor.containsKey("Type")) {
-            if (Sensor["Type"] == "PwmVoltage") {
-              data_.PwmVoltage_V.resize(1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output,&data_.PwmVoltage_V[0]);
-            }
-            if (Sensor["Type"] == "SbusVoltage") {
-              data_.SbusVoltage_V.resize(1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output,&data_.SbusVoltage_V[0]);
-            }
-            if (Sensor["Type"] == "Mpu9250") {
-
-              // const float G = 9.807f;
-              // const float d2r = 3.14159265359f/180.0f;
-              // float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-              // float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
-
-              data_.Mpu9250.resize(data_.Mpu9250.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.Mpu9250.back().ReadStatus);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&data_.Mpu9250.back().AccelX_ct);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&data_.Mpu9250.back().AccelY_ct);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&data_.Mpu9250.back().AccelZ_ct);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&data_.Mpu9250.back().GyroX_ct);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&data_.Mpu9250.back().GyroY_ct);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&data_.Mpu9250.back().GyroZ_ct);
-              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&(data_.Mpu9250.back().MagX_uT));
-              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&(data_.Mpu9250.back().MagY_uT));
-              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&(data_.Mpu9250.back().MagZ_uT));
-              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Mpu9250.back().Temperature_C);
-            }
-            if (Sensor["Type"] == "Bme280") {
-              data_.Bme280.resize(data_.Bme280.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.Bme280.back().ReadStatus);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Pressure_Pa",&data_.Bme280.back().Pressure_Pa);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Bme280.back().Temperature_C);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Humidity_RH",&data_.Bme280.back().Humidity_RH);
-            }
-            if (Sensor["Type"] == "uBlox") {
-              data_.uBlox.resize(data_.uBlox.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Fix",(uint8_t*)&data_.uBlox.back().Fix);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NumberSatellites",&data_.uBlox.back().NumberSatellites);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/TOW",&data_.uBlox.back().TOW);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Year",&data_.uBlox.back().Year);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Month",&data_.uBlox.back().Month);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Day",&data_.uBlox.back().Day);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Hour",&data_.uBlox.back().Hour);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Minute",&data_.uBlox.back().Min);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Second",&data_.uBlox.back().Sec);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Latitude_rad",&data_.uBlox.back().Latitude_rad);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Longitude_rad",&data_.uBlox.back().Longitude_rad);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Altitude_m",&data_.uBlox.back().Altitude_m);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NorthVelocity_ms",&data_.uBlox.back().NorthVelocity_ms);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/EastVelocity_ms",&data_.uBlox.back().EastVelocity_ms);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/DownVelocity_ms",&data_.uBlox.back().DownVelocity_ms);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/HorizontalAccuracy_m",&data_.uBlox.back().HorizontalAccuracy_m);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VerticalAccuracy_m",&data_.uBlox.back().VerticalAccuracy_m);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VelocityAccuracy_ms",&data_.uBlox.back().VelocityAccuracy_ms);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/pDOP",&data_.uBlox.back().pDOP);
-            }
-            if (Sensor["Type"] == "Swift") {
-              data_.Swift.resize(data_.Swift.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Static/Status",(int8_t*)&data_.Swift.back().Static.ReadStatus);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Static/Pressure_Pa",&data_.Swift.back().Static.Pressure_Pa);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Static/Temperature_C",&data_.Swift.back().Static.Temperature_C);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Differential/Status",(int8_t*)&data_.Swift.back().Differential.ReadStatus);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Differential/Pressure_Pa",&data_.Swift.back().Differential.Pressure_Pa);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Differential/Temperature_C",&data_.Swift.back().Differential.Temperature_C);
-            }
-            if (Sensor["Type"] == "Ams5915") {
-              data_.Ams5915.resize(data_.Ams5915.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.Ams5915.back().ReadStatus);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Pressure_Pa",&data_.Ams5915.back().Pressure_Pa);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Ams5915.back().Temperature_C);
-            }
-            if (Sensor["Type"] == "Sbus") {
-              data_.Sbus.resize(data_.Sbus.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/FailSafe",(uint8_t*)&data_.Sbus.back().FailSafe);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/LostFrames",&data_.Sbus.back().LostFrames);
-              for (size_t j=0; j < 16; j++) {
-                DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Channels/" + std::to_string(j),&data_.Sbus.back().Channels[j]);
-              }
-            }
-            if (Sensor["Type"] == "Analog") {
-              data_.Analog.resize(data_.Analog.size()+1);
-              std::string Output = (std::string) Sensor.get<String>("Output").c_str();
-              // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Voltage_V",(uint8_t*)&data_.Analog.back().Voltage_V);
-              DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/CalibratedValue",&data_.Analog.back().CalibratedValue);
-            }
-          }
-        }
-      }
-    } else {
-      while(1){
-        Serial.println("ERROR: Sensor Node Address required.");
-        Serial.println(JsonString);
+  if ( node_ == NULL ) {
+    // create a new node
+    node_ = new Node(kBfsPort,config_.BfsAddr,kBfsRate);
+    // start communication with node
+    node_->Begin();
+  }
+  // send config messages
+  node_->SetConfigurationMode();
+  node_->Configure(id, Payload);
+  // update local structures and definition tree to match
+  if ( id == message_config_basic_id ) {
+    message_config_basic_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if (msg.device == config_basic::pwm_voltage) {
+      data_.PwmVoltage_V.resize(1);
+      DefinitionTreePtr->InitMember(RootPath + "/" + msg.output, &data_.PwmVoltage_V[0]);
+    } else if (msg.device == config_basic::sbus_voltage) {
+      data_.SbusVoltage_V.resize(1);
+      DefinitionTreePtr->InitMember(RootPath + "/" + msg.output, &data_.SbusVoltage_V[0]);
+    } else if (msg.device == config_basic::sbus) {
+      data_.Sbus.resize(data_.Sbus.size()+1);
+      DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/FailSafe",(uint8_t*)&data_.Sbus.back().FailSafe);
+      DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/LostFrames",&data_.Sbus.back().LostFrames);
+      for (size_t j=0; j < 16; j++) {
+        DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Channels/" + std::to_string(j),&data_.Sbus.back().Channels[j]);
       }
     }
-  } else {
-    while(1){
-      Serial.println("ERROR: Sensor Configuration failed to parse.");
-      Serial.println(JsonString);
-    }
+  } else if ( id == message_config_mpu9250_id ) {
+    message_config_mpu9250_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.Mpu9250.resize(data_.Mpu9250.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Status",(int8_t*)&data_.Mpu9250.back().ReadStatus);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/AccelX_mss",&data_.Mpu9250.back().AccelX_ct);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/AccelY_mss",&data_.Mpu9250.back().AccelY_ct);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/AccelZ_mss",&data_.Mpu9250.back().AccelZ_ct);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/GyroX_rads",&data_.Mpu9250.back().GyroX_ct);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/GyroY_rads",&data_.Mpu9250.back().GyroY_ct);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/GyroZ_rads",&data_.Mpu9250.back().GyroZ_ct);
+  } else if ( id == message_config_bme280_id ) {
+    message_config_bme280_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.Bme280.resize(data_.Bme280.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Status",(int8_t*)&data_.Bme280.back().ReadStatus);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Pressure_Pa",&data_.Bme280.back().Pressure_Pa);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Temperature_C",&data_.Bme280.back().Temperature_C);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Humidity_RH",&data_.Bme280.back().Humidity_RH);
+  } else if ( id == message_config_ublox_id ) {
+    message_config_ublox_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.uBlox.resize(data_.uBlox.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Fix",(uint8_t*)&data_.uBlox.back().Fix);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/NumberSatellites",&data_.uBlox.back().NumberSatellites);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/TOW",&data_.uBlox.back().TOW);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Year",&data_.uBlox.back().Year);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Month",&data_.uBlox.back().Month);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Day",&data_.uBlox.back().Day);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Hour",&data_.uBlox.back().Hour);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Minute",&data_.uBlox.back().Min);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Second",&data_.uBlox.back().Sec);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Latitude_rad",&data_.uBlox.back().Latitude_rad);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Longitude_rad",&data_.uBlox.back().Longitude_rad);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Altitude_m",&data_.uBlox.back().Altitude_m);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/NorthVelocity_ms",&data_.uBlox.back().NorthVelocity_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/EastVelocity_ms",&data_.uBlox.back().EastVelocity_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/DownVelocity_ms",&data_.uBlox.back().DownVelocity_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/HorizontalAccuracy_m",&data_.uBlox.back().HorizontalAccuracy_m);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/VerticalAccuracy_m",&data_.uBlox.back().VerticalAccuracy_m);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/VelocityAccuracy_ms",&data_.uBlox.back().VelocityAccuracy_ms);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/pDOP",&data_.uBlox.back().pDOP);
+  } else if ( id == message_config_swift_id ) {
+    message_config_swift_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.Swift.resize(data_.Swift.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Static/Status",(int8_t*)&data_.Swift.back().Static.ReadStatus);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Static/Pressure_Pa",&data_.Swift.back().Static.Pressure_Pa);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Static/Temperature_C",&data_.Swift.back().Static.Temperature_C);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Differential/Status",(int8_t*)&data_.Swift.back().Differential.ReadStatus);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Differential/Pressure_Pa",&data_.Swift.back().Differential.Pressure_Pa);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Differential/Temperature_C",&data_.Swift.back().Differential.Temperature_C);
+  } else if ( id == message_config_ams5915_id ) {
+    message_config_ams5915_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.Ams5915.resize(data_.Ams5915.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Status",(int8_t*)&data_.Ams5915.back().ReadStatus);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Pressure_Pa",&data_.Ams5915.back().Pressure_Pa);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Temperature_C",&data_.Ams5915.back().Temperature_C);
+  } else if ( id == message_config_analog_id ) {
+    message_config_analog_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.Analog.resize(data_.Analog.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/CalibratedValue",&data_.Analog.back().CalibratedValue);
   }
 }
 
@@ -1179,11 +1105,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *Defin
         HardFail("Error: uBlox configured wrong way");
       }
       if (Sensor["Type"] == "Swift") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        SwiftSensor TempSensor;
-        classes_.Swift.push_back(TempSensor);
-        data_.Swift.resize(classes_.Swift.size());
-        classes_.Swift.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+        HardFail("Error: Swift configured wrong way");
       }
       if (Sensor["Type"] == "Ams5915") {
         Sensor.printTo(buffer.data(),buffer.size());
@@ -1207,11 +1129,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *Defin
         classes_.Analog.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
       }
       if (Sensor["Type"] == "Node") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        SensorNodes TempSensor;
-        classes_.Nodes.push_back(TempSensor);
-        data_.Nodes.resize(classes_.Nodes.size());
-        classes_.Nodes.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+        HardFail("Error: Sensor Node configured wrong way");
       }
     }
   } else {
@@ -1225,10 +1143,24 @@ void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *Defin
 
 /* updates the sensor configuration */
 bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
-  std::vector<char> buffer;
   delayMicroseconds(10);
   Serial.print("Updating sensor configuration:");
-  if ( id == message_config_basic_id ) {
+  if ( address > 0 ) {
+    // this message is relayed to a node
+    int found = -1;
+    for ( unsigned int i = 0; i < classes_.Nodes.size(); i++ ) {
+      if ( classes_.Nodes[i].GetBfsAddr() == address ) {
+        found = i;
+      }
+    }
+    if ( found < 0 ) {
+      found = classes_.Nodes.size();
+      classes_.Nodes.push_back(SensorNodes(address));
+      data_.Nodes.resize(classes_.Nodes.size());
+    }
+    classes_.Nodes[found].UpdateConfig(id, Payload, RootPath_, DefinitionTreePtr);
+    return true;
+  } else if ( id == message_config_basic_id ) {
     message_config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
     if ( msg.device == config_basic::time ) {
@@ -1311,11 +1243,16 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
   } else if ( id  == message_config_ublox_id ) {
     message_config_ublox_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    uBloxSensor TempSensor;
-    classes_.uBlox.push_back(TempSensor);
+    classes_.uBlox.push_back(uBloxSensor());
     data_.uBlox.resize(classes_.uBlox.size());
     classes_.uBlox.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
+  } else if ( id == message_config_swift_id ) {
+    message_config_swift_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Swift.push_back(SwiftSensor());
+    data_.Swift.resize(classes_.Swift.size());
+    classes_.Swift.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
   }
   #if 0
     if (Sensor["Type"] == "Mpu9250") {
@@ -1332,13 +1269,6 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.Bme280.resize(classes_.Bme280.size());
       classes_.Bme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
 
-    }
-    if (Sensor["Type"] == "Swift") {
-      Sensor.printTo(buffer.data(),buffer.size());
-      SwiftSensor TempSensor;
-      classes_.Swift.push_back(TempSensor);
-      data_.Swift.resize(classes_.Swift.size());
-      classes_.Swift.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
     }
     if (Sensor["Type"] == "Ams5915") {
       Sensor.printTo(buffer.data(),buffer.size());

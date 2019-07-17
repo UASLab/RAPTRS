@@ -43,6 +43,12 @@ void Node::Configure(String ConfigString) {
   delay(500);
 }
 
+/* sends a configuration string to the node */
+void Node::Configure(uint8_t id, std::vector<uint8_t> *Payload) {
+  SendMessage(Configuration,*Payload);
+  delay(500);
+}
+
 void Node::SetConfigurationMode() {
   std::vector<uint8_t> Payload;
   Payload.push_back(ConfigurationMode);

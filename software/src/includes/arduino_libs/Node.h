@@ -32,6 +32,7 @@ class Node {
     Node(i2c_t3& bus,uint8_t addr,uint32_t rate);
     void Begin();
     void Configure(String ConfigString);
+    void Configure(uint8_t id, std::vector<uint8_t> *Payload);
     void SetRunMode();
     void SetConfigurationMode();
     bool ReadSensorData();

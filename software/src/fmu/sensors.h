@@ -241,7 +241,7 @@ class SwiftSensor {
       Ams5915Sensor::Data Static;
       Ams5915Sensor::Data Differential;
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -320,16 +320,19 @@ class SensorNodes {
       std::vector<SbusSensor::Data> Sbus;
       std::vector<AnalogSensor::Data> Analog;
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    SensorNodes(uint8_t address);
+    void UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
+    uint8_t GetBfsAddr() { return config_.BfsAddr; }
     void Begin(Data *DataPtr);
     int GetData(Data *DataPtr);
     void End();
   private:
     Config config_;
     Data data_;
-    class Node *node_;
+    class Node *node_ = NULL;
 };
 
 /* aircraft sensors class wrapping the individual sensor classes */

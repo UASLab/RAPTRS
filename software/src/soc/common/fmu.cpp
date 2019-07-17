@@ -288,7 +288,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 500) ) {
+      if ( WaitForAck(msg.id, 0, 1000) ) {
         return true;
       }
     } else {
@@ -302,7 +302,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 500) ) {
+      if ( WaitForAck(msg.id, 0, 1000) ) {
         return true;
       }
     } else {
@@ -316,7 +316,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 500) ) {
+      if ( WaitForAck(msg.id, 0, 1000) ) {
         return true;
       }
     } else {
@@ -329,7 +329,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
+    if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "SbusVoltage" ) {
@@ -339,7 +339,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
+    if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "InternalBme280" ) {
@@ -350,7 +350,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 500) ) {
+      if ( WaitForAck(msg.id, 0, 1000) ) {
         return true;
       }
     } else {
@@ -363,7 +363,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
+    if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "InternalMpu9250" ) {
@@ -408,10 +408,9 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
           printf("Error: InternalMpu9250 DLPF-Bandwidth set incorrectly\n");
         }
       }
-    
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 500) ) {
+      if ( WaitForAck(msg.id, 0, 1000) ) {
         return true;
       }
     } else {
@@ -434,7 +433,46 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     printf("uBlox: %d %d\n", msg.uart, msg.baud);
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
+    if ( WaitForAck(msg.id, 0, 1000) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "Swift" ) {
+    printf("Configuring Swift\n");
+    message_config_swift_t msg;
+    msg.output = Sensor["Output"].GetString();
+    if ( Sensor.HasMember("I2c") ) {
+      msg.i2c_bus = Sensor["I2c"].GetInt();
+    } else {
+      msg.i2c_bus = 1;
+    }
+    if ( Sensor.HasMember("Static") ) {
+      const rapidjson::Value &st = Sensor["Static"];
+      if ( st.HasMember("Address") ) {
+        msg.static_i2c_addr = st["Address"].GetInt();
+      } else {
+        printf("ERROR: Swift Static config missing Address\n");
+      }
+    } else {
+      printf("ERROR: Swift config missing Static section\n");
+    }
+    if ( Sensor.HasMember("Differential") ) {
+      const rapidjson::Value &diff = Sensor["Differential"];
+      if ( diff.HasMember("Address") ) {
+        msg.diff_i2c_addr = diff["Address"].GetInt();
+      } else {
+        printf("ERROR: Swift Differential config missing Address\n");
+      }
+      if ( diff.HasMember("Transducer") ) {
+        msg.diff_transducer = diff["Transducer"].GetString();
+      } else {
+        printf("ERROR: Swift Differential config missing Transducer\n");
+      }
+    } else {
+      printf("ERROR: Swift config missing Differential section\n");
+    }
+    msg.pack();
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
   }
