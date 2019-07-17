@@ -50,7 +50,7 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
   // configure FMU sensors
   if (Config.HasMember("Sensors")) {
     std::cout << "\t\tSending Sensors config to FMU..." << std::flush;
-    ConfigureSensors(Config["Sensors"]);
+    ConfigureSensors(Config["Sensors"], 0);
     std::cout << "done!" << std::endl;
   }
 
@@ -101,7 +101,7 @@ void FlightManagementUnit::SendModeCommand(Mode mode) {
   printf("sending mode change: %d\n", mode);
   cmd_msg.mode = mode;
   cmd_msg.pack();
-  SendMessage(cmd_msg.id, cmd_msg.payload, cmd_msg.len);
+  SendMessage(cmd_msg.id, 0, cmd_msg.payload, cmd_msg.len);
 }
 
 /* Receive sensor data from FMU */
@@ -252,7 +252,7 @@ void FlightManagementUnit::SendEffectorCommands(std::vector<float> Commands) {
     effector_msg.command[i] = Commands[i];
   }
   effector_msg.pack();
-  SendMessage(effector_msg.id, effector_msg.payload, effector_msg.len);
+  SendMessage(effector_msg.id, 0, effector_msg.payload, effector_msg.len);
 }
 
 /* Wait for Ack message */
@@ -279,36 +279,48 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
 }
 
 /* Generate sensor config messages */
-bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
+bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint8_t node_address) {
   if ( Sensor["Type"] == "Time" ) {
-    printf("Configuring Time\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::time;
-    msg.output = Sensor["Output"].GetString();
-    msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
-      return true;
+    if ( node_address == 0 ) {
+      printf("Configuring Time\n");
+      message_config_basic_t msg;
+      msg.device = config_basic::time;
+      msg.output = Sensor["Output"].GetString();
+      msg.pack();
+      SendMessage(msg.id, 0, msg.payload, msg.len);
+      if ( WaitForAck(msg.id, 0, 500) ) {
+        return true;
+      }
+    } else {
+      printf("Cannot configure Time on a Node\n");
     }
   } else if ( Sensor["Type"] == "InputVoltage" ) {
-    printf("Configuring InputVoltage\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::input_voltage;
-    msg.output = Sensor["Output"].GetString();
-    msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
-      return true;
+    if ( node_address == 0 ) {
+      printf("Configuring InputVoltage\n");
+      message_config_basic_t msg;
+      msg.device = config_basic::input_voltage;
+      msg.output = Sensor["Output"].GetString();
+      msg.pack();
+      SendMessage(msg.id, 0, msg.payload, msg.len);
+      if ( WaitForAck(msg.id, 0, 500) ) {
+        return true;
+      }
+    } else {
+      printf("Cannot configure InputVoltage on a Node\n");
     }
   } else if ( Sensor["Type"] == "RegulatedVoltage" ) {
-    printf("Configuring RegulatedVoltage\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::regulated_voltage;
-    msg.output = Sensor["Output"].GetString();
-    msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
-      return true;
+    if ( node_address == 0 ) {
+      printf("Configuring RegulatedVoltage\n");
+      message_config_basic_t msg;
+      msg.device = config_basic::regulated_voltage;
+      msg.output = Sensor["Output"].GetString();
+      msg.pack();
+      SendMessage(msg.id, 0, msg.payload, msg.len);
+      if ( WaitForAck(msg.id, 0, 500) ) {
+        return true;
+      }
+    } else {
+      printf("Cannot configure RegulatedVoltage on a Node\n");
     }
   } else if ( Sensor["Type"] == "PwmVoltage" ) {
     printf("Configuring PwmVoltage\n");
@@ -316,7 +328,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     msg.device = config_basic::pwm_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 500) ) {
       return true;
     }
@@ -326,19 +338,23 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     msg.device = config_basic::sbus_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 500) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "InternalBme280" ) {
-    printf("Configuring InternalBme280\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::internal_bme280;
-    msg.output = Sensor["Output"].GetString();
-    msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
-      return true;
+    if ( node_address == 0 ) {
+      printf("Configuring InternalBme280\n");
+      message_config_basic_t msg;
+      msg.device = config_basic::internal_bme280;
+      msg.output = Sensor["Output"].GetString();
+      msg.pack();
+      SendMessage(msg.id, 0, msg.payload, msg.len);
+      if ( WaitForAck(msg.id, 0, 500) ) {
+        return true;
+      }
+    } else {
+      printf("Cannot configure InternalBme280 on a Node\n");
     }
   } else if ( Sensor["Type"] == "Sbus" ) {
     printf("Configuring Sbus\n");
@@ -346,55 +362,60 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     msg.device = config_basic::sbus;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 500) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "InternalMpu9250" ) {
-    printf("Configuring InternalMpu9250\n");
-    message_config_mpu9250_t msg;
-    msg.output = Sensor["Output"].GetString();
-    msg.internal = true;
-    if ( Sensor.HasMember("SRD") ) {
-      msg.SRD = Sensor["SRD"].GetInt();
-    } else {
-      msg.SRD = 0;
-    }
-    msg.orientation[0] = 1.0;
-    msg.orientation[1] = 0.0;
-    msg.orientation[2] = 0.0;
-    msg.orientation[3] = 0.0;
-    msg.orientation[4] = 1.0;
-    msg.orientation[5] = 0.0;
-    msg.orientation[6] = 0.0;
-    msg.orientation[7] = 0.0;
-    msg.orientation[8] = 1.0;
-    if ( Sensor.HasMember("Rotation") ) {
-      if ( Sensor["Rotation"].IsArray() and Sensor["Rotation"].Size() == 9 ) {
-	for ( int i = 0; i < 9; i++ ) {
-	  msg.orientation[i] = Sensor["Rotation"][i].GetFloat();
-	}
+    if ( node_address == 0 ) {
+      printf("Configuring InternalMpu9250\n");
+      message_config_mpu9250_t msg;
+      msg.output = Sensor["Output"].GetString();
+      msg.internal = true;
+      if ( Sensor.HasMember("SRD") ) {
+        msg.SRD = Sensor["SRD"].GetInt();
       } else {
-	printf("Error: InternalMpu9250 Rotation incorrect\n");
+        msg.SRD = 0;
       }
-    }
-    msg.DLPF_bandwidth_hz = 0;
-    if ( Sensor.HasMember("DLPF-Bandwidth") ) {
-      string bandwidth = Sensor["DLPF-Bandwidth"].GetString();
-      if ( bandwidth == "184Hz" ) msg.DLPF_bandwidth_hz = 184;
-      else if ( bandwidth == "92Hz" ) msg.DLPF_bandwidth_hz = 92;
-      else if ( bandwidth == "41Hz" ) msg.DLPF_bandwidth_hz = 41;
-      else if ( bandwidth == "20Hz" ) msg.DLPF_bandwidth_hz = 20;
-      else if ( bandwidth == "10Hz" ) msg.DLPF_bandwidth_hz = 10;
-      else if ( bandwidth == "5Hz" ) msg.DLPF_bandwidth_hz = 5;
-      else {
-	printf("Error: InternalMpu9250 DLPF-Bandwidth set incorrectly\n");
+      msg.orientation[0] = 1.0;
+      msg.orientation[1] = 0.0;
+      msg.orientation[2] = 0.0;
+      msg.orientation[3] = 0.0;
+      msg.orientation[4] = 1.0;
+      msg.orientation[5] = 0.0;
+      msg.orientation[6] = 0.0;
+      msg.orientation[7] = 0.0;
+      msg.orientation[8] = 1.0;
+      if ( Sensor.HasMember("Rotation") ) {
+        if ( Sensor["Rotation"].IsArray() and Sensor["Rotation"].Size() == 9 ) {
+          for ( int i = 0; i < 9; i++ ) {
+            msg.orientation[i] = Sensor["Rotation"][i].GetFloat();
+          }
+        } else {
+          printf("Error: InternalMpu9250 Rotation incorrect\n");
+        }
       }
-    }
-    msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 500) ) {
-      return true;
+      msg.DLPF_bandwidth_hz = 0;
+      if ( Sensor.HasMember("DLPF-Bandwidth") ) {
+        string bandwidth = Sensor["DLPF-Bandwidth"].GetString();
+        if ( bandwidth == "184Hz" ) msg.DLPF_bandwidth_hz = 184;
+        else if ( bandwidth == "92Hz" ) msg.DLPF_bandwidth_hz = 92;
+        else if ( bandwidth == "41Hz" ) msg.DLPF_bandwidth_hz = 41;
+        else if ( bandwidth == "20Hz" ) msg.DLPF_bandwidth_hz = 20;
+        else if ( bandwidth == "10Hz" ) msg.DLPF_bandwidth_hz = 10;
+        else if ( bandwidth == "5Hz" ) msg.DLPF_bandwidth_hz = 5;
+        else {
+          printf("Error: InternalMpu9250 DLPF-Bandwidth set incorrectly\n");
+        }
+      }
+    
+      msg.pack();
+      SendMessage(msg.id, 0, msg.payload, msg.len);
+      if ( WaitForAck(msg.id, 0, 500) ) {
+        return true;
+      }
+    } else {
+      printf("Cannot configure InternalMpu9250 on a Node\n");
     }
   } else if ( Sensor["Type"] == "uBlox" ) {
     printf("Configuring uBlox\n");
@@ -412,7 +433,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     }
     printf("uBlox: %d %d\n", msg.uart, msg.baud);
     msg.pack();
-    SendMessage(msg.id, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 500) ) {
       return true;
     }
@@ -421,13 +442,19 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
 }
 
 /* Configures the FMU sensors */
-void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config) {
+void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config, uint8_t node_address) {
   std::vector<uint8_t> Payload;
   assert(Config.IsArray());
   for (size_t i=0; i < Config.Size(); i++) {
     const rapidjson::Value& Sensor = Config[i];
-    if (Sensor.HasMember("Type")) {
-      if ( GenConfigMessage(Sensor) ) {
+    if ( Sensor.HasMember("Type") ) {
+      if ( Sensor["Type"] == "Node" ) {
+        if ( Sensor.HasMember("Address") and Sensor.HasMember("Sensors") ) {
+          ConfigureSensors(Sensor["Sensors"], Sensor["Address"].GetInt());
+        } else {
+          printf("ERROR: sensor node specified without a valid address or sensor sub block\n");
+        }
+      } else if ( GenConfigMessage(Sensor, node_address) ) {
 	// new way succeeded!
       } else {
 	printf("config message: %s\n", Sensor["Type"].GetString() );
@@ -440,7 +467,7 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config) {
 	for (size_t j=0; j < ConfigString.size(); j++) {
 	  Payload.push_back((uint8_t)ConfigString[j]);
 	}
-	SendMessage(Message::kConfigMesg, Payload);
+	SendMessage(Message::kConfigMesg, 0, Payload);
       }
     }
   }
@@ -457,7 +484,7 @@ void FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
   for (size_t j=0; j < ConfigString.size(); j++) {
     Payload.push_back((uint8_t)ConfigString[j]);
   }
-  SendMessage(Message::kConfigMesg,Payload);
+  SendMessage(Message::kConfigMesg, 0, Payload);
 }
 
 /* Configures the FMU control laws */
@@ -480,7 +507,7 @@ void FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
       for (size_t j=0; j < ConfigString.size(); j++) {
         Payload.push_back((uint8_t)ConfigString[j]);
       }
-      SendMessage(Message::kConfigMesg,Payload);
+      SendMessage(Message::kConfigMesg, 0, Payload);
     }
   }
 }
@@ -500,7 +527,7 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config) {
     for (size_t j=0; j < ConfigString.size(); j++) {
       Payload.push_back((uint8_t)ConfigString[j]);
     }
-    SendMessage(Message::kConfigMesg,Payload);
+    SendMessage(Message::kConfigMesg, 0, Payload);
   }
 }
 
@@ -656,14 +683,15 @@ std::string FlightManagementUnit::GetSensorOutputName(const rapidjson::Value& Co
 }
 
 /* Send a BFS Bus message. */
-void FlightManagementUnit::SendMessage(Message message,std::vector<uint8_t> &Payload) {
-  SendMessage(message, Payload.data(), Payload.size());
+void FlightManagementUnit::SendMessage(Message message, uint8_t address, std::vector<uint8_t> &Payload) {
+  SendMessage(message, address, Payload.data(), Payload.size());
 }
 
 /* Send a BFS Bus message. */
-void FlightManagementUnit::SendMessage(uint8_t message, uint8_t *Payload, int len) {
+void FlightManagementUnit::SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len) {
   _bus->beginTransmission();
   _bus->write(message);
+  _bus->write(address);
   _bus->write(Payload, len);
   if ((message == kModeCommand)||(message == kConfigMesg)) {
     _bus->endTransmission();
@@ -676,6 +704,7 @@ void FlightManagementUnit::SendMessage(uint8_t message, uint8_t *Payload, int le
 bool FlightManagementUnit::ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
   if (_bus->checkReceived()) {
     *message = _bus->read();
+    uint8_t address = _bus->read();
     printf("receving msg: %d (size = %d)\n", *message, _bus->available());
     Payload->resize(_bus->available());
     _bus->read(Payload->data(),Payload->size());

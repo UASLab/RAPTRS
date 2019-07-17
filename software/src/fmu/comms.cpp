@@ -39,9 +39,10 @@ void AircraftSocComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftSocComms::ReceiveOtherMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
+bool AircraftSocComms::ReceiveOtherMessage(uint8_t *message, uint8_t *address, std::vector<uint8_t> *Payload) {
   if (MessageReceived_) {
     *message = ReceivedMessage_;
+    *address = ReceivedAddress_;
     Payload->resize(ReceivedPayload_.size());
     memcpy(Payload->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
     return true;
@@ -63,7 +64,7 @@ bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
         return false;
       }
     } else {
-      Serial.println("mode not a mode message id");
+      Serial.println("ReceiveModeCommand(): not a mode message");
       return false;
     }
   } else {
@@ -108,7 +109,7 @@ bool AircraftSocComms::ReceiveEffectorCommand(std::vector<float> *EffectorComman
 
 /* checks for valid BFS messages received */
 void AircraftSocComms::CheckMessages() {
-  MessageReceived_ = ReceiveMessage(&ReceivedMessage_,&ReceivedPayload_);
+  MessageReceived_ = ReceiveMessage(&ReceivedMessage_, &ReceivedAddress_, &ReceivedPayload_);
 }
 
 /* builds and sends a BFS message given a message ID and payload */
@@ -120,15 +121,17 @@ void AircraftSocComms::SendMessage(Message message,std::vector<uint8_t> &Payload
 void AircraftSocComms::SendMessage(uint8_t message, uint8_t *Payload, int len) {
   bus_->beginTransmission();
   bus_->write(message);
+  bus_->write(0);
   bus_->write(Payload, len);
   bus_->sendTransmission();
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftSocComms::ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
+bool AircraftSocComms::ReceiveMessage(uint8_t *message, uint8_t *address, std::vector<uint8_t> *Payload) {
   if (bus_->checkReceived()) {
     *message = (uint8_t) bus_->read();
-    Serial.print("received msg: "); Serial.println(*message);
+    *address = (uint8_t) bus_->read();
+    Serial.print("received id: "); Serial.print(*message); Serial.print(" addr: "); Serial.println(*address);
     Payload->resize(bus_->available());
     bus_->read(Payload->data(),Payload->size());
     bus_->sendStatus(true);

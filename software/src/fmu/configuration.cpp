@@ -77,9 +77,9 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
 }
 
 /* Update configuration structure from JSON payloads */
-bool AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
+bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
   if ( id == message_config_basic_id or id == message_config_mpu9250_id or id == message_config_ublox_id ) {
-    return AircraftSensorsPtr->UpdateConfig(id, Payload, DefinitionTreePtr);
+    return AircraftSensorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr);
   } else {
     Serial.print("Unknown msg in fmu/configuration.cpp:"); Serial.println(id);
   }

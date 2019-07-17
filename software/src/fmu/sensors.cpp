@@ -936,10 +936,10 @@ void SensorNodes::UpdateConfig(const char *JsonString,std::string RootPath,Defin
             }
             if (Sensor["Type"] == "Mpu9250") {
 
-              const float G = 9.807f;
-              const float d2r = 3.14159265359f/180.0f;
-              float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-              float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+              // const float G = 9.807f;
+              // const float d2r = 3.14159265359f/180.0f;
+              // float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+              // float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
 
               data_.Mpu9250.resize(data_.Mpu9250.size()+1);
               std::string Output = (std::string) Sensor.get<String>("Output").c_str();
@@ -1146,14 +1146,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *Defin
 	HardFail("ERROR: InternalMpu9250 configured wrong way.");
       }
       if (Sensor["Type"] == "InternalBme280") {
-        if (classes_.InternalBme280.size() > 0) {
-          HardFail("ERROR: Internal BME280 already initialized.");
-        }
-        Sensor.printTo(buffer.data(),buffer.size());
-        InternalBme280Sensor TempSensor;
-        classes_.InternalBme280.push_back(TempSensor);
-        data_.InternalBme280.resize(classes_.InternalBme280.size());
-        classes_.InternalBme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
+        HardFail("ERROR: InternalBme280 configured wrong way.");
       }
       if (Sensor["Type"] == "InputVoltage") {
 	HardFail("ERROR: InputVoltage configured wrong way.");
@@ -1231,7 +1224,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *Defin
 }
 
 /* updates the sensor configuration */
-bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
+bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
   std::vector<char> buffer;
   delayMicroseconds(10);
   Serial.print("Updating sensor configuration:");

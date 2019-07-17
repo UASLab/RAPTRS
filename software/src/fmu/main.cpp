@@ -147,13 +147,14 @@ int main()
       std::vector<char> ConfigBuffer;
       std::vector<uint8_t> Payload;
       uint8_t id;
+      uint8_t address;
       // update configuration
       if (SocComms.ReceiveConfigMessage(&ConfigBuffer)) {
-	Serial.println("received config message");
+	Serial.println("received json config message");
         Config.Update(ConfigBuffer.data(), &Mission, &Sensors, &Control, &Effectors, &GlobalData);
-      } else if (SocComms.ReceiveOtherMessage(&id, &Payload)) {
+      } else if (SocComms.ReceiveOtherMessage(&id, &address, &Payload)) {
 	Serial.print("recieved other message: "); Serial.println(id);
-	if ( Config.Update(id, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {
+	if ( Config.Update(id, address, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {
 	  Serial.println("Config.Update() returned true");
 	  SocComms.SendAck(id, 0);
 	  SocComms.ClearReceived();
