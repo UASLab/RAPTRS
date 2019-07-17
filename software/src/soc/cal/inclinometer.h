@@ -22,8 +22,8 @@ struct InclineData {
 class Incline {
   public:
     Incline();
-    bool GetAngle(InclineData *InclineDataPtr);
-    bool SetDamping();
+    void GetAngle(InclineData *InclineDataPtr);
+    void SetDamping();
   private:
     int InclineFileDesc_;
     void OpenPort();
