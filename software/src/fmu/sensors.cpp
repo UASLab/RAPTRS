@@ -461,44 +461,32 @@ void Bme280Sensor::End() {
 }
 
 /* update the uBlox configuration */
-void uBloxSensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("Uart")&&Config.containsKey("Baud")) {
-      config_.Uart = Config["Uart"];
-      config_.Baud = Config["Baud"];
-    } else {
-      while(1){
-        Serial.println("ERROR: UART port or baudrate missing from GPS configuration.");
-      }
-    }
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Fix",(uint8_t*)&data_.Fix);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NumberSatellites",&data_.NumberSatellites);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/TOW",&data_.TOW);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Year",&data_.Year);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Month",&data_.Month);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Day",&data_.Day);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Hour",&data_.Hour);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Minute",&data_.Min);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Second",&data_.Sec);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Latitude_rad",&data_.Longitude_rad);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Longitude_rad",&data_.Latitude_rad);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Altitude_m",&data_.Altitude_m);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/NorthVelocity_ms",&data_.NorthVelocity_ms);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/EastVelocity_ms",&data_.EastVelocity_ms);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/DownVelocity_ms",&data_.DownVelocity_ms);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/HorizontalAccuracy_m",&data_.HorizontalAccuracy_m);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VerticalAccuracy_m",&data_.VerticalAccuracy_m);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/VelocityAccuracy_ms",&data_.VelocityAccuracy_ms);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/pDOP",&data_.pDOP);
+void uBloxSensor::UpdateConfig(message_config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+  if (msg->uart and msg->baud) {
+    config_.Uart = msg->uart;
+    config_.Baud = msg->baud;
   } else {
-    while(1){
-      Serial.println("ERROR: uBlox sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: uBlox port or baudrate missing from GPS configuration.");
   }
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Fix",(uint8_t*)&data_.Fix);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/NumberSatellites",&data_.NumberSatellites);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/TOW",&data_.TOW);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Year",&data_.Year);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Month",&data_.Month);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Day",&data_.Day);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Hour",&data_.Hour);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Minute",&data_.Min);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Second",&data_.Sec);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Latitude_rad",&data_.Longitude_rad);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Longitude_rad",&data_.Latitude_rad);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Altitude_m",&data_.Altitude_m);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/NorthVelocity_ms",&data_.NorthVelocity_ms);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/EastVelocity_ms",&data_.EastVelocity_ms);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/DownVelocity_ms",&data_.DownVelocity_ms);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/HorizontalAccuracy_m",&data_.HorizontalAccuracy_m);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/VerticalAccuracy_m",&data_.VerticalAccuracy_m);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/VelocityAccuracy_ms",&data_.VelocityAccuracy_ms);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/pDOP",&data_.pDOP);
 }
 
 /* set the uBlox configuration */
@@ -1134,7 +1122,7 @@ void SensorNodes::End() {
 }
 
 /* updates the sensor configuration */
-void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr) {
+void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *DefinitionTreePtr) {
   DynamicJsonBuffer ConfigBuffer;
   std::vector<char> buffer;
   delayMicroseconds(10);
@@ -1195,12 +1183,7 @@ void AircraftSensors::UpdateConfig(const char *JsonString,DefinitionTree *Defini
 
       }
       if (Sensor["Type"] == "uBlox") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        uBloxSensor TempSensor;
-        classes_.uBlox.push_back(TempSensor);
-        data_.uBlox.resize(classes_.uBlox.size());
-        classes_.uBlox.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-
+        HardFail("Error: uBlox configured wrong way");
       }
       if (Sensor["Type"] == "Swift") {
         Sensor.printTo(buffer.data(),buffer.size());
@@ -1329,9 +1312,17 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
       }
       AcquireInternalMpu9250Data_ = true;
       data_.InternalMpu9250.resize(1);
-      classes_.InternalMpu9250.UpdateConfig(&msg,RootPath_,DefinitionTreePtr);
+      classes_.InternalMpu9250.UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
       return true;      
     }
+  } else if ( id  == message_config_ublox_id ) {
+    message_config_ublox_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    uBloxSensor TempSensor;
+    classes_.uBlox.push_back(TempSensor);
+    data_.uBlox.resize(classes_.uBlox.size());
+    classes_.uBlox.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    return true;
   }
   #if 0
     if (Sensor["Type"] == "Mpu9250") {
@@ -1347,14 +1338,6 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
       classes_.Bme280.push_back(TempSensor);
       data_.Bme280.resize(classes_.Bme280.size());
       classes_.Bme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-
-    }
-    if (Sensor["Type"] == "uBlox") {
-      Sensor.printTo(buffer.data(),buffer.size());
-      uBloxSensor TempSensor;
-      classes_.uBlox.push_back(TempSensor);
-      data_.uBlox.resize(classes_.uBlox.size());
-      classes_.uBlox.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
 
     }
     if (Sensor["Type"] == "Swift") {

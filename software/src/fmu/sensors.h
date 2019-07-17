@@ -190,7 +190,7 @@ class uBloxSensor {
       float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
       float pDOP;                               // Position DOP
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();

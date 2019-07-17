@@ -357,7 +357,18 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
     msg.internal = true;
     if ( Sensor.HasMember("SRD") ) {
       msg.SRD = Sensor["SRD"].GetInt();
+    } else {
+      msg.SRD = 0;
     }
+    msg.orientation[0] = 1.0;
+    msg.orientation[1] = 0.0;
+    msg.orientation[2] = 0.0;
+    msg.orientation[3] = 0.0;
+    msg.orientation[4] = 1.0;
+    msg.orientation[5] = 0.0;
+    msg.orientation[6] = 0.0;
+    msg.orientation[7] = 0.0;
+    msg.orientation[8] = 1.0;
     if ( Sensor.HasMember("Rotation") ) {
       if ( Sensor["Rotation"].IsArray() and Sensor["Rotation"].Size() == 9 ) {
 	for ( int i = 0; i < 9; i++ ) {
@@ -367,6 +378,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
 	printf("Error: InternalMpu9250 Rotation incorrect\n");
       }
     }
+    msg.DLPF_bandwidth_hz = 0;
     if ( Sensor.HasMember("DLPF-Bandwidth") ) {
       string bandwidth = Sensor["DLPF-Bandwidth"].GetString();
       if ( bandwidth == "184Hz" ) msg.DLPF_bandwidth_hz = 184;
@@ -375,10 +387,30 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor) {
       else if ( bandwidth == "20Hz" ) msg.DLPF_bandwidth_hz = 20;
       else if ( bandwidth == "10Hz" ) msg.DLPF_bandwidth_hz = 10;
       else if ( bandwidth == "5Hz" ) msg.DLPF_bandwidth_hz = 5;
-      else msg.DLPF_bandwidth_hz = 20;
-    } else {
-      msg.DLPF_bandwidth_hz = 20;
+      else {
+	printf("Error: InternalMpu9250 DLPF-Bandwidth set incorrectly\n");
+      }
     }
+    msg.pack();
+    SendMessage(msg.id, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 500) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "uBlox" ) {
+    printf("Configuring uBlox\n");
+    message_config_ublox_t msg;
+    msg.output = Sensor["Output"].GetString();
+    if ( Sensor.HasMember("Uart") ) {
+      msg.uart = Sensor["Uart"].GetInt();
+    } else {
+      msg.uart = 0;
+    }
+    if ( Sensor.HasMember("Baud") ) {
+      msg.baud = Sensor["Baud"].GetInt();
+    } else {
+      msg.baud = 0;
+    }
+    printf("uBlox: %d %d\n", msg.uart, msg.baud);
     msg.pack();
     SendMessage(msg.id, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 500) ) {
