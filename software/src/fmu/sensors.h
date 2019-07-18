@@ -98,7 +98,7 @@ class Mpu9250Sensor {
       // int16_t MagZ_ct = 0;
       // int16_t Temperature_ct = 0.0f;   // Temperature, counts                                 // Temperature, C
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -149,7 +149,7 @@ class Bme280Sensor {
       float Temperature_C = 0.0f;                                                   // Temperature, C
       float Humidity_RH = 0.0f;                                                     // Relative humidity
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();

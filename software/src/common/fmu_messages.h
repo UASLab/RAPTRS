@@ -235,6 +235,9 @@ struct message_config_mpu9250_t {
     float orientation[9];
     int8_t DLPF_bandwidth_hz;
     string output;
+    bool use_spi;
+    uint8_t i2c_addr;
+    uint8_t cs_pin;
 
     // internal structure for packing
     uint8_t payload[message_max_len];
@@ -245,6 +248,9 @@ struct message_config_mpu9250_t {
         float orientation[9];
         int8_t DLPF_bandwidth_hz;
         uint8_t output_len;
+        bool use_spi;
+        uint8_t i2c_addr;
+        uint8_t cs_pin;
     };
     #pragma pack(pop)
 
@@ -267,6 +273,9 @@ struct message_config_mpu9250_t {
         for (int _i=0; _i<9; _i++) _buf->orientation[_i] = orientation[_i];
         _buf->DLPF_bandwidth_hz = DLPF_bandwidth_hz;
         _buf->output_len = output.length();
+        _buf->use_spi = use_spi;
+        _buf->i2c_addr = i2c_addr;
+        _buf->cs_pin = cs_pin;
         memcpy(&(payload[len]), output.c_str(), output.length());
         len += output.length();
         return true;
@@ -283,6 +292,9 @@ struct message_config_mpu9250_t {
         SRD = _buf->SRD;
         for (int _i=0; _i<9; _i++) orientation[_i] = _buf->orientation[_i];
         DLPF_bandwidth_hz = _buf->DLPF_bandwidth_hz;
+        use_spi = _buf->use_spi;
+        i2c_addr = _buf->i2c_addr;
+        cs_pin = _buf->cs_pin;
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
@@ -293,9 +305,7 @@ struct message_config_mpu9250_t {
 struct message_config_bme280_t {
     // public fields
     bool use_spi;
-    uint8_t i2c;
-    uint8_t addr;
-    uint8_t spi;
+    uint8_t i2c_addr;
     uint8_t cs_pin;
     uint8_t mosi_pin;
     uint8_t miso_pin;
@@ -307,9 +317,7 @@ struct message_config_bme280_t {
     #pragma pack(push, 1)
     struct _compact_t {
         bool use_spi;
-        uint8_t i2c;
-        uint8_t addr;
-        uint8_t spi;
+        uint8_t i2c_addr;
         uint8_t cs_pin;
         uint8_t mosi_pin;
         uint8_t miso_pin;
@@ -333,9 +341,7 @@ struct message_config_bme280_t {
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
         _buf->use_spi = use_spi;
-        _buf->i2c = i2c;
-        _buf->addr = addr;
-        _buf->spi = spi;
+        _buf->i2c_addr = i2c_addr;
         _buf->cs_pin = cs_pin;
         _buf->mosi_pin = mosi_pin;
         _buf->miso_pin = miso_pin;
@@ -354,9 +360,7 @@ struct message_config_bme280_t {
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         use_spi = _buf->use_spi;
-        i2c = _buf->i2c;
-        addr = _buf->addr;
-        spi = _buf->spi;
+        i2c_addr = _buf->i2c_addr;
         cs_pin = _buf->cs_pin;
         mosi_pin = _buf->mosi_pin;
         miso_pin = _buf->miso_pin;

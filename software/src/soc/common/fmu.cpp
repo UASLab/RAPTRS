@@ -366,55 +366,73 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
-  } else if ( Sensor["Type"] == "InternalMpu9250" ) {
-    if ( node_address == 0 ) {
-      printf("Configuring InternalMpu9250\n");
-      message_config_mpu9250_t msg;
-      msg.output = Sensor["Output"].GetString();
-      msg.internal = true;
+  } else if ( Sensor["Type"] == "InternalMpu9250" or Sensor["Type"] == "Mpu9250" ) {
+    message_config_mpu9250_t msg;
+    msg.output = Sensor["Output"].GetString();
+    msg.orientation[0] = 1.0;
+    msg.orientation[1] = 0.0;
+    msg.orientation[2] = 0.0;
+    msg.orientation[3] = 0.0;
+    msg.orientation[4] = 1.0;
+    msg.orientation[5] = 0.0;
+    msg.orientation[6] = 0.0;
+    msg.orientation[7] = 0.0;
+    msg.orientation[8] = 1.0;
+    if ( Sensor.HasMember("Rotation") ) {
+      if ( Sensor["Rotation"].IsArray() and Sensor["Rotation"].Size() == 9 ) {
+        for ( int i = 0; i < 9; i++ ) {
+          msg.orientation[i] = Sensor["Rotation"][i].GetFloat();
+        }
+      } else {
+        printf("ERROR: InternalMpu9250 Rotation incorrect\n");
+      }
+    }
+    msg.DLPF_bandwidth_hz = 0;
+    if ( Sensor.HasMember("DLPF-Bandwidth") ) {
+      string bandwidth = Sensor["DLPF-Bandwidth"].GetString();
+      if ( bandwidth == "184Hz" ) msg.DLPF_bandwidth_hz = 184;
+      else if ( bandwidth == "92Hz" ) msg.DLPF_bandwidth_hz = 92;
+      else if ( bandwidth == "41Hz" ) msg.DLPF_bandwidth_hz = 41;
+      else if ( bandwidth == "20Hz" ) msg.DLPF_bandwidth_hz = 20;
+      else if ( bandwidth == "10Hz" ) msg.DLPF_bandwidth_hz = 10;
+      else if ( bandwidth == "5Hz" ) msg.DLPF_bandwidth_hz = 5;
+      else {
+        printf("ERROR: InternalMpu9250 DLPF-Bandwidth set incorrectly\n");
+      }
+    }
+    if ( Sensor["Type"] == "InternalMpu9250" ) {
+      if ( node_address == 0 ) {
+        printf("Configuring InternalMpu9250\n");
+        msg.internal = true;
+      } else {
+        printf("ERROR: Cannot configure InternalMpu9250 on a Node\n");
+        return false;
+      }
       if ( Sensor.HasMember("SRD") ) {
         msg.SRD = Sensor["SRD"].GetInt();
       } else {
         msg.SRD = 0;
       }
-      msg.orientation[0] = 1.0;
-      msg.orientation[1] = 0.0;
-      msg.orientation[2] = 0.0;
-      msg.orientation[3] = 0.0;
-      msg.orientation[4] = 1.0;
-      msg.orientation[5] = 0.0;
-      msg.orientation[6] = 0.0;
-      msg.orientation[7] = 0.0;
-      msg.orientation[8] = 1.0;
-      if ( Sensor.HasMember("Rotation") ) {
-        if ( Sensor["Rotation"].IsArray() and Sensor["Rotation"].Size() == 9 ) {
-          for ( int i = 0; i < 9; i++ ) {
-            msg.orientation[i] = Sensor["Rotation"][i].GetFloat();
-          }
-        } else {
-          printf("Error: InternalMpu9250 Rotation incorrect\n");
-        }
-      }
-      msg.DLPF_bandwidth_hz = 0;
-      if ( Sensor.HasMember("DLPF-Bandwidth") ) {
-        string bandwidth = Sensor["DLPF-Bandwidth"].GetString();
-        if ( bandwidth == "184Hz" ) msg.DLPF_bandwidth_hz = 184;
-        else if ( bandwidth == "92Hz" ) msg.DLPF_bandwidth_hz = 92;
-        else if ( bandwidth == "41Hz" ) msg.DLPF_bandwidth_hz = 41;
-        else if ( bandwidth == "20Hz" ) msg.DLPF_bandwidth_hz = 20;
-        else if ( bandwidth == "10Hz" ) msg.DLPF_bandwidth_hz = 10;
-        else if ( bandwidth == "5Hz" ) msg.DLPF_bandwidth_hz = 5;
-        else {
-          printf("Error: InternalMpu9250 DLPF-Bandwidth set incorrectly\n");
-        }
-      }
-      msg.pack();
-      SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 1000) ) {
-        return true;
-      }
     } else {
-      printf("Cannot configure InternalMpu9250 on a Node\n");
+      msg.internal = false;
+      if ( Sensor.HasMember("UseSpi") ) {
+        msg.use_spi = Sensor["UseSpi"].GetInt();
+      }
+      if ( Sensor.HasMember("CsPin") ) {
+        msg.cs_pin = Sensor["CsPin"].GetInt();
+      } else if ( msg.use_spi ) {
+        printf("ERROR: no spi pin specified\n");
+      }
+      if ( Sensor.HasMember("Address") ) {
+        msg.i2c_addr = Sensor["Address"].GetInt();
+      } else if ( !msg.use_spi ) {
+        printf("ERROR: no i2c address specified\n");
+      }      
+    }
+    msg.pack();
+    SendMessage(msg.id, 0, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 1000) ) {
+      return true;
     }
   } else if ( Sensor["Type"] == "uBlox" ) {
     printf("Configuring uBlox\n");
@@ -472,6 +490,28 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 1000) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "Bme280" ) {
+    printf("Configuring Bme280\n");
+    message_config_bme280_t msg;
+    msg.output = Sensor["Output"].GetString();
+    if ( Sensor.HasMember("UseSpi") ) {
+      msg.use_spi = Sensor["UseSpi"].GetInt();
+    }
+    if ( Sensor.HasMember("CsPin") ) {
+      msg.cs_pin = Sensor["CsPin"].GetInt();
+    } else if ( msg.use_spi ) {
+      printf("ERROR: no spi pin specified\n");
+    }
+    if ( Sensor.HasMember("Address") ) {
+      msg.i2c_addr = Sensor["Address"].GetInt();
+    } else if ( !msg.use_spi ) {
+      printf("ERROR: no i2c address specified\n");
+    }      
+    msg.pack();
+    SendMessage(msg.id, 0, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }

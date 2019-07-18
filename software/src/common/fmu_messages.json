@@ -1,0 +1,120 @@
+{
+    "constants": [
+        { "type": "uint8_t", "name": "message_num_effectors", "value": 16, "desc": "nubmer of effector channels" }
+    ],
+
+    "enums": [
+        {
+            "name": "config_basic",
+            "identifiers": [
+                { "name": "time" },
+                { "name": "input_voltage" },
+                { "name": "regulated_voltage" },
+                { "name": "pwm_voltage" },
+                { "name": "sbus_voltage" },
+                { "name": "internal_bme280" },
+                { "name": "sbus" }
+            ]
+        }
+    ],
+    
+    "messages": [
+        {
+            "id": 10,
+            "name": "mode_command",
+            "fields": [
+                { "type": "int8_t", "name": "mode" }
+            ]
+        },
+        {
+            "id": 12,
+            "name": "effector_command",
+            "fields": [
+                { "type": "uint8_t", "name": "num_active" },
+                { "type": "float", "name": "command[message_num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
+            ]
+        },
+        {
+            "id": 20,
+            "name": "config_ack",
+            "fields": [
+                { "type": "uint8_t", "name": "ack_id" },
+                { "type": "uint8_t", "name": "ack_subid" }
+            ]
+        },
+        {
+            "id": 21,
+            "name": "config_basic",
+            "fields": [
+                { "type": "config_basic", "name": "device" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "id": 22,
+            "name": "config_mpu9250",
+            "fields": [
+                { "type": "bool", "name": "internal" },
+                { "type": "uint8_t", "name": "SRD" },
+                { "type": "float", "name": "orientation[9]" },
+                { "type": "int8_t", "name": "DLPF_bandwidth_hz" },
+                { "type": "string", "name": "output" },
+                { "type": "bool", "name": "use_spi" }, // external
+                { "type": "uint8_t", "name": "i2c_addr" }, // external
+                { "type": "uint8_t", "name": "cs_pin" }    // external
+            ]
+        },
+        {
+            "id": 23,
+            "name": "config_bme280",
+            "fields": [
+                { "type": "bool", "name": "use_spi" },
+                { "type": "uint8_t", "name": "i2c_addr" },
+                { "type": "uint8_t", "name": "cs_pin" },
+                { "type": "uint8_t", "name": "mosi_pin" },
+                { "type": "uint8_t", "name": "miso_pin" },
+                { "type": "uint8_t", "name": "sck_pin" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "id": 24,
+            "name": "config_ublox",
+            "fields": [
+                { "type": "uint8_t", "name": "uart" },
+                { "type": "uint32_t", "name": "baud" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "id": 25,
+            "name": "config_ams5915",
+            "fields": [
+                { "type": "uint8_t", "name": "i2c_addr" },
+                { "type": "string", "name": "transducer" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "id": 26,
+            "name": "config_swift",
+            "fields": [
+                { "type": "uint8_t", "name": "i2c_bus" },
+                { "type": "uint8_t", "name": "static_i2c_addr" },
+                { "type": "uint8_t", "name": "diff_i2c_addr" },
+                { "type": "string", "name": "diff_transducer" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "id": 27,
+            "name": "config_analog",
+            "fields": [
+                { "type": "uint8_t", "name": "channel" },
+                { "type": "float", "name": "calibration[4]" },
+                { "type": "string", "name": "output" }
+            ]
+        }
+    ]
+}
+

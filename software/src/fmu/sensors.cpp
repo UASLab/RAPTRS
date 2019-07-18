@@ -155,93 +155,46 @@ void InternalMpu9250Sensor::End() {
 }
 
 /* update MPU9250 sensor configuration */
-void Mpu9250Sensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("UseSpi")) {
-      config_.UseSpi = Config["UseSpi"];
-      if (config_.UseSpi) {
-        if (Config.containsKey("CsPin")) {
-          config_.CsPin = Config["CsPin"];
-        } else {
-          while(1){
-            Serial.println("ERROR: CS Pin missing from MPU9250 configuration.");
-          }
-        }
-      } else {
-        if (Config.containsKey("Address")) {
-          config_.Addr = Config["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: I2C address missing from MPU9250 configuration.");
-          }
-        }
-      }
-    } else {
-      if (Config.containsKey("Address")) {
-        config_.Addr = Config["Address"];
-      } else {
-        while(1){
-          Serial.println("ERROR: I2C address missing from MPU9250 configuration.");
-        }
-      }
-    }
-    if (Config.containsKey("Rotation")) {
-      JsonArray &Rotation = Config["Rotation"];
-      if (Rotation.size() != 9) {
-        while(1){
-          Serial.println("ERROR: MPU9250 rotation matrix size incorrect.");
-        }
-      } else {
-        config_.Rotation(0,0) = Rotation[0];
-        config_.Rotation(0,1) = Rotation[1];
-        config_.Rotation(0,2) = Rotation[2];
-        config_.Rotation(1,0) = Rotation[3];
-        config_.Rotation(1,1) = Rotation[4];
-        config_.Rotation(1,2) = Rotation[5];
-        config_.Rotation(2,0) = Rotation[6];
-        config_.Rotation(2,1) = Rotation[7];
-        config_.Rotation(2,2) = Rotation[8];
-      }
-    }
-    if (Config.containsKey("DLPF-Bandwidth")) {
-      if (Config["DLPF-Bandwidth"] == "184Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
-      } else if (Config["DLPF-Bandwidth"] == "92Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
-      } else if (Config["DLPF-Bandwidth"] == "41Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
-      } else if (Config["DLPF-Bandwidth"] == "20Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
-      } else if (Config["DLPF-Bandwidth"] == "10Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
-      } else if (Config["DLPF-Bandwidth"] == "5Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
-      } else {
-        while(1){
-          Serial.println("ERROR: Requested MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
-        }
-      }
-    }
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.ReadStatus);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelX_mss",&Accel_mss_(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelY_mss",&Accel_mss_(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/AccelZ_mss",&Accel_mss_(2,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroX_rads",&Gyro_rads_(0,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroY_rads",&Gyro_rads_(1,0));
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/GyroZ_rads",&Gyro_rads_(2,0));
-    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagX_uT",&data_.MagX_uT);
-    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagY_uT",&data_.MagY_uT);
-    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/MagZ_uT",&data_.MagZ_uT);
-    // DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
+void Mpu9250Sensor::UpdateConfig(message_config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+  config_.UseSpi = msg->use_spi;
+  if (config_.UseSpi) {
+    config_.CsPin = msg->cs_pin;
   } else {
-    while(1){
-      Serial.println("ERROR: Mpu9250 sensor failed to parse.");
-      Serial.println(JsonString);
+    config_.Addr = msg->i2c_addr;
+  }
+  config_.Rotation(0,0) = msg->orientation[0];
+  config_.Rotation(0,1) = msg->orientation[1];
+  config_.Rotation(0,2) = msg->orientation[2];
+  config_.Rotation(1,0) = msg->orientation[3];
+  config_.Rotation(1,1) = msg->orientation[4];
+  config_.Rotation(1,2) = msg->orientation[5];
+  config_.Rotation(2,0) = msg->orientation[6];
+  config_.Rotation(2,1) = msg->orientation[7];
+  config_.Rotation(2,2) = msg->orientation[8];
+  if ( msg->DLPF_bandwidth_hz > 0 ) {
+    if (msg->DLPF_bandwidth_hz == 184) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
+    } else if (msg->DLPF_bandwidth_hz == 92) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
+    } else if (msg->DLPF_bandwidth_hz == 41) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
+    } else if (msg->DLPF_bandwidth_hz == 20) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
+    } else if (msg->DLPF_bandwidth_hz == 10) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
+    } else if (msg->DLPF_bandwidth_hz == 5) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
+    } else {
+      HardFail("ERROR: Requested internal MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
     }
   }
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Status",(int8_t*)&data_.ReadStatus);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/AccelX_mss",&Accel_mss_(0,0));
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/AccelY_mss",&Accel_mss_(1,0));
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/AccelZ_mss",&Accel_mss_(2,0));
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroX_rads",&Gyro_rads_(0,0));
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroY_rads",&Gyro_rads_(1,0));
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroZ_rads",&Gyro_rads_(2,0));
 }
 
 /* set the MPU9250 configuration */
@@ -375,49 +328,17 @@ void InternalBme280Sensor::End() {
 }
 
 /* update the BME280 sensor configuration */
-void Bme280Sensor::UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("UseSpi")) {
-      config_.UseSpi = Config["UseSpi"];
-      if (config_.UseSpi) {
-        if (Config.containsKey("CsPin")) {
-          config_.CsPin = Config["CsPin"];
-        } else {
-          while(1){
-            Serial.println("ERROR: CS Pin missing from BME280 configuration.");
-          }
-        }
-      } else {
-        if (Config.containsKey("Address")) {
-          config_.Addr = Config["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: I2C address missing from BME280 configuration.");
-          }
-        }
-      }
-    } else {
-      if (Config.containsKey("Address")) {
-        config_.Addr = Config["Address"];
-      } else {
-        while(1){
-          Serial.println("ERROR: I2C address missing from BME280 configuration.");
-        }
-      }
-    }
-    std::string Output = (std::string) Config.get<String>("Output").c_str();
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Status",(int8_t*)&data_.ReadStatus);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Pressure_Pa",&data_.Pressure_Pa);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
-    DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Humidity_RH",&data_.Humidity_RH);
+void Bme280Sensor::UpdateConfig(message_config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+  config_.UseSpi = msg->use_spi;
+  if (config_.UseSpi) {
+    config_.CsPin = msg->cs_pin;
   } else {
-    while(1){
-      Serial.println("ERROR: Bme280 sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    config_.Addr = msg->i2c_addr;
   }
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Status",(int8_t*)&data_.ReadStatus);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Pressure_Pa",&data_.Pressure_Pa);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Temperature_C",&data_.Temperature_C);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Humidity_RH",&data_.Humidity_RH);
 }
 
 /* set the BME280 sensor configuration */
@@ -1067,44 +988,25 @@ void AircraftSensors::UpdateConfig(const char *JsonString, DefinitionTree *Defin
     if (Sensor.containsKey("Type")) {
       if (Sensor["Type"] == "Time") {
 	HardFail("ERROR: Time configured wrong way.");
-      }
-      if (Sensor["Type"] == "InternalMpu9250") {
+      } else if (Sensor["Type"] == "InternalMpu9250") {
 	HardFail("ERROR: InternalMpu9250 configured wrong way.");
-      }
-      if (Sensor["Type"] == "InternalBme280") {
+      } else if (Sensor["Type"] == "InternalBme280") {
         HardFail("ERROR: InternalBme280 configured wrong way.");
-      }
-      if (Sensor["Type"] == "InputVoltage") {
+      } else if (Sensor["Type"] == "InputVoltage") {
 	HardFail("ERROR: InputVoltage configured wrong way.");
-      }
-      if (Sensor["Type"] == "RegulatedVoltage") {
+      } else if (Sensor["Type"] == "RegulatedVoltage") {
 	HardFail("ERROR: RegulatedVoltage configured wrong way.");
-      }
-      if (Sensor["Type"] == "PwmVoltage") {
+      } else if (Sensor["Type"] == "PwmVoltage") {
 	HardFail("ERROR: PwmVoltage configured wrong way.");
-      }
-      if (Sensor["Type"] == "SbusVoltage") {
+      } else if (Sensor["Type"] == "SbusVoltage") {
 	HardFail("ERROR: SbusVoltage configured wrong way.");
-      }
-      if (Sensor["Type"] == "Mpu9250") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Mpu9250Sensor TempSensor;
-        classes_.Mpu9250.push_back(TempSensor);
-        data_.Mpu9250.resize(classes_.Mpu9250.size());
-        classes_.Mpu9250.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-      }
-      if (Sensor["Type"] == "Bme280") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Bme280Sensor TempSensor;
-        classes_.Bme280.push_back(TempSensor);
-        data_.Bme280.resize(classes_.Bme280.size());
-        classes_.Bme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-
-      }
-      if (Sensor["Type"] == "uBlox") {
+      } else if (Sensor["Type"] == "Mpu9250") {
+        HardFail("ERROR: Mpu9250 configured wrong way.");
+      } else if (Sensor["Type"] == "Bme280") {
+        HardFail("ERROR: Bme280 configured wrong way.");
+      } else if (Sensor["Type"] == "uBlox") {
         HardFail("Error: uBlox configured wrong way");
-      }
-      if (Sensor["Type"] == "Swift") {
+      } else if (Sensor["Type"] == "Swift") {
         HardFail("Error: Swift configured wrong way");
       }
       if (Sensor["Type"] == "Ams5915") {
@@ -1239,6 +1141,11 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.InternalMpu9250.resize(1);
       classes_.InternalMpu9250.UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
       return true;      
+    } else {
+      Serial.println("Mpu9250");
+      classes_.Mpu9250.push_back(Mpu9250Sensor());
+      data_.Mpu9250.resize(classes_.Mpu9250.size());
+      classes_.Mpu9250.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     }
   } else if ( id  == message_config_ublox_id ) {
     message_config_ublox_t msg;
@@ -1253,22 +1160,20 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     classes_.Swift.push_back(SwiftSensor());
     data_.Swift.resize(classes_.Swift.size());
     classes_.Swift.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
-  }
-  #if 0
+  } else if ( id == message_config_bme280_id ) {
+    message_config_bme280_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Bme280.push_back(Bme280Sensor());
+    data_.Bme280.resize(classes_.Bme280.size());
+    classes_.Bme280.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+  } 
+ #if 0
     if (Sensor["Type"] == "Mpu9250") {
       Sensor.printTo(buffer.data(),buffer.size());
       Mpu9250Sensor TempSensor;
       classes_.Mpu9250.push_back(TempSensor);
       data_.Mpu9250.resize(classes_.Mpu9250.size());
       classes_.Mpu9250.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-    }
-    if (Sensor["Type"] == "Bme280") {
-      Sensor.printTo(buffer.data(),buffer.size());
-      Bme280Sensor TempSensor;
-      classes_.Bme280.push_back(TempSensor);
-      data_.Bme280.resize(classes_.Bme280.size());
-      classes_.Bme280.back().UpdateConfig(buffer.data(),RootPath_,DefinitionTreePtr);
-
     }
     if (Sensor["Type"] == "Ams5915") {
       Sensor.printTo(buffer.data(),buffer.size());

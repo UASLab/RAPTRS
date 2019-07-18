@@ -33,7 +33,7 @@
 # vs code files
 *.vscode
 # config files
-*.json
+#*.json
 # data files
 *.bin
 *.h5
