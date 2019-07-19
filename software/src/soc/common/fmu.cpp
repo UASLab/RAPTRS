@@ -71,7 +71,7 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
   // configuring FMU effectors
   if (Config.HasMember("Effectors")) {
     std::cout << "\t\tSending Effector config to FMU..." << std::flush;
-    ConfigureEffectors(Config["Effectors"]);
+    ConfigureEffectors(Config["Effectors"], 0);
     std::cout << "done!" << std::endl;
   }
 
@@ -284,7 +284,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( node_address == 0 ) {
       printf("Configuring Time\n");
       message::config_basic_t msg;
-      msg.sensor = message::sensor_name::time;
+      msg.sensor = message::sensor_type::time;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -298,7 +298,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( node_address == 0 ) {
       printf("Configuring InputVoltage\n");
       message::config_basic_t msg;
-      msg.sensor = message::sensor_name::input_voltage;
+      msg.sensor = message::sensor_type::input_voltage;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -312,7 +312,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( node_address == 0 ) {
       printf("Configuring RegulatedVoltage\n");
       message::config_basic_t msg;
-      msg.sensor = message::sensor_name::regulated_voltage;
+      msg.sensor = message::sensor_type::regulated_voltage;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -325,7 +325,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "PwmVoltage" ) {
     printf("Configuring PwmVoltage\n");
     message::config_basic_t msg;
-    msg.sensor = message::sensor_name::pwm_voltage;
+    msg.sensor = message::sensor_type::pwm_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
@@ -335,7 +335,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "SbusVoltage" ) {
     printf("Configuring SbusVoltage\n");
     message::config_basic_t msg;
-    msg.sensor = message::sensor_name::sbus_voltage;
+    msg.sensor = message::sensor_type::sbus_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
@@ -346,7 +346,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( node_address == 0 ) {
       printf("Configuring InternalBme280\n");
       message::config_basic_t msg;
-      msg.sensor = message::sensor_name::internal_bme280;
+      msg.sensor = message::sensor_type::internal_bme280;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -359,7 +359,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "Sbus" ) {
     printf("Configuring Sbus\n");
     message::config_basic_t msg;
-    msg.sensor = message::sensor_name::sbus;
+    msg.sensor = message::sensor_type::sbus;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
@@ -655,21 +655,66 @@ void FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
 }
 
 /* Configures the FMU effectors */
-void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config) {
+void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config, uint8_t node_address) {
   std::vector<uint8_t> Payload;
   assert(Config.IsArray());
   for (size_t i=0; i < Config.Size(); i++) {
     const rapidjson::Value& Effector = Config[i];
-    Payload.clear();
-    rapidjson::StringBuffer StringBuff;
-    rapidjson::Writer<rapidjson::StringBuffer> Writer(StringBuff);
-    Effector.Accept(Writer);
-    std::string OutputString = StringBuff.GetString();
-    std::string ConfigString = std::string("{\"Effectors\":[") + OutputString + std::string("]}");
-    for (size_t j=0; j < ConfigString.size(); j++) {
-      Payload.push_back((uint8_t)ConfigString[j]);
+    if ( Effector.HasMember("Type" ) ) {
+      if ( Effector["Type"] == "Node" ) {
+        if ( Effector.HasMember("Address") and Effector.HasMember("Effectors") ) {
+          ConfigureEffectors(Effector["Effectors"], Effector["Address"].GetInt());
+        } else {
+          printf("ERROR: effector node specified without a valid address or effectors sub block\n");
+        }
+      } else {
+        message::config_effector_t msg;
+        if ( Effector["Type"] == "Motor" ) {
+          msg.effector = message::effector_type::motor;
+        } else if ( Effector["Type"] == "Pwm" ) {
+          msg.effector = message::effector_type::pwm;
+        } else if ( Effector["Type"] == "Sbus" ) {
+          msg.effector = message::effector_type::sbus;
+        } else {
+          printf("ERROR: effector without a valid type\n");
+        }
+        if ( Effector.HasMember("Input") ) {
+          msg.input = Effector["Input"].GetString();
+        } else {
+          printf("ERROR: effector without Input defined\n");
+        }
+        if ( Effector.HasMember("Channel") ) {
+          msg.channel = Effector["Channel"].GetInt();
+        } else {
+          printf("ERROR: effector without Channel defined\n");
+        }
+        msg.calibration[0] = 1.0;
+        msg.calibration[1] = 0.0;
+        msg.calibration[2] = 0.0;
+        msg.calibration[3] = 0.0;
+        if ( Effector.HasMember("Calibration") ) {
+          if ( Effector["Calibration"].IsArray() and Effector["Calibration"].Size() <= 4 ) {
+            for ( int i = 0; i < Effector["Calibration"].Size(); i++ ) {
+              msg.calibration[i] = Effector["Calibration"][i].GetFloat();
+            }
+          } else {
+            printf("ERROR: effector calibration incorrect\n");
+          }
+        }
+        if ( Effector.HasMember("Safed-Command") ) {
+          msg.safed_command = Effector["Safed-Command"].GetInt();
+        } else if ( Effector["Type"] == "Motor" ){
+          printf("ERROR: effector type motor without a safed-command\n");
+        }
+        msg.pack();
+        SendMessage(msg.id, 0, msg.payload, msg.len);
+        if ( ! WaitForAck(msg.id, 0, 1000) ) {
+          printf("ERROR: effector command message failed ack!\n");
+        }
+      }
+    } else {
+      printf("ERROR: effector defined with no Type\n");
     }
-    SendMessage(Message::kConfigMesg, 0, Payload);
   }
 }
 

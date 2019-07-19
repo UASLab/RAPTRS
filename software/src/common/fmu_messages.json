@@ -6,7 +6,7 @@
 
     "enums": [
         {
-            "name": "sensor_name",
+            "name": "sensor_type",
             "identifiers": [
                 { "name": "time" },
                 { "name": "input_voltage" },
@@ -14,6 +14,14 @@
                 { "name": "pwm_voltage" },
                 { "name": "sbus_voltage" },
                 { "name": "internal_bme280" },
+                { "name": "sbus" }
+            ]
+        },
+        {
+            "name": "effector_type",
+            "identifiers": [
+                { "name": "motor" },
+                { "name": "pwm" },
                 { "name": "sbus" }
             ]
         }
@@ -47,7 +55,7 @@
             "id": 21,
             "name": "config_basic",
             "fields": [
-                { "type": "sensor_name", "name": "sensor" },
+                { "type": "sensor_type", "name": "sensor" },
                 { "type": "string", "name": "output" }
             ]
         },
@@ -123,6 +131,17 @@
                 { "type": "float", "name": "calibration[max_calibration]" },
                 { "type": "string", "name": "output" }
             ]
+        },
+        {
+            "id": 28,
+            "name": "config_effector",
+            "fields": [
+                { "type": "effector_type", "name": "effector" },
+                { "type": "string", "name": "input" },
+                { "type": "uint8_t", "name": "channel" }, 
+                { "type": "float", "name": "calibration[max_calibration]" },
+                { "type": "uint8_t", "name": "safed_command" }
+           ]
         }
     ]
 }

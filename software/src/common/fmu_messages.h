@@ -27,6 +27,7 @@ const uint8_t config_ublox_id = 24;
 const uint8_t config_ams5915_id = 25;
 const uint8_t config_swift_id = 26;
 const uint8_t config_analog_id = 27;
+const uint8_t config_effector_id = 28;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -36,7 +37,7 @@ static const uint8_t num_effectors = 16;  // number of effector channels
 static const uint8_t max_calibration = 4;  // maximum nubmer of calibration coefficients
 
 // Enums
-enum class sensor_name {
+enum class sensor_type {
     time = 0,
     input_voltage = 1,
     regulated_voltage = 2,
@@ -44,6 +45,11 @@ enum class sensor_name {
     sbus_voltage = 4,
     internal_bme280 = 5,
     sbus = 6
+};
+enum class effector_type {
+    motor = 0,
+    pwm = 1,
+    sbus = 2
 };
 
 // Message: mode_command (id: 10)
@@ -183,7 +189,7 @@ struct config_ack_t {
 // Message: config_basic (id: 21)
 struct config_basic_t {
     // public fields
-    sensor_name sensor;
+    sensor_type sensor;
     string output;
 
     // internal structure for packing
@@ -223,7 +229,7 @@ struct config_basic_t {
         memcpy(payload, external_message, message_size);
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
-        sensor = (sensor_name)_buf->sensor;
+        sensor = (sensor_type)_buf->sensor;
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
@@ -634,6 +640,68 @@ struct config_analog_t {
         for (int _i=0; _i<max_calibration; _i++) calibration[_i] = _buf->calibration[_i];
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
+        return true;
+    }
+};
+
+// Message: config_effector (id: 28)
+struct config_effector_t {
+    // public fields
+    effector_type effector;
+    string input;
+    uint8_t channel;
+    float calibration[max_calibration];
+    uint8_t safed_command;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t effector;
+        uint8_t input_len;
+        uint8_t channel;
+        float calibration[max_calibration];
+        uint8_t safed_command;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 28;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        size += input.length();
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->effector = (uint8_t)effector;
+        _buf->input_len = input.length();
+        _buf->channel = channel;
+        for (int _i=0; _i<max_calibration; _i++) _buf->calibration[_i] = calibration[_i];
+        _buf->safed_command = safed_command;
+        memcpy(&(payload[len]), input.c_str(), input.length());
+        len += input.length();
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        effector = (effector_type)_buf->effector;
+        channel = _buf->channel;
+        for (int _i=0; _i<max_calibration; _i++) calibration[_i] = _buf->calibration[_i];
+        safed_command = _buf->safed_command;
+        input = string((char *)&(payload[len]), _buf->input_len);
+        len += _buf->input_len;
         return true;
     }
 };

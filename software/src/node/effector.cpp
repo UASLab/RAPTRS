@@ -21,52 +21,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "effector.h"
 
 /* updates the effector configuration from JSON */
-void AircraftEffectors::UpdateConfig(const char *JsonString) {
+bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   Serial.print("Updating effector configuration...");
-  DynamicJsonBuffer ConfigBuffer;
-  JsonArray &Config = ConfigBuffer.parseArray(JsonString);
-  sbus_ = new SBUS(kSbusUart);
-  sbus_->begin();
-  if (Config.success()) {
-    for (size_t i=0; i < Config.size(); i++) {
-      JsonObject& Effector = Config[i];
-      Data Temp;
-      Effectors_.push_back(Temp);
-      if ((Effector["Type"] == "Pwm")||(Effector["Type"] == "Motor")) {
-        Effectors_.back().Type = kPwm;
-      }
-      if (Effector["Type"] == "Sbus") {
-        Effectors_.back().Type = kSbus;
-      }
-      if (Effector.containsKey("Calibration")) {
-        JsonArray &Calibration = Effector["Calibration"];
-        for (size_t i=0; i < Calibration.size(); i++) {
-          Effectors_.back().Calibration.push_back(Calibration[i]);
-        }
-      } else {
-        while(1){
-          Serial.println("ERROR: Calibration not specified in configuration");
-        }
-      }
-      if (Effector.containsKey("Channel")) {
-        Effectors_.back().Channel = Effector["Channel"];
-      } else {
-        while(1){
-          Serial.println("ERROR: Channel not specified in configuration");
-        }
-      }
-      analogWriteResolution(kPwmResolution);
-      analogWriteFrequency(kPwmPins[Effectors_.back().Channel],kPwmFrequency);
-      config_.Resolution = powf(2,kPwmResolution) - 1.0f;
-      config_.Period = 1.0f/kPwmFrequency * 1000000.0f;
+  sbus_ = new SBUS(kSbusUart);  // FIXME?
+  sbus_->begin();               // FIXME?
+  if ( id == message::config_effector_id ) {
+    Data eff;
+    message::config_effector_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if ( msg.effector == message::effector_type::pwm or msg.effector == message::effector_type::motor ) {
+      eff.Type = kPwm;
+    } else if ( msg.effector == message::effector_type::sbus ) {
+      eff.Type = kSbus;
     }
-  } else {
-    while(1){
-      Serial.println("ERROR: Effector Configuration failed to parse.");
-      Serial.println(JsonString);
+    int last_coeff = 0;
+    for (int i = 0; i < message::max_calibration; i++) {
+      if ( fabs(msg.calibration[i]) > 0.000001 ) {
+        last_coeff = i;
+      }
     }
+    for (int i = 0; i < message::max_calibration; i++) {
+      eff.Calibration.push_back(msg.calibration[i]);
+    }
+    eff.Channel = msg.channel;
+    analogWriteResolution(kPwmResolution);
+    analogWriteFrequency(kPwmPins[eff.Channel],kPwmFrequency);
+    config_.Resolution = powf(2,kPwmResolution) - 1.0f;
+    config_.Period = 1.0f/kPwmFrequency * 1000000.0f;
+    Effectors_.push_back(eff); // keep!
   }
-  Serial.println("done!");
+  return false;
 }
 
 /* sets the effector angle commands to the given values */

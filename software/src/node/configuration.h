@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#include "ArduinoJson.h"
 #include "effector.h"
 #include "sensors.h"
 #include "hardware-defs.h"
@@ -34,7 +33,7 @@ class AircraftConfiguration {
       uint8_t BfsAddr;
     };
     void Load();
-    void Update(const char* JsonString,AircraftSensors *AircraftSensorsPtr,AircraftEffectors *AircraftEffectorsPtr);
+    void Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftSensors *AircraftSensorsPtr, AircraftEffectors *AircraftEffectorsPtr);
     uint8_t GetBfsAddr();
   private:
     Config config_;

@@ -544,13 +544,13 @@ void SbusSensor::End() {
 /* update the analog sensor configuration */
 void AnalogSensor::UpdateConfig(message::config_analog_t *msg) {
   config_.Channel = msg->channel;
-  int last_coeff = 3;
+  int last_coeff = message::max_calibration - 1;
   for (int i=0; i < message::max_calibration; i++) {
     if ( fabs(msg->calibration[i]) > 0.000001 ) {
       last_coeff = i;
     }
   }
-  for (int i=0; i < message::max_calibration; i++) {
+  for (int i = 0; i < message::max_calibration; i++) {
     config_.Calibration.push_back(msg->calibration[i]);
   }
 }
@@ -587,21 +587,21 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   if ( id == message::config_basic_id ) {
     message::config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    if ( msg.sensor == message::sensor_name::pwm_voltage ) {
+    if ( msg.sensor == message::sensor_type::pwm_voltage ) {
       Serial.println("PwmVoltage");
       if (AcquirePwmVoltageData_) {
 	HardFail("ERROR: Pwm voltage already initialized.");
       }
       AcquirePwmVoltageData_ = true;
       return true;
-    } else if (msg.sensor == message::sensor_name::sbus_voltage ) {
+    } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("SbusVoltage");
       if (AcquireSbusVoltageData_) {
 	HardFail("ERROR: Sbus voltage already initialized.");
       }
       AcquireSbusVoltageData_ = true;
       return true;
-    } else if ( msg.sensor == message::sensor_name::sbus ) {
+    } else if ( msg.sensor == message::sensor_type::sbus ) {
       Serial.println("Sbus");
       classes_.Sbus.push_back(SbusSensor());
       data_.Sbus.resize(classes_.Sbus.size());

@@ -124,7 +124,7 @@ void AircraftBfsComms::SendMessage(Message message,std::vector<uint8_t> &Payload
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftBfsComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
+bool AircraftBfsComms::ReceiveMessage(Message *message, std::vector<uint8_t> *Payload) {
   while(bus_->available()) {
     RxByte_ = bus_->read();
     // header

@@ -45,7 +45,7 @@ class AircraftBfsComms {
     bool ReceiveEffectorCommand(std::vector<float> *EffectorCommands);
     void CheckMessages();
     void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
+    bool ReceiveMessage(Message *message, std::vector<uint8_t> *Payload);
     void GetMessage(Message *message);
     void OnReceive(void (*function)(size_t len));
     void OnRequest(void (*function)(void));

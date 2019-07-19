@@ -770,13 +770,13 @@ void SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::s
   if ( id == message::config_basic_id ) {
     message::config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    if (msg.sensor == message::sensor_name::pwm_voltage) {
+    if (msg.sensor == message::sensor_type::pwm_voltage) {
       data_.PwmVoltage_V.resize(1);
       DefinitionTreePtr->InitMember(RootPath + "/" + msg.output, &data_.PwmVoltage_V[0]);
-    } else if (msg.sensor == message::sensor_name::sbus_voltage) {
+    } else if (msg.sensor == message::sensor_type::sbus_voltage) {
       data_.SbusVoltage_V.resize(1);
       DefinitionTreePtr->InitMember(RootPath + "/" + msg.output, &data_.SbusVoltage_V[0]);
-    } else if (msg.sensor == message::sensor_name::sbus) {
+    } else if (msg.sensor == message::sensor_type::sbus) {
       data_.Sbus.resize(data_.Sbus.size()+1);
       DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/FailSafe",(uint8_t*)&data_.Sbus.back().FailSafe);
       DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/LostFrames",&data_.Sbus.back().LostFrames);
@@ -961,7 +961,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
   } else if ( id == message::config_basic_id ) {
     message::config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    if ( msg.sensor == message::sensor_name::time ) {
+    if ( msg.sensor == message::sensor_type::time ) {
       Serial.println("Time");
       if (AcquireTimeData_) {
 	HardFail("ERROR: Time already initialized.");
@@ -971,7 +971,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       std::string Output = msg.output;
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.Time_us[0]);
       return true;
-    } else if ( msg.sensor == message::sensor_name::input_voltage ) {
+    } else if ( msg.sensor == message::sensor_type::input_voltage ) {
       Serial.println("InputVoltage");
       if (AcquireInputVoltageData_) {
 	HardFail("ERROR: Input voltage already initialized.");
@@ -980,7 +980,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.InputVoltage_V.resize(1);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.InputVoltage_V[0]);
       return true;
-    } else if ( msg.sensor == message::sensor_name::regulated_voltage ) {
+    } else if ( msg.sensor == message::sensor_type::regulated_voltage ) {
       Serial.println("RegulatedVoltage");
       if (AcquireRegulatedVoltageData_) {
 	HardFail("ERROR: Regulated voltage already initialized.");
@@ -989,7 +989,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.RegulatedVoltage_V.resize(1);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.RegulatedVoltage_V[0]);
       return true;
-    } else if ( msg.sensor == message::sensor_name::pwm_voltage ) {
+    } else if ( msg.sensor == message::sensor_type::pwm_voltage ) {
       Serial.println("PwmVoltage");
       if (AcquirePwmVoltageData_) {
 	HardFail("ERROR: Pwm voltage already initialized.");
@@ -998,7 +998,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.PwmVoltage_V.resize(1);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.PwmVoltage_V[0]);
       return true;
-    } else if (msg.sensor == message::sensor_name::sbus_voltage ) {
+    } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("SbusVoltage");
       if (AcquireSbusVoltageData_) {
 	HardFail("ERROR: Sbus voltage already initialized.");
@@ -1007,7 +1007,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.SbusVoltage_V.resize(1);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &data_.SbusVoltage_V[0]);
       return true;
-    } else if ( msg.sensor == message::sensor_name::internal_bme280 ) {
+    } else if ( msg.sensor == message::sensor_type::internal_bme280 ) {
       Serial.println("InternalBme280");
       if (classes_.InternalBme280.size() > 0) {
 	HardFail("ERROR: Internal BME280 already initialized.");
@@ -1017,7 +1017,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       data_.InternalBme280.resize(classes_.InternalBme280.size());
       classes_.InternalBme280.back().UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
       return true;
-    } else if ( msg.sensor == message::sensor_name::sbus ) {
+    } else if ( msg.sensor == message::sensor_type::sbus ) {
       Serial.println("Sbus");
       classes_.Sbus.push_back(SbusSensor());
       data_.Sbus.resize(classes_.Sbus.size());
