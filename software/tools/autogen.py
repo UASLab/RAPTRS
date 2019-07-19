@@ -9,7 +9,7 @@ import props_json
 
 parser = argparse.ArgumentParser(description='autogen messages code.')
 parser.add_argument('--input', required=True, help='message definition file')
-parser.add_argument('--prefix', help='optional namespace prefix')
+parser.add_argument('--namespace', default="message", help='optional namespace (for C++)')
 args = parser.parse_args()
 
 if not os.path.isfile(args.input):
@@ -37,11 +37,6 @@ reserved_names += list(type_code.keys())
 
 basename, ext = os.path.splitext(args.input)
 
-if args.prefix:
-    base = args.prefix
-else:
-    base = "message"
-
 def field_name_helper(f):
     name = f.getString("name")
     # test for array form: ident[size]
@@ -57,10 +52,27 @@ def field_name_helper(f):
 def gen_cpp_header():
     result = []
 
+    # test if any messages use "string"
+    has_dynamic_string = False
+    for i in range(root.getLen("messages")):
+        m = root.getChild("messages[%d]" % i)
+        # quick checks
+        for j in range(m.getLen("fields")):
+            f = m.getChild("fields[%d]" % j)
+            name = f.getString("name")
+            if f.getString("type") == "string":
+                has_dynamic_string = True
+                
     result.append("#pragma once")
     result.append("")
     result.append("#include <stdint.h>  // uint8_t, et. al.")
     result.append("#include <string.h>  // memcpy()")
+    result.append("")
+    if has_dynamic_string:
+        result.append("#include <string>")
+        result.append("using std::string;")
+        result.append("")
+    result.append("namespace %s {" % args.namespace)
     result.append("")
     result.append("static inline int32_t intround(float f) {")
     result.append("    return (int32_t)(f >= 0.0 ? (f + 0.5) : (f - 0.5));")
@@ -72,11 +84,10 @@ def gen_cpp_header():
     result.append("")
 
     # generate message id constants (and quick checks)
-    has_dynamic_string = False
     result.append("// Message id constants")
     for i in range(root.getLen("messages")):
         m = root.getChild("messages[%d]" % i)
-        result.append("const uint8_t %s_%s_id = %s;" % (base, m.getString("name"), m.getString("id")))
+        result.append("const uint8_t %s_id = %s;" % (m.getString("name"), m.getString("id")))
         # quick checks
         for j in range(m.getLen("fields")):
             f = m.getChild("fields[%d]" % j)
@@ -85,19 +96,12 @@ def gen_cpp_header():
                 print("Error: '%s' is reserved and cannot be used as a field name." % name)
                 print("Aborting.")
                 quit()
-            if f.getString("type") == "string":
-                has_dynamic_string = True
     result.append("")
 
     result.append("// max of one byte used to store message len")
     result.append("static const uint8_t message_max_len = 255;")
     result.append("");
     
-    if has_dynamic_string:
-        result.append("#include <string>")
-        result.append("using std::string;")
-        result.append("")
-
     if root.getLen("constants"):
         result.append("// Constants")
         for i in range(root.getLen("constants")):
@@ -140,7 +144,7 @@ def gen_cpp_header():
 
         # generate public c message struct
         result.append("// Message: %s (id: %d)" % (m.getString("name"), m.getInt("id")))
-        result.append("struct %s_%s_t {" % (base, m.getString("name")))
+        result.append("struct %s_t {" % (m.getString("name")))
         result.append("    // public fields")
         for j in range(m.getLen("fields")):
             f = m.getChild("fields[%d]" % j)
@@ -308,6 +312,7 @@ def gen_cpp_header():
         result.append("    }")
         result.append("};")
         result.append("")
+    result.append("} // namespace %s" % args.namespace)
     return result
 
 def gen_python_module():
