@@ -30,7 +30,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "EEPROM.h"
 #include "Eigen.h"
 #include "Vector.h"
-#include "ArduinoJson.h"
 #include "utils.h"
 #include "hardware-defs.h"
 #include "definition-tree.h"
@@ -217,7 +216,7 @@ class Ams5915Sensor {
       float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
       float Temperature_C = 0.0f;                                                   // Temperature, C
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_ams5915_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -264,7 +263,7 @@ class SbusSensor {
       bool FailSafe = false;
       uint64_t LostFrames = 0;
     };
-    void UpdateConfig(std::string Output, std::string RootPath,DefinitionTree *DefinitionTreePtr);
+  void UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -291,7 +290,7 @@ class AnalogSensor {
       // float Voltage_V = 0.0f;
       float CalibratedValue = 0.0f;
     };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void UpdateConfig(message_config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -320,7 +319,6 @@ class SensorNodes {
       std::vector<SbusSensor::Data> Sbus;
       std::vector<AnalogSensor::Data> Analog;
     };
-    // void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     SensorNodes(uint8_t address);
     void UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
@@ -367,7 +365,6 @@ class AircraftSensors {
       std::vector<AnalogSensor::Data> Analog;
       std::vector<SensorNodes::Data> Nodes;
     };
-    void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
     bool UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
     void ReadSyncSensors();

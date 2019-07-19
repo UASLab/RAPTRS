@@ -515,6 +515,52 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
+  } else if ( Sensor["Type"] == "Ams5915" ) {
+    printf("Configuring Ams5915\n");
+    message_config_ams5915_t msg;
+    msg.output = Sensor["Output"].GetString();
+    if ( Sensor.HasMember("Address") ) {
+      msg.i2c_addr = Sensor["Address"].GetInt();
+    } else {
+        printf("ERROR: no i2c address specified");
+    }
+    if ( Sensor.HasMember("Transducer") ) {
+      msg.transducer = Sensor["Transducer"].GetString();
+    } else {
+      printf("ERROR: no transducer type specified\n");
+    }
+    msg.pack();
+    SendMessage(msg.id, 0, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 1000) ) {
+      return true;
+    }
+  } else if ( Sensor["Type"] == "Analog" ) {
+    printf("Configuring Analog\n");
+    message_config_analog_t msg;
+    msg.output = Sensor["Output"].GetString();
+    if ( Sensor.HasMember("Channel") ) {
+      msg.channel = Sensor["Channel"].GetInt();
+    } else {
+        printf("ERROR: no analog channel specified");
+    }
+    msg.calibration[0] = 1.0;
+    msg.calibration[1] = 0.0;
+    msg.calibration[2] = 0.0;
+    msg.calibration[3] = 0.0;
+    if ( Sensor.HasMember("Calibration") ) {
+      if ( Sensor["Calibration"].IsArray() and Sensor["Calibration"].Size() <= 4 ) {
+        for ( int i = 0; i < Sensor["Calibration"].Size(); i++ ) {
+          msg.calibration[i] = Sensor["Calibration"][i].GetFloat();
+        }
+      } else {
+        printf("ERROR: analog calibration incorrect\n");
+      }
+    }
+    msg.pack();
+    SendMessage(msg.id, 0, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 1000) ) {
+      return true;
+    }
   }
   return false;
 }

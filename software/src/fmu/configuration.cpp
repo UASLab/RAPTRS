@@ -47,12 +47,7 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
 
   if (Config.success()) {
     if (Config.containsKey("Sensors")) {
-      JsonArray &Sensors = Config["Sensors"];
-      for (size_t j=0; j < Sensors.size(); j++) {
-        JsonObject &Sensor = Sensors[j];
-        Sensor.printTo(buffer.data(),buffer.size());
-        AircraftSensorsPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
-      }
+      Serial.println("AircraftConfiguration::Update() we should never be here!");
     }
     if (Config.containsKey("Control")) {
       JsonObject &Control = Config["Control"];

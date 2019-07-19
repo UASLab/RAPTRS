@@ -1,6 +1,7 @@
 {
     "constants": [
-        { "type": "uint8_t", "name": "message_num_effectors", "value": 16, "desc": "nubmer of effector channels" }
+        { "type": "uint8_t", "name": "message_num_effectors", "value": 16, "desc": "number of effector channels" },
+        { "type": "uint8_t", "name": "message_max_calibration", "value": 4, "desc": "maximum nubmer of calibration coefficients" }
     ],
 
     "enums": [
@@ -111,7 +112,7 @@
             "name": "config_analog",
             "fields": [
                 { "type": "uint8_t", "name": "channel" },
-                { "type": "float", "name": "calibration[4]" },
+                { "type": "float", "name": "calibration[message_max_calibration]" },
                 { "type": "string", "name": "output" }
             ]
         }

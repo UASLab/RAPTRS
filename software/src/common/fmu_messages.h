@@ -30,7 +30,8 @@ static const uint8_t message_max_len = 255;
 using std::string;
 
 // Constants
-static const uint8_t message_num_effectors = 16;  // nubmer of effector channels
+static const uint8_t message_num_effectors = 16;  // number of effector channels
+static const uint8_t message_max_calibration = 4;  // maximum nubmer of calibration coefficients
 
 // Enums
 enum class config_basic {
@@ -553,7 +554,7 @@ struct message_config_swift_t {
 struct message_config_analog_t {
     // public fields
     uint8_t channel;
-    float calibration[4];
+    float calibration[message_max_calibration];
     string output;
 
     // internal structure for packing
@@ -561,7 +562,7 @@ struct message_config_analog_t {
     #pragma pack(push, 1)
     struct _compact_t {
         uint8_t channel;
-        float calibration[4];
+        float calibration[message_max_calibration];
         uint8_t output_len;
     };
     #pragma pack(pop)
@@ -581,7 +582,7 @@ struct message_config_analog_t {
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
         _buf->channel = channel;
-        for (int _i=0; _i<4; _i++) _buf->calibration[_i] = calibration[_i];
+        for (int _i=0; _i<message_max_calibration; _i++) _buf->calibration[_i] = calibration[_i];
         _buf->output_len = output.length();
         memcpy(&(payload[len]), output.c_str(), output.length());
         len += output.length();
@@ -596,7 +597,7 @@ struct message_config_analog_t {
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         channel = _buf->channel;
-        for (int _i=0; _i<4; _i++) calibration[_i] = _buf->calibration[_i];
+        for (int _i=0; _i<message_max_calibration; _i++) calibration[_i] = _buf->calibration[_i];
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
