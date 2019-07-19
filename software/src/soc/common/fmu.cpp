@@ -262,7 +262,7 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
   uint64_t start = millis();
   while ( millis() < start + timeout_millis ) {
     if ( ReceiveMessage(&msg_id, &Payload) ) {
-      if ( msg_id == message_config_ack_id ) {
+      if ( msg_id == message::config_ack_id ) {
 	config_ack_msg.unpack(Payload.data(), Payload.size());
 	printf("  received ack: %d ", config_ack_msg.ack_id);
 	if ( id == config_ack_msg.ack_id and subid == config_ack_msg.ack_subid ) {
@@ -283,8 +283,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   if ( Sensor["Type"] == "Time" ) {
     if ( node_address == 0 ) {
       printf("Configuring Time\n");
-      message_config_basic_t msg;
-      msg.device = config_basic::time;
+      message::config_basic_t msg;
+      msg.sensor = message::sensor_name::time;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -297,8 +297,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "InputVoltage" ) {
     if ( node_address == 0 ) {
       printf("Configuring InputVoltage\n");
-      message_config_basic_t msg;
-      msg.device = config_basic::input_voltage;
+      message::config_basic_t msg;
+      msg.sensor = message::sensor_name::input_voltage;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -311,8 +311,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "RegulatedVoltage" ) {
     if ( node_address == 0 ) {
       printf("Configuring RegulatedVoltage\n");
-      message_config_basic_t msg;
-      msg.device = config_basic::regulated_voltage;
+      message::config_basic_t msg;
+      msg.sensor = message::sensor_name::regulated_voltage;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -324,8 +324,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "PwmVoltage" ) {
     printf("Configuring PwmVoltage\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::pwm_voltage;
+    message::config_basic_t msg;
+    msg.sensor = message::sensor_name::pwm_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
@@ -334,8 +334,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "SbusVoltage" ) {
     printf("Configuring SbusVoltage\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::sbus_voltage;
+    message::config_basic_t msg;
+    msg.sensor = message::sensor_name::sbus_voltage;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
@@ -345,8 +345,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "InternalBme280" ) {
     if ( node_address == 0 ) {
       printf("Configuring InternalBme280\n");
-      message_config_basic_t msg;
-      msg.device = config_basic::internal_bme280;
+      message::config_basic_t msg;
+      msg.sensor = message::sensor_name::internal_bme280;
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -358,8 +358,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Sbus" ) {
     printf("Configuring Sbus\n");
-    message_config_basic_t msg;
-    msg.device = config_basic::sbus;
+    message::config_basic_t msg;
+    msg.sensor = message::sensor_name::sbus;
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
@@ -367,7 +367,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       return true;
     }
   } else if ( Sensor["Type"] == "InternalMpu9250" or Sensor["Type"] == "Mpu9250" ) {
-    message_config_mpu9250_t msg;
+    message::config_mpu9250_t msg;
     msg.output = Sensor["Output"].GetString();
     msg.orientation[0] = 1.0;
     msg.orientation[1] = 0.0;
@@ -436,7 +436,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "uBlox" ) {
     printf("Configuring uBlox\n");
-    message_config_ublox_t msg;
+    message::config_ublox_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("Uart") ) {
       msg.uart = Sensor["Uart"].GetInt();
@@ -456,7 +456,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Swift" ) {
     printf("Configuring Swift\n");
-    message_config_swift_t msg;
+    message::config_swift_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("I2c") ) {
       msg.i2c_bus = Sensor["I2c"].GetInt();
@@ -495,7 +495,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Bme280" ) {
     printf("Configuring Bme280\n");
-    message_config_bme280_t msg;
+    message::config_bme280_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("UseSpi") ) {
       msg.use_spi = Sensor["UseSpi"].GetInt();
@@ -517,7 +517,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Ams5915" ) {
     printf("Configuring Ams5915\n");
-    message_config_ams5915_t msg;
+    message::config_ams5915_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("Address") ) {
       msg.i2c_addr = Sensor["Address"].GetInt();
@@ -536,7 +536,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Analog" ) {
     printf("Configuring Analog\n");
-    message_config_analog_t msg;
+    message::config_analog_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("Channel") ) {
       msg.channel = Sensor["Channel"].GetInt();

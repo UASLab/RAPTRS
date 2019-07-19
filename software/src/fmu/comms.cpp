@@ -53,7 +53,7 @@ bool AircraftSocComms::ReceiveOtherMessage(uint8_t *message, uint8_t *address, s
 /* returns mode command if a mode command message has been received */
 bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
   if (MessageReceived_) {
-    if (ReceivedMessage_ == message_mode_command_id) {
+    if (ReceivedMessage_ == message::mode_command_id) {
       MessageReceived_ = false;
       cmd_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
       Serial.print("new mode: "); Serial.println(cmd_msg.mode);
@@ -91,7 +91,7 @@ bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
 /* returns effector command if a mode command message has been received */
 bool AircraftSocComms::ReceiveEffectorCommand(std::vector<float> *EffectorCommands) {
   if (MessageReceived_) {
-    if (ReceivedMessage_ == message_effector_command_id) {
+    if (ReceivedMessage_ == message::effector_command_id) {
       MessageReceived_ = false;
       effector_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
       EffectorCommands->resize(effector_msg.num_active);
@@ -146,10 +146,10 @@ void AircraftSocComms::ClearReceived() {
 }
 
 void AircraftSocComms::SendAck(uint8_t id, uint8_t subid) {
-  message_config_ack_t config_ack_msg;
-  config_ack_msg.ack_id = id;
-  config_ack_msg.ack_subid = subid;
-  config_ack_msg.pack();
-  SendMessage(config_ack_msg.id, config_ack_msg.payload, config_ack_msg.len);
+  message::config_ack_t msg;
+  msg.ack_id = id;
+  msg.ack_subid = subid;
+  msg.pack();
+  SendMessage(msg.id, msg.payload, msg.len);
   Serial.print("SendAck: "); Serial.println(id);
 }

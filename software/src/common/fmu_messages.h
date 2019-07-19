@@ -3,6 +3,8 @@
 #include <stdint.h>  // uint8_t, et. al.
 #include <string.h>  // memcpy()
 
+namespace message {
+
 static inline int32_t intround(float f) {
     return (int32_t)(f >= 0.0 ? (f + 0.5) : (f - 0.5));
 }
@@ -12,16 +14,16 @@ static inline uint32_t uintround(float f) {
 }
 
 // Message id constants
-const uint8_t message_mode_command_id = 10;
-const uint8_t message_effector_command_id = 12;
-const uint8_t message_config_ack_id = 20;
-const uint8_t message_config_basic_id = 21;
-const uint8_t message_config_mpu9250_id = 22;
-const uint8_t message_config_bme280_id = 23;
-const uint8_t message_config_ublox_id = 24;
-const uint8_t message_config_ams5915_id = 25;
-const uint8_t message_config_swift_id = 26;
-const uint8_t message_config_analog_id = 27;
+const uint8_t mode_command_id = 10;
+const uint8_t effector_command_id = 12;
+const uint8_t config_ack_id = 20;
+const uint8_t config_basic_id = 21;
+const uint8_t config_mpu9250_id = 22;
+const uint8_t config_bme280_id = 23;
+const uint8_t config_ublox_id = 24;
+const uint8_t config_ams5915_id = 25;
+const uint8_t config_swift_id = 26;
+const uint8_t config_analog_id = 27;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -30,11 +32,11 @@ static const uint8_t message_max_len = 255;
 using std::string;
 
 // Constants
-static const uint8_t message_num_effectors = 16;  // number of effector channels
-static const uint8_t message_max_calibration = 4;  // maximum nubmer of calibration coefficients
+static const uint8_t num_effectors = 16;  // number of effector channels
+static const uint8_t max_calibration = 4;  // maximum nubmer of calibration coefficients
 
 // Enums
-enum class config_basic {
+enum class sensor_name {
     time = 0,
     input_voltage = 1,
     regulated_voltage = 2,
@@ -45,7 +47,7 @@ enum class config_basic {
 };
 
 // Message: mode_command (id: 10)
-struct message_mode_command_t {
+struct mode_command_t {
     // public fields
     int8_t mode;
 
@@ -87,17 +89,17 @@ struct message_mode_command_t {
 };
 
 // Message: effector_command (id: 12)
-struct message_effector_command_t {
+struct effector_command_t {
     // public fields
     uint8_t num_active;
-    float command[message_num_effectors];
+    float command[num_effectors];
 
     // internal structure for packing
     uint8_t payload[message_max_len];
     #pragma pack(push, 1)
     struct _compact_t {
         uint8_t num_active;
-        int16_t command[message_num_effectors];
+        int16_t command[num_effectors];
     };
     #pragma pack(pop)
 
@@ -115,7 +117,7 @@ struct message_effector_command_t {
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
         _buf->num_active = num_active;
-        for (int _i=0; _i<message_num_effectors; _i++) _buf->command[_i] = intround(command[_i] * 32767);
+        for (int _i=0; _i<num_effectors; _i++) _buf->command[_i] = intround(command[_i] * 32767);
         return true;
     }
 
@@ -127,13 +129,13 @@ struct message_effector_command_t {
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         num_active = _buf->num_active;
-        for (int _i=0; _i<message_num_effectors; _i++) command[_i] = _buf->command[_i] / (float)32767;
+        for (int _i=0; _i<num_effectors; _i++) command[_i] = _buf->command[_i] / (float)32767;
         return true;
     }
 };
 
 // Message: config_ack (id: 20)
-struct message_config_ack_t {
+struct config_ack_t {
     // public fields
     uint8_t ack_id;
     uint8_t ack_subid;
@@ -179,16 +181,16 @@ struct message_config_ack_t {
 };
 
 // Message: config_basic (id: 21)
-struct message_config_basic_t {
+struct config_basic_t {
     // public fields
-    config_basic device;
+    sensor_name sensor;
     string output;
 
     // internal structure for packing
     uint8_t payload[message_max_len];
     #pragma pack(push, 1)
     struct _compact_t {
-        uint8_t device;
+        uint8_t sensor;
         uint8_t output_len;
     };
     #pragma pack(pop)
@@ -207,7 +209,7 @@ struct message_config_basic_t {
         }
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
-        _buf->device = (uint8_t)device;
+        _buf->sensor = (uint8_t)sensor;
         _buf->output_len = output.length();
         memcpy(&(payload[len]), output.c_str(), output.length());
         len += output.length();
@@ -221,7 +223,7 @@ struct message_config_basic_t {
         memcpy(payload, external_message, message_size);
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
-        device = (config_basic)_buf->device;
+        sensor = (sensor_name)_buf->sensor;
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
@@ -229,7 +231,7 @@ struct message_config_basic_t {
 };
 
 // Message: config_mpu9250 (id: 22)
-struct message_config_mpu9250_t {
+struct config_mpu9250_t {
     // public fields
     bool internal;
     uint8_t SRD;
@@ -303,7 +305,7 @@ struct message_config_mpu9250_t {
 };
 
 // Message: config_bme280 (id: 23)
-struct message_config_bme280_t {
+struct config_bme280_t {
     // public fields
     bool use_spi;
     uint8_t i2c_addr;
@@ -373,7 +375,7 @@ struct message_config_bme280_t {
 };
 
 // Message: config_ublox (id: 24)
-struct message_config_ublox_t {
+struct config_ublox_t {
     // public fields
     uint8_t uart;
     uint32_t baud;
@@ -427,7 +429,7 @@ struct message_config_ublox_t {
 };
 
 // Message: config_ams5915 (id: 25)
-struct message_config_ams5915_t {
+struct config_ams5915_t {
     // public fields
     uint8_t i2c_addr;
     string transducer;
@@ -485,7 +487,7 @@ struct message_config_ams5915_t {
 };
 
 // Message: config_swift (id: 26)
-struct message_config_swift_t {
+struct config_swift_t {
     // public fields
     uint8_t i2c_bus;
     uint8_t static_i2c_addr;
@@ -551,10 +553,10 @@ struct message_config_swift_t {
 };
 
 // Message: config_analog (id: 27)
-struct message_config_analog_t {
+struct config_analog_t {
     // public fields
     uint8_t channel;
-    float calibration[message_max_calibration];
+    float calibration[max_calibration];
     string output;
 
     // internal structure for packing
@@ -562,7 +564,7 @@ struct message_config_analog_t {
     #pragma pack(push, 1)
     struct _compact_t {
         uint8_t channel;
-        float calibration[message_max_calibration];
+        float calibration[max_calibration];
         uint8_t output_len;
     };
     #pragma pack(pop)
@@ -582,7 +584,7 @@ struct message_config_analog_t {
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
         _buf->channel = channel;
-        for (int _i=0; _i<message_max_calibration; _i++) _buf->calibration[_i] = calibration[_i];
+        for (int _i=0; _i<max_calibration; _i++) _buf->calibration[_i] = calibration[_i];
         _buf->output_len = output.length();
         memcpy(&(payload[len]), output.c_str(), output.length());
         len += output.length();
@@ -597,10 +599,11 @@ struct message_config_analog_t {
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         channel = _buf->channel;
-        for (int _i=0; _i<message_max_calibration; _i++) calibration[_i] = _buf->calibration[_i];
+        for (int _i=0; _i<max_calibration; _i++) calibration[_i] = _buf->calibration[_i];
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
     }
 };
 
+} // namespace message

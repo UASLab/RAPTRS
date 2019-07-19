@@ -57,8 +57,8 @@ class AircraftSocComms {
     uint8_t ReceivedMessage_;
     uint8_t ReceivedAddress_;
     std::vector<uint8_t> ReceivedPayload_;
-    message_mode_command_t cmd_msg;
-    message_effector_command_t effector_msg;
+    message::mode_command_t cmd_msg;
+    message::effector_command_t effector_msg;
 };
 
 #endif

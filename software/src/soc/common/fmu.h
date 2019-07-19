@@ -229,9 +229,9 @@ class FlightManagementUnit {
     const uint32_t Baud_ = FmuBaud;
     HardwareSerial *_serial;
     SerialLink *_bus;
-    message_mode_command_t cmd_msg;
-    message_effector_command_t effector_msg;
-    message_config_ack_t config_ack_msg;
+    message::mode_command_t cmd_msg;
+    message::effector_command_t effector_msg;
+    message::config_ack_t config_ack_msg;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const

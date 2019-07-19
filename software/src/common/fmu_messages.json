@@ -1,12 +1,12 @@
 {
     "constants": [
-        { "type": "uint8_t", "name": "message_num_effectors", "value": 16, "desc": "number of effector channels" },
-        { "type": "uint8_t", "name": "message_max_calibration", "value": 4, "desc": "maximum nubmer of calibration coefficients" }
+        { "type": "uint8_t", "name": "num_effectors", "value": 16, "desc": "number of effector channels" },
+        { "type": "uint8_t", "name": "max_calibration", "value": 4, "desc": "maximum nubmer of calibration coefficients" }
     ],
 
     "enums": [
         {
-            "name": "config_basic",
+            "name": "sensor_name",
             "identifiers": [
                 { "name": "time" },
                 { "name": "input_voltage" },
@@ -32,7 +32,7 @@
             "name": "effector_command",
             "fields": [
                 { "type": "uint8_t", "name": "num_active" },
-                { "type": "float", "name": "command[message_num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
+                { "type": "float", "name": "command[num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
             ]
         },
         {
@@ -47,7 +47,7 @@
             "id": 21,
             "name": "config_basic",
             "fields": [
-                { "type": "config_basic", "name": "device" },
+                { "type": "sensor_name", "name": "sensor" },
                 { "type": "string", "name": "output" }
             ]
         },
@@ -112,7 +112,7 @@
             "name": "config_analog",
             "fields": [
                 { "type": "uint8_t", "name": "channel" },
-                { "type": "float", "name": "calibration[message_max_calibration]" },
+                { "type": "float", "name": "calibration[max_calibration]" },
                 { "type": "string", "name": "output" }
             ]
         }
