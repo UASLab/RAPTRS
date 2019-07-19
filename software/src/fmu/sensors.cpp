@@ -848,6 +848,8 @@ void SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::s
     msg.unpack(Payload->data(), Payload->size());
     data_.Analog.resize(data_.Analog.size()+1);
     DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/CalibratedValue",&data_.Analog.back().CalibratedValue);
+  } else {
+    HardFail("FMU doesn't know how to handle locally a config message for a Node");
   }
 }
 
@@ -1042,6 +1044,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       return true;
     }
   } else if ( id  == message::config_ublox_id ) {
+    Serial.println("uBlox");
     message::config_ublox_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.uBlox.push_back(uBloxSensor());
@@ -1049,6 +1052,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     classes_.uBlox.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_swift_id ) {
+    Serial.println("Swift");
     message::config_swift_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Swift.push_back(SwiftSensor());
@@ -1056,6 +1060,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     classes_.Swift.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_bme280_id ) {
+    Serial.println("Bme280");
     message::config_bme280_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Bme280.push_back(Bme280Sensor());
@@ -1063,6 +1068,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     classes_.Bme280.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_ams5915_id ) {
+    Serial.println("Ams5915");
     message::config_ams5915_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Ams5915.push_back(Ams5915Sensor());
@@ -1070,6 +1076,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     classes_.Ams5915.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_analog_id ) {
+    Serial.println("Analog");
     message::config_analog_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Analog.push_back(AnalogSensor());

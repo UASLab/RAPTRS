@@ -20,98 +20,50 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "sensors.h"
 
+static void HardFail(std::string message) {
+  while (true) {
+    Serial.println(message.c_str());
+    delay(1000);
+  }
+}
+
 /* update MPU9250 sensor configuration */
-void Mpu9250Sensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("UseSpi")) {
-      config_.UseSpi = Config["UseSpi"];
-      if (config_.UseSpi) {
-        if (Config.containsKey("CsPin")) {
-          config_.CsPin = Config["CsPin"];
-        } else {
-          while(1){
-            Serial.println("ERROR: CS Pin missing from MPU9250 configuration.");
-          }
-        }
-        if (Config.containsKey("MosiPin")) {
-          config_.MosiPin = Config["MosiPin"];
-        }
-        if (Config.containsKey("MisoPin")) {
-          config_.MisoPin = Config["MisoPin"];
-        }
-        if (Config.containsKey("SckPin")) {
-          config_.SckPin = Config["SckPin"];
-        }
-        if (Config.containsKey("Spi")) {
-          config_.Spi = Config["Spi"];
-        }
-      } else {
-        if (Config.containsKey("Address")) {
-          config_.Addr = Config["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: I2C address missing from MPU9250 configuration.");
-          }
-        }
-        if (Config.containsKey("I2c")) {
-          config_.I2c = Config["I2c"];
-        }
-      }
-    } else {
-      if (Config.containsKey("Address")) {
-        config_.Addr = Config["Address"];
-      } else {
-        while(1){
-          Serial.println("ERROR: I2C address missing from MPU9250 configuration.");
-        }
-      }
-      if (Config.containsKey("I2c")) {
-        config_.I2c = Config["I2c"];
-      }
-    }
-    if (Config.containsKey("Rotation")) {
-      JsonArray &Rotation = Config["Rotation"];
-      if (Rotation.size() != 9) {
-        while(1){
-          Serial.println("ERROR: MPU9250 rotation matrix size incorrect.");
-        }
-      } else {
-        config_.Rotation(0,0) = Rotation[0];
-        config_.Rotation(0,1) = Rotation[1];
-        config_.Rotation(0,2) = Rotation[2];
-        config_.Rotation(1,0) = Rotation[3];
-        config_.Rotation(1,1) = Rotation[4];
-        config_.Rotation(1,2) = Rotation[5];
-        config_.Rotation(2,0) = Rotation[6];
-        config_.Rotation(2,1) = Rotation[7];
-        config_.Rotation(2,2) = Rotation[8];
-      }
-    }
-    if (Config.containsKey("DLPF-Bandwidth")) {
-      if (Config["DLPF-Bandwidth"] == "184Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
-      } else if (Config["DLPF-Bandwidth"] == "92Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
-      } else if (Config["DLPF-Bandwidth"] == "41Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
-      } else if (Config["DLPF-Bandwidth"] == "20Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
-      } else if (Config["DLPF-Bandwidth"] == "10Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
-      } else if (Config["DLPF-Bandwidth"] == "5Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
-      } else {
-        while(1){
-          Serial.println("ERROR: Requested MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
-        }
-      }
-    }
+void Mpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg) {
+  config_.UseSpi = msg->use_spi;
+  if (config_.UseSpi) {
+    config_.CsPin = msg->cs_pin;
+    config_.MosiPin = msg->mosi_pin;
+    config_.MisoPin = msg->miso_pin;
+    config_.SckPin = msg->sck_pin;
+    config_.Spi = msg->spi_bus;
   } else {
-    while(1){
-      Serial.println("ERROR: Mpu9250 sensor failed to parse.");
-      Serial.println(JsonString);
+    config_.I2c = msg->i2c_bus;
+    config_.Addr = msg->i2c_addr;
+  }
+  config_.Rotation(0,0) = msg->orientation[0];
+  config_.Rotation(0,1) = msg->orientation[1];
+  config_.Rotation(0,2) = msg->orientation[2];
+  config_.Rotation(1,0) = msg->orientation[3];
+  config_.Rotation(1,1) = msg->orientation[4];
+  config_.Rotation(1,2) = msg->orientation[5];
+  config_.Rotation(2,0) = msg->orientation[6];
+  config_.Rotation(2,1) = msg->orientation[7];
+  config_.Rotation(2,2) = msg->orientation[8];
+  if ( msg->DLPF_bandwidth_hz > 0 ) {
+    if (msg->DLPF_bandwidth_hz == 184) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
+    } else if (msg->DLPF_bandwidth_hz == 92) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
+    } else if (msg->DLPF_bandwidth_hz == 41) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
+    } else if (msg->DLPF_bandwidth_hz == 20) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
+    } else if (msg->DLPF_bandwidth_hz == 10) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
+    } else if (msg->DLPF_bandwidth_hz == 5) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
+    } else {
+      HardFail("ERROR: Requested internal MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
     }
   }
 }
@@ -218,61 +170,17 @@ void Mpu9250Sensor::End() {
 }
 
 /* update the BME280 sensor configuration */
-void Bme280Sensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("UseSpi")) {
-      config_.UseSpi = Config["UseSpi"];
-      if (config_.UseSpi) {
-        if (Config.containsKey("CsPin")) {
-          config_.CsPin = Config["CsPin"];
-        } else {
-          while(1){
-            Serial.println("ERROR: CS Pin missing from BME280 configuration.");
-          }
-        }
-        if (Config.containsKey("MosiPin")) {
-          config_.MosiPin = Config["MosiPin"];
-        }
-        if (Config.containsKey("MisoPin")) {
-          config_.MisoPin = Config["MisoPin"];
-        }
-        if (Config.containsKey("SckPin")) {
-          config_.SckPin = Config["SckPin"];
-        }
-        if (Config.containsKey("Spi")) {
-          config_.Spi = Config["Spi"];
-        }
-      } else {
-        if (Config.containsKey("Address")) {
-          config_.Addr = Config["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: I2C address missing from BME280 configuration.");
-          }
-        }
-        if (Config.containsKey("I2c")) {
-          config_.I2c = Config["I2c"];
-        }
-      }
-    } else {
-      if (Config.containsKey("Address")) {
-        config_.Addr = Config["Address"];
-      } else {
-        while(1){
-          Serial.println("ERROR: I2C address missing from BME280 configuration.");
-        }
-      }
-      if (Config.containsKey("I2c")) {
-        config_.I2c = Config["I2c"];
-      }
-    }
+void Bme280Sensor::UpdateConfig(message::config_bme280_t *msg) {
+  config_.UseSpi = msg->use_spi;
+  if (config_.UseSpi) {
+    config_.CsPin = msg->cs_pin;
+    config_.MosiPin = msg->mosi_pin;
+    config_.MisoPin = msg->miso_pin;
+    config_.SckPin = msg->sck_pin;
+    config_.Spi = msg->spi_bus;
   } else {
-    while(1){
-      Serial.println("ERROR: Bme280 sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    config_.I2c = msg->i2c_bus;
+    config_.Addr = msg->i2c_addr;
   }
 }
 
@@ -330,23 +238,12 @@ void Bme280Sensor::End() {
 }
 
 /* update the uBlox configuration */
-void uBloxSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("Uart")&&Config.containsKey("Baud")) {
-      config_.Uart = Config["Uart"];
-      config_.Baud = Config["Baud"];
-    } else {
-      while(1){
-        Serial.println("ERROR: UART port or baudrate missing from GPS configuration.");
-      }
-    }
+void uBloxSensor::UpdateConfig(message::config_ublox_t *msg) {
+  if (msg->uart and msg->baud) {
+    config_.Uart = msg->uart;
+    config_.Baud = msg->baud;
   } else {
-    while(1){
-      Serial.println("ERROR: uBlox sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: uBlox port or baudrate missing from GPS configuration.");
   }
 }
 
@@ -457,74 +354,55 @@ void uBloxSensor::End() {
 }
 
 /* update the AMS5915 configuration */
-void Ams5915Sensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Address")&&Config.containsKey("Transducer")){
-      config_.Addr = Config["Address"];
-      if (Config["Transducer"] == "AMS5915-0005-D") {
-        config_.Transducer = AMS5915::AMS5915_0005_D;
-      } else if (Config["Transducer"] == "AMS5915-0010-D") {
-        config_.Transducer = AMS5915::AMS5915_0010_D;
-      } else if (Config["Transducer"] == "AMS5915-0005-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0005_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0010-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0010_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0020-D") {
-        config_.Transducer = AMS5915::AMS5915_0020_D;
-      } else if (Config["Transducer"] == "AMS5915-0050-D") {
-        config_.Transducer = AMS5915::AMS5915_0050_D;
-      } else if (Config["Transducer"] == "AMS5915-0100-D") {
-        config_.Transducer = AMS5915::AMS5915_0100_D;
-      } else if (Config["Transducer"] == "AMS5915-0020-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0020_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0050-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0050_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0100-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0100_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0200-D") {
-        config_.Transducer = AMS5915::AMS5915_0200_D;
-      } else if (Config["Transducer"] == "AMS5915-0350-D") {
-        config_.Transducer = AMS5915::AMS5915_0350_D;
-      } else if (Config["Transducer"] == "AMS5915-1000-D") {
-        config_.Transducer = AMS5915::AMS5915_1000_D;
-      } else if (Config["Transducer"] == "AMS5915-2000-D") {
-        config_.Transducer = AMS5915::AMS5915_2000_D;
-      } else if (Config["Transducer"] == "AMS5915-4000-D") {
-        config_.Transducer = AMS5915::AMS5915_4000_D;
-      } else if (Config["Transducer"] == "AMS5915-7000-D") {
-        config_.Transducer = AMS5915::AMS5915_7000_D;
-      } else if (Config["Transducer"] == "AMS5915-10000-D") {
-        config_.Transducer = AMS5915::AMS5915_10000_D;
-      } else if (Config["Transducer"] == "AMS5915-0200-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0200_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0350-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0350_D_B;
-      } else if (Config["Transducer"] == "AMS5915-1000-D-B") {
-        config_.Transducer = AMS5915::AMS5915_1000_D_B;
-      } else if (Config["Transducer"] == "AMS5915-1000-A") {
-        config_.Transducer = AMS5915::AMS5915_1000_A;
-      } else if (Config["Transducer"] == "AMS5915-1200-B") {
-        config_.Transducer = AMS5915::AMS5915_1200_B;
-      } else {
-        while(1){
-          Serial.println("ERROR: Requested AMS5915 transducer is not an available option.");
-        }
-      }
-    } else {
-      while(1){
-        Serial.println("ERROR: I2C address or transducer missing from pressure sensor configuration.");
-      }
-    }
-    if (Config.containsKey("I2c")) {
-      config_.I2c = Config["I2c"];
-    }
+void Ams5915Sensor::UpdateConfig(message::config_ams5915_t *msg) {
+  config_.Addr = msg->i2c_addr;
+  config_.I2c = msg->i2c_bus;
+  if (msg->transducer == "AMS5915-0005-D") {
+    config_.Transducer = AMS5915::AMS5915_0005_D;
+  } else if (msg->transducer == "AMS5915-0010-D") {
+    config_.Transducer = AMS5915::AMS5915_0010_D;
+  } else if (msg->transducer == "AMS5915-0005-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0005_D_B;
+  } else if (msg->transducer == "AMS5915-0010-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0010_D_B;
+  } else if (msg->transducer == "AMS5915-0020-D") {
+    config_.Transducer = AMS5915::AMS5915_0020_D;
+  } else if (msg->transducer == "AMS5915-0050-D") {
+    config_.Transducer = AMS5915::AMS5915_0050_D;
+  } else if (msg->transducer == "AMS5915-0100-D") {
+    config_.Transducer = AMS5915::AMS5915_0100_D;
+  } else if (msg->transducer == "AMS5915-0020-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0020_D_B;
+  } else if (msg->transducer == "AMS5915-0050-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0050_D_B;
+  } else if (msg->transducer == "AMS5915-0100-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0100_D_B;
+  } else if (msg->transducer == "AMS5915-0200-D") {
+    config_.Transducer = AMS5915::AMS5915_0200_D;
+  } else if (msg->transducer == "AMS5915-0350-D") {
+    config_.Transducer = AMS5915::AMS5915_0350_D;
+  } else if (msg->transducer == "AMS5915-1000-D") {
+    config_.Transducer = AMS5915::AMS5915_1000_D;
+  } else if (msg->transducer == "AMS5915-2000-D") {
+    config_.Transducer = AMS5915::AMS5915_2000_D;
+  } else if (msg->transducer == "AMS5915-4000-D") {
+    config_.Transducer = AMS5915::AMS5915_4000_D;
+  } else if (msg->transducer == "AMS5915-7000-D") {
+    config_.Transducer = AMS5915::AMS5915_7000_D;
+  } else if (msg->transducer == "AMS5915-10000-D") {
+    config_.Transducer = AMS5915::AMS5915_10000_D;
+  } else if (msg->transducer == "AMS5915-0200-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0200_D_B;
+  } else if (msg->transducer == "AMS5915-0350-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0350_D_B;
+  } else if (msg->transducer == "AMS5915-1000-D-B") {
+    config_.Transducer = AMS5915::AMS5915_1000_D_B;
+  } else if (msg->transducer == "AMS5915-1000-A") {
+    config_.Transducer = AMS5915::AMS5915_1000_A;
+  } else if (msg->transducer == "AMS5915-1200-B") {
+    config_.Transducer = AMS5915::AMS5915_1200_B;
   } else {
-    while(1){
-      Serial.println("ERROR: Ams5915 sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: Requested AMS5915 transducer is not an available option.");
   }
 }
 
@@ -565,56 +443,23 @@ void Ams5915Sensor::End() {
 }
 
 /* update the Swift sensor configuration */
-void SwiftSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Static")&&Config.containsKey("Differential")){
-      JsonObject &Static = Config["Static"];
-      if (Static.containsKey("Address")) {
-        config_.Static.Addr = Static["Address"];
-        config_.Static.Transducer = AMS5915::AMS5915_1200_B;
-      } else {
-        while(1){
-          Serial.println("ERROR: Static pressure I2C address missing from pitot configuration.");
-        }
-      }
-      JsonObject &Diff = Config["Differential"];
-      if (Diff.containsKey("Address")&&Diff.containsKey("Transducer")) {
-        config_.Differential.Addr = Diff["Address"];
-        if (Diff["Transducer"] == "AMS5915-0020-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0020_D;
-        } else if (Diff["Transducer"] == "AMS5915-0005-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0005_D;
-        } else if (Diff["Transducer"] == "AMS5915-0010-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0010_D;
-        } else {
-          while(1){
-            Serial.println("ERROR: Incompatible differential pressure transducer in pitot configuration.");
-          }
-        }
-      } else {
-        while(1){
-          Serial.println("ERROR: Differential pressure I2C address or transducer missing from pitot configuration.");
-        }
-      }
-    } else {
-      while(1){
-        Serial.println("ERROR: Static pressure object or differential pressure object missing from pitot configuration.");
-      }
-    }
-    if (Config.containsKey("I2c")) {
-      config_.Static.I2c = Config["I2c"];
-      config_.Differential.I2c = Config["I2c"];
-    }
-    StaticAms.SetConfig(config_.Static);
-    DiffAms.SetConfig(config_.Differential);
+void SwiftSensor::UpdateConfig(message::config_swift_t *msg) {
+  config_.Static.Addr = msg->static_i2c_addr;
+  config_.Static.Transducer = AMS5915::AMS5915_1200_B;
+  config_.Differential.Addr = msg->diff_i2c_addr;
+  if (msg->diff_transducer == "AMS5915-0020-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0020_D;
+  } else if (msg->diff_transducer == "AMS5915-0005-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0005_D;
+  } else if (msg->diff_transducer == "AMS5915-0010-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0010_D;
   } else {
-    while(1){
-      Serial.println("ERROR: Swift sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: Incompatible differential pressure transducer in pitot configuration.");
   }
+  StaticAms.SetConfig(config_.Static);
+  DiffAms.SetConfig(config_.Differential);
+  config_.Static.I2c = msg->i2c_bus;
+  config_.Differential.I2c = msg->i2c_bus;
 }
 
 /* set the Swift sensor configuration */
@@ -654,17 +499,8 @@ void SwiftSensor::End(){
 }
 
 /* update the SBUS receiver configuration */
-void SbusSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-
-  } else {
-    while(1){
-      Serial.println("ERROR: Sbus sensor failed to parse.");
-      Serial.println(JsonString);
-    }
-  }
+void SbusSensor::UpdateConfig() {
+  // pass
 }
 
 /* set the SBUS receiver configuration */
@@ -706,28 +542,16 @@ void SbusSensor::End() {
 }
 
 /* update the analog sensor configuration */
-void AnalogSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Channel")){
-      config_.Channel = Config["Channel"];
-    } else {
-      while(1){
-        Serial.println("ERROR: Analog channel number missing from analog configuration.");
-      }
+void AnalogSensor::UpdateConfig(message::config_analog_t *msg) {
+  config_.Channel = msg->channel;
+  int last_coeff = 3;
+  for (int i=0; i < message::max_calibration; i++) {
+    if ( fabs(msg->calibration[i]) > 0.000001 ) {
+      last_coeff = i;
     }
-    if (Config.containsKey("Calibration")) {
-      JsonArray &Calibration = Config["Calibration"];
-      for (size_t i=0; i < Calibration.size(); i++) {
-        config_.Calibration.push_back(Calibration[i]);
-      }
-    }
-  } else {
-    while(1){
-      Serial.println("ERROR: Analog sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+  }
+  for (int i=0; i < message::max_calibration; i++) {
+    config_.Calibration.push_back(msg->calibration[i]);
   }
 }
 
@@ -757,87 +581,77 @@ void AnalogSensor::GetData(Data *DataPtr) {
 void AnalogSensor::End() {}
 
 /* updates the sensor configuration */
-void AircraftSensors::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  std::vector<char> buffer;
+bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   delayMicroseconds(10);
   Serial.println("Updating sensor configuration...");
-  Serial.print("\tParsing: ");
-  Serial.println(JsonString);
-
-  JsonObject &Sensor = ConfigBuffer.parseObject(JsonString);
-  buffer.resize(ConfigBuffer.size());
-
-  Serial.print("\tSuccess: ");
-  Serial.println(Sensor.success());
-
-  if (Sensor.success()) {
-    if (Sensor.containsKey("Type")) {
-      if (Sensor["Type"] == "PwmVoltage") {
-        if (AcquirePwmVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Pwm voltage already initialized.");
-          }
-        }
-        AcquirePwmVoltageData_ = true;
+  if ( id == message::config_basic_id ) {
+    message::config_basic_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if ( msg.sensor == message::sensor_name::pwm_voltage ) {
+      Serial.println("PwmVoltage");
+      if (AcquirePwmVoltageData_) {
+	HardFail("ERROR: Pwm voltage already initialized.");
       }
-      if (Sensor["Type"] == "SbusVoltage") {
-        if (AcquireSbusVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Sbus voltage already initialized.");
-          }
-        }
-        AcquireSbusVoltageData_ = true;
+      AcquirePwmVoltageData_ = true;
+      return true;
+    } else if (msg.sensor == message::sensor_name::sbus_voltage ) {
+      Serial.println("SbusVoltage");
+      if (AcquireSbusVoltageData_) {
+	HardFail("ERROR: Sbus voltage already initialized.");
       }
-      if (Sensor["Type"] == "Mpu9250") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Mpu9250Sensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Mpu9250.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Bme280") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Bme280Sensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Bme280.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "uBlox") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        uBloxSensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.uBlox.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Swift") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        SwiftSensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Swift.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Ams5915") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Ams5915Sensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Ams5915.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Sbus") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        SbusSensor TempSensor;
-        classes_.Sbus.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Analog") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        AnalogSensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Analog.push_back(TempSensor);
-      }
+      AcquireSbusVoltageData_ = true;
+      return true;
+    } else if ( msg.sensor == message::sensor_name::sbus ) {
+      Serial.println("Sbus");
+      classes_.Sbus.push_back(SbusSensor());
+      data_.Sbus.resize(classes_.Sbus.size());
+      return true;
     }
-  } else {
-    while(1){
-      Serial.println("ERROR: Sensor Configuration failed to parse.");
-      Serial.println(JsonString);
-    }
+  } else if ( id == message::config_mpu9250_id ) {
+    Serial.println("Mpu9250");
+    message::config_mpu9250_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Mpu9250.push_back(Mpu9250Sensor());
+    classes_.Mpu9250.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_bme280_id ) {
+    Serial.println("Bme280");
+    message::config_bme280_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Bme280.push_back(Bme280Sensor());
+    classes_.Bme280.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id  == message::config_ublox_id ) {
+    Serial.println("uBlox");
+    message::config_ublox_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.uBlox.push_back(uBloxSensor());
+    classes_.uBlox.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_swift_id ) {
+    Serial.println("Swift");
+    message::config_swift_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Swift.push_back(SwiftSensor());
+    classes_.Swift.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_ams5915_id ) {
+    Serial.println("Ams5915");
+    message::config_ams5915_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Ams5915.push_back(Ams5915Sensor());
+    classes_.Ams5915.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_analog_id ) {
+    Serial.println("Analog");
+    message::config_analog_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Analog.push_back(AnalogSensor());
+    classes_.Analog.back().UpdateConfig(&msg);
+    return true;
   }
-  Serial.println("done!");
+  Serial.print("Unknown message id: "); Serial.println(id);
+  return false;
 }
 
 /* begin communication with all sensors */

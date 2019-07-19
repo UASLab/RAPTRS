@@ -3,6 +3,9 @@
 #include <stdint.h>  // uint8_t, et. al.
 #include <string.h>  // memcpy()
 
+#include <string>
+using std::string;
+
 namespace message {
 
 static inline int32_t intround(float f) {
@@ -27,9 +30,6 @@ const uint8_t config_analog_id = 27;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
-
-#include <string>
-using std::string;
 
 // Constants
 static const uint8_t num_effectors = 16;  // number of effector channels
@@ -239,8 +239,13 @@ struct config_mpu9250_t {
     int8_t DLPF_bandwidth_hz;
     string output;
     bool use_spi;
-    uint8_t i2c_addr;
+    uint8_t spi_bus;
     uint8_t cs_pin;
+    uint8_t mosi_pin;
+    uint8_t miso_pin;
+    uint8_t sck_pin;
+    uint8_t i2c_bus;
+    uint8_t i2c_addr;
 
     // internal structure for packing
     uint8_t payload[message_max_len];
@@ -252,8 +257,13 @@ struct config_mpu9250_t {
         int8_t DLPF_bandwidth_hz;
         uint8_t output_len;
         bool use_spi;
-        uint8_t i2c_addr;
+        uint8_t spi_bus;
         uint8_t cs_pin;
+        uint8_t mosi_pin;
+        uint8_t miso_pin;
+        uint8_t sck_pin;
+        uint8_t i2c_bus;
+        uint8_t i2c_addr;
     };
     #pragma pack(pop)
 
@@ -277,8 +287,13 @@ struct config_mpu9250_t {
         _buf->DLPF_bandwidth_hz = DLPF_bandwidth_hz;
         _buf->output_len = output.length();
         _buf->use_spi = use_spi;
-        _buf->i2c_addr = i2c_addr;
+        _buf->spi_bus = spi_bus;
         _buf->cs_pin = cs_pin;
+        _buf->mosi_pin = mosi_pin;
+        _buf->miso_pin = miso_pin;
+        _buf->sck_pin = sck_pin;
+        _buf->i2c_bus = i2c_bus;
+        _buf->i2c_addr = i2c_addr;
         memcpy(&(payload[len]), output.c_str(), output.length());
         len += output.length();
         return true;
@@ -296,8 +311,13 @@ struct config_mpu9250_t {
         for (int _i=0; _i<9; _i++) orientation[_i] = _buf->orientation[_i];
         DLPF_bandwidth_hz = _buf->DLPF_bandwidth_hz;
         use_spi = _buf->use_spi;
-        i2c_addr = _buf->i2c_addr;
+        spi_bus = _buf->spi_bus;
         cs_pin = _buf->cs_pin;
+        mosi_pin = _buf->mosi_pin;
+        miso_pin = _buf->miso_pin;
+        sck_pin = _buf->sck_pin;
+        i2c_bus = _buf->i2c_bus;
+        i2c_addr = _buf->i2c_addr;
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
@@ -308,11 +328,13 @@ struct config_mpu9250_t {
 struct config_bme280_t {
     // public fields
     bool use_spi;
-    uint8_t i2c_addr;
+    uint8_t spi_bus;
     uint8_t cs_pin;
     uint8_t mosi_pin;
     uint8_t miso_pin;
     uint8_t sck_pin;
+    uint8_t i2c_bus;
+    uint8_t i2c_addr;
     string output;
 
     // internal structure for packing
@@ -320,11 +342,13 @@ struct config_bme280_t {
     #pragma pack(push, 1)
     struct _compact_t {
         bool use_spi;
-        uint8_t i2c_addr;
+        uint8_t spi_bus;
         uint8_t cs_pin;
         uint8_t mosi_pin;
         uint8_t miso_pin;
         uint8_t sck_pin;
+        uint8_t i2c_bus;
+        uint8_t i2c_addr;
         uint8_t output_len;
     };
     #pragma pack(pop)
@@ -344,11 +368,13 @@ struct config_bme280_t {
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
         _buf->use_spi = use_spi;
-        _buf->i2c_addr = i2c_addr;
+        _buf->spi_bus = spi_bus;
         _buf->cs_pin = cs_pin;
         _buf->mosi_pin = mosi_pin;
         _buf->miso_pin = miso_pin;
         _buf->sck_pin = sck_pin;
+        _buf->i2c_bus = i2c_bus;
+        _buf->i2c_addr = i2c_addr;
         _buf->output_len = output.length();
         memcpy(&(payload[len]), output.c_str(), output.length());
         len += output.length();
@@ -363,11 +389,13 @@ struct config_bme280_t {
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         use_spi = _buf->use_spi;
-        i2c_addr = _buf->i2c_addr;
+        spi_bus = _buf->spi_bus;
         cs_pin = _buf->cs_pin;
         mosi_pin = _buf->mosi_pin;
         miso_pin = _buf->miso_pin;
         sck_pin = _buf->sck_pin;
+        i2c_bus = _buf->i2c_bus;
+        i2c_addr = _buf->i2c_addr;
         output = string((char *)&(payload[len]), _buf->output_len);
         len += _buf->output_len;
         return true;
@@ -431,6 +459,7 @@ struct config_ublox_t {
 // Message: config_ams5915 (id: 25)
 struct config_ams5915_t {
     // public fields
+    uint8_t i2c_bus;
     uint8_t i2c_addr;
     string transducer;
     string output;
@@ -439,6 +468,7 @@ struct config_ams5915_t {
     uint8_t payload[message_max_len];
     #pragma pack(push, 1)
     struct _compact_t {
+        uint8_t i2c_bus;
         uint8_t i2c_addr;
         uint8_t transducer_len;
         uint8_t output_len;
@@ -460,6 +490,7 @@ struct config_ams5915_t {
         }
         // copy values
         _compact_t *_buf = (_compact_t *)payload;
+        _buf->i2c_bus = i2c_bus;
         _buf->i2c_addr = i2c_addr;
         _buf->transducer_len = transducer.length();
         _buf->output_len = output.length();
@@ -477,6 +508,7 @@ struct config_ams5915_t {
         memcpy(payload, external_message, message_size);
         _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
+        i2c_bus = _buf->i2c_bus;
         i2c_addr = _buf->i2c_addr;
         transducer = string((char *)&(payload[len]), _buf->transducer_len);
         len += _buf->transducer_len;

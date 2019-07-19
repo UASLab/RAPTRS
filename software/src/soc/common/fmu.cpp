@@ -418,16 +418,31 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       if ( Sensor.HasMember("UseSpi") ) {
         msg.use_spi = Sensor["UseSpi"].GetInt();
       }
+      if ( Sensor.HasMember("Spi") ) {
+        msg.spi_bus = Sensor["Spi"].GetInt();
+      }
       if ( Sensor.HasMember("CsPin") ) {
         msg.cs_pin = Sensor["CsPin"].GetInt();
       } else if ( msg.use_spi ) {
         printf("ERROR: no spi pin specified\n");
       }
+      if ( Sensor.HasMember("MosiPin" ) ) {
+        msg.mosi_pin = Sensor["MosiPin"].GetInt();
+      }
+      if ( Sensor.HasMember("MisoPin" ) ) {
+        msg.miso_pin = Sensor["MisoPin"].GetInt();
+      }
+      if ( Sensor.HasMember("SckPin" ) ) {
+        msg.sck_pin = Sensor["SckPin"].GetInt();
+      }
       if ( Sensor.HasMember("Address") ) {
         msg.i2c_addr = Sensor["Address"].GetInt();
       } else if ( !msg.use_spi ) {
         printf("ERROR: no i2c address specified\n");
-      }      
+      }
+      if ( Sensor.HasMember("I2c") ) {
+        msg.i2c_bus = Sensor["I2c"].GetInt();
+      }
     }
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -519,6 +534,9 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     printf("Configuring Ams5915\n");
     message::config_ams5915_t msg;
     msg.output = Sensor["Output"].GetString();
+    if ( Sensor.HasMember("I2c") ) {
+      msg.i2c_bus = Sensor["I2c"].GetInt();
+    }
     if ( Sensor.HasMember("Address") ) {
       msg.i2c_addr = Sensor["Address"].GetInt();
     } else {

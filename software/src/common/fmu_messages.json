@@ -60,9 +60,14 @@
                 { "type": "float", "name": "orientation[9]" },
                 { "type": "int8_t", "name": "DLPF_bandwidth_hz" },
                 { "type": "string", "name": "output" },
-                { "type": "bool", "name": "use_spi" }, // external
-                { "type": "uint8_t", "name": "i2c_addr" }, // external
-                { "type": "uint8_t", "name": "cs_pin" }    // external
+                { "type": "bool", "name": "use_spi" },     // external
+                { "type": "uint8_t", "name": "spi_bus" },     // external
+                { "type": "uint8_t", "name": "cs_pin" },   // external
+                { "type": "uint8_t", "name": "mosi_pin" }, // node
+                { "type": "uint8_t", "name": "miso_pin" }, // node
+                { "type": "uint8_t", "name": "sck_pin" },  // node
+                { "type": "uint8_t", "name": "i2c_bus" },     // external
+                { "type": "uint8_t", "name": "i2c_addr" } // external
             ]
         },
         {
@@ -70,11 +75,13 @@
             "name": "config_bme280",
             "fields": [
                 { "type": "bool", "name": "use_spi" },
-                { "type": "uint8_t", "name": "i2c_addr" },
+                { "type": "uint8_t", "name": "spi_bus" },
                 { "type": "uint8_t", "name": "cs_pin" },
                 { "type": "uint8_t", "name": "mosi_pin" },
                 { "type": "uint8_t", "name": "miso_pin" },
                 { "type": "uint8_t", "name": "sck_pin" },
+                { "type": "uint8_t", "name": "i2c_bus" },
+                { "type": "uint8_t", "name": "i2c_addr" },
                 { "type": "string", "name": "output" }
             ]
         },
@@ -91,6 +98,7 @@
             "id": 25,
             "name": "config_ams5915",
             "fields": [
+                { "type": "uint8_t", "name": "i2c_bus" },
                 { "type": "uint8_t", "name": "i2c_addr" },
                 { "type": "string", "name": "transducer" },
                 { "type": "string", "name": "output" }

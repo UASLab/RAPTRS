@@ -28,13 +28,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "UBLOX.h"
 #include "utils.h"
 #include "hardware-defs.h"
-#include "ArduinoJson.h"
 #include "Vector.h"
 #include "Eigen.h"
 #include "EEPROM.h"
 #include "i2c_t3.h"
 #include "SPI.h"
 #include "Arduino.h"
+
+#include "fmu_messages.h"
 
 /* class for external MPU-9250 sensors */
 class Mpu9250Sensor {
@@ -65,7 +66,7 @@ class Mpu9250Sensor {
       // int16_t MagZ_ct = 0;
       // int16_t Temperature_ct = 0.0f;   // Temperature, counts
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig(message::config_mpu9250_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -102,7 +103,7 @@ class Bme280Sensor {
       float Temperature_C = 0.0f;                                                   // Temperature, C
       float Humidity_RH = 0.0f;                                                     // Relative humidity
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig(message::config_bme280_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -145,7 +146,7 @@ class uBloxSensor {
       float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
       float pDOP;                              // Position DOP
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig(message::config_ublox_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -173,7 +174,7 @@ class Ams5915Sensor {
       float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
       float Temperature_C = 0.0f;                                                   // Temperature, C
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig(message::config_ams5915_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -198,7 +199,7 @@ class SwiftSensor {
       Ams5915Sensor::Data Static;
       Ams5915Sensor::Data Differential;
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig(message::config_swift_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -221,7 +222,7 @@ class SbusSensor {
       bool FailSafe = false;
       uint64_t LostFrames = 0;
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig();
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -248,7 +249,7 @@ class AnalogSensor {
       // float Voltage_V = 0.0f;
       float CalibratedValue = 0.0f;
     };
-    void UpdateConfig(const char *JsonString);
+    void UpdateConfig(message::config_analog_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -283,7 +284,7 @@ class AircraftSensors {
       std::vector<SbusSensor::Data> Sbus;
       std::vector<AnalogSensor::Data> Analog;
     };
-    void UpdateConfig(const char *JsonString);
+    bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload);
     void Begin();
     void ReadSyncSensors();
     void ReadAsyncSensors();
