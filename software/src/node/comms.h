@@ -46,9 +46,10 @@ class AircraftBfsComms {
     void CheckMessages();
     void SendMessage(Message message,std::vector<uint8_t> &Payload);
     bool ReceiveMessage(Message *message, std::vector<uint8_t> *Payload);
-    void GetMessage(Message *message);
+    void GetMessage(Message *message, std::vector<uint8_t> *Payload);
     void OnReceive(void (*function)(size_t len));
     void OnRequest(void (*function)(void));
+    void ClearReceived();
   private:
     i2c_t3 *bus_;
     uint8_t addr_;

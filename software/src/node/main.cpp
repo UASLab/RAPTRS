@@ -57,7 +57,8 @@ unsigned long tnow, tprev;
 // send messages on request
 void RequestMessage() {
   AircraftBfsComms::Message message;
-  BfsComms->GetMessage(&message);
+  std::vector<uint8_t> Payload;
+  BfsComms->GetMessage(&message, &Payload);
   if (message == AircraftBfsComms::SensorMetaData) {
     BfsComms->SendSensorMetaData(MetaDataBuffer);
   }
@@ -143,10 +144,12 @@ void loop() {
   }
   if (MissionMode == AircraftMission::Configuration) {
     // buffer for receiving configurations
-    std::vector<char> ConfigBuffer;
+    AircraftBfsComms::Message message;
+    std::vector<uint8_t> Payload;
+    BfsComms->GetMessage(&message, &Payload);
     // update configuration
-    if (BfsComms->ReceiveConfigMessage(&ConfigBuffer)) {
-      Config.Update(ConfigBuffer.data(),&Sensors,&Effectors);
+    if ( Config.Update(message, &Payload, &Sensors, &Effectors) ) {
+      BfsComms->ClearReceived();
     }
   }
   // request mode

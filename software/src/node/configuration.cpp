@@ -31,14 +31,17 @@ void AircraftConfiguration::Load() {
 }
 
 /* Update configuration structure from messages */
-void AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftSensors *AircraftSensorsPtr, AircraftEffectors *AircraftEffectorsPtr) {
+bool AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftSensors *AircraftSensorsPtr, AircraftEffectors *AircraftEffectorsPtr) {
   if ( AircraftSensorsPtr->UpdateConfig(id, Payload) ) {
     // successfully parsed an aircraft sensor config message
+    return true;
   } else if ( AircraftEffectorsPtr->UpdateConfig(id, Payload) ) {
     // successfully parsed an effector config message
+    return true;
   } else {
     Serial.print("ERROR: Node received an unknown message: ");
     Serial.println(id);
+    return false;
   }
 }
 

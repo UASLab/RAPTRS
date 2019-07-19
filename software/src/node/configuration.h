@@ -33,7 +33,7 @@ class AircraftConfiguration {
       uint8_t BfsAddr;
     };
     void Load();
-    void Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftSensors *AircraftSensorsPtr, AircraftEffectors *AircraftEffectorsPtr);
+    bool Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftSensors *AircraftSensorsPtr, AircraftEffectors *AircraftEffectorsPtr);
     uint8_t GetBfsAddr();
   private:
     Config config_;
