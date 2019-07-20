@@ -25,7 +25,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "effector.h"
 #include "control.h"
 #include "sensors.h"
-#include "ArduinoJson.h"
 #include "Arduino.h"
 
 class AircraftMission {
@@ -40,7 +39,7 @@ class AircraftMission {
       Configuration,
       Run
     };
-    void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void UpdateMode(AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr);
     void SetRequestedMode(Mode ModeCopy);
     void GetMode(Mode *ModePtr);

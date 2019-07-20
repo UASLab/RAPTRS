@@ -18,16 +18,17 @@ static inline uint32_t uintround(float f) {
 
 // Message id constants
 const uint8_t mode_command_id = 10;
-const uint8_t command_effectors_id = 12;
-const uint8_t config_ack_id = 20;
-const uint8_t config_basic_id = 21;
-const uint8_t config_mpu9250_id = 22;
-const uint8_t config_bme280_id = 23;
-const uint8_t config_ublox_id = 24;
-const uint8_t config_ams5915_id = 25;
-const uint8_t config_swift_id = 26;
-const uint8_t config_analog_id = 27;
-const uint8_t config_effector_id = 28;
+const uint8_t command_effectors_id = 11;
+const uint8_t config_ack_id = 12;
+const uint8_t config_basic_id = 13;
+const uint8_t config_mpu9250_id = 14;
+const uint8_t config_bme280_id = 15;
+const uint8_t config_ublox_id = 16;
+const uint8_t config_ams5915_id = 17;
+const uint8_t config_swift_id = 18;
+const uint8_t config_analog_id = 19;
+const uint8_t config_effector_id = 20;
+const uint8_t config_mission_id = 21;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -94,7 +95,7 @@ struct mode_command_t {
     }
 };
 
-// Message: command_effectors (id: 12)
+// Message: command_effectors (id: 11)
 struct command_effectors_t {
     // public fields
     uint8_t num_active;
@@ -110,7 +111,7 @@ struct command_effectors_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 12;
+    static const uint8_t id = 11;
     uint16_t len = 0;
 
     bool pack() {
@@ -140,7 +141,7 @@ struct command_effectors_t {
     }
 };
 
-// Message: config_ack (id: 20)
+// Message: config_ack (id: 12)
 struct config_ack_t {
     // public fields
     uint8_t ack_id;
@@ -156,7 +157,7 @@ struct config_ack_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 20;
+    static const uint8_t id = 12;
     uint16_t len = 0;
 
     bool pack() {
@@ -186,7 +187,7 @@ struct config_ack_t {
     }
 };
 
-// Message: config_basic (id: 21)
+// Message: config_basic (id: 13)
 struct config_basic_t {
     // public fields
     sensor_type sensor;
@@ -202,7 +203,7 @@ struct config_basic_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 21;
+    static const uint8_t id = 13;
     uint16_t len = 0;
 
     bool pack() {
@@ -236,7 +237,7 @@ struct config_basic_t {
     }
 };
 
-// Message: config_mpu9250 (id: 22)
+// Message: config_mpu9250 (id: 14)
 struct config_mpu9250_t {
     // public fields
     bool internal;
@@ -274,7 +275,7 @@ struct config_mpu9250_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 22;
+    static const uint8_t id = 14;
     uint16_t len = 0;
 
     bool pack() {
@@ -330,7 +331,7 @@ struct config_mpu9250_t {
     }
 };
 
-// Message: config_bme280 (id: 23)
+// Message: config_bme280 (id: 15)
 struct config_bme280_t {
     // public fields
     bool use_spi;
@@ -360,7 +361,7 @@ struct config_bme280_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 23;
+    static const uint8_t id = 15;
     uint16_t len = 0;
 
     bool pack() {
@@ -408,7 +409,7 @@ struct config_bme280_t {
     }
 };
 
-// Message: config_ublox (id: 24)
+// Message: config_ublox (id: 16)
 struct config_ublox_t {
     // public fields
     uint8_t uart;
@@ -426,7 +427,7 @@ struct config_ublox_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 24;
+    static const uint8_t id = 16;
     uint16_t len = 0;
 
     bool pack() {
@@ -462,7 +463,7 @@ struct config_ublox_t {
     }
 };
 
-// Message: config_ams5915 (id: 25)
+// Message: config_ams5915 (id: 17)
 struct config_ams5915_t {
     // public fields
     uint8_t i2c_bus;
@@ -482,7 +483,7 @@ struct config_ams5915_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 25;
+    static const uint8_t id = 17;
     uint16_t len = 0;
 
     bool pack() {
@@ -524,7 +525,7 @@ struct config_ams5915_t {
     }
 };
 
-// Message: config_swift (id: 26)
+// Message: config_swift (id: 18)
 struct config_swift_t {
     // public fields
     uint8_t i2c_bus;
@@ -546,7 +547,7 @@ struct config_swift_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 26;
+    static const uint8_t id = 18;
     uint16_t len = 0;
 
     bool pack() {
@@ -590,7 +591,7 @@ struct config_swift_t {
     }
 };
 
-// Message: config_analog (id: 27)
+// Message: config_analog (id: 19)
 struct config_analog_t {
     // public fields
     uint8_t channel;
@@ -608,7 +609,7 @@ struct config_analog_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 27;
+    static const uint8_t id = 19;
     uint16_t len = 0;
 
     bool pack() {
@@ -644,7 +645,7 @@ struct config_analog_t {
     }
 };
 
-// Message: config_effector (id: 28)
+// Message: config_effector (id: 20)
 struct config_effector_t {
     // public fields
     effector_type effector;
@@ -666,7 +667,7 @@ struct config_effector_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 28;
+    static const uint8_t id = 20;
     uint16_t len = 0;
 
     bool pack() {
@@ -702,6 +703,68 @@ struct config_effector_t {
         safed_command = _buf->safed_command;
         input = string((char *)&(payload[len]), _buf->input_len);
         len += _buf->input_len;
+        return true;
+    }
+};
+
+// Message: config_mission (id: 21)
+struct config_mission_t {
+    // public fields
+    string switch_name;
+    string source;
+    float gain = 1.0;
+    float threshold = 0.5;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t switch_name_len;
+        uint8_t source_len;
+        float gain;
+        float threshold;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 21;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        size += switch_name.length();
+        size += source.length();
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->switch_name_len = switch_name.length();
+        _buf->source_len = source.length();
+        _buf->gain = gain;
+        _buf->threshold = threshold;
+        memcpy(&(payload[len]), switch_name.c_str(), switch_name.length());
+        len += switch_name.length();
+        memcpy(&(payload[len]), source.c_str(), source.length());
+        len += source.length();
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        gain = _buf->gain;
+        threshold = _buf->threshold;
+        switch_name = string((char *)&(payload[len]), _buf->switch_name_len);
+        len += _buf->switch_name_len;
+        source = string((char *)&(payload[len]), _buf->source_len);
+        len += _buf->source_len;
         return true;
     }
 };

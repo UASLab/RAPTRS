@@ -36,7 +36,6 @@
             ]
         },
         {
-            "id": 12,
             "name": "command_effectors",
             "fields": [
                 { "type": "uint8_t", "name": "num_active" },
@@ -44,7 +43,6 @@
             ]
         },
         {
-            "id": 20,
             "name": "config_ack",
             "fields": [
                 { "type": "uint8_t", "name": "ack_id" },
@@ -52,7 +50,6 @@
             ]
         },
         {
-            "id": 21,
             "name": "config_basic",
             "fields": [
                 { "type": "sensor_type", "name": "sensor" },
@@ -60,7 +57,6 @@
             ]
         },
         {
-            "id": 22,
             "name": "config_mpu9250",
             "fields": [
                 { "type": "bool", "name": "internal" },
@@ -79,7 +75,6 @@
             ]
         },
         {
-            "id": 23,
             "name": "config_bme280",
             "fields": [
                 { "type": "bool", "name": "use_spi" },
@@ -94,7 +89,6 @@
             ]
         },
         {
-            "id": 24,
             "name": "config_ublox",
             "fields": [
                 { "type": "uint8_t", "name": "uart" },
@@ -103,7 +97,6 @@
             ]
         },
         {
-            "id": 25,
             "name": "config_ams5915",
             "fields": [
                 { "type": "uint8_t", "name": "i2c_bus" },
@@ -113,7 +106,6 @@
             ]
         },
         {
-            "id": 26,
             "name": "config_swift",
             "fields": [
                 { "type": "uint8_t", "name": "i2c_bus" },
@@ -124,7 +116,6 @@
             ]
         },
         {
-            "id": 27,
             "name": "config_analog",
             "fields": [
                 { "type": "uint8_t", "name": "channel" },
@@ -133,7 +124,6 @@
             ]
         },
         {
-            "id": 28,
             "name": "config_effector",
             "fields": [
                 { "type": "effector_type", "name": "effector" },
@@ -142,6 +132,15 @@
                 { "type": "float", "name": "calibration[max_calibration]" },
                 { "type": "uint8_t", "name": "safed_command" }
            ]
+        },
+        {
+            "name": "config_mission",
+            "fields": [
+                { "type": "string", "name": "switch_name" },
+                { "type": "string", "name": "source" },
+                { "type": "float", "name": "gain", "default": 1.0 },
+                { "type": "float", "name": "threshold", "default": 0.5 }
+            ]
         }
     ]
 }

@@ -58,9 +58,7 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
       Serial.println("AircraftConfiguration::Update() [Effectors] we should never be here!");
     }
     if (Config.containsKey("Mission-Manager")) {
-      JsonObject &Mission = Config["Mission-Manager"];
-      Mission.printTo(buffer.data(),buffer.size());
-      AircraftMissionPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
+      Serial.println("AircraftConfiguration::Update() [Mission-Manager] we should never be here!");
     }
   }
   else {
@@ -75,9 +73,10 @@ bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint
     return true;
   } else if ( AircraftEffectorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr) ) {
     return true;
+  } else if ( AircraftMissionPtr->UpdateConfig(id, Payload, DefinitionTreePtr) ) {
+    return true;
   // fixme: move control and mission processing messages here as well
   // } else if (control message) {
-  // } else if (mission message) {
   } else {
     Serial.print("Unknown config msg in fmu/configuration.cpp:"); Serial.println(id);
   }

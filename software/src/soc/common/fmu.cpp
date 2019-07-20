@@ -580,6 +580,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
+  } else {
+    printf("ERROR: unknown sensor\n");
   }
   return false;
 }
@@ -600,34 +602,56 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config, uint
       } else if ( GenConfigMessage(Sensor, node_address) ) {
 	// new way succeeded!
       } else {
-	printf("config message: %s\n", Sensor["Type"].GetString() );
-	Payload.clear();
-	rapidjson::StringBuffer StringBuff;
-	rapidjson::Writer<rapidjson::StringBuffer> Writer(StringBuff);
-	Sensor.Accept(Writer);
-	std::string OutputString = StringBuff.GetString();
-	std::string ConfigString = std::string("{\"Sensors\":[") + OutputString + std::string("]}");
-	for (size_t j=0; j < ConfigString.size(); j++) {
-	  Payload.push_back((uint8_t)ConfigString[j]);
-	}
-	SendMessage(Message::kConfigMesg, 0, Payload);
+	printf("ERROR: failed to generate config message: %s\n", Sensor["Type"].GetString() );
       }
     }
   }
 }
 
 /* Configures the FMU mission manager */
-void FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Config) {
-  std::vector<uint8_t> Payload;
-  rapidjson::StringBuffer StringBuff;
-  rapidjson::Writer<rapidjson::StringBuffer> Writer(StringBuff);
-  Config.Accept(Writer);
-  std::string OutputString = StringBuff.GetString();
-  std::string ConfigString = std::string("{\"Mission-Manager\":") + OutputString + std::string("}");
-  for (size_t j=0; j < ConfigString.size(); j++) {
-    Payload.push_back((uint8_t)ConfigString[j]);
+bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Config) {
+  message::config_mission_t msg;
+  if ( Config.HasMember("Fmu-Soc-Switch") ) {
+    const rapidjson::Value &sw = Config["Fmu-Soc-Switch"];
+    msg.switch_name = "Fmu-Soc-Switch";
+    if ( sw.HasMember("Source") ) {
+      msg.source = sw["Source"].GetString();
+    } else {
+      printf("ERROR: no fmu-soc-switch source field specified\n");
+    }
+    if ( sw.HasMember("Gain") ) {
+      msg.gain = sw["Gain"].GetFloat();
+    }
+    if ( sw.HasMember("Threshold") ) {
+      msg.gain = sw["Threshold"].GetFloat();
+    }
+    msg.pack();
+    SendMessage(msg.id, 0, msg.payload, msg.len);
+    if ( ! WaitForAck(msg.id, 0, 1000) ) {
+      return false;
+    }
   }
-  SendMessage(Message::kConfigMesg, 0, Payload);
+  if ( Config.HasMember("Throttle-Safety-Switch") ) {
+    const rapidjson::Value &sw = Config["Throttle-Safety-Switch"];
+    msg.switch_name = "Throttle-Safety-Switch";
+    if ( sw.HasMember("Source") ) {
+      msg.source = sw["Source"].GetString();
+    } else {
+      printf("ERROR: no throttle-safety-switch source field specified\n");
+    }
+    if ( sw.HasMember("Gain") ) {
+      msg.gain = sw["Gain"].GetFloat();
+    }
+    if ( sw.HasMember("Threshold") ) {
+      msg.gain = sw["Threshold"].GetFloat();
+    }
+    msg.pack();
+    SendMessage(msg.id, 0, msg.payload, msg.len);
+    if ( ! WaitForAck(msg.id, 0, 1000) ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /* Configures the FMU control laws */

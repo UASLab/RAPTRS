@@ -21,49 +21,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "mission.h"
 
 /* updates the mission configuration from a JSON string */
-void AircraftMission::UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.containsKey("Fmu-Soc-Switch")) {
-    JsonObject &EngageSwitch = Config["Fmu-Soc-Switch"];
-    if (EngageSwitch.containsKey("Source")) {
-      if (DefinitionTreePtr->GetValuePtr<float*>(EngageSwitch.get<String>("Source").c_str())) {
-        config_.EngageSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(EngageSwitch.get<String>("Source").c_str());
-      } else {
-        Serial.println("ERROR: Engage switch source not found in global data.");
-        while(1){}
-      }
-    } else {
-        Serial.println("ERROR: Engage switch source not specified in configuration.");
-        while(1){}
-    }
-    if (EngageSwitch.containsKey("Gain")) {
-      config_.EngageSwitch.Gain = EngageSwitch["Gain"];
-    }
-    if (EngageSwitch.containsKey("Threshold")) {
-      config_.EngageSwitch.Threshold = EngageSwitch["Threshold"];
-    }
+bool AircraftMission::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
+  if ( id != message::config_mission_id ) {
+    // not our message
+    return false;
   }
-  if (Config.containsKey("Throttle-Safety-Switch")) {
-    JsonObject &ThrottleSwitch = Config["Throttle-Safety-Switch"];
-    if (ThrottleSwitch.containsKey("Source")) {
-      if (DefinitionTreePtr->GetValuePtr<float*>(ThrottleSwitch.get<String>("Source").c_str())) {
-        config_.ThrottleSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(ThrottleSwitch.get<String>("Source").c_str());
-      } else {
-        Serial.println("ERROR: Throttle safety switch source not found in global data.");
-        while(1){}
-      }
+  message::config_mission_t msg;
+  msg.unpack(Payload->data(), Payload->size());
+  if ( msg.switch_name == "Fmu-Soc-Switch" ) {
+    if (DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str())) {
+      config_.EngageSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str());
     } else {
-        Serial.println("ERROR: Throttle safety switch source not specified in configuration.");
-        while(1){}
+      HardFail("ERROR: Engage switch source not found in global data.");
     }
-    if (ThrottleSwitch.containsKey("Gain")) {
-      config_.ThrottleSwitch.Gain = ThrottleSwitch["Gain"];
+    config_.EngageSwitch.Gain = msg.gain;
+    config_.EngageSwitch.Threshold = msg.threshold;
+    return true;
+  } else if ( msg.switch_name == "Throttle-Safety-Switch" ) {
+    if (DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str())) {
+      config_.ThrottleSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str());
+    } else {
+      HardFail("ERROR: Engage switch source not found in global data.");
     }
-    if (ThrottleSwitch.containsKey("Threshold")) {
-      config_.ThrottleSwitch.Threshold = ThrottleSwitch["Threshold"];
-    }
+    config_.ThrottleSwitch.Gain = msg.gain;
+    config_.ThrottleSwitch.Threshold = msg.threshold;
+    return true;
   }
+  return false;
 }
 
 /* state machine controlling mode transitions */
