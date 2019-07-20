@@ -26,5 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 uint64_t micros_64();
 float PolyVal(std::vector<float> &Coefficients, float X);
+void HardFail(const char *error);
 
 #endif

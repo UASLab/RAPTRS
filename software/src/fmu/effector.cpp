@@ -20,113 +20,69 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "effector.h"
 
-void AircraftEffectors::UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  std::vector<char> buffer;
-  JsonArray &Config = ConfigBuffer.parseArray(JsonString);
-  buffer.resize(ConfigBuffer.size());
-  if (Config.success()) {
-    for (size_t i=0; i < Config.size(); i++) {
-      JsonObject& Effector = Config[i];
-      if ((Effector["Type"] == "Motor") || (Effector["Type"] == "Pwm") || (Effector["Type"] == "Sbus")) {
-        Data Temp;
-        Effectors_.push_back(Temp);
-
-        if (Effector["Type"] == "Motor") {
-          Effectors_.back().Type = kMotor;
-          if (Effector.containsKey("Safed-Command")) {
-            Effectors_.back().SafedCommand = Effector["Safed-Command"];
-          }
-        }
-        if (Effector["Type"] == "Pwm") {
-          Effectors_.back().Type = kPwm;
-        }
-        if (Effector["Type"] == "Sbus") {
-          Effectors_.back().Type = kSbus;
-        }
-
-        if (Effector.containsKey("Input")) {
-          if (DefinitionTreePtr->GetValuePtr<float*>(Effector.get<String>("Input").c_str())) {
-            Effectors_.back().Input = DefinitionTreePtr->GetValuePtr<float*>(Effector.get<String>("Input").c_str());
-          } else {
-            while(1) {
-              Serial.println("ERROR: Input not found in global data.");
-              Serial.println(Effector.get<String>("Input"));
-            }
-          }
-        } else {
-          while(1){
-            Serial.println("ERROR: Input not specified in configuration");
-          }
-        }
-
-        if (Effector.containsKey("Calibration")) {
-          JsonArray &Calibration = Effector["Calibration"];
-          for (size_t i=0; i < Calibration.size(); i++) {
-            Effectors_.back().Calibration.push_back(Calibration[i]);
-          }
-        } else {
-          while(1){
-            Serial.println("ERROR: Calibration not specified in configuration");
-          }
-        }
-
-        if (Effector.containsKey("Channel")) {
-          Effectors_.back().Channel = Effector["Channel"];
-        } else {
-          while(1){
-            Serial.println("ERROR: Channel not specified in configuration");
-          }
-        }
-      }
-
-      if (Effector["Type"] == "Node") {
-        NodeData Temp;
-        NodeEffectors_.push_back(Temp);
-        if (Effector.containsKey("Address")) {
-          NodeEffectors_.back().Address = Effector["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: Node address not specified in configuration");
-          }
-        }
-        // create a new node
-        NodeEffectors_.back().node = new Node(kBfsPort,NodeEffectors_.back().Address,kBfsRate);
-        // start communication with node
-        NodeEffectors_.back().node->Begin();
-        // send config messages
-        NodeEffectors_.back().node->SetConfigurationMode();
-        if (Effector.containsKey("Effectors")) {
-          JsonArray &NodeEffectors = Effector["Effectors"];
-          for (size_t j=0; j < NodeEffectors.size(); j++) {
-            JsonObject &NodeEffector = NodeEffectors[j];
-            if (NodeEffector["Type"] == "Motor") {
-              NodeEffectors_.back().Types.push_back(kMotor);
-              if (NodeEffector.containsKey("Safed-Command")) {
-                NodeEffectors_.back().SafedCommands.push_back(NodeEffector["Safed-Command"]);
-              }
-            }
-            if (NodeEffector["Type"] == "Pwm") {
-              NodeEffectors_.back().Types.push_back(kPwm);
-            }
-            if (NodeEffector["Type"] == "Sbus") {
-              NodeEffectors_.back().Types.push_back(kSbus);
-            }
-            if (NodeEffector.containsKey("Input")) {
-              NodeEffectors_.back().Inputs.push_back(DefinitionTreePtr->GetValuePtr<float*>(NodeEffector.get<String>("Input").c_str()));
-            }
-            NodeEffector.printTo(buffer.data(),buffer.size());
-            String ConfigString = String("{\"Effectors\":[") + buffer.data() + String("]}");
-            NodeEffectors_.back().node->Configure(ConfigString);
-          }
-        }
+bool AircraftEffectors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
+  if ( id != message::config_effector_id ) {
+    // not our message
+    return false;
+  }
+  message::config_effector_t msg;
+  msg.unpack(Payload->data(), Payload->size());
+  if ( address == 0 ) {
+    // local effector
+    Data Temp;
+    Effectors_.push_back(Temp);
+    if ( msg.effector == message::effector_type::motor ) {
+      Effectors_.back().Type = kMotor;
+      Effectors_.back().SafedCommand = msg.safed_command;
+    } else if ( msg.effector == message::effector_type::pwm ) {
+      Effectors_.back().Type = kPwm;
+    } else if ( msg.effector == message::effector_type::sbus ) {
+      Effectors_.back().Type = kSbus;
+    }
+    if ( DefinitionTreePtr->GetValuePtr<float*>(msg.input.c_str()) ) {
+      Effectors_.back().Input = DefinitionTreePtr->GetValuePtr<float*>(msg.input.c_str());
+    } else {
+      HardFail("ERROR: Input not found in global data.");
+    }
+    int last_coeff = 0;
+    for (int i=0; i < message::max_calibration; i++) {
+      if ( fabs(msg.calibration[i]) > 0.000001 ) {
+        last_coeff = i;
       }
     }
+    for (int i=0; i < last_coeff; i++) {
+      Effectors_.back().Calibration.push_back(msg.calibration[i]);
+    }
+    Effectors_.back().Channel = msg.channel;
   } else {
-    while(1){
-      Serial.println("ERROR: Effector Configuration failed to parse.");
-      Serial.println(JsonString);
+    // node effector
+    int found = -1;
+    for ( size_t i = 0; i < NodeEffectors_.size(); i++ ) {
+      if ( NodeEffectors_[i].Address == address ) {
+        found = i;
+      }
     }
+    if ( found < 0 ){
+      found = NodeEffectors_.size();
+      NodeEffectors_.push_back(NodeData());
+      NodeEffectors_.back().Address = address;
+      // create a new node
+      NodeEffectors_.back().node = new Node(kBfsPort, NodeEffectors_.back().Address, kBfsRate);
+      // start communication with node
+      NodeEffectors_.back().node->Begin();
+    }
+    // send config messages
+    NodeEffectors_[found].node->SetConfigurationMode();
+    if ( msg.effector == message::effector_type::motor ) {
+      NodeEffectors_[found].Types.push_back(kMotor);
+    } else if ( msg.effector == message::effector_type::pwm ) {
+      NodeEffectors_[found].Types.push_back(kPwm);
+    } else if ( msg.effector == message::effector_type::sbus ) {
+      NodeEffectors_[found].Types.push_back(kSbus);
+    }
+    NodeEffectors_[found].SafedCommands.push_back(msg.safed_command);
+    NodeEffectors_[found].Inputs.push_back(DefinitionTreePtr->GetValuePtr<float*>(msg.input.c_str()));
+    NodeEffectors_[found].node->Configure(id, Payload);
   }
 }
 

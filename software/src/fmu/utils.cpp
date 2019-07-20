@@ -39,3 +39,11 @@ float PolyVal(std::vector<float> &Coefficients, float X) {
   }
   return(Y);
 }
+
+void HardFail(const char *error) {
+  while (true) {
+    Serial.println(error);
+    delay(1000);
+  }
+}
+

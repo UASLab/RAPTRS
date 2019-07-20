@@ -20,13 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "sensors.h"
 
-static void HardFail(std::string message) {
-  while (true) {
-    Serial.println(message.c_str());
-    delay(1000);
-  }
-}
-
 /* update internal MPU9250 sensor configuration */
 bool InternalMpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath,DefinitionTree *DefinitionTreePtr) {
   if (msg->SRD > 0) {
@@ -720,7 +713,7 @@ void SbusSensor::End() {
 /* update the analog sensor configuration */
 bool AnalogSensor::UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.Channel = msg->channel;
-  int last_coeff = 3;
+  int last_coeff = 0;
   for (int i=0; i < message::max_calibration; i++) {
     if ( fabs(msg->calibration[i]) > 0.000001 ) {
       last_coeff = i;
@@ -956,7 +949,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
   if ( address > 0 ) {
     // this message is relayed to a node
     int found = -1;
-    for ( unsigned int i = 0; i < classes_.Nodes.size(); i++ ) {
+    for ( size_t i = 0; i < classes_.Nodes.size(); i++ ) {
       if ( classes_.Nodes[i].GetBfsAddr() == address ) {
         found = i;
       }

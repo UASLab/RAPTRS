@@ -47,7 +47,7 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
 
   if (Config.success()) {
     if (Config.containsKey("Sensors")) {
-      Serial.println("AircraftConfiguration::Update() we should never be here!");
+      Serial.println("AircraftConfiguration::Update() [Sensors] we should never be here!");
     }
     if (Config.containsKey("Control")) {
       JsonObject &Control = Config["Control"];
@@ -55,9 +55,7 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
       ControlLawsPtr->Configure(buffer.data(),DefinitionTreePtr);
     }
     if (Config.containsKey("Effectors")) {
-      JsonArray &Effectors = Config["Effectors"];
-      Effectors.printTo(buffer.data(),buffer.size());
-      AircraftEffectorsPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
+      Serial.println("AircraftConfiguration::Update() [Effectors] we should never be here!");
     }
     if (Config.containsKey("Mission-Manager")) {
       JsonObject &Mission = Config["Mission-Manager"];
@@ -75,28 +73,16 @@ void AircraftConfiguration::Update(const char* JsonString,AircraftMission *Aircr
 bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
   if ( AircraftSensorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr) ) {
     return true;
+  } else if ( AircraftEffectorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr) ) {
+    return true;
   } else {
     Serial.print("Unknown config msg in fmu/configuration.cpp:"); Serial.println(id);
   }
 #if 0
-  if (Config.success()) {
-    if (Config.containsKey("Sensors")) {
-      JsonArray &Sensors = Config["Sensors"];
-      for (size_t j=0; j < Sensors.size(); j++) {
-        JsonObject &Sensor = Sensors[j];
-        Sensor.printTo(buffer.data(),buffer.size());
-        AircraftSensorsPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
-      }
-    }
     if (Config.containsKey("Control")) {
       JsonObject &Control = Config["Control"];
       Control.printTo(buffer.data(),buffer.size());
       ControlLawsPtr->Configure(buffer.data(),DefinitionTreePtr);
-    }
-    if (Config.containsKey("Effectors")) {
-      JsonArray &Effectors = Config["Effectors"];
-      Effectors.printTo(buffer.data(),buffer.size());
-      AircraftEffectorsPtr->UpdateConfig(buffer.data(),DefinitionTreePtr);
     }
     if (Config.containsKey("Mission-Manager")) {
       JsonObject &Mission = Config["Mission-Manager"];

@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EFFECTOR_H_
 
 #include "Arduino.h"
-#include "ArduinoJson.h"
 #include "SBUS.h"
 #include "Node.h"
 #include "definition-tree.h"
@@ -34,7 +33,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 class AircraftEffectors {
   public:
-    void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
     void SetCommands(message::command_effectors_t *msg, bool ThrottleSafed);
     void ComputeOutputs(bool ThrottleSafed);
