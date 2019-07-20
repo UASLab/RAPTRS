@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "mission.h"
 
-/* updates the mission configuration from a JSON string */
+/* updates the mission configuration */
 bool AircraftMission::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr) {
   if ( id != message::config_mission_id ) {
     // not our message
@@ -32,7 +32,7 @@ bool AircraftMission::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
     if (DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str())) {
       config_.EngageSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str());
     } else {
-      HardFail("ERROR: Engage switch source not found in global data.");
+      HardFail("ERROR: Fmu-soc switch source not found in global data.");
     }
     config_.EngageSwitch.Gain = msg.gain;
     config_.EngageSwitch.Threshold = msg.threshold;
@@ -41,7 +41,7 @@ bool AircraftMission::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
     if (DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str())) {
       config_.ThrottleSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str());
     } else {
-      HardFail("ERROR: Engage switch source not found in global data.");
+      HardFail("ERROR: Throttle safety switch source not found in global data.");
     }
     config_.ThrottleSwitch.Gain = msg.gain;
     config_.ThrottleSwitch.Threshold = msg.threshold;
