@@ -550,7 +550,7 @@ void AnalogSensor::UpdateConfig(message::config_analog_t *msg) {
       last_coeff = i;
     }
   }
-  for (int i = 0; i < message::max_calibration; i++) {
+  for (int i = 0; i < last_coeff; i++) {
     config_.Calibration.push_back(msg->calibration[i]);
   }
 }

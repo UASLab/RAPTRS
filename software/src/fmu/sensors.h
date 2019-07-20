@@ -58,7 +58,7 @@ class InternalMpu9250Sensor {
       float MagZ_uT;
       float Temperature_C;     // Temperature, C
     };
-    void UpdateConfig(message::config_mpu9250_t *msg,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_mpu9250_t *msg,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -97,7 +97,7 @@ class Mpu9250Sensor {
       // int16_t MagZ_ct = 0;
       // int16_t Temperature_ct = 0.0f;   // Temperature, counts                                 // Temperature, C
     };
-    void UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -122,7 +122,7 @@ class InternalBme280Sensor {
       float Temperature_C = 0.0f;                                                   // Temperature, C
       float Humidity_RH = 0.0f;                                                     // Relative humidity
     };
-    void UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -148,7 +148,7 @@ class Bme280Sensor {
       float Temperature_C = 0.0f;                                                   // Temperature, C
       float Humidity_RH = 0.0f;                                                     // Relative humidity
     };
-    void UpdateConfig(message::config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -189,7 +189,7 @@ class uBloxSensor {
       float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
       float pDOP;                               // Position DOP
     };
-    void UpdateConfig(message::config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -216,7 +216,7 @@ class Ams5915Sensor {
       float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
       float Temperature_C = 0.0f;                                                   // Temperature, C
     };
-    void UpdateConfig(message::config_ams5915_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_ams5915_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -240,7 +240,7 @@ class SwiftSensor {
       Ams5915Sensor::Data Static;
       Ams5915Sensor::Data Differential;
     };
-    void UpdateConfig(message::config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -263,7 +263,7 @@ class SbusSensor {
       bool FailSafe = false;
       uint64_t LostFrames = 0;
     };
-  void UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+  bool UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -290,7 +290,7 @@ class AnalogSensor {
       // float Voltage_V = 0.0f;
       float CalibratedValue = 0.0f;
     };
-    void UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
@@ -320,7 +320,7 @@ class SensorNodes {
       std::vector<AnalogSensor::Data> Analog;
     };
     SensorNodes(uint8_t address);
-    void UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     uint8_t GetBfsAddr() { return config_.BfsAddr; }

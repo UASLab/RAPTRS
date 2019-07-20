@@ -50,28 +50,6 @@ bool AircraftSocComms::ReceiveOtherMessage(uint8_t *message, uint8_t *address, s
   return false;
 }
 
-/* returns mode command if a mode command message has been received */
-bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
-  if (MessageReceived_) {
-    if (ReceivedMessage_ == message::mode_command_id) {
-      MessageReceived_ = false;
-      cmd_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
-      Serial.print("new mode: "); Serial.println(cmd_msg.mode);
-      if (cmd_msg.len == 1) {
-        *mode = (AircraftMission::Mode)cmd_msg.mode;
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      Serial.println("ReceiveModeCommand(): not a mode message");
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
 /* returns configuration string if a configuration message has been received */
 bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
   if (MessageReceived_) {
@@ -86,30 +64,6 @@ bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
   } else {
     return false;
   }
-}
-
-/* returns effector command if a mode command message has been received */
-bool AircraftSocComms::ReceiveEffectorCommand(std::vector<float> *EffectorCommands) {
-  if (MessageReceived_) {
-    if (ReceivedMessage_ == message::effector_command_id) {
-      MessageReceived_ = false;
-      effector_msg.unpack(ReceivedPayload_.data(), ReceivedPayload_.size());
-      EffectorCommands->resize(effector_msg.num_active);
-      for ( size_t i = 0; i < effector_msg.num_active; i++ ) {
-	(*EffectorCommands)[i] = effector_msg.command[i];
-      }
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
-/* checks for valid BFS messages received */
-void AircraftSocComms::CheckMessages() {
-  MessageReceived_ = ReceiveMessage(&ReceivedMessage_, &ReceivedAddress_, &ReceivedPayload_);
 }
 
 /* builds and sends a BFS message given a message ID and payload */
@@ -139,10 +93,6 @@ bool AircraftSocComms::ReceiveMessage(uint8_t *message, uint8_t *address, std::v
   } else {
     return false;
   }
-}
-
-void AircraftSocComms::ClearReceived() {
-  MessageReceived_ = false;
 }
 
 void AircraftSocComms::SendAck(uint8_t id, uint8_t subid) {

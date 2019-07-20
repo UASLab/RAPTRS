@@ -147,8 +147,8 @@ void AircraftEffectors::Begin() {
   }
 }
 
-void AircraftEffectors::SetCommands(std::vector<float> Commands,bool ThrottleSafed) {
-  EffectorCommands_ = Commands;
+void AircraftEffectors::SetCommands(message::command_effectors_t *msg, bool ThrottleSafed) {
+  std::vector<float> EffectorCommands_;
   size_t EffectorIndex = 0;
   for (size_t i=0; i < Effectors_.size(); i++) {
         if (Effectors_[i].Type != kMotor) {

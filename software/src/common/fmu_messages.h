@@ -18,7 +18,7 @@ static inline uint32_t uintround(float f) {
 
 // Message id constants
 const uint8_t mode_command_id = 10;
-const uint8_t effector_command_id = 12;
+const uint8_t command_effectors_id = 12;
 const uint8_t config_ack_id = 20;
 const uint8_t config_basic_id = 21;
 const uint8_t config_mpu9250_id = 22;
@@ -94,8 +94,8 @@ struct mode_command_t {
     }
 };
 
-// Message: effector_command (id: 12)
-struct effector_command_t {
+// Message: command_effectors (id: 12)
+struct command_effectors_t {
     // public fields
     uint8_t num_active;
     float command[num_effectors];

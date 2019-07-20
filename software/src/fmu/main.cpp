@@ -130,42 +130,43 @@ int main()
 // Serial.print("\tEffectors: ");
 // Serial.println(float(micros_64() - ts) * 1e-3, 2);
       }
-      // effector commands from SOC
-      if (SocComms.ReceiveEffectorCommand(&EffectorCommands)) {
-        if (Mission.UseSocEffectorComands()) {
-          // set the received commands to be used
-          Effectors.SetCommands(EffectorCommands,Mission.ThrottleSafed());
-        }
-// Serial.print("\tSOC: ");
-// Serial.println(float(micros_64() - ts) * 1e-3, 2);
-      }
 // Serial.print("\tDone: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
     }
-    if (MissionMode == AircraftMission::Configuration) {
-      // buffer for receiving configurations
-      std::vector<char> ConfigBuffer;
-      std::vector<uint8_t> Payload;
-      uint8_t id;
-      uint8_t address;
-      // update configuration
-      if (SocComms.ReceiveConfigMessage(&ConfigBuffer)) {
-	Serial.println("received json config message");
-        Config.Update(ConfigBuffer.data(), &Mission, &Sensors, &Control, &Effectors, &GlobalData);
-      } else if (SocComms.ReceiveOtherMessage(&id, &address, &Payload)) {
-	Serial.print("recieved other message: "); Serial.println(id);
-	if ( Config.Update(id, address, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {
-	  Serial.println("Config.Update() returned true");
-	  SocComms.SendAck(id, 0);
-	  SocComms.ClearReceived();
-	}
+    // check for new messages from SOC
+    uint8_t id;
+    uint8_t address;
+    std::vector<uint8_t> Payload;
+    if ( SocComms.ReceiveMessage(&id, &address, &Payload) ) {
+      if ( id == message::mode_command_id ) {
+        // request mode
+        message::mode_command_t msg;
+        msg.unpack(Payload.data(), Payload.size());
+        Serial.print("new mode: "); Serial.println(msg.mode);
+        Mission.SetRequestedMode((AircraftMission::Mode)msg.mode);
+      } else if ( MissionMode == AircraftMission::Run ) {
+        if (id == message::command_effectors_id ) {
+          // receive the effector commands
+          if (Mission.UseSocEffectorComands()) {
+            message::command_effectors_t msg;
+            msg.unpack(Payload.data(), Payload.size());
+            Effectors.SetCommands(&msg, Mission.ThrottleSafed());
+          }
+        }
+      } else if (MissionMode == AircraftMission::Configuration) {
+        if ( Config.Update(id, address, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {
+          Serial.println("Config.Update() returned true, sending ack");
+          SocComms.SendAck(id, 0);
+        } else {
+          // buffer for receiving configurations
+          std::vector<char> ConfigBuffer;
+          // update configuration
+          if (SocComms.ReceiveConfigMessage(&ConfigBuffer)) {
+            Serial.println("received json config message");
+            Config.Update(ConfigBuffer.data(), &Mission, &Sensors, &Control, &Effectors, &GlobalData);
+          }
+        }
       }
     }
-    // request mode
-    if (SocComms.ReceiveModeCommand(&RequestedMode)) {
-      Mission.SetRequestedMode(RequestedMode);
-    }
-    // check for new messages from SOC
-    SocComms.CheckMessages();
   }
 }

@@ -30,11 +30,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "utils.h"
 #include <memory>
 
+#include "fmu_messages.h"
+
 class AircraftEffectors {
   public:
     void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
     void Begin();
-    void SetCommands(std::vector<float> Commands,bool ThrottleSafed);
+    void SetCommands(message::command_effectors_t *msg, bool ThrottleSafed);
     void ComputeOutputs(bool ThrottleSafed);
     void CommandEffectors();
     void End();

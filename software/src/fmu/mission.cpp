@@ -111,8 +111,8 @@ void AircraftMission::UpdateMode(AircraftSensors *AircraftSensorsPtr,ControlLaws
 }
 
 /* sets the requested mode */
-void AircraftMission::SetRequestedMode(Mode &ModeRef) {
-  RequestedMode_ = ModeRef;
+void AircraftMission::SetRequestedMode(Mode ModeCopy) {
+  RequestedMode_ = ModeCopy;
 }
 
 /* gets the current mode */

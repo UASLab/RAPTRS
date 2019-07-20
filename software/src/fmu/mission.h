@@ -42,7 +42,7 @@ class AircraftMission {
     };
     void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
     void UpdateMode(AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr);
-    void SetRequestedMode(Mode &ModeRef);
+    void SetRequestedMode(Mode ModeCopy);
     void GetMode(Mode *ModePtr);
     void UpdateState();
     void GetState(State *StatePtr);

@@ -153,9 +153,9 @@ NODE_CXX = $(NODE_COMPILER)/arm-none-eabi-g++
 NODE_OBJCOPY = $(NODE_COMPILER)/arm-none-eabi-objcopy
 NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 # compiler options
-SOC_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
+SOC_CPPFLAGS = -Wall -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SOC_CXXFLAGS = -std=c++17
-SIM_CPPFLAGS = -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
+SIM_CPPFLAGS = -Wall -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SIM_CXXFLAGS = -std=c++17
 FMU_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(FMU_CORE)
 FMU_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti

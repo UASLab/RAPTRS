@@ -230,7 +230,6 @@ class FlightManagementUnit {
     HardwareSerial *_serial;
     SerialLink *_bus;
     message::mode_command_t cmd_msg;
-    message::effector_command_t effector_msg;
     message::config_ack_t config_ack_msg;
     SensorData SensorData_;
     SensorNodes SensorNodes_;

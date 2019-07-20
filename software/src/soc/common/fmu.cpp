@@ -247,12 +247,13 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
 
 /* Sends effector commands to FMU */
 void FlightManagementUnit::SendEffectorCommands(std::vector<float> Commands) {
-  effector_msg.num_active = Commands.size();
+  message::command_effectors_t msg;
+  msg.num_active = Commands.size();
   for ( size_t i = 0; i < Commands.size(); i++ ) {
-    effector_msg.command[i] = Commands[i];
+    msg.command[i] = Commands[i];
   }
-  effector_msg.pack();
-  SendMessage(effector_msg.id, 0, effector_msg.payload, effector_msg.len);
+  msg.pack();
+  SendMessage(msg.id, 0, msg.payload, msg.len);
 }
 
 /* Wait for Ack message */
@@ -567,7 +568,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.calibration[3] = 0.0;
     if ( Sensor.HasMember("Calibration") ) {
       if ( Sensor["Calibration"].IsArray() and Sensor["Calibration"].Size() <= 4 ) {
-        for ( int i = 0; i < Sensor["Calibration"].Size(); i++ ) {
+        for ( size_t i = 0; i < Sensor["Calibration"].Size(); i++ ) {
           msg.calibration[i] = Sensor["Calibration"][i].GetFloat();
         }
       } else {
@@ -694,7 +695,7 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config, ui
         msg.calibration[3] = 0.0;
         if ( Effector.HasMember("Calibration") ) {
           if ( Effector["Calibration"].IsArray() and Effector["Calibration"].Size() <= 4 ) {
-            for ( int i = 0; i < Effector["Calibration"].Size(); i++ ) {
+            for ( size_t i = 0; i < Effector["Calibration"].Size(); i++ ) {
               msg.calibration[i] = Effector["Calibration"][i].GetFloat();
             }
           } else {
@@ -869,12 +870,12 @@ std::string FlightManagementUnit::GetSensorOutputName(const rapidjson::Value& Co
   return "";
 }
 
-/* Send a BFS Bus message. */
+/* Send a (Serial) BFS Bus message. */
 void FlightManagementUnit::SendMessage(Message message, uint8_t address, std::vector<uint8_t> &Payload) {
   SendMessage(message, address, Payload.data(), Payload.size());
 }
 
-/* Send a BFS Bus message. */
+/* Send a (Serial) BFS Bus message. */
 void FlightManagementUnit::SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len) {
   _bus->beginTransmission();
   _bus->write(message);

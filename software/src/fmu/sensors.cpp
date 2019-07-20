@@ -28,7 +28,7 @@ static void HardFail(std::string message) {
 }
 
 /* update internal MPU9250 sensor configuration */
-void InternalMpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+bool InternalMpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath,DefinitionTree *DefinitionTreePtr) {
   if (msg->SRD > 0) {
     config_.SRD = msg->SRD;
   }
@@ -68,6 +68,7 @@ void InternalMpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::st
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/MagY_uT",&data_.MagY_uT);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/MagZ_uT",&data_.MagZ_uT);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Temperature_C",&data_.Temperature_C);
+  return true;
 }
 
 /* set the internal MPU9250 configuration */
@@ -155,7 +156,7 @@ void InternalMpu9250Sensor::End() {
 }
 
 /* update MPU9250 sensor configuration */
-void Mpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool Mpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.UseSpi = msg->use_spi;
   if (config_.UseSpi) {
     config_.CsPin = msg->cs_pin;
@@ -195,6 +196,7 @@ void Mpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg, std::string Roo
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroX_rads",&Gyro_rads_(0,0));
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroY_rads",&Gyro_rads_(1,0));
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/GyroZ_rads",&Gyro_rads_(2,0));
+  return true;
 }
 
 /* set the MPU9250 configuration */
@@ -287,10 +289,11 @@ void Mpu9250Sensor::End() {
 }
 
 /* update the internal BME280 sensor configuration */
-void InternalBme280Sensor::UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
+bool InternalBme280Sensor::UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr) {
   DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Pressure_Pa",&data_.Pressure_Pa);
   DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Temperature_C",&data_.Temperature_C);
   DefinitionTreePtr->InitMember(RootPath+"/"+Output+"/Humidity_RH",&data_.Humidity_RH);
+  return true;
 }
 
 /* set the internal BME280 sensor configuration */
@@ -328,7 +331,7 @@ void InternalBme280Sensor::End() {
 }
 
 /* update the BME280 sensor configuration */
-void Bme280Sensor::UpdateConfig(message::config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool Bme280Sensor::UpdateConfig(message::config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.UseSpi = msg->use_spi;
   if (config_.UseSpi) {
     config_.CsPin = msg->cs_pin;
@@ -339,6 +342,7 @@ void Bme280Sensor::UpdateConfig(message::config_bme280_t *msg, std::string RootP
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Pressure_Pa",&data_.Pressure_Pa);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Temperature_C",&data_.Temperature_C);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Humidity_RH",&data_.Humidity_RH);
+  return true;
 }
 
 /* set the BME280 sensor configuration */
@@ -382,7 +386,7 @@ void Bme280Sensor::End() {
 }
 
 /* update the uBlox configuration */
-void uBloxSensor::UpdateConfig(message::config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool uBloxSensor::UpdateConfig(message::config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   if (msg->uart and msg->baud) {
     config_.Uart = msg->uart;
     config_.Baud = msg->baud;
@@ -408,6 +412,7 @@ void uBloxSensor::UpdateConfig(message::config_ublox_t *msg, std::string RootPat
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/VerticalAccuracy_m",&data_.VerticalAccuracy_m);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/VelocityAccuracy_ms",&data_.VelocityAccuracy_ms);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/pDOP",&data_.pDOP);
+  return true;
 }
 
 /* set the uBlox configuration */
@@ -517,7 +522,7 @@ void uBloxSensor::End() {
 }
 
 /* update the AMS5915 configuration */
-void Ams5915Sensor::UpdateConfig(message::config_ams5915_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool Ams5915Sensor::UpdateConfig(message::config_ams5915_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.Addr = msg->i2c_addr;
   if (msg->transducer == "AMS5915-0005-D") {
     config_.Transducer = AMS5915::AMS5915_0005_D;
@@ -569,6 +574,7 @@ void Ams5915Sensor::UpdateConfig(message::config_ams5915_t *msg, std::string Roo
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Status",(int8_t*)&data_.ReadStatus);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Pressure_Pa",&data_.Pressure_Pa);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Temperature_C",&data_.Temperature_C);
+  return true;
 }
 
 /* set the AMS5915 configuration */
@@ -603,7 +609,7 @@ void Ams5915Sensor::End() {
 }
 
 /* update the Swift sensor configuration */
-void SwiftSensor::UpdateConfig(message::config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool SwiftSensor::UpdateConfig(message::config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.Static.Addr = msg->static_i2c_addr;
   config_.Static.Transducer = AMS5915::AMS5915_1200_B;
   config_.Differential.Addr = msg->diff_i2c_addr;
@@ -624,6 +630,7 @@ void SwiftSensor::UpdateConfig(message::config_swift_t *msg, std::string RootPat
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Differential/Status",(int8_t*)&data_.Differential.ReadStatus);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Differential/Pressure_Pa",&data_.Differential.Pressure_Pa);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Differential/Temperature_C",&data_.Differential.Temperature_C);
+  return true;
 }
 
 /* set the Swift sensor configuration */
@@ -663,12 +670,13 @@ void SwiftSensor::End(){
 }
 
 /* update the SBUS receiver configuration */
-void SbusSensor::UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool SbusSensor::UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   DefinitionTreePtr->InitMember(RootPath+"/"+output+"/FailSafe",(uint8_t*)&data_.FailSafe);
   DefinitionTreePtr->InitMember(RootPath+"/"+output+"/LostFrames",&data_.LostFrames);
   for (size_t j=0; j < 16; j++) {
     DefinitionTreePtr->InitMember(RootPath+"/"+output+"/Channels/" + std::to_string(j),&data_.Channels[j]);
   }
+  return true;
 }
 
 /* set the SBUS receiver configuration */
@@ -710,7 +718,7 @@ void SbusSensor::End() {
 }
 
 /* update the analog sensor configuration */
-void AnalogSensor::UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool AnalogSensor::UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.Channel = msg->channel;
   int last_coeff = 3;
   for (int i=0; i < message::max_calibration; i++) {
@@ -718,11 +726,12 @@ void AnalogSensor::UpdateConfig(message::config_analog_t *msg, std::string RootP
       last_coeff = i;
     }
   }
-  for (int i=0; i < message::max_calibration; i++) {
+  for (int i=0; i < last_coeff; i++) {
     config_.Calibration.push_back(msg->calibration[i]);
   }
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Voltage_V",(uint8_t*)&Voltage_V_);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/CalibratedValue",&data_.CalibratedValue);
+  return true;
 }
 
 /* set the analog sensor configuration */
@@ -755,7 +764,7 @@ SensorNodes::SensorNodes(uint8_t address) {
 }
 
 /* updates the node configuration */
-void SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+bool SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   Serial.print("SensorNodes Parsing: ");
   if ( node_ == NULL ) {
     // create a new node
@@ -851,6 +860,7 @@ void SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::s
   } else {
     HardFail("FMU doesn't know how to handle locally a config message for a Node");
   }
+  return true;
 }
 
 /* set the node configuration */

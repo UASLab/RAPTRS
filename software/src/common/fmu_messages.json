@@ -37,7 +37,7 @@
         },
         {
             "id": 12,
-            "name": "effector_command",
+            "name": "command_effectors",
             "fields": [
                 { "type": "uint8_t", "name": "num_active" },
                 { "type": "float", "name": "command[num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
