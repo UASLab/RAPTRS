@@ -655,28 +655,87 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
 }
 
 /* Configures the FMU control laws */
-void FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) {
-  std::vector<uint8_t> Payload;
-  if (Config.HasMember("Fmu")) {
-    if (Config.HasMember(Config["Fmu"].GetString())) {
-      rapidjson::StringBuffer FmuStringBuff;
-      rapidjson::Writer<rapidjson::StringBuffer> FmuWriter(FmuStringBuff);
-      const rapidjson::Value& Fmu = Config["Fmu"];
-      Fmu.Accept(FmuWriter);
-      std::string FmuString = FmuStringBuff.GetString();
-      rapidjson::StringBuffer CntrlStringBuff;
-      rapidjson::Writer<rapidjson::StringBuffer> CntrlWriter(CntrlStringBuff);
-      const rapidjson::Value& Cntrl = Config[Config["Fmu"].GetString()];
-      Cntrl.Accept(CntrlWriter);
-      std::string CntrlString = CntrlStringBuff.GetString();
-      std::string ConfigString = std::string("{\"Control\":{") + std::string("\"Fmu\":") + FmuString + std::string(",")
-        + std::string("\"") + Config["Fmu"].GetString() + std::string("\":") + CntrlString + std::string("}}");
-      for (size_t j=0; j < ConfigString.size(); j++) {
-        Payload.push_back((uint8_t)ConfigString[j]);
-      }
-      SendMessage(Message::kConfigMesg, 0, Payload);
-    }
+/* example JSON configuration:
+{
+  "Output": "OutputName",
+  "Input": "InputName",
+  "Gain": X,
+  "Limits": {
+    "Upper": X,
+    "Lower": X
   }
+}
+Where OutputName gives a convenient name for the block (i.e. SpeedControl).
+Input is the full path name of the input signal
+Gain is the gain applied to the input signal
+Limits are optional and saturate the output if defined
+*/
+bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) {
+  std::vector<uint8_t> Payload;
+  if ( Config.HasMember("Fmu") ) {
+    std::string block_name = Config["Fmu"].GetString();
+    if ( Config.HasMember(block_name.c_str()) ) {
+      if ( Config[block_name.c_str()].IsArray() ) {
+        // iterate through levels
+        for ( size_t j = 0; j < Config[block_name.c_str()].Size(); j++ ) {
+          const rapidjson::Value &Level = Config[block_name.c_str()][j];
+          if ( Level.HasMember("Level") and Level.HasMember("Components") and Level["Components"].IsArray() ) {
+            for ( size_t i = 0; i < Level["Components"].Size(); i++ ) {
+              const rapidjson::Value &Component = Level["Components"][i];
+              if ( Component.HasMember("type") and Component["Type"] == "Gain" ) {
+                message::config_control_gain_t msg;
+                if ( Component.HasMember("Input") ) {
+                  msg.input = Component["Input"].GetString();
+                } else {
+                  printf("ERROR: component does not specified an input\n");
+                }
+                if ( Component.HasMember("Output") ) {
+                  msg.output = Component["Output"].GetString();
+                } else {
+                  printf("ERROR: component does not specified an output\n");
+                }
+                if ( Component.HasMember("Gain") ) {
+                  msg.gain = Component["Gain"].GetFloat();
+                } else {
+                  printf("ERROR: component does not specified a gain\n");
+                }
+                if ( Component.HasMember("Limits") ) {
+                  msg.has_limits = true;
+                  const rapidjson::Value &Limits = Component["Limits"];
+                  if ( Limits.HasMember("Lower") ) {
+                    msg.lower_limit = Limits["Lower"].GetFloat();
+                  } else {
+                    printf("ERROR: no lower limit in control\n");
+                  }
+                  if ( Limits.HasMember("Upper") ) {
+                    msg.upper_limit = Limits["Upper"].GetFloat();
+                  } else {
+                    printf("ERROR: no upper limit in control\n");
+                  }
+                } else {
+                  msg.has_limits = false;
+                }
+                msg.pack();
+                SendMessage(msg.id, 0, msg.payload, msg.len);
+                if ( WaitForAck(msg.id, 0, 1000) ) {
+                  return true;
+                }
+              }
+            }
+          } else {
+            printf("ERROR: Level or Components not specified correctly in Control\n");
+          }
+        }
+      } else {
+        printf("ERROR: %s not an array\n", block_name.c_str());
+      }
+    } else {
+      printf("ERROR: could not find baseline control law: %s\n", block_name.c_str());
+    }
+  } else {
+    printf("ERROR: Fmu key not found in Control\n");
+  }
+  return false;
 }
 
 /* Configures the FMU effectors */

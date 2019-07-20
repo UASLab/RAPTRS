@@ -31,43 +31,7 @@ void AircraftConfiguration::Load() {
   Serial.println("done!");
 }
 
-/* Update configuration structure from JSON payloads */
-void AircraftConfiguration::Update(const char* JsonString,AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  std::vector<char> buffer;
-
-  Serial.print("AircraftConfiguration Parsing: ");
-  Serial.print(JsonString);
-
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  buffer.resize(ConfigBuffer.size());
-
-  Serial.print("\tSuccess: ");
-  Serial.println(Config.success());
-
-  if (Config.success()) {
-    if (Config.containsKey("Sensors")) {
-      Serial.println("AircraftConfiguration::Update() [Sensors] we should never be here!");
-    }
-    if (Config.containsKey("Control")) {
-      JsonObject &Control = Config["Control"];
-      Control.printTo(buffer.data(),buffer.size());
-      ControlLawsPtr->Configure(buffer.data(),DefinitionTreePtr);
-    }
-    if (Config.containsKey("Effectors")) {
-      Serial.println("AircraftConfiguration::Update() [Effectors] we should never be here!");
-    }
-    if (Config.containsKey("Mission-Manager")) {
-      Serial.println("AircraftConfiguration::Update() [Mission-Manager] we should never be here!");
-    }
-  }
-  else {
-    Serial.println("ERROR: FMU Config Message Failed to Parse: ");
-    Serial.println(JsonString);
-  }
-}
-
-/* Update configuration structure from JSON payloads */
+/* Update configuration structure from message */
 bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
   if ( AircraftSensorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr) ) {
     return true;
@@ -75,8 +39,8 @@ bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint
     return true;
   } else if ( AircraftMissionPtr->UpdateConfig(id, Payload, DefinitionTreePtr) ) {
     return true;
-  // fixme: move control and mission processing messages here as well
-  // } else if (control message) {
+  } else if ( ControlLawsPtr->Configure(id, Payload, DefinitionTreePtr) ) {
+    return true;
   } else {
     Serial.print("Unknown config msg in fmu/configuration.cpp:"); Serial.println(id);
   }

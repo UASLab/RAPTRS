@@ -136,6 +136,18 @@
             ]
         },
         {
+            "name": "config_control_gain",
+            "fields": [
+                { "type": "string", "name": "level_name" },
+                { "type": "string", "name": "input" },
+                { "type": "string", "name": "output" },
+                { "type": "float", "name": "gain", "default": 1.0 },
+                { "type": "bool", "name": "has_limits" },
+                { "type": "float", "name": "upper_limit" },
+                { "type": "float", "name": "lower_limit" }
+            ]
+        },
+        {
             "name": "command_effectors",
             "fields": [
                 { "type": "uint8_t", "name": "num_active" },

@@ -238,7 +238,7 @@ class FlightManagementUnit {
     bool GenConfigMessage(const rapidjson::Value& Sensor, uint8_t node_address);
     void ConfigureSensors(const rapidjson::Value& Config, uint8_t node_address);
     bool ConfigureMissionManager(const rapidjson::Value& Config);
-    void ConfigureControlLaws(const rapidjson::Value& Config);
+    bool ConfigureControlLaws(const rapidjson::Value& Config);
     void ConfigureEffectors(const rapidjson::Value& Config, uint8_t node_address);
     void RegisterSensors(const rapidjson::Value& Config);
     std::string GetSensorOutputName(const rapidjson::Value& Config,std::string Key,size_t index);

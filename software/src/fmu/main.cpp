@@ -158,13 +158,8 @@ int main()
           Serial.println("Config.Update() returned true, sending ack");
           SocComms.SendAck(id, 0);
         } else {
-          // buffer for receiving configurations
-          std::vector<char> ConfigBuffer;
-          // update configuration
-          if (SocComms.ReceiveConfigMessage(&ConfigBuffer)) {
-            Serial.println("received json config message");
-            Config.Update(ConfigBuffer.data(), &Mission, &Sensors, &Control, &Effectors, &GlobalData);
-          }
+          Serial.print("Unhandled message while in Configuration mode, id: ");
+          Serial.println(id);
         }
       }
     }
