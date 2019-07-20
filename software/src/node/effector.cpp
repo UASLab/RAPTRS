@@ -20,11 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "effector.h"
 
-/* updates the effector configuration from JSON */
+/* handle effector configuration messages */
 bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   Serial.print("Updating effector configuration...");
-  sbus_ = new SBUS(kSbusUart);  // FIXME?
-  sbus_->begin();               // FIXME?
+  if ( sbus_ == NULL ) {
+    sbus_ = new SBUS(kSbusUart);
+    sbus_->begin();
+  }
   if ( id == message::config_effector_id ) {
     Data eff;
     message::config_effector_t msg;

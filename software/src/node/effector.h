@@ -37,7 +37,7 @@ class AircraftEffectors {
     void CommandEffectors();
     void End();
   private:
-    SBUS *sbus_;
+    SBUS *sbus_ = NULL;
     enum EffectorType {
       kPwm,
       kSbus
