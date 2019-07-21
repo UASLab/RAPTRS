@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "comms.h"
+#include "fmu_messages.h"
 
 /* class declaration, hardware serial bus and baudrate */
 AircraftSocComms::AircraftSocComms(HardwareSerial& bus,uint32_t baud) {
@@ -36,34 +37,6 @@ void AircraftSocComms::Begin() {
 /* sends sensor data message */
 void AircraftSocComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
   SendMessage(SensorData,DataBuffer);
-}
-
-/* parses BFS messages returning message ID and payload on success */
-bool AircraftSocComms::ReceiveOtherMessage(uint8_t *message, uint8_t *address, std::vector<uint8_t> *Payload) {
-  if (MessageReceived_) {
-    *message = ReceivedMessage_;
-    *address = ReceivedAddress_;
-    Payload->resize(ReceivedPayload_.size());
-    memcpy(Payload->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
-    return true;
-  }
-  return false;
-}
-
-/* returns configuration string if a configuration message has been received */
-bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
-  if (MessageReceived_) {
-    if (ReceivedMessage_ == Configuration) {
-      MessageReceived_ = false;
-      ConfigString->resize(ReceivedPayload_.size());
-      memcpy(ConfigString->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
 }
 
 /* builds and sends a BFS message given a message ID and payload */
