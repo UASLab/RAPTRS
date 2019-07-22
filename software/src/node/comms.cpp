@@ -224,6 +224,10 @@ void AircraftBfsComms::OnRequest(void (*function)(void)) {
   bus_->onRequest(function);
 }
 
+bool AircraftBfsComms::NewReceived() {
+  return MessageReceived_;
+}
+
 void AircraftBfsComms::ClearReceived() {
   MessageReceived_ = false;
 }

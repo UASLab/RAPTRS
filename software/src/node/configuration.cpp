@@ -39,8 +39,7 @@ bool AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, Ai
     // successfully parsed an effector config message
     return true;
   } else {
-    Serial.print("ERROR: Node received an unknown message: ");
-    Serial.println(id);
+    // not a configuration message
     return false;
   }
 }

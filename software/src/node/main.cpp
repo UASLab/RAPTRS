@@ -144,12 +144,14 @@ void loop() {
   }
   if (MissionMode == AircraftMission::Configuration) {
     // buffer for receiving configurations
-    AircraftBfsComms::Message message;
-    std::vector<uint8_t> Payload;
-    BfsComms->GetMessage(&message, &Payload);
-    // update configuration
-    if ( Config.Update(message, &Payload, &Sensors, &Effectors) ) {
-      BfsComms->ClearReceived();
+    if ( BfsComms->NewReceived() ) {
+      AircraftBfsComms::Message message;
+      std::vector<uint8_t> Payload;
+      BfsComms->GetMessage(&message, &Payload);
+      // update configuration
+      if ( Config.Update(message, &Payload, &Sensors, &Effectors) ) {
+        BfsComms->ClearReceived();
+      }
     }
   }
   // request mode

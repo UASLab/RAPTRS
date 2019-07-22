@@ -45,7 +45,7 @@ void Node::Configure(String ConfigString) {
 
 /* sends a configuration string to the node */
 void Node::Configure(uint8_t id, std::vector<uint8_t> *Payload) {
-  SendMessage(Configuration,*Payload);
+  SendMessage(id, *Payload);
   delay(500);
 }
 
@@ -219,7 +219,7 @@ void Node::SendEffectorCommand(std::vector<float> Commands) {
 }
 
 /* builds and sends a BFS message given a message ID and payload */
-void Node::SendMessage(Message message,std::vector<uint8_t> &Payload) {
+void Node::SendMessage(uint8_t message, std::vector<uint8_t> &Payload) {
   std::vector<uint8_t> TxBuffer;
   BuildMessage(message,Payload,&TxBuffer);
   // transmit
@@ -229,14 +229,14 @@ void Node::SendMessage(Message message,std::vector<uint8_t> &Payload) {
 }
 
 /* builds a BFS message given a message ID and payload */
-void Node::BuildMessage(Message message,std::vector<uint8_t> &Payload,std::vector<uint8_t> *TxBuffer) {
+void Node::BuildMessage(uint8_t message, std::vector<uint8_t> &Payload, std::vector<uint8_t> *TxBuffer) {
   if (Payload.size() < (kBufferMaxSize-headerLength_-checksumLength_)) {
     TxBuffer->resize(Payload.size()+headerLength_+checksumLength_);
     // header
     Buffer_[0] = header_[0];
     Buffer_[1] = header_[1];
     // message ID
-    Buffer_[2] = (uint8_t)message;
+    Buffer_[2] = message;
     // payload length
     Buffer_[3] = Payload.size() & 0xff;
     Buffer_[4] = Payload.size() >> 8;

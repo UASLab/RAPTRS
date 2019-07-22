@@ -650,7 +650,6 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
     classes_.Analog.back().UpdateConfig(&msg);
     return true;
   }
-  Serial.print("Unknown message id: "); Serial.println(id);
   return false;
 }
 

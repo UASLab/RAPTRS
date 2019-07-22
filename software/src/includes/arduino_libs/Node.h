@@ -134,8 +134,8 @@ class Node {
     const size_t MetaDataLength_ = 8;
     struct SensorData SensorData_;
     std::vector<uint8_t> DataBuffer_;
-    void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    void BuildMessage(Message message,std::vector<uint8_t> &Payload,std::vector<uint8_t> *TxBuffer);
+    void SendMessage(uint8_t message, std::vector<uint8_t> &Payload);
+    void BuildMessage(uint8_t message, std::vector<uint8_t> &Payload, std::vector<uint8_t> *TxBuffer);
     bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
     void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
 };

@@ -42,7 +42,7 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, uint8_t address, std::vector<ui
     if ( DefinitionTreePtr->GetValuePtr<float*>(msg.input.c_str()) ) {
       Effectors_.back().Input = DefinitionTreePtr->GetValuePtr<float*>(msg.input.c_str());
     } else {
-      HardFail("ERROR: Input not found in global data.");
+      HardFail("ERROR: Effector input not found in global data.");
     }
     int last_coeff = 0;
     for (int i=0; i < message::max_calibration; i++) {

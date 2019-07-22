@@ -680,9 +680,11 @@ bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
         for ( size_t j = 0; j < Config[block_name.c_str()].Size(); j++ ) {
           const rapidjson::Value &Level = Config[block_name.c_str()][j];
           if ( Level.HasMember("Level") and Level.HasMember("Components") and Level["Components"].IsArray() ) {
+            printf("Control laws size: %d\n", Level["Components"].Size());
             for ( size_t i = 0; i < Level["Components"].Size(); i++ ) {
+              printf("  component: %d\n", i);
               const rapidjson::Value &Component = Level["Components"][i];
-              if ( Component.HasMember("type") and Component["Type"] == "Gain" ) {
+              if ( Component.HasMember("Type") and Component["Type"] == "Gain" ) {
                 message::config_control_gain_t msg;
                 if ( Component.HasMember("Input") ) {
                   msg.input = Component["Input"].GetString();
@@ -717,11 +719,15 @@ bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
                 }
                 msg.pack();
                 SendMessage(msg.id, 0, msg.payload, msg.len);
-                if ( WaitForAck(msg.id, 0, 1000) ) {
-                  return true;
+                if ( !WaitForAck(msg.id, 0, 1000) ) {
+                  return false;
                 }
+              } else {
+                printf("ignore component that isn't a gain\n");
               }
             }
+            // success if we made it to here
+            return true;
           } else {
             printf("ERROR: Level or Components not specified correctly in Control\n");
           }
