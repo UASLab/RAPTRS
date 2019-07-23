@@ -188,6 +188,7 @@ class AnalogSensor {
   public:
     struct Config {
       uint8_t Channel;
+      uint8_t DirectPin = 0; // allow specifying the actual pin instead of a channel
       std::vector<float> Calibration;
     };
     void UpdateConfig(message::config_analog_t *msg);

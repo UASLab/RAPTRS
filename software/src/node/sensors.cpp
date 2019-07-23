@@ -594,7 +594,13 @@ void AnalogSensor::Begin() {
 
 /* get analog sensor data */
 int AnalogSensor::ReadSensor() {
-  Voltage_V_ = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
+  uint8_t pin;
+  if ( config_.DirectPin > 0 ) {
+    pin = config_.DirectPin;
+  } else {
+    pin = kAnalogPins[config_.Channel];
+  }
+  Voltage_V_ = ((float)analogRead(pin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
 }
 
 /* get analog sensor data */
@@ -746,12 +752,6 @@ void AircraftSensors::Begin() {
   }
   Serial.println(classes_.Sbus.size());
 
-  Serial.print("\tSbus voltage: ");
-  if (AcquireSbusVoltageData_) {
-    // data_.SbusVoltage_V.resize(1);
-  }
-  Serial.println(AcquireSbusVoltageData_);
-
   Serial.print("\tAnalog: ");
   // data_.Analog.resize(classes_.Analog.size());
   for (size_t i=0; i < classes_.Analog.size(); i++) {
@@ -761,9 +761,27 @@ void AircraftSensors::Begin() {
 
   Serial.print("\tPwm voltage: ");
   if (AcquirePwmVoltageData_) {
-    // data_.PwmVoltage_V.resize(1);
+    AnalogSensor::Config config;
+    config.DirectPin = kPwmVoltagePin;
+    config.Calibration.clear();
+    config.Calibration.push_back(0.0);
+    config.Calibration.push_back(kEffectorVoltageScale);
+    classes_.PwmVoltageSensor.SetConfig(config);
+    classes_.PwmVoltageSensor.Begin();
   }
   Serial.println(AcquirePwmVoltageData_);
+
+  Serial.print("\tSbus voltage: ");
+  if (AcquireSbusVoltageData_) {
+    AnalogSensor::Config config;
+    config.DirectPin = kSbusVoltagePin;
+    config.Calibration.clear();
+    config.Calibration.push_back(0.0);
+    config.Calibration.push_back(kEffectorVoltageScale);
+    classes_.SbusVoltageSensor.SetConfig(config);
+    classes_.SbusVoltageSensor.Begin();
+  }
+  Serial.println(AcquireSbusVoltageData_);
 
   Serial.println("done!");
 }
@@ -774,11 +792,9 @@ void AircraftSensors::ReadSyncSensors() {
   ResetI2cBus2_ = false;
   if (AcquirePwmVoltageData_) {
     classes_.PwmVoltageSensor.ReadSensor();
-    // data_.PwmVoltage_V[0] = ((float)analogRead(kPwmVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
   }
   if (AcquireSbusVoltageData_) {
     classes_.SbusVoltageSensor.ReadSensor();
-    // data_.SbusVoltage_V[0] = ((float)analogRead(kSbusVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
   }
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
     int8_t status;
