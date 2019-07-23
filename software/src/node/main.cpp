@@ -33,8 +33,6 @@ AircraftBfsComms *BfsComms;
 AircraftConfiguration Config;
 // class for sensor configuration and data acquisition
 AircraftSensors Sensors;
-// struct for sensor data
-AircraftSensors::Data SensorData;
 // class for mission management (modes and states)
 AircraftMission Mission;
 // class for effectors
@@ -47,8 +45,6 @@ AircraftMission::State MissionState;
 AircraftMission::Mode RequestedMode;
 // effector commands
 std::vector<float> EffectorCommands;
-// buffer for transmitting metadata
-std::vector<uint8_t> MetaDataBuffer;
 // buffer for transmitting data
 std::vector<uint8_t> DataBuffer;
 
@@ -59,9 +55,6 @@ void RequestMessage() {
   AircraftBfsComms::Message message;
   std::vector<uint8_t> Payload;
   BfsComms->GetMessage(&message, &Payload);
-  if (message == AircraftBfsComms::SensorMetaData) {
-    BfsComms->SendSensorMetaData(MetaDataBuffer);
-  }
   if (message == AircraftBfsComms::SensorData) {
     BfsComms->SendSensorData(DataBuffer);
   }
@@ -120,12 +113,8 @@ void loop() {
       Mission.ClearSyncDataCollection();
       // read synchronous sensors
       Sensors.ReadSyncSensors();
-      // get the current data
-      Sensors.GetData(&SensorData);
-      // buffer for transmitting meta data
-      Sensors.GetMetaDataBuffer(&MetaDataBuffer);
       // buffer for transmitting data
-      Sensors.GetDataBuffer(&DataBuffer);
+      Sensors.MakeMegaMessage(&DataBuffer);
     }
     if (MissionState == AircraftMission::AsyncDataCollection) {
       // read the asynchronous sensors

@@ -30,6 +30,13 @@ const uint8_t config_effector_id = 19;
 const uint8_t config_mission_id = 20;
 const uint8_t config_control_gain_id = 21;
 const uint8_t command_effectors_id = 22;
+const uint8_t data_mpu9250_id = 23;
+const uint8_t data_bme280_id = 24;
+const uint8_t data_ublox_id = 25;
+const uint8_t data_ams5915_id = 26;
+const uint8_t data_swift_id = 27;
+const uint8_t data_sbus_id = 28;
+const uint8_t data_analog_id = 29;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -37,6 +44,8 @@ static const uint8_t message_max_len = 255;
 // Constants
 static const uint8_t num_effectors = 16;  // number of effector channels
 static const uint8_t max_calibration = 4;  // maximum nubmer of calibration coefficients
+static const float accel_scale = 0.0047886473;  // 9.807(g) * 16 / 32767.5
+static const float gyro_scale = 0.0010652807;  // 2000.0f/32767.5f * d2r
 
 // Enums
 enum class sensor_type {
@@ -844,6 +853,444 @@ struct command_effectors_t {
         len = sizeof(_compact_t);
         num_active = _buf->num_active;
         for (int _i=0; _i<num_effectors; _i++) command[_i] = _buf->command[_i] / (float)32767;
+        return true;
+    }
+};
+
+// Message: data_mpu9250 (id: 23)
+struct data_mpu9250_t {
+    // public fields
+    int8_t ReadStatus;
+    float AccelX_mss;
+    float AccelY_mss;
+    float AccelZ_mss;
+    float GyroX_rads;
+    float GyroY_rads;
+    float GyroZ_rads;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int8_t ReadStatus;
+        int16_t AccelX_mss;
+        int16_t AccelY_mss;
+        int16_t AccelZ_mss;
+        int16_t GyroX_rads;
+        int16_t GyroY_rads;
+        int16_t GyroZ_rads;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 23;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->ReadStatus = ReadStatus;
+        _buf->AccelX_mss = intround(AccelX_mss * accel_scale);
+        _buf->AccelY_mss = intround(AccelY_mss * accel_scale);
+        _buf->AccelZ_mss = intround(AccelZ_mss * accel_scale);
+        _buf->GyroX_rads = intround(GyroX_rads * gyro_scale);
+        _buf->GyroY_rads = intround(GyroY_rads * gyro_scale);
+        _buf->GyroZ_rads = intround(GyroZ_rads * gyro_scale);
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        ReadStatus = _buf->ReadStatus;
+        AccelX_mss = _buf->AccelX_mss / (float)accel_scale;
+        AccelY_mss = _buf->AccelY_mss / (float)accel_scale;
+        AccelZ_mss = _buf->AccelZ_mss / (float)accel_scale;
+        GyroX_rads = _buf->GyroX_rads / (float)gyro_scale;
+        GyroY_rads = _buf->GyroY_rads / (float)gyro_scale;
+        GyroZ_rads = _buf->GyroZ_rads / (float)gyro_scale;
+        return true;
+    }
+};
+
+// Message: data_bme280 (id: 24)
+struct data_bme280_t {
+    // public fields
+    int8_t ReadStatus;
+    float Pressure_Pa;
+    float Temperature_C;
+    float Humidity_RH;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int8_t ReadStatus;
+        float Pressure_Pa;
+        int16_t Temperature_C;
+        float Humidity_RH;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 24;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->ReadStatus = ReadStatus;
+        _buf->Pressure_Pa = Pressure_Pa;
+        _buf->Temperature_C = intround(Temperature_C * 100);
+        _buf->Humidity_RH = Humidity_RH;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        ReadStatus = _buf->ReadStatus;
+        Pressure_Pa = _buf->Pressure_Pa;
+        Temperature_C = _buf->Temperature_C / (float)100;
+        Humidity_RH = _buf->Humidity_RH;
+        return true;
+    }
+};
+
+// Message: data_ublox (id: 25)
+struct data_ublox_t {
+    // public fields
+    bool Fix;
+    uint8_t NumberSatellites;
+    uint32_t TOW;
+    uint16_t Year;
+    uint8_t Month;
+    uint8_t Day;
+    uint8_t Hour;
+    uint8_t Min;
+    uint8_t Sec;
+    double Latitude_rad;
+    double Longitude_rad;
+    float Altitude_m;
+    float NorthVelocity_ms;
+    float EastVelocity_ms;
+    float DownVelocity_ms;
+    float HorizontalAccuracy_m;
+    float VerticalAccuracy_m;
+    float VelocityAccuracy_ms;
+    float pDOP;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        bool Fix;
+        uint8_t NumberSatellites;
+        uint32_t TOW;
+        uint16_t Year;
+        uint8_t Month;
+        uint8_t Day;
+        uint8_t Hour;
+        uint8_t Min;
+        uint8_t Sec;
+        double Latitude_rad;
+        double Longitude_rad;
+        float Altitude_m;
+        int16_t NorthVelocity_ms;
+        int16_t EastVelocity_ms;
+        int16_t DownVelocity_ms;
+        float HorizontalAccuracy_m;
+        int16_t VerticalAccuracy_m;
+        int16_t VelocityAccuracy_ms;
+        int16_t pDOP;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 25;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->Fix = Fix;
+        _buf->NumberSatellites = NumberSatellites;
+        _buf->TOW = TOW;
+        _buf->Year = Year;
+        _buf->Month = Month;
+        _buf->Day = Day;
+        _buf->Hour = Hour;
+        _buf->Min = Min;
+        _buf->Sec = Sec;
+        _buf->Latitude_rad = Latitude_rad;
+        _buf->Longitude_rad = Longitude_rad;
+        _buf->Altitude_m = Altitude_m;
+        _buf->NorthVelocity_ms = intround(NorthVelocity_ms * 100);
+        _buf->EastVelocity_ms = intround(EastVelocity_ms * 100);
+        _buf->DownVelocity_ms = intround(DownVelocity_ms * 100);
+        _buf->HorizontalAccuracy_m = HorizontalAccuracy_m;
+        _buf->VerticalAccuracy_m = intround(VerticalAccuracy_m * 100);
+        _buf->VelocityAccuracy_ms = intround(VelocityAccuracy_ms * 100);
+        _buf->pDOP = intround(pDOP * 100);
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        Fix = _buf->Fix;
+        NumberSatellites = _buf->NumberSatellites;
+        TOW = _buf->TOW;
+        Year = _buf->Year;
+        Month = _buf->Month;
+        Day = _buf->Day;
+        Hour = _buf->Hour;
+        Min = _buf->Min;
+        Sec = _buf->Sec;
+        Latitude_rad = _buf->Latitude_rad;
+        Longitude_rad = _buf->Longitude_rad;
+        Altitude_m = _buf->Altitude_m;
+        NorthVelocity_ms = _buf->NorthVelocity_ms / (float)100;
+        EastVelocity_ms = _buf->EastVelocity_ms / (float)100;
+        DownVelocity_ms = _buf->DownVelocity_ms / (float)100;
+        HorizontalAccuracy_m = _buf->HorizontalAccuracy_m;
+        VerticalAccuracy_m = _buf->VerticalAccuracy_m / (float)100;
+        VelocityAccuracy_ms = _buf->VelocityAccuracy_ms / (float)100;
+        pDOP = _buf->pDOP / (float)100;
+        return true;
+    }
+};
+
+// Message: data_ams5915 (id: 26)
+struct data_ams5915_t {
+    // public fields
+    int8_t ReadStatus;
+    float Pressure_Pa;
+    float Temperature_C;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int8_t ReadStatus;
+        float Pressure_Pa;
+        int16_t Temperature_C;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 26;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->ReadStatus = ReadStatus;
+        _buf->Pressure_Pa = Pressure_Pa;
+        _buf->Temperature_C = intround(Temperature_C * 100);
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        ReadStatus = _buf->ReadStatus;
+        Pressure_Pa = _buf->Pressure_Pa;
+        Temperature_C = _buf->Temperature_C / (float)100;
+        return true;
+    }
+};
+
+// Message: data_swift (id: 27)
+struct data_swift_t {
+    // public fields
+    int8_t static_ReadStatus;
+    float static_Pressure_Pa;
+    float static_Temperature_C;
+    int8_t diff_ReadStatus;
+    float diff_Pressure_Pa;
+    float diff_Temperature_C;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int8_t static_ReadStatus;
+        float static_Pressure_Pa;
+        int16_t static_Temperature_C;
+        int8_t diff_ReadStatus;
+        float diff_Pressure_Pa;
+        int16_t diff_Temperature_C;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 27;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->static_ReadStatus = static_ReadStatus;
+        _buf->static_Pressure_Pa = static_Pressure_Pa;
+        _buf->static_Temperature_C = intround(static_Temperature_C * 100);
+        _buf->diff_ReadStatus = diff_ReadStatus;
+        _buf->diff_Pressure_Pa = diff_Pressure_Pa;
+        _buf->diff_Temperature_C = intround(diff_Temperature_C * 100);
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        static_ReadStatus = _buf->static_ReadStatus;
+        static_Pressure_Pa = _buf->static_Pressure_Pa;
+        static_Temperature_C = _buf->static_Temperature_C / (float)100;
+        diff_ReadStatus = _buf->diff_ReadStatus;
+        diff_Pressure_Pa = _buf->diff_Pressure_Pa;
+        diff_Temperature_C = _buf->diff_Temperature_C / (float)100;
+        return true;
+    }
+};
+
+// Message: data_sbus (id: 28)
+struct data_sbus_t {
+    // public fields
+    float channels[16];
+    bool FailSafe;
+    uint32_t LostFrames;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int16_t channels[16];
+        bool FailSafe;
+        uint32_t LostFrames;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 28;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        for (int _i=0; _i<16; _i++) _buf->channels[_i] = intround(channels[_i] * 20000);
+        _buf->FailSafe = FailSafe;
+        _buf->LostFrames = LostFrames;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        for (int _i=0; _i<16; _i++) channels[_i] = _buf->channels[_i] / (float)20000;
+        FailSafe = _buf->FailSafe;
+        LostFrames = _buf->LostFrames;
+        return true;
+    }
+};
+
+// Message: data_analog (id: 29)
+struct data_analog_t {
+    // public fields
+    float calibrated_value;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        float calibrated_value;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 29;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->calibrated_value = calibrated_value;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        calibrated_value = _buf->calibrated_value;
         return true;
     }
 };

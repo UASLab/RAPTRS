@@ -1,7 +1,9 @@
 {
     "constants": [
         { "type": "uint8_t", "name": "num_effectors", "value": 16, "desc": "number of effector channels" },
-        { "type": "uint8_t", "name": "max_calibration", "value": 4, "desc": "maximum nubmer of calibration coefficients" }
+        { "type": "uint8_t", "name": "max_calibration", "value": 4, "desc": "maximum nubmer of calibration coefficients" },
+        { "type": "float", "name": "accel_scale", "value": 0.0047886473, "desc": "9.807(g) * 16 / 32767.5" },
+        { "type": "float", "name": "gyro_scale", "value": 0.0010652807, "desc": "2000.0f/32767.5f * d2r" }
     ],
 
     "enums": [
@@ -153,7 +155,93 @@
                 { "type": "uint8_t", "name": "num_active" },
                 { "type": "float", "name": "command[num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
             ]
+        },
+        {
+            "name": "data_mpu9250",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                // x,y,z accelerometer counts
+                { "type": "float", "name": "AccelX_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "AccelY_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "AccelZ_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                // x,y,z gyros counts
+                { "type": "float", "name": "GyroX_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "GyroY_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "GyroZ_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" }
+                // x,y,z mag counts
+                // { "type": "float", "name": "MagX_uT" },
+                // { "type": "float", "name": "MagY_uT" },
+                // { "type": "float", "name": "MagZ_uT" },
+                // { "type": "float", "name": "Temperature_C", "pack_type": "int16_t", "pack_scale": 100 }
+            ]
+        },
+        {
+            "name": "data_bme280",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                { "type": "float", "name": "Pressure_Pa" },
+                { "type": "float", "name": "Temperature_C", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "Humidity_RH"}
+            ]
+        },
+        {
+            "name": "data_ublox",
+            "fields": [
+                { "type": "bool", "name": "Fix" }, // True for 3D fix only
+                { "type": "uint8_t", "name": "NumberSatellites" }, // Number of satellites used in solution
+                { "type": "uint32_t", "name": "TOW" }, // GPS time of the navigation epoch
+                { "type": "uint16_t", "name": "Year" }, // UTC year
+                { "type": "uint8_t", "name": "Month" }, // UTC month
+                { "type": "uint8_t", "name": "Day" },   // UTC day
+                { "type": "uint8_t", "name": "Hour" },  // UTC hour
+                { "type": "uint8_t", "name": "Min" },   // UTC minute
+                { "type": "uint8_t", "name": "Sec" },   // UTC second
+                // Latitude (rad), Longitude (rad), Altitude (m)
+                { "type": "double", "name": "Latitude_rad" },
+                { "type": "double", "name": "Longitude_rad" },
+                { "type": "float", "name": "Altitude_m" },
+                // NED Velocity, m/s
+                { "type": "float", "name": "NorthVelocity_ms", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "EastVelocity_ms", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "DownVelocity_ms", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "HorizontalAccuracy_m" }, // Accuracy Horizontal (m)
+                { "type": "float", "name": "VerticalAccuracy_m", "pack_type": "int16_t", "pack_scale": 100 }, // Accuracy Vertical (m)
+                { "type": "float", "name": "VelocityAccuracy_ms", "pack_type": "int16_t", "pack_scale": 100 }, // Accuracy Speed (m/s)
+                { "type": "float", "name": "pDOP", "pack_type": "int16_t", "pack_scale": 100 } // Position DOP
+            ]
+        },
+        {
+            "name": "data_ams5915",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                { "type": "float", "name": "Pressure_Pa" },
+                { "type": "float", "name": "Temperature_C", "pack_type": "int16_t", "pack_scale": 100 }
+            ]
+        },
+        {
+            "name": "data_swift",
+            "fields": [
+                { "type": "int8_t", "name": "static_ReadStatus" },
+                { "type": "float", "name": "static_Pressure_Pa" },
+                { "type": "float", "name": "static_Temperature_C", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "int8_t", "name": "diff_ReadStatus" },
+                { "type": "float", "name": "diff_Pressure_Pa" },
+                { "type": "float", "name": "diff_Temperature_C", "pack_type": "int16_t", "pack_scale": 100 }
+            ]
+        },
+        {
+            "name": "data_sbus",
+            "fields": [
+                { "type": "float", "name": "channels[16]", "pack_type": "int16_t", "pack_scale": 20000 },
+                { "type": "bool", "name": "FailSafe" },
+                { "type": "uint32_t", "name": "LostFrames" }
+            ]
+        },
+        {
+            "name": "data_analog",
+            "fields": [
+                { "type": "float", "name": "calibrated_value" }
+            ]
         }
     ]
 }
-
