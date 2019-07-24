@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 void MinCellVolt::Configure(const rapidjson::Value& Config, std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Inputs", input_nodes_, &InputKeys_);
-  LoadOutput(Config, SystemName, "Output", output_node_);
+  LoadInput(Config, SystemName, "Inputs", &input_nodes_, &InputKeys_);
+  LoadOutput(Config, SystemName, "Output", &output_node_);
 
   // Number of cells
   LoadVal(Config, "NumCells", &numCells_, true);

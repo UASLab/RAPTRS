@@ -20,12 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #pragma once
 
-#include "hardware-defs.h"
+#include "configuration.h"
 #include "definition-tree2.h"
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+
 #include "generic-function.h"
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -36,13 +36,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <stdexcept>
 #include <vector>
 #include <cstring>
+#include <memory>
 
 // Mode change requests are handled with a set of persistance counters.
 // Requesting Armed or Engaged states require persistance to switch
 class ModeSelect {
   public:
     void Configure(const rapidjson::Value& Config, int PersistThreshold);
-    std::string Run(float val);
+    void Run(float val, uint8_t *cmdSel, std::string *cmdSelName);
     void Reset(){
       PersistCounter_ = 0;
     };
@@ -54,7 +55,7 @@ class ModeSelect {
 
   private:
     std::vector<ModeEnt> ModeSel_;
-    std::string cmdSel_, cmdReq_;
+    uint8_t cmdSelPrev_, cmdReqPrev_;
     int PersistCounter_ = 0;
     int PersistThreshold_ = 0;
 };
@@ -73,41 +74,46 @@ class MissionManager {
     void Run();
     std::string GetBaselineSensorProcessing();
     std::string GetBaselineController();
-    GenericFunction::Mode GetBaselineRunMode();
+    Mode GetBaselineRunMode();
     std::string GetTestSensorProcessing();
     std::string GetTestController();
-    GenericFunction::Mode GetTestRunMode();
+    Mode GetTestRunMode();
     std::string GetExcitation();
   private:
     std::string RootPath_ = "/Mission-Manager";
 
+    // Switches
     struct Switch {
       ElementPtr source_node;
       std::string sourceKey;
       float Gain = 1.0;
-      ModeSelect modeSelect;
+      std::shared_ptr<ModeSelect> modeSelectPtr;
     };
 
-    Switch SocEngage_;
-    Switch ThrottleSafety_;
-    Switch BaselineSelect_;
-    Switch TestMode_;
-    Switch TestSelect_;
-    Switch Trigger_;
+    Switch ThrottleSafetySw_, SocEngageSw_, BaseCtrlSelectSw_, TestModeSw_, TestSelectSw_, TriggerSw_;
 
-    size_t NumberOfTestPoints_ = 0;
-    ElementPtr TestPointId_node;
+    // defTree Elements
+    ElementPtr SocEngage_node;
+    ElementPtr BaseCtrlSelect_node, BaseCtrlMode_node, TestCtrlMode_node, TestSenProcMode_node;
+    ElementPtr TestPtID_node, ExciteEngage_node;
 
-    std::string TestSensorProcessingSel_ = "None";
-    std::string TestControlSel_ = "None";
-    std::string BaselineSensProcSel_ = "None";
-    std::string BaselineControlSel_ = "None";
-    Mode BaselineControlMode_ = Mode::kArm; // Armed
-    Mode TestControlMode_ = Mode::kStandby; // Standby
-    std::string ExcitationSel_ = "None";
+    // Test Point
+    size_t TestPtID_ = 0;
+    size_t NumTestPts_ = 0;
+    std::map<std::string, TestPointDefinition> TestPoints_;
 
-    ElementPtr SocEngage_node, BaselineMode_node, TestMode_node, TestSelect_node;
-    ElementPtr TestEngageFlag_node;
+    bool SocEngageMode_ = false;
 
-    std::map<std::string,TestPointDefinition> TestPoints_;
+    std::string BaseSenProcSel_ = "None";
+    std::string BaseCtrlSel_ = "None";
+    Mode BaseCtrlMode_ = Mode::kArm; // Armed
+
+    std::string TestSenProcSel_ = "None";
+    std::string TestCtrlSel_ = "None";
+    Mode TestCtrlMode_ = Mode::kStandby; // Standby
+
+    std::string ExciteSel_ = "None";
+    bool TriggerLatch_ = false;
+    bool TriggerAct_ = false;
+
 };

@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) {
 
-  x.resize(num.size());
-  y.resize(den.size());
-  
+  x_.resize(num.size());
+  y_.resize(den.size());
+
   // scale all den and num by den[0] if available
   if (den.size() > 0) {
     // prevent divide by zero
@@ -37,46 +37,47 @@ void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) 
       }
     }
   }
+  num_ = num;
+  den_ = den;
 }
 
 float __GeneralFilter::Run(float input) {
   // shift all x and y values to the right 1
-  if (x.size()>0) {
-    std::rotate(x.data(), x.data()+x.size()-1, x.data()+x.size());
+  if (x_.size()>0) {
+    std::rotate(x_.data(), x_.data()+x_.size()-1, x_.data()+x_.size());
   }
-  if (y.size() > 0) {
-    std::rotate(y.data(), y.data()+y.size()-1, y.data()+y.size());
+  if (y_.size() > 0) {
+    std::rotate(y_.data(), y_.data()+y_.size()-1, y_.data()+y_.size());
   }
 
   // grab the newest x value
-  x[0] = input;
+  x_[0] = input;
 
   // apply all num coefficients
   float FeedForward = 0.0f;
-  for (size_t i=0; i < num.size(); i++) {
-    FeedForward += num[i]*x[i];
+  for (size_t i=0; i < num_.size(); i++) {
+    FeedForward += num_[i]*x_[i];
   }
 
   // apply all den coefficients
   float FeedBack = 0.0f;
-  for (size_t i=1; i < den.size(); i++) {
-    FeedBack += den[i]*y[i];
+  for (size_t i=1; i < den_.size(); i++) {
+    FeedBack += den_[i]*y_[i];
   }
 
   // get the output
-  Output = FeedForward - FeedBack;
+  float Output = FeedForward - FeedBack;
 
   // grab the newest y value
-  if (y.size() > 0) {
-    y[0] = Output;
+  if (y_.size() > 0) {
+    y_[0] = Output;
   }
   return Output;
 }
 
 void __GeneralFilter::Clear() {
-  den.clear();
-  num.clear();
-  x.clear();
-  y.clear();
-  Output = 0.0f;
+  den_.clear();
+  num_.clear();
+  x_.clear();
+  y_.clear();
 }

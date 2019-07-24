@@ -23,8 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 void IndicatedAirspeed::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Differential-Pressure", DiffPress_node_, &DiffPressKeys_);
-  LoadOutput(Config, SystemName, "Output", IAS_node_);
+  LoadInput(Config, SystemName, "Differential-Pressure", &DiffPress_node_, &DiffPressKeys_);
+  LoadOutput(Config, SystemName, "Output", &IAS_node_);
 
   // Resize bias vector
   DiffPressBias_.resize(DiffPressKeys_.size());
@@ -85,8 +85,8 @@ void IndicatedAirspeed::Clear() {
 
 void AglAltitude::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Static-Pressure", StaticPress_node_, &StaticPressKeys_);
-  LoadOutput(Config, SystemName, "Output", AltAgl_node_);
+  LoadInput(Config, SystemName, "Static-Pressure", &StaticPress_node_, &StaticPressKeys_);
+  LoadOutput(Config, SystemName, "Output", &AltAgl_node_);
 
   // Initialization time
   LoadVal(Config, "Initialization-Time", &TimeInit_s_);
@@ -148,11 +148,11 @@ void AglAltitude::Clear() {
 /* Pitot-Static System */
 void PitotStatic::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Static-Pressure", StaticPress_node_, &StaticPressKey_);
-  LoadInput(Config, SystemName, "Differential-Pressure", DiffPress_node_, &DiffPressKey_);
+  LoadInput(Config, SystemName, "Static-Pressure", &StaticPress_node_, &StaticPressKey_);
+  LoadInput(Config, SystemName, "Differential-Pressure", &DiffPress_node_, &DiffPressKey_);
 
-  LoadOutput(Config, SystemName, "OutputAltitude", AltAgl_node_);
-  LoadOutput(Config, SystemName, "OutputIas", IAS_node_);
+  LoadOutput(Config, SystemName, "OutputAltitude", &AltAgl_node_);
+  LoadOutput(Config, SystemName, "OutputIas", &IAS_node_);
 
   // Initialization time
   LoadVal(Config, "Initialization-Time", &TimeInit_s_);
@@ -219,17 +219,17 @@ void PitotStatic::Clear() {
 // Assume that all 5 pressure sensors are measuring relative to the static ring
 void FiveHole1::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Static-Pressure", StaticPress_node_, &StaticPressKey_);
-  LoadInput(Config, SystemName, "Tip-Pressure", TipPress_node_, &TipPressKey_);
-  LoadInput(Config, SystemName, "Alpha1-Pressure", Alpha1Press_node_, &Alpha1PressKey_);
-  LoadInput(Config, SystemName, "Alpha2-Pressure", Alpha2Press_node_, &Alpha2PressKey_);
-  LoadInput(Config, SystemName, "Beta1-Pressure", Beta1Press_node_, &Beta1PressKey_);
-  LoadInput(Config, SystemName, "Beta2-Pressure", Beta2Press_node_, &Beta2PressKey_);
+  LoadInput(Config, SystemName, "Static-Pressure", &StaticPress_node_, &StaticPressKey_);
+  LoadInput(Config, SystemName, "Tip-Pressure", &TipPress_node_, &TipPressKey_);
+  LoadInput(Config, SystemName, "Alpha1-Pressure", &Alpha1Press_node_, &Alpha1PressKey_);
+  LoadInput(Config, SystemName, "Alpha2-Pressure", &Alpha2Press_node_, &Alpha2PressKey_);
+  LoadInput(Config, SystemName, "Beta1-Pressure", &Beta1Press_node_, &Beta1PressKey_);
+  LoadInput(Config, SystemName, "Beta2-Pressure", &Beta2Press_node_, &Beta2PressKey_);
 
-  LoadOutput(Config, SystemName, "OutputAltitude", AltAgl_node_);
-  LoadOutput(Config, SystemName, "OutputIas", IAS_node_);
-  LoadOutput(Config, SystemName, "OutputAlpha", Alpha_rad_node_);
-  LoadOutput(Config, SystemName, "OutputBeta", Beta_rad_node_);
+  LoadOutput(Config, SystemName, "OutputAltitude", &AltAgl_node_);
+  LoadOutput(Config, SystemName, "OutputIas", &IAS_node_);
+  LoadOutput(Config, SystemName, "OutputAlpha", &Alpha_rad_node_);
+  LoadOutput(Config, SystemName, "OutputBeta", &Beta_rad_node_);
 
   // Alpha and Beta Calibration constants
   LoadVal(Config, "Alpha-Calibration", &kAlpha_);
@@ -345,15 +345,15 @@ void FiveHole1::Clear() {
 // Beta pressure sensor measures Beta2 - Beta1
 void FiveHole2::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Static-Pressure", StaticPress_node_, &StaticPressKey_);
-  LoadInput(Config, SystemName, "Tip-Pressure", TipPress_node_, &TipPressKey_);
-  LoadInput(Config, SystemName, "Alpha-Pressure", AlphaPress_node_, &AlphaPressKey_);
-  LoadInput(Config, SystemName, "Beta-Pressure", BetaPress_node_, &BetaPressKey_);
+  LoadInput(Config, SystemName, "Static-Pressure", &StaticPress_node_, &StaticPressKey_);
+  LoadInput(Config, SystemName, "Tip-Pressure", &TipPress_node_, &TipPressKey_);
+  LoadInput(Config, SystemName, "Alpha-Pressure", &AlphaPress_node_, &AlphaPressKey_);
+  LoadInput(Config, SystemName, "Beta-Pressure", &BetaPress_node_, &BetaPressKey_);
 
-  LoadOutput(Config, SystemName, "OutputAltitude", AltAgl_node_);
-  LoadOutput(Config, SystemName, "OutputIas", IAS_node_);
-  LoadOutput(Config, SystemName, "OutputAlpha", Alpha_rad_node_);
-  LoadOutput(Config, SystemName, "OutputBeta", Beta_rad_node_);
+  LoadOutput(Config, SystemName, "OutputAltitude", &AltAgl_node_);
+  LoadOutput(Config, SystemName, "OutputIas", &IAS_node_);
+  LoadOutput(Config, SystemName, "OutputAlpha", &Alpha_rad_node_);
+  LoadOutput(Config, SystemName, "OutputBeta", &Beta_rad_node_);
 
   // Alpha and Beta Calibration constants
   LoadVal(Config, "Alpha-Calibration", &kAlpha_);

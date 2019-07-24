@@ -141,11 +141,11 @@ int main(int argc, char* argv[]) {
 
   /* profiling */
   ElementPtr profMainLoop = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
-  ElementPtr profSenProc = deftree.initElement("/Mission/profSenProc", "Baseline Sensor processing time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profBaseline = deftree.initElement("/Mission/profBaseline", "Baseline Sensor processing time us", LOG_UINT32, LOG_NONE);
   ElementPtr profTest = deftree.initElement("/Mission/profTest", "Test System time us", LOG_UINT32, LOG_NONE);
   ElementPtr profResponse = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
   uint64_t profMainStart_us = 0;
-  uint64_t profSenProcStart_us = 0;
+  uint64_t profBaselineStart_us = 0;
   uint64_t profTestStart_us = 0;
   uint64_t profResponseStart_us = 0;
 
@@ -169,27 +169,29 @@ int main(int argc, char* argv[]) {
       float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
 
       if (SenProc.Initialized()) {
-
         // Run the Baseline Sensor Processing
-        profSenProcStart_us = micros();
-        SenProc.RunBaseline(Mode::kEngage);
-        profSenProc->setInt(micros() - profSenProcStart_us);
+        profBaselineStart_us = micros();
+        SenProc.RunBaseline(Mode::kEngage); // Always run the Baseline SenProc as engaged.
 
-        // Run mission
+        // Run mission manager
         Mission.Run();
 
-        // get and set test systems
+        // Run the Baseline Control Laws
+        Control.SetBaseline(Mission.GetBaselineController());
+        Control.RunBaseline(Mission.GetBaselineRunMode());
+        profBaseline->setInt(micros() - profBaselineStart_us);
+
+        // Setup the Test systems
         SenProc.SetTest(Mission.GetTestSensorProcessing());
         Control.SetTest(Mission.GetTestController());
         Excitation.SetExcitation(Mission.GetExcitation());
 
-        // Start Test timer
-        profTestStart_us = micros();
-
-        if (Mission.GetTestRunMode() > 0) {
+        // Run Test systems
+        profTestStart_us = micros(); // Start Test timer
+        if (Mission.GetTestRunMode() > 0) { // Armed or Engaged
 
           // Run Test Sensor-Processing
-          Control.RunTest(Mission.GetTestRunMode());
+          SenProc.RunTest(Mission.GetTestRunMode());
 
           // loop through control levels running excitations and control laws
           std::vector<std::string> ControlLevels = Control.GetTestLevels();
@@ -202,9 +204,6 @@ int main(int argc, char* argv[]) {
             Control.SetLevel(ControlLevels[i]);
             Control.RunTest(Mission.GetTestRunMode());
           }
-
-          // send effector commands to FMU
-          Fmu.SendEffectorCommands(Effectors.Run());
         }
 
         profTest->setInt(micros() - profTestStart_us);
@@ -215,21 +214,23 @@ int main(int argc, char* argv[]) {
           sim_cmd_update();
         }
 
-        // run baseline control laws
-        Control.RunBaseline(Mission.GetBaselineRunMode());
+        // send effector commands to FMU
+        Fmu.SendEffectorCommands(Effectors.Run());
 
-
-        // Print some status
-        std::string BaseCntrl = Mission.GetTestController();
+        /* Print some status */
+        std::string BaseCntrl = Mission.GetBaselineController();
+        GenericFunction::Mode BaseMode = Mission.GetBaselineRunMode();
         std::string TestCntrl = Mission.GetTestController();
-        std::string TestSens = Mission.GetTestSensorProcessing();
+        GenericFunction::Mode TestMode = Mission.GetTestRunMode();
         std::string ExcitEngaged = Mission.GetExcitation();
 
         float timeCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
         float dt_ms = timeCurr_ms - timePrev_ms;
         timePrev_ms = timeCurr_ms;
 
-        std::cout << BaseCntrl << "\t" << TestCntrl << "\t" << TestSens << "\t" << ExcitEngaged
+        std::cout << BaseCntrl << ":" << BaseMode << "\t"
+                  << TestCntrl << ":" << TestMode << "\t"
+                  << ExcitEngaged
                   << "\tdt (ms):  " << dt_ms
                   << std::endl;
 

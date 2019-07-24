@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 void GeneralFilter::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Input", u_node, &InputKey_);
-  LoadOutput(Config, SystemName, "Output", y_node);
+  LoadInput(Config, SystemName, "Input", &u_node, &InputKey_);
+  LoadOutput(Config, SystemName, "Output", &y_node);
 
   // Coefficient vectors
   LoadVal(Config, "num", &num, true);

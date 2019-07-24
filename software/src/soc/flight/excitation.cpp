@@ -25,7 +25,7 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
 
   // Get the time signal
   std::string TimeKey;
-  LoadInput(Config, RootPath_, "Time", time_node_, &TimeKey);
+  LoadInput(Config, RootPath_, "Time", &time_node_, &TimeKey);
 
   // Load Waveform Definitions
   if (!Config.HasMember("WaveDef")) { // WaveDef not defined
@@ -134,7 +134,7 @@ void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value
     LoadVal(WaveformDef, "Scale-Factor", &WaveStructInst.Scale);
 
     std::string SignalKey;
-    LoadInput(WaveformDef, ExcitePath, "Signal", WaveStructInst.NodeSignal, &SignalKey);
+    LoadInput(WaveformDef, ExcitePath, "Signal", &WaveStructInst.NodeSignal, &SignalKey);
 
     std::string ExciteKey = ExcitePath + "/" + SignalKey.substr (SignalKey.rfind("/")+1);
     WaveStructInst.NodeExcite = deftree.initElement(ExciteKey, ": Excitation Signal", LOG_FLOAT, LOG_NONE);

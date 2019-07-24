@@ -1,7 +1,7 @@
 
 #include "control-algorithms.h"
 
-void __PID2Class::Configure(float Kp, float Ki, float Kd, float b, float c, float Tf, float Min, float Max) {
+void __PID2Class::Configure(float Kp, float Ki, float Kd, float Tf, float b, float c, float Min, float Max) {
   Clear();  // Set Defaults
 
   Kp_ = Kp;

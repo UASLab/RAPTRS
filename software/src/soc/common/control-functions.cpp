@@ -31,9 +31,9 @@ void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath
   float Min = std::numeric_limits<float>::lowest();
   float Max = std::numeric_limits<float>::max();
 
-  LoadInput(Config, SystemPath, "Reference", reference_node, &ReferenceKey_);
-  LoadInput(Config, SystemPath, "Feedback", feedback_node, &FeedbackKey_);
-  LoadOutput(Config, SystemPath, "Output", output_node);
+  LoadInput(Config, SystemPath, "Reference", &reference_node, &ReferenceKey_);
+  LoadInput(Config, SystemPath, "Feedback", &feedback_node, &FeedbackKey_);
+  LoadOutput(Config, SystemPath, "Output", &output_node);
 
   std::string OutputKey = Config["Output"].GetString();
 
@@ -45,7 +45,7 @@ void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath
   if (dt > 0.0) {
     UseFixedTimeSample = true;
   } else {
-    LoadInput(Config, SystemPath, "Time-Source", time_node, &TimeKey_);
+    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
   }
 
   LoadVal(Config, "Kp", &Kp);
@@ -105,8 +105,8 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) 
   float Min = std::numeric_limits<float>::lowest();
   float Max = std::numeric_limits<float>::max();
 
-  LoadInput(Config, SystemPath, "Input", input_node, &InputKey_);
-  LoadOutput(Config, SystemPath, "Output", output_node);
+  LoadInput(Config, SystemPath, "Input", &input_node, &InputKey_);
+  LoadOutput(Config, SystemPath, "Output", &output_node);
 
   std::string OutputKey = Config["Output"].GetString();
 
@@ -118,7 +118,7 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) 
   if (dt > 0.0) {
     UseFixedTimeSample = true;
   } else {
-    LoadInput(Config, SystemPath, "Time-Source", time_node, &TimeKey_);
+    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
   }
 
   LoadVal(Config, "Kp", &Kp);
@@ -170,8 +170,8 @@ void PIDClass::Clear() {
 /* SS class methods, see control-functions.hxx for more information */
 void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
   // I/O signals
-  LoadInput(Config, SystemPath, "Inputs", u_node, &InputKeys_);
-  LoadOutput(Config, SystemPath, "Outputs", y_node);
+  LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
+  LoadOutput(Config, SystemPath, "Outputs", &y_node);
 
   // Matrices
   LoadVal(Config, "A", &A);
@@ -199,7 +199,7 @@ void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) 
   if (dt > 0.0) {
     UseFixedTimeSample = true;
   } else {
-    LoadInput(Config, SystemPath, "Time-Source", time_node, &TimeKey_);
+    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
   }
 
   // Limits
@@ -263,16 +263,16 @@ void SSClass::Clear() {
 void TecsClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
   // Inputs
   std::string RefSpeedKey, FeedbackSpeedKey;
-  LoadInput(Config, SystemPath, "RefSpeed", ref_vel_node, &RefSpeedKey);
-  LoadInput(Config, SystemPath, "FeedbackSpeed", vel_node, &FeedbackSpeedKey);
+  LoadInput(Config, SystemPath, "RefSpeed", &ref_vel_node, &RefSpeedKey);
+  LoadInput(Config, SystemPath, "FeedbackSpeed", &vel_node, &FeedbackSpeedKey);
 
   std::string RefAltitudeKey, FeedbackAltitudeKey;
-  LoadInput(Config, SystemPath, "RefAltitude", ref_agl_node, &RefAltitudeKey);
-  LoadInput(Config, SystemPath, "FeedbackAltitude", agl_node, &FeedbackAltitudeKey);
+  LoadInput(Config, SystemPath, "RefAltitude", &ref_agl_node, &RefAltitudeKey);
+  LoadInput(Config, SystemPath, "FeedbackAltitude", &agl_node, &FeedbackAltitudeKey);
 
   // Outputs
-  LoadOutput(Config, SystemPath, "OutputTotal", error_total_node);
-  LoadOutput(Config, SystemPath, "OutputDiff", error_diff_node);
+  LoadOutput(Config, SystemPath, "OutputTotal", &error_total_node);
+  LoadOutput(Config, SystemPath, "OutputDiff", &error_diff_node);
 
   // Parameters
   LoadVal(Config, "mass_kg", &mass_kg, true);

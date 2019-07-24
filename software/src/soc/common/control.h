@@ -46,7 +46,7 @@ Example JSON configuration:
 
 "Control": {
     "Fmu": "Group1",
-    "Baseline": ["Group2", "Group3"], // Selected is always Armed or Engaged
+    "Baseline": ["Group2", "Group3", "Group3"], // Selected is always Armed or Engaged
     "Test": ["Group2", "Group3", "Group4", "Group5"], // Only one is either Armed or Engaged by Command
 
     "GroupDef": {
@@ -101,27 +101,30 @@ class ControlSystem {
 
     // Containers for deftree nodes
     typedef std::vector<ElementPtr> NodeVec;
-    typedef std::map<std::string, NodeVec> NodeMap;
-    typedef std::map<std::string, NodeMap> NodeSetMap;
+    struct NodeStruct {
+      NodeVec Controller; // Vector of Nodes at Controller path (/Control/Baseline/<Controller1>/<Elem1>)
+      NodeVec Set;        // Vector of Nodes at Set path (/Control/Baseline/<Elem1>)
+      NodeVec Root;       // Vector of Nodes at Root path (/Control/<Elem1>)
+    } ;
+    typedef std::map<std::string, NodeStruct> NodeMap; // Key is <Controller1>
 
+    // Configuration Methods
     void Configure(const rapidjson::Value& Config);
-    void ConfigureSet(std::string SetPath, const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef, GroupMap *SetGroupMap, ControlMap *SetControlMap, NodeSetMap *SetNodeMap);
+    void ConfigureSet(std::string SetPath, const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef, GroupMap *SetGroupMap, ControlMap *SetControlMap, NodeMap *SetNodeMap);
 
     // Baseline Controller
     std::string GetBaseline();
     void SetBaseline(std::string GroupSel);
-
-    void RunTest(GenericFunction::Mode mode);
+    void RunBaseline(GenericFunction::Mode mode);
 
     // Test Controller
     std::string GetTest();
     void SetTest(std::string TestGroupSel);
+    void RunTest(GenericFunction::Mode mode);
 
     std::vector<std::string> GetTestLevels();
     std::string GetLevel();
     void SetLevel(std::string TestLevelSel);
-
-    void RunBaseline(GenericFunction::Mode mode);
 
   private:
     std::string RootPath_ = "/Control";
@@ -134,5 +137,5 @@ class ControlSystem {
     std::string TestGroupSel_;
     std::string TestLevelSel_;
 
-    NodeSetMap BaselineNodeMap_, TestNodeMap_;
+    NodeMap BaselineNodeMap_, TestNodeMap_;
 };

@@ -33,12 +33,10 @@ class __GeneralFilter {
     float Run(float input);
     void Clear();
   private:
-    std::vector<float> num;
-    std::vector<float> den;
+    std::vector<float> num_;
+    std::vector<float> den_;
 
-    float Output = 0.0f;
-
-    std::vector<float> x;
-    std::vector<float> y;
+    std::vector<float> x_;
+    std::vector<float> y_;
 
 };

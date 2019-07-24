@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 void PseudoInverseAllocation::Configure(const rapidjson::Value& Config,std::string SystemName) {
   // I/O signals
-  LoadInput(Config, SystemName, "Inputs", input_nodes, &InputKeys_);
-  LoadOutput(Config, SystemName, "Outputs", uCmd_nodes);
+  LoadInput(Config, SystemName, "Inputs", &input_nodes, &InputKeys_);
+  LoadOutput(Config, SystemName, "Outputs", &uCmd_nodes);
 
   // Control Effectiveness
   LoadVal(Config, "Effectiveness", &Effectiveness);

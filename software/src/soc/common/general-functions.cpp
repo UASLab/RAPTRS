@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 /* Constant class methods, see general-functions.h for more information */
 void ConstantClass::Configure(const rapidjson::Value& Config,std::string SystemName) {
 
-  LoadOutput(Config, SystemName, "Output", Output_node_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
   LoadVal(Config, "Constant", &Val_);
 }
 
@@ -43,8 +43,8 @@ void ConstantClass::Clear() {
 
 /* Gain class methods, see general-functions.h for more information */
 void GainClass::Configure(const rapidjson::Value& Config,std::string SystemName) {
-  LoadInput(Config, SystemName, "Input", Input_node_, &InputKey_);
-  LoadOutput(Config, SystemName, "Output", Output_node_);
+  LoadInput(Config, SystemName, "Input", &Input_node_, &InputKey_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
   LoadVal(Config, "Gain", &Gain_);
   LoadVal(Config, "Min", &Min_);
   LoadVal(Config, "Max", &Max_);
@@ -77,8 +77,8 @@ void GainClass::Clear() {
 /* Sum class methods, see general-functions.h for more information */
 void SumClass::Configure(const rapidjson::Value& Config,std::string SystemName) {
 
-  LoadInput(Config, SystemName, "Inputs", Input_nodes_, &InputKeys_);
-  LoadOutput(Config, SystemName, "Output", Output_node_);
+  LoadInput(Config, SystemName, "Inputs", &Input_nodes_, &InputKeys_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
   LoadVal(Config, "Min", &Min_);
   LoadVal(Config, "Max", &Max_);
 }
@@ -113,8 +113,8 @@ void SumClass::Clear() {
 /* Product class methods, see general-functions.h for more information */
 void ProductClass::Configure(const rapidjson::Value& Config,std::string SystemName) {
 
-  LoadInput(Config, SystemName, "Inputs", Input_nodes_, &InputKeys_);
-  LoadOutput(Config, SystemName, "Output", Output_node_);
+  LoadInput(Config, SystemName, "Inputs", &Input_nodes_, &InputKeys_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
   LoadVal(Config, "Min", &Min_);
   LoadVal(Config, "Max", &Max_);
 }
@@ -150,8 +150,8 @@ void ProductClass::Clear() {
 /* Delay class methods, see general-functions.h for more information */
 void DelayClass::Configure(const rapidjson::Value& Config, std::string SystemName) {
 
-  LoadInput(Config, SystemName, "Input", Input_node_, &InputKey_);
-  LoadOutput(Config, SystemName, "Output", Output_node_);
+  LoadInput(Config, SystemName, "Input", &Input_node_, &InputKey_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
   LoadVal(Config, "Delay_frames", &DelayFrames_);
 }
 
@@ -180,8 +180,8 @@ void DelayClass::Clear() {
 
 /* Latch class methods, see general-functions.h for more information */
 void LatchClass::Configure(const rapidjson::Value& Config,std::string SystemName) {
-  LoadInput(Config, SystemName, "Input", Input_node_, &InputKey_);
-  LoadOutput(Config, SystemName, "Output", Output_node_);
+  LoadInput(Config, SystemName, "Input", &Input_node_, &InputKey_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
 }
 
 void LatchClass::Initialize() {}

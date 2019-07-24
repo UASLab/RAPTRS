@@ -158,7 +158,7 @@ void ControlLaws::Configure(const char *JsonString,DefinitionTree *DefinitionTre
         JsonArray& BaselineConfig = Config[GroupName.c_str()];
         // resizing the control group levels
         BaselineControlGroup_.resize(BaselineConfig.size());
-        // iterating through levels 
+        // iterating through levels
         for (size_t i=0; i < BaselineConfig.size(); i++) {
           JsonObject& Level = BaselineConfig[i];
           if (Level.containsKey("Level")&&Level.containsKey("Components")) {

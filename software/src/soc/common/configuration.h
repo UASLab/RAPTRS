@@ -38,11 +38,11 @@ class Configuration {
 
 // Configuration Helpers: Read Json, Configure definition tree
 std::string ParseInput(std::string SystemPath, std::string Key);
-void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr Node, std::string *InputKey);
-void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, std::vector<ElementPtr> Node, std::vector<std::string> *InputKey);
+void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, ElementPtr *Node, std::string *InputKey);
+void LoadInput(const rapidjson::Value& Config, std::string SystemName, std::string InputName, std::vector<ElementPtr> *Node, std::vector<std::string> *InputKey);
 
-void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr Node);
-void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, std::vector<ElementPtr> Node);
+void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, ElementPtr *Node);
+void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, std::vector<ElementPtr> *Node);
 
 void LoadVal(const rapidjson::Value& Config, std::string ValName, int *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, float *Val, bool required = 0);

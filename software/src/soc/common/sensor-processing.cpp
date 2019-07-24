@@ -246,11 +246,11 @@ void SensorProcessing::RunBaseline(GenericFunction::Mode mode) {
   BaselinePtr_->Run(mode);
 
   // Copy the output up two levels, this may get overwritten later by a test system  (to: /Sensor-Processing)
-  NodeVec NodeVecSys = TestNodeMap_["System"][BaselineGroup_];
-  NodeVec NodeVecRoot = TestNodeMap_["Root"][BaselineGroup_];
+  NodeVec NodeVecSys = BaselineNodeMap_["System"][BaselineGroup_];
+  NodeVec NodeVecRoot = BaselineNodeMap_["Root"][BaselineGroup_];
 
   for (size_t iNode = 0; iNode < NodeVecSys.size(); ++iNode) {
-    NodeVecRoot[iNode]->copyFrom(NodeVecSys[iNode]);
+    NodeVecRoot[iNode]->setDouble(NodeVecSys[iNode]->getDouble());
   }
 }
 
@@ -282,7 +282,7 @@ void SensorProcessing::RunTest(GenericFunction::Mode mode) {
     NodeVec NodeVecRoot = TestNodeMap_["Root"][TestSel_];
 
     for (size_t iNode = 0; iNode < NodeVecSys.size(); ++iNode) {
-      NodeVecRoot[iNode]->copyFrom(NodeVecSys[iNode]);
+      NodeVecRoot[iNode]->setDouble(NodeVecSys[iNode]->getDouble());
     }
   }
 }
