@@ -36,22 +36,22 @@ class Node {
     void SetRunMode();
     void SetConfigurationMode();
     bool ReadSensorData();
-    uint8_t GetNumberPwmVoltageSensor();
-    uint8_t GetNumberSbusVoltageSensor();
-    uint8_t GetNumberMpu9250Sensor();
-    uint8_t GetNumberBme280Sensor();
-    uint8_t GetNumberuBloxSensor();
-    uint8_t GetNumberSwiftSensor();
-    uint8_t GetNumberAms5915Sensor();
-    uint8_t GetNumberSbusSensor();
-    uint8_t GetNumberAnalogSensor();
+    // uint8_t GetNumberPwmVoltageSensor();
+    // uint8_t GetNumberSbusVoltageSensor();
+    // uint8_t GetNumberMpu9250Sensor();
+    // uint8_t GetNumberBme280Sensor();
+    // uint8_t GetNumberuBloxSensor();
+    // uint8_t GetNumberSwiftSensor();
+    // uint8_t GetNumberAms5915Sensor();
+    // uint8_t GetNumberSbusSensor();
+    // uint8_t GetNumberAnalogSensor();
     void GetSensorDataBuffer(std::vector<uint8_t> *SensorDataBuffer);
     void SendEffectorCommand(std::vector<float> Commands);
   private:
     enum Message {
       ModeCommand,
       Configuration,
-      SensorMetaData,
+      SensorDataSize,
       SensorData,
       EffectorCommand
     };
@@ -59,63 +59,63 @@ class Node {
       ConfigurationMode,
       RunMode
     };
-    struct Mpu9250SensorData {
-      int ReadStatus = -1;                                                          // positive if a good read or negative if not
-      Eigen::Matrix<float,3,1>Accel_mss = Eigen::Matrix<float,3,1>::Zero();         // x,y,z accelerometers, m/s/s
-      Eigen::Matrix<float,3,1>Gyro_rads = Eigen::Matrix<float,3,1>::Zero();         // x,y,z gyros, rad/s
-      Eigen::Matrix<float,3,1>Mag_uT = Eigen::Matrix<float,3,1>::Zero();            // x,y,z magnetometers, uT
-      float Temperature_C = 0.0f;                                                   // Temperature, C
-    };
-    struct Bme280SensorData {
-      int ReadStatus = -1;                                                          // positive if a good read or negative if not
-      float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
-      float Temperature_C = 0.0f;                                                   // Temperature, C
-      float Humidity_RH = 0.0f;                                                     // Relative humidity
-    };
-    struct uBloxSensorData {
-      bool Fix = false;                                                             // True for 3D fix only
-      uint8_t NumberSatellites = 0;                                                 // Number of satellites used in solution
-      uint32_t TOW = 0;                                                             // GPS time of the navigation epoch
-      uint16_t Year = 0;                                                            // UTC year
-      uint8_t Month = 0;                                                            // UTC month
-      uint8_t Day = 0;                                                              // UTC day
-      uint8_t Hour = 0;                                                             // UTC hour
-      uint8_t Min = 0;                                                              // UTC minute
-      uint8_t Sec = 0;                                                              // UTC second
-      Eigen::Matrix<double,3,1>LLA = Eigen::Matrix<double,3,1>::Zero();             // Latitude (rad), Longitude (rad), Altitude (m)
-      Eigen::Matrix<double,3,1>NEDVelocity_ms  = Eigen::Matrix<double,3,1>::Zero(); // NED Velocity, m/s
-      Eigen::Matrix<double,3,1>Accuracy  = Eigen::Matrix<double,3,1>::Zero();       // Horizontal (m), vertical (m), and speed (m/s) accuracy estimates
-      double pDOP = 0.0;                                                            // Position DOP
-    };
-    struct Ams5915SensorData {
-      int ReadStatus = -1;                                                          // positive if a good read or negative if not
-      float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
-      float Temperature_C = 0.0f;                                                   // Temperature, C
-    };
-    struct SwiftSensorData {
-      Ams5915SensorData Static;
-      Ams5915SensorData Differential;
-    };
-    struct SbusSensorData {
-      float Channels[16] = {0.0f};
-      bool FailSafe = false;
-      uint64_t LostFrames = 0;
-    };
-    struct AnalogSensorData {
-      float Voltage_V = 0.0f;
-      float CalibratedValue = 0.0f;
-    };
-    struct SensorData {
-      std::vector<float> PwmVoltage_V;
-      std::vector<float> SbusVoltage_V;
-      std::vector<Mpu9250SensorData> Mpu9250;
-      std::vector<Bme280SensorData> Bme280;
-      std::vector<uBloxSensorData> uBlox;
-      std::vector<SwiftSensorData> Swift;
-      std::vector<Ams5915SensorData> Ams5915;
-      std::vector<SbusSensorData> Sbus;
-      std::vector<AnalogSensorData> Analog;
-    };
+    // struct Mpu9250SensorData {
+    //   int ReadStatus = -1;                                                          // positive if a good read or negative if not
+    //   Eigen::Matrix<float,3,1>Accel_mss = Eigen::Matrix<float,3,1>::Zero();         // x,y,z accelerometers, m/s/s
+    //   Eigen::Matrix<float,3,1>Gyro_rads = Eigen::Matrix<float,3,1>::Zero();         // x,y,z gyros, rad/s
+    //   Eigen::Matrix<float,3,1>Mag_uT = Eigen::Matrix<float,3,1>::Zero();            // x,y,z magnetometers, uT
+    //   float Temperature_C = 0.0f;                                                   // Temperature, C
+    // };
+    // struct Bme280SensorData {
+    //   int ReadStatus = -1;                                                          // positive if a good read or negative if not
+    //   float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
+    //   float Temperature_C = 0.0f;                                                   // Temperature, C
+    //   float Humidity_RH = 0.0f;                                                     // Relative humidity
+    // };
+    // struct uBloxSensorData {
+    //   bool Fix = false;                                                             // True for 3D fix only
+    //   uint8_t NumberSatellites = 0;                                                 // Number of satellites used in solution
+    //   uint32_t TOW = 0;                                                             // GPS time of the navigation epoch
+    //   uint16_t Year = 0;                                                            // UTC year
+    //   uint8_t Month = 0;                                                            // UTC month
+    //   uint8_t Day = 0;                                                              // UTC day
+    //   uint8_t Hour = 0;                                                             // UTC hour
+    //   uint8_t Min = 0;                                                              // UTC minute
+    //   uint8_t Sec = 0;                                                              // UTC second
+    //   Eigen::Matrix<double,3,1>LLA = Eigen::Matrix<double,3,1>::Zero();             // Latitude (rad), Longitude (rad), Altitude (m)
+    //   Eigen::Matrix<double,3,1>NEDVelocity_ms  = Eigen::Matrix<double,3,1>::Zero(); // NED Velocity, m/s
+    //   Eigen::Matrix<double,3,1>Accuracy  = Eigen::Matrix<double,3,1>::Zero();       // Horizontal (m), vertical (m), and speed (m/s) accuracy estimates
+    //   double pDOP = 0.0;                                                            // Position DOP
+    // };
+    // struct Ams5915SensorData {
+    //   int ReadStatus = -1;                                                          // positive if a good read or negative if not
+    //   float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
+    //   float Temperature_C = 0.0f;                                                   // Temperature, C
+    // };
+    // struct SwiftSensorData {
+    //   Ams5915SensorData Static;
+    //   Ams5915SensorData Differential;
+    // };
+    // struct SbusSensorData {
+    //   float Channels[16] = {0.0f};
+    //   bool FailSafe = false;
+    //   uint64_t LostFrames = 0;
+    // };
+    // struct AnalogSensorData {
+    //   float Voltage_V = 0.0f;
+    //   float CalibratedValue = 0.0f;
+    // };
+    // struct SensorData {
+    //   std::vector<float> PwmVoltage_V;
+    //   std::vector<float> SbusVoltage_V;
+    //   std::vector<Mpu9250SensorData> Mpu9250;
+    //   std::vector<Bme280SensorData> Bme280;
+    //   std::vector<uBloxSensorData> uBlox;
+    //   std::vector<SwiftSensorData> Swift;
+    //   std::vector<Ams5915SensorData> Ams5915;
+    //   std::vector<SbusSensorData> Sbus;
+    //   std::vector<AnalogSensorData> Analog;
+    // };
     static const size_t kBufferMaxSize = 4096;
     const uint32_t I2cHeaderTimeout_us = 200;
     const uint32_t I2cDataTimeout_us = 2000;
@@ -131,8 +131,7 @@ class Node {
     uint8_t LengthBuffer_[2];
     uint16_t Length_ = 0;
     uint8_t Checksum_[2];
-    const size_t MetaDataLength_ = 8;
-    struct SensorData SensorData_;
+    // struct SensorData SensorData_;
     std::vector<uint8_t> DataBuffer_;
     void SendMessage(uint8_t message, std::vector<uint8_t> &Payload);
     void BuildMessage(uint8_t message, std::vector<uint8_t> &Payload, std::vector<uint8_t> *TxBuffer);

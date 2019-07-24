@@ -872,15 +872,15 @@ void SensorNodes::Begin(Data *DataPtr) {
   while (1) {
     digitalWriteFast(kBfsInt1Pin,HIGH);
     if (node_->ReadSensorData()) {
-      DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
-      DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
-      DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
-      DataPtr->Bme280.resize(node_->GetNumberBme280Sensor());
-      DataPtr->uBlox.resize(node_->GetNumberuBloxSensor());
-      DataPtr->Swift.resize(node_->GetNumberSwiftSensor());
-      DataPtr->Ams5915.resize(node_->GetNumberAms5915Sensor());
-      DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
-      DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
+      // DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
+      // DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
+      // DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
+      // DataPtr->Bme280.resize(node_->GetNumberBme280Sensor());
+      // DataPtr->uBlox.resize(node_->GetNumberuBloxSensor());
+      // DataPtr->Swift.resize(node_->GetNumberSwiftSensor());
+      // DataPtr->Ams5915.resize(node_->GetNumberAms5915Sensor());
+      // DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
+      // DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
       break;
     }
     delay(5);
@@ -892,45 +892,56 @@ void SensorNodes::Begin(Data *DataPtr) {
 int SensorNodes::GetData(Data *DataPtr) {
   std::vector<uint8_t> SensorDataBuffer;
   size_t BufferLocation = 0;
-  DataPtr->PwmVoltage_V.clear();
-  DataPtr->SbusVoltage_V.clear();
-  DataPtr->Mpu9250.clear();
-  DataPtr->Bme280.clear();
-  DataPtr->uBlox.clear();
-  DataPtr->Swift.clear();
-  DataPtr->Ams5915.clear();
-  DataPtr->Sbus.clear();
-  DataPtr->Analog.clear();
+  // DataPtr->PwmVoltage_V.clear();
+  // DataPtr->SbusVoltage_V.clear();
+  // DataPtr->Mpu9250.clear();
+  // DataPtr->Bme280.clear();
+  // DataPtr->uBlox.clear();
+  // DataPtr->Swift.clear();
+  // DataPtr->Ams5915.clear();
+  // DataPtr->Sbus.clear();
+  // DataPtr->Analog.clear();
   if (node_->ReadSensorData()) {
-    DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
-    DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
-    DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
-    DataPtr->Bme280.resize(node_->GetNumberBme280Sensor());
-    DataPtr->uBlox.resize(node_->GetNumberuBloxSensor());
-    DataPtr->Swift.resize(node_->GetNumberSwiftSensor());
-    DataPtr->Ams5915.resize(node_->GetNumberAms5915Sensor());
-    DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
-    DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
+    // DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
+    // DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
+    // DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
+    // DataPtr->Bme280.resize(node_->GetNumberBme280Sensor());
+    // DataPtr->uBlox.resize(node_->GetNumberuBloxSensor());
+    // DataPtr->Swift.resize(node_->GetNumberSwiftSensor());
+    // DataPtr->Ams5915.resize(node_->GetNumberAms5915Sensor());
+    // DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
+    // DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
     node_->GetSensorDataBuffer(&SensorDataBuffer);
+    while ( BufferLocation <= SensorDataBuffer.size() - 3 ) {
+      uint8_t id = SensorDataBuffer[BufferLocation++];
+      uint8_t index = SensorDataBuffer[BufferLocation++];
+      uint8_t len = SensorDataBuffer[BufferLocation++];
+      if ( BufferLocation + len <= SensorDataBuffer.size() ) {
+        if ( id == message::data_mpu9250_id ) {
+          message::data_mpu9250_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        }
+      }
+    }
     // sensor data
-    memcpy(DataPtr->PwmVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]));
-    BufferLocation += DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]);
-    memcpy(DataPtr->SbusVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->SbusVoltage_V.size()*sizeof(DataPtr->SbusVoltage_V[0]));
-    BufferLocation += DataPtr->SbusVoltage_V.size()*sizeof(DataPtr->SbusVoltage_V[0]);
-    memcpy(DataPtr->Mpu9250.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Mpu9250.size()*sizeof(Mpu9250Sensor::Data));
-    BufferLocation += DataPtr->Mpu9250.size()*sizeof(Mpu9250Sensor::Data);
-    memcpy(DataPtr->Bme280.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Bme280.size()*sizeof(Bme280Sensor::Data));
-    BufferLocation += DataPtr->Bme280.size()*sizeof(Bme280Sensor::Data);
-    memcpy(DataPtr->uBlox.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->uBlox.size()*sizeof(uBloxSensor::Data));
-    BufferLocation += DataPtr->uBlox.size()*sizeof(uBloxSensor::Data);
-    memcpy(DataPtr->Swift.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Swift.size()*sizeof(SwiftSensor::Data));
-    BufferLocation += DataPtr->Swift.size()*sizeof(SwiftSensor::Data);
-    memcpy(DataPtr->Ams5915.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Ams5915.size()*sizeof(Ams5915Sensor::Data));
-    BufferLocation += DataPtr->Ams5915.size()*sizeof(Ams5915Sensor::Data);
-    memcpy(DataPtr->Sbus.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Sbus.size()*sizeof(SbusSensor::Data));
-    BufferLocation += DataPtr->Sbus.size()*sizeof(SbusSensor::Data);
-    memcpy(DataPtr->Analog.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Analog.size()*sizeof(AnalogSensor::Data));
-    BufferLocation += DataPtr->Analog.size()*sizeof(AnalogSensor::Data);
+    // memcpy(DataPtr->PwmVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]));
+    // BufferLocation += DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]);
+    // memcpy(DataPtr->SbusVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->SbusVoltage_V.size()*sizeof(DataPtr->SbusVoltage_V[0]));
+    // BufferLocation += DataPtr->SbusVoltage_V.size()*sizeof(DataPtr->SbusVoltage_V[0]);
+    // memcpy(DataPtr->Mpu9250.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Mpu9250.size()*sizeof(Mpu9250Sensor::Data));
+    // BufferLocation += DataPtr->Mpu9250.size()*sizeof(Mpu9250Sensor::Data);
+    // memcpy(DataPtr->Bme280.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Bme280.size()*sizeof(Bme280Sensor::Data));
+    // BufferLocation += DataPtr->Bme280.size()*sizeof(Bme280Sensor::Data);
+    // memcpy(DataPtr->uBlox.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->uBlox.size()*sizeof(uBloxSensor::Data));
+    // BufferLocation += DataPtr->uBlox.size()*sizeof(uBloxSensor::Data);
+    // memcpy(DataPtr->Swift.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Swift.size()*sizeof(SwiftSensor::Data));
+    // BufferLocation += DataPtr->Swift.size()*sizeof(SwiftSensor::Data);
+    // memcpy(DataPtr->Ams5915.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Ams5915.size()*sizeof(Ams5915Sensor::Data));
+    // BufferLocation += DataPtr->Ams5915.size()*sizeof(Ams5915Sensor::Data);
+    // memcpy(DataPtr->Sbus.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Sbus.size()*sizeof(SbusSensor::Data));
+    // BufferLocation += DataPtr->Sbus.size()*sizeof(SbusSensor::Data);
+    // memcpy(DataPtr->Analog.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Analog.size()*sizeof(AnalogSensor::Data));
+    // BufferLocation += DataPtr->Analog.size()*sizeof(AnalogSensor::Data);
     return 1;
   } else {
     return -1;
