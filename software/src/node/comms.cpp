@@ -35,14 +35,14 @@ void AircraftBfsComms::Begin() {
   Serial.println("done!");
 }
 
-/* sends sensor meta data message */
+/* sends sensor data message */
 void AircraftBfsComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
   SendMessage(SensorData,DataBuffer);
 }
 
-/* sends sensor data message */
-void AircraftBfsComms::SendSensorMetaData(std::vector<uint8_t> &DataBuffer) {
-  SendMessage(SensorMetaData,DataBuffer);
+/* sends sensor data size message */
+void AircraftBfsComms::SendSensorDataSize(std::vector<uint8_t> &DataBuffer) {
+  SendMessage(SensorDataSize,DataBuffer);
 }
 
 /* returns mode command if a mode command message has been received */

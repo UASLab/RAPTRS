@@ -32,13 +32,13 @@ class AircraftBfsComms {
     enum Message {
       ModeCommand,
       Configuration,
-      SensorMetaData,
+      SensorDataSize,
       SensorData,
       EffectorCommand
     };
     AircraftBfsComms(i2c_t3& bus,uint8_t addr,i2c_pins pins,uint32_t rate);
     void Begin();
-    void SendSensorMetaData(std::vector<uint8_t> &DataBuffer);
+    void SendSensorDataSize(std::vector<uint8_t> &DataBuffer);
     void SendSensorData(std::vector<uint8_t> &DataBuffer);
     bool ReceiveModeCommand(AircraftMission::Mode *mode);
     bool ReceiveConfigMessage(std::vector<char> *ConfigString);

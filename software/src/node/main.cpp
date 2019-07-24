@@ -45,7 +45,8 @@ AircraftMission::State MissionState;
 AircraftMission::Mode RequestedMode;
 // effector commands
 std::vector<float> EffectorCommands;
-// buffer for transmitting data
+// buffers for transmitting data messages
+std::vector<uint8_t> SizeBuffer;
 std::vector<uint8_t> DataBuffer;
 
 unsigned long tnow, tprev;
@@ -55,6 +56,9 @@ void RequestMessage() {
   AircraftBfsComms::Message message;
   std::vector<uint8_t> Payload;
   BfsComms->GetMessage(&message, &Payload);
+  if (message == AircraftBfsComms::SensorDataSize) {
+    BfsComms->SendSensorDataSize(SizeBuffer);
+  }
   if (message == AircraftBfsComms::SensorData) {
     BfsComms->SendSensorData(DataBuffer);
   }
@@ -114,7 +118,7 @@ void loop() {
       // read synchronous sensors
       Sensors.ReadSyncSensors();
       // buffer for transmitting data
-      Sensors.MakeMegaMessage(&DataBuffer);
+      Sensors.MakeMegaMessage(&DataBuffer, &SizeBuffer);
     }
     if (MissionState == AircraftMission::AsyncDataCollection) {
       // read the asynchronous sensors

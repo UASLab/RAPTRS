@@ -894,7 +894,7 @@ static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uin
 }
 
 /* get data buffer */
-void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer) {
+void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer) {
   Buffer->clear();
   {
     message::data_mpu9250_t msg;
@@ -958,6 +958,9 @@ void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer) {
     msg.pack();
     add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
   }
+  SizeBuffer->clear();
+  SizeBuffer->resize(sizeof(uint16_t));
+  *(uint16_t *)(SizeBuffer->data()) = Buffer->size();
 }
 
 /* free all sensor resources and reset sensor vectors and states */
