@@ -912,16 +912,63 @@ int SensorNodes::GetData(Data *DataPtr) {
     // DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
     // DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
     node_->GetSensorDataBuffer(&SensorDataBuffer);
+
+    // if we just relayed this data block to the SOC as is, we
+    // wouldn't need to parse it or map any of these entries to the
+    // local [fmu] data definition tree.
     while ( BufferLocation <= SensorDataBuffer.size() - 3 ) {
       uint8_t id = SensorDataBuffer[BufferLocation++];
       uint8_t index = SensorDataBuffer[BufferLocation++];
       uint8_t len = SensorDataBuffer[BufferLocation++];
       if ( BufferLocation + len <= SensorDataBuffer.size() ) {
         if ( id == message::data_mpu9250_id ) {
+          if ( index >= DataPtr->Mpu9250.size() ) {
+            DataPtr->Mpu9250.resize(index);
+          }
           message::data_mpu9250_t msg;
           msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else if ( id == message::data_bme280_id ) {
+          if ( index >= DataPtr->Bme280.size() ) {
+            DataPtr->Bme280.resize(index);
+          }
+          message::data_bme280_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else if ( id == message::data_ublox_id ) {
+          if ( index >= DataPtr->uBlox.size() ) {
+            DataPtr->uBlox.resize(index);
+          }
+          message::data_ublox_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else if ( id == message::data_swift_id ) {
+          if ( index >= DataPtr->Swift.size() ) {
+            DataPtr->Swift.resize(index);
+          }
+          message::data_swift_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else if ( id == message::data_ams5915_id ) {
+          if ( index >= DataPtr->Ams5915.size() ) {
+            DataPtr->Ams5915.resize(index);
+          }
+          message::data_ams5915_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else if ( id == message::data_sbus_id ) {
+          if ( index >= DataPtr->Sbus.size() ) {
+            DataPtr->Sbus.resize(index);
+          }
+          message::data_sbus_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else if ( id == message::data_analog_id ) {
+          if ( index >= DataPtr->Analog.size() ) {
+            DataPtr->Analog.resize(index);
+          }
+          message::data_analog_t msg;
+          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
+        } else {
+          Serial.print("SensorNode received an unhandled message id:");
+          Serial.println(id);
         }
       }
+      BufferLocation += len;
     }
     // sensor data
     // memcpy(DataPtr->PwmVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]));
