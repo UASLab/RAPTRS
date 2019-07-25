@@ -945,6 +945,7 @@ void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer, std::vector<
       msg.pack();
       add_msg(Buffer, msg.id, i, msg.len, msg.payload);
     }
+    // fixme ... order?
     classes_.PwmVoltageSensor.UpdateMessage(&msg);
     msg.pack();
     add_msg(Buffer, msg.id, 0, msg.len, msg.payload);

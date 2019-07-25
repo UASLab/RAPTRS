@@ -974,8 +974,8 @@ void SensorNodes::Begin(/*Data *DataPtr*/) {
 
 /* get data from the nodes */
 int SensorNodes::ReadSensor() {
-  std::vector<uint8_t> SensorDataBuffer;
-  size_t BufferLocation = 0;
+  // std::vector<uint8_t> SensorDataBuffer;
+  // size_t BufferLocation = 0;
   // DataPtr->PwmVoltage_V.clear();
   // DataPtr->SbusVoltage_V.clear();
   // DataPtr->Mpu9250.clear();
@@ -985,7 +985,9 @@ int SensorNodes::ReadSensor() {
   // DataPtr->Ams5915.clear();
   // DataPtr->Sbus.clear();
   // DataPtr->Analog.clear();
-  if (node_->ReadSensorData()) {
+  return node_->ReadSensorData();
+#if 0
+  // ) {
     // DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
     // DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
     // DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
@@ -1001,7 +1003,6 @@ int SensorNodes::ReadSensor() {
     // the FMU ever needs to cherry pick Node sensor data to use
     // locally, we can parse it here and stash the sensor values in
     // the appropriate places locally.
-#if 0
     while ( BufferLocation <= SensorDataBuffer.size() - 3 ) {
       uint8_t id = SensorDataBuffer[BufferLocation++];
       uint8_t index = SensorDataBuffer[BufferLocation++];
@@ -1056,7 +1057,6 @@ int SensorNodes::ReadSensor() {
       }
       BufferLocation += len;
     }
-#endif
     // sensor data
     // memcpy(DataPtr->PwmVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]));
     // BufferLocation += DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]);
@@ -1080,6 +1080,11 @@ int SensorNodes::ReadSensor() {
   } else {
     return false;
   }
+#endif
+}
+
+int SensorNodes::GetMessage(std::vector<uint8_t> NodeMessageBuffer) {
+  node_->GetSensorDataBuffer(&NodeMessageBuffer);
 }
 
 /* free resources from the nodes */
@@ -1500,6 +1505,15 @@ static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uin
   Buffer->insert(Buffer->end(), payload, payload + len);
 }
 
+static void add_mega_msg(std::vector<uint8_t> *Buffer, size_t len, uint8_t *payload) {
+  if ( Buffer->size() + len > Buffer->capacity() ) {
+    Buffer->resize(Buffer->size() + len);
+    Serial.print("Notice: increasing Buffer size to: ");
+    Serial.println(Buffer->capacity());
+  }
+  Buffer->insert(Buffer->end(), payload, payload + len);
+}
+
 /* get data buffer */
 void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer) {
   Buffer->clear();
@@ -1600,6 +1614,11 @@ void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer) {
       msg.pack();
       add_msg(Buffer, msg.id, i, msg.len, msg.payload);
     }
+  }
+  for (size_t i=0; i < classes_.Nodes.size(); i++) {
+    std::vector<uint8_t> NodeBuffer;
+    classes_.Nodes[i].GetMessage(NodeBuffer);
+    add_mega_msg(Buffer, NodeBuffer.size(), NodeBuffer.data());
   }
 
 #if 0

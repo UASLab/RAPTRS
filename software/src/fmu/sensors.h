@@ -323,6 +323,7 @@ class SensorNodes {
     uint8_t GetBfsAddr() { return config_.BfsAddr; }
     void Begin(/*Data *DataPtr*/);
     int ReadSensor();
+    int GetMessage(std::vector<uint8_t> NodeMessageBuffer);
     void End();
   private:
     Config config_;
