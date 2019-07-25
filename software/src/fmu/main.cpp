@@ -99,7 +99,7 @@ int main()
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
         // buffer for transmitting data
         std::vector<uint8_t> DataBuffer;
-        Sensors.GetDataBuffer(&DataBuffer);
+        Sensors.MakeMegaMessage(&DataBuffer);
 // Serial.print("\tDataBuffer: ");
 // Serial.print(DataBuffer.size());
         // transmit data to SOC
