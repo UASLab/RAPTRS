@@ -37,6 +37,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "fmu_messages.h"
 
+/* class for the fmu Time */
+class TimeSensor {
+  public:
+    // Data
+    uint64_t Time_us = 0;
+    int ReadSensor();
+    void UpdateMessage(message::data_time_t *msg);
+};
+
 /* class for the fmu integrated MPU-9250 */
 class InternalMpu9250Sensor {
   public:
@@ -62,6 +71,7 @@ class InternalMpu9250Sensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+    void UpdateMessage(message::data_mpu9250_t *msg);
     void End();
   private:
     MPU9250 *Mpu_;
@@ -84,13 +94,13 @@ class Mpu9250Sensor {
       uint8_t SRD = 0;                                                              // Sample rate divider
     };
     // Data
-    int8_t ReadStatus = -1;
-    float AccelX_mss = 0;       // x,y,z accelerometers
-    float AccelY_mss = 0;
-    float AccelZ_mss = 0;
-    float GyroX_rads = 0;       // x,y,z gyros
-    float GyroY_rads = 0;
-    float GyroZ_rads = 0;
+    // int8_t ReadStatus = -1;
+    // float AccelX_mss = 0;       // x,y,z accelerometers
+    // float AccelY_mss = 0;
+    // float AccelZ_mss = 0;
+    // float GyroX_rads = 0;       // x,y,z gyros
+    // float GyroY_rads = 0;
+    // float GyroZ_rads = 0;
     // float MagX_uT = 0;       // x,y,z magnetometers
     // float MagY_uT = 0;
     // float MagZ_uT = 0;
@@ -100,6 +110,7 @@ class Mpu9250Sensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+  void UpdateMessage(message::data_mpu9250_short_t *msg);
     void End();
   private:
     MPU9250 *Mpu_;
@@ -115,6 +126,7 @@ class InternalBme280Sensor {
   public:
     struct Config {};
     // Data
+    uint8_t status_ = 0;
     float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
     float Temperature_C = 0.0f;                                                   // Temperature, C
     float Humidity_RH = 0.0f;                                                     // Relative humidity
@@ -123,6 +135,7 @@ class InternalBme280Sensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+    void UpdateMessage(message::data_bme280_t *msg);
     void End();
   private:
     BME280 *Bme_;
@@ -147,6 +160,7 @@ class Bme280Sensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+    void UpdateMessage(message::data_bme280_t *msg);
     void End();
   private:
     BME280 *Bme_;
@@ -185,8 +199,8 @@ class uBloxSensor {
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void UpdateData();
     int ReadSensor();
+    void UpdateMessage(message::data_ublox_t *msg);
     void End();
   private:
     UBLOX *ublox_;
@@ -211,6 +225,7 @@ class Ams5915Sensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+    void UpdateMessage(message::data_ams5915_t *msg);
     void End();
   private:
     AMS5915 *ams_;
@@ -231,6 +246,7 @@ class SwiftSensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+    void UpdateMessage(message::data_swift_t *msg);
     void End();
   private:
     Ams5915Sensor StaticAms, DiffAms;
@@ -244,15 +260,15 @@ class SbusSensor {
   public:
     struct Config {};
     // Data
-    float Channels[16] = {0.0f};
-    bool FailSafe = false;
-    uint64_t LostFrames = 0;
+    //float Channels[16] = {0.0f};
+    //bool FailSafe = false;
+    //uint64_t LostFrames = 0;
   bool UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void UpdateData();
     int ReadSensor();
+    void UpdateMessage(message::data_sbus_t *msg);
     void End();
   private:
     float channels_[16];
@@ -277,6 +293,7 @@ class AnalogSensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
+    void UpdateMessage(message::data_analog_t *msg);
     void End();
   private:
     Config config_;
@@ -317,13 +334,13 @@ class SensorNodes {
 class AircraftSensors {
   public:
     struct Classes {
-      uint64_t Time_us;
+      TimeSensor Time;
       AnalogSensor InputVoltage;
       AnalogSensor RegulatedVoltage;
       AnalogSensor PwmVoltage;
       AnalogSensor SbusVoltage;
       InternalMpu9250Sensor InternalMpu9250;
-      std::vector<InternalBme280Sensor> InternalBme280;
+      InternalBme280Sensor InternalBme280;
       std::vector<Mpu9250Sensor> Mpu9250;
       std::vector<Bme280Sensor> Bme280;
       std::vector<uBloxSensor> uBlox;
@@ -362,6 +379,7 @@ class AircraftSensors {
     bool ResetI2cBus_;
     bool ResetBfsBus_;
     bool AcquireInternalMpu9250Data_ = false;
+    bool AcquireInternalBme280Data_ = false;
     bool AcquireTimeData_ = false;
     bool AcquireInputVoltageData_ = false;
     bool AcquireRegulatedVoltageData_ = false;

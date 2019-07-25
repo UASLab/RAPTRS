@@ -149,11 +149,11 @@ int Mpu9250Sensor::ReadSensor() {
 }
 
 /* get the MPU9250 sensor data */
-void Mpu9250Sensor::UpdateMessage(message::data_mpu9250_t *msg) {
-  const float G = 9.807f;
-  const float d2r = 3.14159265359f/180.0f;
-  float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-  float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+void Mpu9250Sensor::UpdateMessage(message::data_mpu9250_short_t *msg) {
+  // const float G = 9.807f;
+  // const float d2r = 3.14159265359f/180.0f;
+  // float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+  // float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
 
   msg->ReadStatus = status_;
   msg->AccelX_mss = Accel_mss_(0,0);
@@ -162,10 +162,6 @@ void Mpu9250Sensor::UpdateMessage(message::data_mpu9250_t *msg) {
   msg->GyroX_rads = Gyro_rads_(0,0);
   msg->GyroY_rads = Gyro_rads_(1,0);
   msg->GyroZ_rads = Gyro_rads_(2,0);
-  // msg->MagX_uT = Mag_uT(0,0);
-  // msg->MagY_uT = Mag_uT(1,0);
-  // msg->MagZ_uT = Mag_uT(2,0);
-  // msg->Temperature_ct = Mpu_->getTemperature_C();
 }
 
 /* free the MPU9250 sensor resources */
@@ -302,31 +298,29 @@ int uBloxSensor::ReadSensor() {
 
 /* update the private data structure with new uBlox data, if available */
 void uBloxSensor::UpdateMessage(message::data_ublox_t *msg) {
-  if (ublox_->read(&uBloxData_)) {
-    if (uBloxData_.fixType == 3) {
-      msg->Fix = true;
-    } else {
-      msg->Fix = false;
-    }
-    msg->NumberSatellites = uBloxData_.numSV;
-    msg->TOW = uBloxData_.iTOW;
-    msg->Year = uBloxData_.utcYear;
-    msg->Month = uBloxData_.utcMonth;
-    msg->Day = uBloxData_.utcDay;
-    msg->Hour = uBloxData_.utcHour;
-    msg->Min = uBloxData_.utcMin;
-    msg->Sec = uBloxData_.utcSec;
-    msg->Latitude_rad = uBloxData_.lat*kD2R;
-    msg->Longitude_rad = uBloxData_.lon*kD2R;
-    msg->Altitude_m = uBloxData_.hMSL;
-    msg->NorthVelocity_ms = uBloxData_.velN;
-    msg->EastVelocity_ms = uBloxData_.velE;
-    msg->DownVelocity_ms = uBloxData_.velD;
-    msg->HorizontalAccuracy_m = uBloxData_.hAcc;
-    msg->VerticalAccuracy_m = uBloxData_.vAcc;
-    msg->VelocityAccuracy_ms = uBloxData_.sAcc;
-    msg->pDOP = uBloxData_.pDOP;
+  if (uBloxData_.fixType == 3) {
+    msg->Fix = true;
+  } else {
+    msg->Fix = false;
   }
+  msg->NumberSatellites = uBloxData_.numSV;
+  msg->TOW = uBloxData_.iTOW;
+  msg->Year = uBloxData_.utcYear;
+  msg->Month = uBloxData_.utcMonth;
+  msg->Day = uBloxData_.utcDay;
+  msg->Hour = uBloxData_.utcHour;
+  msg->Min = uBloxData_.utcMin;
+  msg->Sec = uBloxData_.utcSec;
+  msg->Latitude_rad = uBloxData_.lat*kD2R;
+  msg->Longitude_rad = uBloxData_.lon*kD2R;
+  msg->Altitude_m = uBloxData_.hMSL;
+  msg->NorthVelocity_ms = uBloxData_.velN;
+  msg->EastVelocity_ms = uBloxData_.velE;
+  msg->DownVelocity_ms = uBloxData_.velD;
+  msg->HorizontalAccuracy_m = uBloxData_.hAcc;
+  msg->VerticalAccuracy_m = uBloxData_.vAcc;
+  msg->VelocityAccuracy_ms = uBloxData_.sAcc;
+  msg->pDOP = uBloxData_.pDOP;
 }
 
 /* free resources used by the uBlox sensor */
@@ -888,7 +882,7 @@ static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uin
     Serial.println(Buffer->capacity());
   }
   Buffer->push_back(id);
-  Buffer->push_back(index);
+  Buffer->push_back(index);     // I think I can get rid of this byte (fixme?)
   Buffer->push_back(len);
   Buffer->insert(Buffer->end(), payload, payload + len);
 }
@@ -897,7 +891,7 @@ static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uin
 void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer) {
   Buffer->clear();
   {
-    message::data_mpu9250_t msg;
+    message::data_mpu9250_short_t msg;
     for ( size_t i = 0; i < classes_.Mpu9250.size(); i++ ) {
       classes_.Mpu9250[i].UpdateMessage(&msg);
       msg.pack();

@@ -58,7 +58,7 @@ class Mpu9250Sensor {
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
-    void UpdateMessage(message::data_mpu9250_t *msg);
+    void UpdateMessage(message::data_mpu9250_short_t *msg);
     void End();
   private:
     MPU9250 *Mpu_;

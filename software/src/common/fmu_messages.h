@@ -30,13 +30,15 @@ const uint8_t config_effector_id = 19;
 const uint8_t config_mission_id = 20;
 const uint8_t config_control_gain_id = 21;
 const uint8_t command_effectors_id = 22;
-const uint8_t data_mpu9250_id = 23;
-const uint8_t data_bme280_id = 24;
-const uint8_t data_ublox_id = 25;
-const uint8_t data_ams5915_id = 26;
-const uint8_t data_swift_id = 27;
-const uint8_t data_sbus_id = 28;
-const uint8_t data_analog_id = 29;
+const uint8_t data_time_id = 23;
+const uint8_t data_mpu9250_short_id = 24;
+const uint8_t data_mpu9250_id = 25;
+const uint8_t data_bme280_id = 26;
+const uint8_t data_ublox_id = 27;
+const uint8_t data_ams5915_id = 28;
+const uint8_t data_swift_id = 29;
+const uint8_t data_sbus_id = 30;
+const uint8_t data_analog_id = 31;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -44,8 +46,9 @@ static const uint8_t message_max_len = 255;
 // Constants
 static const uint8_t num_effectors = 16;  // number of effector channels
 static const uint8_t max_calibration = 4;  // maximum nubmer of calibration coefficients
-static const float accel_scale = 0.0047886473;  // 9.807(g) * 16 / 32767.5
-static const float gyro_scale = 0.0010652807;  // 2000.0f/32767.5f * d2r
+static const float accel_scale = 208.82724;  // 1 / (9.807(g) * 16 / 32767.5) (+/-16g)
+static const float gyro_scale = 938.71973;  // 1 / (2000.0f/32767.5f * d2r (+/-2000deg/sec)
+static const float mag_scale = 300;  // fits range
 
 // Enums
 enum class sensor_type {
@@ -857,8 +860,50 @@ struct command_effectors_t {
     }
 };
 
-// Message: data_mpu9250 (id: 23)
-struct data_mpu9250_t {
+// Message: data_time (id: 23)
+struct data_time_t {
+    // public fields
+    uint64_t time_us;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint64_t time_us;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 23;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->time_us = time_us;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        time_us = _buf->time_us;
+        return true;
+    }
+};
+
+// Message: data_mpu9250_short (id: 24)
+struct data_mpu9250_short_t {
     // public fields
     int8_t ReadStatus;
     float AccelX_mss;
@@ -883,7 +928,7 @@ struct data_mpu9250_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 23;
+    static const uint8_t id = 24;
     uint16_t len = 0;
 
     bool pack() {
@@ -923,7 +968,89 @@ struct data_mpu9250_t {
     }
 };
 
-// Message: data_bme280 (id: 24)
+// Message: data_mpu9250 (id: 25)
+struct data_mpu9250_t {
+    // public fields
+    int8_t ReadStatus;
+    float AccelX_mss;
+    float AccelY_mss;
+    float AccelZ_mss;
+    float GyroX_rads;
+    float GyroY_rads;
+    float GyroZ_rads;
+    float MagX_uT;
+    float MagY_uT;
+    float MagZ_uT;
+    float Temperature_C;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int8_t ReadStatus;
+        int16_t AccelX_mss;
+        int16_t AccelY_mss;
+        int16_t AccelZ_mss;
+        int16_t GyroX_rads;
+        int16_t GyroY_rads;
+        int16_t GyroZ_rads;
+        int16_t MagX_uT;
+        int16_t MagY_uT;
+        int16_t MagZ_uT;
+        int16_t Temperature_C;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 25;
+    uint16_t len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->ReadStatus = ReadStatus;
+        _buf->AccelX_mss = intround(AccelX_mss * accel_scale);
+        _buf->AccelY_mss = intround(AccelY_mss * accel_scale);
+        _buf->AccelZ_mss = intround(AccelZ_mss * accel_scale);
+        _buf->GyroX_rads = intround(GyroX_rads * gyro_scale);
+        _buf->GyroY_rads = intround(GyroY_rads * gyro_scale);
+        _buf->GyroZ_rads = intround(GyroZ_rads * gyro_scale);
+        _buf->MagX_uT = intround(MagX_uT * mag_scale);
+        _buf->MagY_uT = intround(MagY_uT * mag_scale);
+        _buf->MagZ_uT = intround(MagZ_uT * mag_scale);
+        _buf->Temperature_C = intround(Temperature_C * 100);
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        ReadStatus = _buf->ReadStatus;
+        AccelX_mss = _buf->AccelX_mss / (float)accel_scale;
+        AccelY_mss = _buf->AccelY_mss / (float)accel_scale;
+        AccelZ_mss = _buf->AccelZ_mss / (float)accel_scale;
+        GyroX_rads = _buf->GyroX_rads / (float)gyro_scale;
+        GyroY_rads = _buf->GyroY_rads / (float)gyro_scale;
+        GyroZ_rads = _buf->GyroZ_rads / (float)gyro_scale;
+        MagX_uT = _buf->MagX_uT / (float)mag_scale;
+        MagY_uT = _buf->MagY_uT / (float)mag_scale;
+        MagZ_uT = _buf->MagZ_uT / (float)mag_scale;
+        Temperature_C = _buf->Temperature_C / (float)100;
+        return true;
+    }
+};
+
+// Message: data_bme280 (id: 26)
 struct data_bme280_t {
     // public fields
     int8_t ReadStatus;
@@ -943,7 +1070,7 @@ struct data_bme280_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 24;
+    static const uint8_t id = 26;
     uint16_t len = 0;
 
     bool pack() {
@@ -977,7 +1104,7 @@ struct data_bme280_t {
     }
 };
 
-// Message: data_ublox (id: 25)
+// Message: data_ublox (id: 27)
 struct data_ublox_t {
     // public fields
     bool Fix;
@@ -1027,7 +1154,7 @@ struct data_ublox_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 25;
+    static const uint8_t id = 27;
     uint16_t len = 0;
 
     bool pack() {
@@ -1091,7 +1218,7 @@ struct data_ublox_t {
     }
 };
 
-// Message: data_ams5915 (id: 26)
+// Message: data_ams5915 (id: 28)
 struct data_ams5915_t {
     // public fields
     int8_t ReadStatus;
@@ -1109,7 +1236,7 @@ struct data_ams5915_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 26;
+    static const uint8_t id = 28;
     uint16_t len = 0;
 
     bool pack() {
@@ -1141,7 +1268,7 @@ struct data_ams5915_t {
     }
 };
 
-// Message: data_swift (id: 27)
+// Message: data_swift (id: 29)
 struct data_swift_t {
     // public fields
     int8_t static_ReadStatus;
@@ -1165,7 +1292,7 @@ struct data_swift_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 27;
+    static const uint8_t id = 29;
     uint16_t len = 0;
 
     bool pack() {
@@ -1203,7 +1330,7 @@ struct data_swift_t {
     }
 };
 
-// Message: data_sbus (id: 28)
+// Message: data_sbus (id: 30)
 struct data_sbus_t {
     // public fields
     float channels[16];
@@ -1221,7 +1348,7 @@ struct data_sbus_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 28;
+    static const uint8_t id = 30;
     uint16_t len = 0;
 
     bool pack() {
@@ -1253,7 +1380,7 @@ struct data_sbus_t {
     }
 };
 
-// Message: data_analog (id: 29)
+// Message: data_analog (id: 31)
 struct data_analog_t {
     // public fields
     float calibrated_value;
@@ -1267,7 +1394,7 @@ struct data_analog_t {
     #pragma pack(pop)
 
     // public info fields
-    static const uint8_t id = 29;
+    static const uint8_t id = 31;
     uint16_t len = 0;
 
     bool pack() {
