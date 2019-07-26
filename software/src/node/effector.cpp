@@ -66,6 +66,7 @@ void AircraftEffectors::UpdateConfig(const char *JsonString) {
       Serial.println(JsonString);
     }
   }
+  configured_ = true;
   Serial.println("done!");
 }
 
@@ -83,16 +84,18 @@ void AircraftEffectors::ComputeOutputs() {
 
 /* commands the PWM and SBUS effectors */
 void AircraftEffectors::CommandEffectors() {
-  uint16_t SbusCmds[16];
-  for (size_t i=0; i < Effectors_.size(); i++) {
-    if (Effectors_[i].Type == kPwm) {
-      analogWrite(kPwmPins[Effectors_[i].Channel],Effectors_[i].Output/config_.Period*config_.Resolution);
+  if (configured_) {
+    uint16_t SbusCmds[16];
+    for (size_t i=0; i < Effectors_.size(); i++) {
+      if (Effectors_[i].Type == kPwm) {
+        analogWrite(kPwmPins[Effectors_[i].Channel],Effectors_[i].Output/config_.Period*config_.Resolution);
+      }
+      if (Effectors_[i].Type == kSbus) {
+        SbusCmds[Effectors_[i].Channel] = (uint16_t)Effectors_[i].Output;
+      }
     }
-    if (Effectors_[i].Type == kSbus) {
-      SbusCmds[Effectors_[i].Channel] = (uint16_t)Effectors_[i].Output;
-    }
+    sbus_->write(&SbusCmds[0]);
   }
-  sbus_->write(&SbusCmds[0]);
 }
 
 /* frees the resources used */
