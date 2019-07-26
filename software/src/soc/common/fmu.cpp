@@ -26,6 +26,8 @@ using std::to_string;
 using std::cout;
 using std::endl;
 
+#include "fmu_messages.h"
+
 /* Opens port to communicate with FMU. */
 void FlightManagementUnit::Begin() {
   _serial = new HardwareSerial(Port_);
@@ -99,9 +101,10 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
 /* Sends a mode command to the FMU */
 void FlightManagementUnit::SendModeCommand(Mode mode) {
   printf("sending mode change: %d\n", mode);
-  cmd_msg.mode = mode;
-  cmd_msg.pack();
-  SendMessage(cmd_msg.id, 0, cmd_msg.payload, cmd_msg.len);
+  message::command_mode_t msg;
+  msg.mode = mode;
+  msg.pack();
+  SendMessage(msg.id, 0, msg.payload, msg.len);
 }
 
 /* Receive sensor data from FMU */
@@ -264,9 +267,10 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
   while ( millis() < start + timeout_millis ) {
     if ( ReceiveMessage(&msg_id, &Payload) ) {
       if ( msg_id == message::config_ack_id ) {
-	config_ack_msg.unpack(Payload.data(), Payload.size());
-	printf("  received ack: %d ", config_ack_msg.ack_id);
-	if ( id == config_ack_msg.ack_id and subid == config_ack_msg.ack_subid ) {
+        message::config_ack_t msg;
+	msg.unpack(Payload.data(), Payload.size());
+	printf("  received ack: %d ", msg.ack_id);
+	if ( id == msg.ack_id and subid == msg.ack_subid ) {
 	  printf("ok\n");
 	  return true;
 	} else {

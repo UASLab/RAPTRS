@@ -38,8 +38,6 @@ class AircraftSocComms {
     };
     AircraftSocComms(HardwareSerial& bus,uint32_t baud);
     void Begin();
-    void SendSensorData(std::vector<uint8_t> &DataBuffer);
-    void SendMessage(Message message, std::vector<uint8_t> &Payload);
     void SendMessage(uint8_t message, uint8_t *Payload, int len);
     bool ReceiveMessage(uint8_t *message, uint8_t *address, std::vector<uint8_t> *Payload);
     void SendAck(uint8_t id, uint8_t subid);

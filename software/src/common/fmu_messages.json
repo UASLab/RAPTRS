@@ -33,12 +33,20 @@
     "messages": [
         {
             "id": 10,
-            "name": "mode_command",
+            "name": "command_mode",
             "fields": [
                 { "type": "int8_t", "name": "mode" }
             ]
         },
         {
+            "name": "command_effectors",
+            "fields": [
+                { "type": "uint8_t", "name": "num_active" },
+                { "type": "float", "name": "command[num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
+            ]
+        },
+        {
+            "id": 20,
             "name": "config_ack",
             "fields": [
                 { "type": "uint8_t", "name": "ack_id" },
@@ -151,13 +159,7 @@
             ]
         },
         {
-            "name": "command_effectors",
-            "fields": [
-                { "type": "uint8_t", "name": "num_active" },
-                { "type": "float", "name": "command[num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
-            ]
-        },
-        {
+            "id": 40,
             "name": "data_time",
             "fields": [
                 { "type": "uint64_t", "name": "time_us" }
@@ -167,11 +169,9 @@
             "name": "data_mpu9250_short",
             "fields": [
                 { "type": "int8_t", "name": "ReadStatus" },
-                // x,y,z accelerometer counts
                 { "type": "float", "name": "AccelX_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
                 { "type": "float", "name": "AccelY_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
                 { "type": "float", "name": "AccelZ_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
-                // x,y,z gyros counts
                 { "type": "float", "name": "GyroX_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
                 { "type": "float", "name": "GyroY_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
                 { "type": "float", "name": "GyroZ_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" }
@@ -181,15 +181,12 @@
             "name": "data_mpu9250",
             "fields": [
                 { "type": "int8_t", "name": "ReadStatus" },
-                // x,y,z accelerometer counts
                 { "type": "float", "name": "AccelX_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
                 { "type": "float", "name": "AccelY_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
                 { "type": "float", "name": "AccelZ_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
-                // x,y,z gyros counts
                 { "type": "float", "name": "GyroX_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
                 { "type": "float", "name": "GyroY_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
                 { "type": "float", "name": "GyroZ_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
-                // x,y,z mag counts
                 { "type": "float", "name": "MagX_uT", "pack_type": "int16_t", "pack_scale": "mag_scale" },
                 { "type": "float", "name": "MagY_uT", "pack_type": "int16_t", "pack_scale": "mag_scale" },
                 { "type": "float", "name": "MagZ_uT", "pack_type": "int16_t", "pack_scale": "mag_scale" },
@@ -262,6 +259,12 @@
             "name": "data_analog",
             "fields": [
                 { "type": "float", "name": "calibrated_value" }
+            ]
+        },
+        {
+            "name": "data_mega_group",
+            "desc": "reserve a message id, but external code will handle the message contents, packing, and unpacking",
+            "fields": [
             ]
         }
     ]

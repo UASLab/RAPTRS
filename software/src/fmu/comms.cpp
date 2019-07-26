@@ -34,16 +34,6 @@ void AircraftSocComms::Begin() {
   Serial.println("done!");
 }
 
-/* sends sensor data message */
-void AircraftSocComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
-  SendMessage(SensorData,DataBuffer);
-}
-
-/* builds and sends a BFS message given a message ID and payload */
-void AircraftSocComms::SendMessage(Message message,std::vector<uint8_t> &Payload) {
-  SendMessage(message, Payload.data(), Payload.size());
-}
-
 /* builds and sends a BFS message given a message ID and payload */
 void AircraftSocComms::SendMessage(uint8_t message, uint8_t *Payload, int len) {
   bus_->beginTransmission();

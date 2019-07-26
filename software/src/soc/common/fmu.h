@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "hardware-defs.h"
 #include "definition-tree2.h"
-#include "fmu_messages.h"
 #include "SerialLink.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
@@ -229,8 +228,6 @@ class FlightManagementUnit {
     const uint32_t Baud_ = FmuBaud;
     HardwareSerial *_serial;
     SerialLink *_bus;
-    message::mode_command_t cmd_msg;
-    message::config_ack_t config_ack_msg;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const

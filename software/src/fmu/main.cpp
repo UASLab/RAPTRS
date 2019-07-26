@@ -103,7 +103,7 @@ int main()
 // Serial.print("\tDataBuffer: ");
 // Serial.print(DataBuffer.size());
         // transmit data to SOC
-        SocComms.SendSensorData(DataBuffer);
+        SocComms.SendMessage(message::data_mega_group_id, DataBuffer.data(), DataBuffer.size());
 // Serial.print("\tSync: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
 
@@ -138,9 +138,9 @@ int main()
     uint8_t address;
     std::vector<uint8_t> Payload;
     if ( SocComms.ReceiveMessage(&id, &address, &Payload) ) {
-      if ( id == message::mode_command_id ) {
+      if ( id == message::command_mode_id ) {
         // request mode
-        message::mode_command_t msg;
+        message::command_mode_t msg;
         msg.unpack(Payload.data(), Payload.size());
         Serial.print("new mode: "); Serial.println(msg.mode);
         Mission.SetRequestedMode((AircraftMission::Mode)msg.mode);
