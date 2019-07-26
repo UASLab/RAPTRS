@@ -221,7 +221,7 @@ class AircraftSensors {
     void Begin();
     void ReadSyncSensors();
     void ReadAsyncSensors();
-  void MakeMegaMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer);
+  void MakeCompoundMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer);
     void End();
   private:
     Classes classes_;

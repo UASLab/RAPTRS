@@ -888,7 +888,7 @@ static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uin
 }
 
 /* get data buffer */
-void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer) {
+void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer) {
   Buffer->clear();
   {
     message::data_mpu9250_short_t msg;

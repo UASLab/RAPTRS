@@ -1505,7 +1505,7 @@ static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uin
   Buffer->insert(Buffer->end(), payload, payload + len);
 }
 
-static void add_mega_msg(std::vector<uint8_t> *Buffer, size_t len, uint8_t *payload) {
+static void add_compound_msg(std::vector<uint8_t> *Buffer, size_t len, uint8_t *payload) {
   if ( Buffer->size() + len > Buffer->capacity() ) {
     Buffer->resize(Buffer->size() + len);
     Serial.print("Notice: increasing Buffer size to: ");
@@ -1515,7 +1515,7 @@ static void add_mega_msg(std::vector<uint8_t> *Buffer, size_t len, uint8_t *payl
 }
 
 /* get data buffer */
-void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer) {
+void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer) {
   Buffer->clear();
   if ( AcquireTimeData_ ) {
     message::data_time_t msg;
@@ -1618,7 +1618,7 @@ void AircraftSensors::MakeMegaMessage(std::vector<uint8_t> *Buffer) {
   for (size_t i=0; i < classes_.Nodes.size(); i++) {
     std::vector<uint8_t> NodeBuffer;
     classes_.Nodes[i].GetMessage(NodeBuffer);
-    add_mega_msg(Buffer, NodeBuffer.size(), NodeBuffer.data());
+    add_compound_msg(Buffer, NodeBuffer.size(), NodeBuffer.data());
   }
 
 #if 0

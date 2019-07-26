@@ -39,7 +39,7 @@ const uint8_t data_ams5915_id = 45;
 const uint8_t data_swift_id = 46;
 const uint8_t data_sbus_id = 47;
 const uint8_t data_analog_id = 48;
-const uint8_t data_mega_group_id = 49;
+const uint8_t data_compound_id = 49;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -1423,8 +1423,8 @@ struct data_analog_t {
     }
 };
 
-// Message: data_mega_group (id: 49)
-struct data_mega_group_t {
+// Message: data_compound (id: 49)
+struct data_compound_t {
     // public fields
 
     // internal structure for packing

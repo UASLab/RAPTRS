@@ -118,7 +118,7 @@ void loop() {
       // read synchronous sensors
       Sensors.ReadSyncSensors();
       // buffer for transmitting data
-      Sensors.MakeMegaMessage(&DataBuffer, &SizeBuffer);
+      Sensors.MakeCompoundMessage(&DataBuffer, &SizeBuffer);
     }
     if (MissionState == AircraftMission::AsyncDataCollection) {
       // read the asynchronous sensors

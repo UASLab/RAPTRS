@@ -372,7 +372,7 @@ class AircraftSensors {
     void Begin();
     void ReadSyncSensors();
     void ReadAsyncSensors();
-    void MakeMegaMessage(std::vector<uint8_t> *Buffer);
+    void MakeCompoundMessage(std::vector<uint8_t> *Buffer);
     void End();
   private:
     std::string RootPath_ = "/Sensors";

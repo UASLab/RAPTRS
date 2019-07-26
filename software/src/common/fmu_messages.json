@@ -262,8 +262,8 @@
             ]
         },
         {
-            "name": "data_mega_group",
-            "desc": "reserve a message id, but external code will handle the message contents, packing, and unpacking",
+            "name": "data_compound",
+            "desc": "reserve a message id for compound messages, but external code will handle the message contents, packing, and unpacking",
             "fields": [
             ]
         }

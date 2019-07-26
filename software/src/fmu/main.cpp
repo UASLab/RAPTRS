@@ -99,11 +99,11 @@ int main()
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
         // buffer for transmitting data
         std::vector<uint8_t> DataBuffer;
-        Sensors.MakeMegaMessage(&DataBuffer);
+        Sensors.MakeCompoundMessage(&DataBuffer);
 // Serial.print("\tDataBuffer: ");
 // Serial.print(DataBuffer.size());
         // transmit data to SOC
-        SocComms.SendMessage(message::data_mega_group_id, DataBuffer.data(), DataBuffer.size());
+        SocComms.SendMessage(message::data_compound_id, DataBuffer.data(), DataBuffer.size());
 // Serial.print("\tSync: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
 
