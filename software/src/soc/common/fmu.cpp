@@ -115,6 +115,73 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
   bool freshdata = 0;
   while (ReceiveMessage(&message,&Payload)) {
     printf("received msg: %d\n", message);
+    if ( message == message::data_compound_id ) {
+      int counter = 0;
+      while ( counter <= Payload.size() - 3 ) {
+        uint8_t id = Payload[counter++];
+        uint8_t index = Payload[counter++];
+        uint8_t len = Payload[counter++];
+        if ( counter + len <= Payload.size() ) {
+          if ( id == message::data_time_id ) {
+            message::data_time_t msg;
+            msg.unpack(Payload.data()+counter, len);
+            SensorData_.Time_us = msg.time_us;
+          } else if ( id == message::data_mpu9250_id ) {
+            message::data_mpu9250_t msg;
+            msg.unpack(Payload.data()+counter, len);
+            SensorData_.InternalMpu9250.AccelX_mss = msg.AccelX_mss;
+            SensorData_.InternalMpu9250.AccelY_mss = msg.AccelY_mss;
+            SensorData_.InternalMpu9250.AccelZ_mss = msg.AccelZ_mss;
+            SensorData_.InternalMpu9250.GyroX_rads = msg.GyroX_rads;
+            SensorData_.InternalMpu9250.GyroY_rads = msg.GyroY_rads;
+            SensorData_.InternalMpu9250.GyroZ_rads = msg.GyroZ_rads;
+            SensorData_.InternalMpu9250.MagX_uT = msg.MagX_uT;
+            SensorData_.InternalMpu9250.MagY_uT = msg.MagY_uT;
+            SensorData_.InternalMpu9250.MagZ_uT = msg.MagZ_uT;
+            SensorData_.InternalMpu9250.Temperature_C = msg.Temperature_C;
+          } else if ( id == message::data_bme280_id ) {
+            if ( index >= DataPtr->Bme280.size() ) {
+              DataPtr->Bme280.resize(index);
+            }
+            message::data_bme280_t msg;
+            msg.unpack(Payload.data()+counter, len);
+          } else if ( id == message::data_ublox_id ) {
+            if ( index >= DataPtr->uBlox.size() ) {
+              DataPtr->uBlox.resize(index);
+            }
+            message::data_ublox_t msg;
+            msg.unpack(Payload.data()+counter, len);
+          } else if ( id == message::data_swift_id ) {
+            if ( index >= DataPtr->Swift.size() ) {
+              DataPtr->Swift.resize(index);
+            }
+            message::data_swift_t msg;
+            msg.unpack(Payload.data()+counter, len);
+          } else if ( id == message::data_ams5915_id ) {
+            if ( index >= DataPtr->Ams5915.size() ) {
+              DataPtr->Ams5915.resize(index);
+            }
+            message::data_ams5915_t msg;
+            msg.unpack(Payload.data()+counter, len);
+          } else if ( id == message::data_sbus_id ) {
+            if ( index >= DataPtr->Sbus.size() ) {
+              DataPtr->Sbus.resize(index);
+            }
+            message::data_sbus_t msg;
+            msg.unpack(Payload.data()+counter, len);
+          } else if ( id == message::data_analog_id ) {
+            if ( index >= DataPtr->Analog.size() ) {
+              DataPtr->Analog.resize(index);
+            }
+            message::data_analog_t msg;
+            msg.unpack(Payload.data()+counter, len);
+          } else {
+            printf("SensorNode received an unhandled message id: %d", id);
+          }
+        }
+        counter += len;
+      } // while processing compound message
+    } // if compound message
     if (message == kSensorData) {
       // meta data
       uint8_t AcquireInternalData,NumberPwmVoltageSensor,NumberSbusVoltageSensor,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
@@ -140,8 +207,8 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
       PayloadLocation += sizeof(NumberAnalogSensor);
       // resize data buffers
       if (AcquireInternalData & 0x01) {
-        SensorData_.Time_us.resize(1);
-        SensorNodes_.Time_us.resize(1);
+        //SensorData_.Time_us.resize(1);
+        //SensorNodes_.Time_us.resize(1);
       }
       if (AcquireInternalData & 0x02) {
         SensorData_.InternalMpu9250.resize(1);

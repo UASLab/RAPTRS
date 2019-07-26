@@ -192,9 +192,9 @@ class FlightManagementUnit {
       ElementPtr val;
     };
     struct SensorData {
-      std::vector<uint64_t> Time_us;
-      std::vector<InternalMpu9250SensorData> InternalMpu9250;
-      std::vector<InternalBme280SensorData> InternalBme280;
+      uint64_t Time_us;
+      InternalMpu9250SensorData InternalMpu9250;
+      InternalBme280SensorData InternalBme280;
       std::vector<float> InputVoltage_V;
       std::vector<float> RegulatedVoltage_V;
       std::vector<float> PwmVoltage_V;
@@ -208,9 +208,9 @@ class FlightManagementUnit {
       std::vector<AnalogSensorData> Analog;
     };
     struct SensorNodes {
-      vector<ElementPtr> Time_us;
-      vector<InternalMpu9250SensorNodes> InternalMpu9250;
-      vector<InternalBme280SensorNodes> InternalBme280;
+      ElementPtr Time_us;
+      InternalMpu9250SensorNodes InternalMpu9250;
+      InternalBme280SensorNodes InternalBme280;
       vector<ElementPtr> input_volts;
       vector<ElementPtr> reg_volts;
       vector<ElementPtr> pwm_volts;
