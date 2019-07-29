@@ -22,12 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 /* handle effector configuration messages */
 bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
-  Serial.print("Updating effector configuration...");
-  if ( sbus_ == NULL ) {
-    sbus_ = new SBUS(kSbusUart);
-    sbus_->begin();
-  }
   if ( id == message::config_effector_id ) {
+    Serial.print("Updating effector configuration...");
+    if ( sbus_ == NULL ) {
+      sbus_ = new SBUS(kSbusUart);
+      sbus_->begin();
+    }
     Data eff;
     message::config_effector_t msg;
     msg.unpack(Payload->data(), Payload->size());
@@ -51,6 +51,7 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) 
     config_.Resolution = powf(2,kPwmResolution) - 1.0f;
     config_.Period = 1.0f/kPwmFrequency * 1000000.0f;
     Effectors_.push_back(eff); // keep!
+    return true;
   }
   return false;
 }
@@ -69,16 +70,18 @@ void AircraftEffectors::ComputeOutputs() {
 
 /* commands the PWM and SBUS effectors */
 void AircraftEffectors::CommandEffectors() {
-  uint16_t SbusCmds[16];
-  for (size_t i=0; i < Effectors_.size(); i++) {
-    if (Effectors_[i].Type == kPwm) {
-      analogWrite(kPwmPins[Effectors_[i].Channel],Effectors_[i].Output/config_.Period*config_.Resolution);
+  if (sbus_) {
+    uint16_t SbusCmds[16];
+    for (size_t i=0; i < Effectors_.size(); i++) {
+      if (Effectors_[i].Type == kPwm) {
+        analogWrite(kPwmPins[Effectors_[i].Channel],Effectors_[i].Output/config_.Period*config_.Resolution);
+      }
+      if (Effectors_[i].Type == kSbus) {
+        SbusCmds[Effectors_[i].Channel] = (uint16_t)Effectors_[i].Output;
+      }
     }
-    if (Effectors_[i].Type == kSbus) {
-      SbusCmds[Effectors_[i].Channel] = (uint16_t)Effectors_[i].Output;
-    }
+    sbus_->write(&SbusCmds[0]);
   }
-  sbus_->write(&SbusCmds[0]);
 }
 
 /* frees the resources used */
