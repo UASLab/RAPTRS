@@ -962,15 +962,6 @@ void SensorNodes::Begin(/*Data *DataPtr*/) {
   while (1) {
     digitalWriteFast(kBfsInt1Pin,HIGH);
     if (node_->ReadSensorData()) {
-      // DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
-      // DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
-      // DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
-      // DataPtr->Bme280.resize(node_->GetNumberBme280Sensor());
-      // DataPtr->uBlox.resize(node_->GetNumberuBloxSensor());
-      // DataPtr->Swift.resize(node_->GetNumberSwiftSensor());
-      // DataPtr->Ams5915.resize(node_->GetNumberAms5915Sensor());
-      // DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
-      // DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
       break;
     }
     delay(5);
@@ -980,117 +971,12 @@ void SensorNodes::Begin(/*Data *DataPtr*/) {
 
 /* get data from the nodes */
 int SensorNodes::ReadSensor() {
-  // std::vector<uint8_t> SensorDataBuffer;
-  // size_t BufferLocation = 0;
-  // DataPtr->PwmVoltage_V.clear();
-  // DataPtr->SbusVoltage_V.clear();
-  // DataPtr->Mpu9250.clear();
-  // DataPtr->Bme280.clear();
-  // DataPtr->uBlox.clear();
-  // DataPtr->Swift.clear();
-  // DataPtr->Ams5915.clear();
-  // DataPtr->Sbus.clear();
-  // DataPtr->Analog.clear();
   return node_->ReadSensorData();
-#if 0
-  // ) {
-    // DataPtr->PwmVoltage_V.resize(node_->GetNumberPwmVoltageSensor());
-    // DataPtr->SbusVoltage_V.resize(node_->GetNumberSbusVoltageSensor());
-    // DataPtr->Mpu9250.resize(node_->GetNumberMpu9250Sensor());
-    // DataPtr->Bme280.resize(node_->GetNumberBme280Sensor());
-    // DataPtr->uBlox.resize(node_->GetNumberuBloxSensor());
-    // DataPtr->Swift.resize(node_->GetNumberSwiftSensor());
-    // DataPtr->Ams5915.resize(node_->GetNumberAms5915Sensor());
-    // DataPtr->Sbus.resize(node_->GetNumberSbusSensor());
-    // DataPtr->Analog.resize(node_->GetNumberAnalogSensor());
-    node_->GetSensorDataBuffer(&SensorDataBuffer);
-
-    // normally we just relay this data block to the SOC as is.  If
-    // the FMU ever needs to cherry pick Node sensor data to use
-    // locally, we can parse it here and stash the sensor values in
-    // the appropriate places locally.
-    while ( BufferLocation <= SensorDataBuffer.size() - 3 ) {
-      uint8_t id = SensorDataBuffer[BufferLocation++];
-      uint8_t index = SensorDataBuffer[BufferLocation++];
-      uint8_t len = SensorDataBuffer[BufferLocation++];
-      if ( BufferLocation + len <= SensorDataBuffer.size() ) {
-        if ( id == message::data_mpu9250_id ) {
-          if ( index >= DataPtr->Mpu9250.size() ) {
-            DataPtr->Mpu9250.resize(index);
-          }
-          message::data_mpu9250_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else if ( id == message::data_bme280_id ) {
-          if ( index >= DataPtr->Bme280.size() ) {
-            DataPtr->Bme280.resize(index);
-          }
-          message::data_bme280_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else if ( id == message::data_ublox_id ) {
-          if ( index >= DataPtr->uBlox.size() ) {
-            DataPtr->uBlox.resize(index);
-          }
-          message::data_ublox_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else if ( id == message::data_swift_id ) {
-          if ( index >= DataPtr->Swift.size() ) {
-            DataPtr->Swift.resize(index);
-          }
-          message::data_swift_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else if ( id == message::data_ams5915_id ) {
-          if ( index >= DataPtr->Ams5915.size() ) {
-            DataPtr->Ams5915.resize(index);
-          }
-          message::data_ams5915_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else if ( id == message::data_sbus_id ) {
-          if ( index >= DataPtr->Sbus.size() ) {
-            DataPtr->Sbus.resize(index);
-          }
-          message::data_sbus_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else if ( id == message::data_analog_id ) {
-          if ( index >= DataPtr->Analog.size() ) {
-            DataPtr->Analog.resize(index);
-          }
-          message::data_analog_t msg;
-          msg.unpack(SensorDataBuffer.data()+BufferLocation, len);
-        } else {
-          Serial.print("SensorNode received an unhandled message id:");
-          Serial.println(id);
-        }
-      }
-      BufferLocation += len;
-    }
-    // sensor data
-    // memcpy(DataPtr->PwmVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]));
-    // BufferLocation += DataPtr->PwmVoltage_V.size()*sizeof(DataPtr->PwmVoltage_V[0]);
-    // memcpy(DataPtr->SbusVoltage_V.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->SbusVoltage_V.size()*sizeof(DataPtr->SbusVoltage_V[0]));
-    // BufferLocation += DataPtr->SbusVoltage_V.size()*sizeof(DataPtr->SbusVoltage_V[0]);
-    // memcpy(DataPtr->Mpu9250.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Mpu9250.size()*sizeof(Mpu9250Sensor::Data));
-    // BufferLocation += DataPtr->Mpu9250.size()*sizeof(Mpu9250Sensor::Data);
-    // memcpy(DataPtr->Bme280.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Bme280.size()*sizeof(Bme280Sensor::Data));
-    // BufferLocation += DataPtr->Bme280.size()*sizeof(Bme280Sensor::Data);
-    // memcpy(DataPtr->uBlox.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->uBlox.size()*sizeof(uBloxSensor::Data));
-    // BufferLocation += DataPtr->uBlox.size()*sizeof(uBloxSensor::Data);
-    // memcpy(DataPtr->Swift.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Swift.size()*sizeof(SwiftSensor::Data));
-    // BufferLocation += DataPtr->Swift.size()*sizeof(SwiftSensor::Data);
-    // memcpy(DataPtr->Ams5915.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Ams5915.size()*sizeof(Ams5915Sensor::Data));
-    // BufferLocation += DataPtr->Ams5915.size()*sizeof(Ams5915Sensor::Data);
-    // memcpy(DataPtr->Sbus.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Sbus.size()*sizeof(SbusSensor::Data));
-    // BufferLocation += DataPtr->Sbus.size()*sizeof(SbusSensor::Data);
-    // memcpy(DataPtr->Analog.data(),SensorDataBuffer.data()+BufferLocation,DataPtr->Analog.size()*sizeof(AnalogSensor::Data));
-    // BufferLocation += DataPtr->Analog.size()*sizeof(AnalogSensor::Data);
-    return true;
-  } else {
-    return false;
-  }
-#endif
 }
 
-int SensorNodes::GetMessage(std::vector<uint8_t> NodeMessageBuffer) {
-  node_->GetSensorDataBuffer(&NodeMessageBuffer);
+// fixme: this one line method might easily be able to collapse out?
+int SensorNodes::GetMessage(std::vector<uint8_t> *NodeMessageBuffer) {
+  node_->GetSensorDataBuffer(NodeMessageBuffer);
 }
 
 /* free resources from the nodes */
@@ -1584,7 +1470,7 @@ void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer) {
   }
   for (size_t i=0; i < classes_.Nodes.size(); i++) {
     std::vector<uint8_t> NodeBuffer;
-    classes_.Nodes[i].GetMessage(NodeBuffer);
+    classes_.Nodes[i].GetMessage(&NodeBuffer);
     add_compound_msg(Buffer, NodeBuffer.size(), NodeBuffer.data());
   }
 
