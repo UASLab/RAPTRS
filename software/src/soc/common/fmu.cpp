@@ -107,9 +107,14 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
   size_t PayloadLocation = 0;
   bool freshdata = 0;
   while (ReceiveMessage(&message,&Payload)) {
-    printf("received msg: %d\n", message);
+    // printf("received msg: %d\n", message);
     if ( message == message::data_compound_id ) {
       size_t counter = 0;
+      size_t mpu9250_counter = 0;
+      size_t ublox_counter = 0;
+      size_t swift_counter = 0;
+      size_t ams5915_counter = 0;
+      size_t sbus_counter = 0;
       size_t analog_counter = 0;
       while ( counter <= Payload.size() - 3 ) {
         uint8_t id = Payload[counter++];
@@ -121,7 +126,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             msg.unpack(Payload.data()+counter, len);
             SensorData_.Time_us = msg.time_us;
           } else if ( id == message::data_mpu9250_id ) {
-            // fixme: internal or external?
+            // note: full message assumed to be the internal mpu9250
             message::data_mpu9250_t msg;
             msg.unpack(Payload.data()+counter, len);
             SensorData_.InternalMpu9250.AccelX_mss = msg.AccelX_mss;
@@ -134,6 +139,17 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             SensorData_.InternalMpu9250.MagY_uT = msg.MagY_uT;
             SensorData_.InternalMpu9250.MagZ_uT = msg.MagZ_uT;
             SensorData_.InternalMpu9250.Temperature_C = msg.Temperature_C;
+          } else if ( id == message::data_mpu9250_short_id ) {
+            message::data_mpu9250_short_t msg;
+            msg.unpack(Payload.data()+counter, len);
+            size_t i = mpu9250_counter;
+            SensorData_.Mpu9250[i].AccelX_mss = msg.AccelX_mss;
+            SensorData_.Mpu9250[i].AccelY_mss = msg.AccelY_mss;
+            SensorData_.Mpu9250[i].AccelZ_mss = msg.AccelZ_mss;
+            SensorData_.Mpu9250[i].GyroX_rads = msg.GyroX_rads;
+            SensorData_.Mpu9250[i].GyroY_rads = msg.GyroY_rads;
+            SensorData_.Mpu9250[i].GyroZ_rads = msg.GyroZ_rads;
+            mpu9250_counter++;
           } else if ( id == message::data_bme280_id ) {
             message::data_bme280_t msg;
             msg.unpack(Payload.data()+counter, len);
@@ -143,7 +159,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
           } else if ( id == message::data_ublox_id ) {
             message::data_ublox_t msg;
             msg.unpack(Payload.data()+counter, len);
-            int i = index; // FIXME
+            size_t i = ublox_counter;
             SensorData_.uBlox[i].Fix = msg.Fix;
             SensorData_.uBlox[i].NumberSatellites = msg.NumberSatellites;
             SensorData_.uBlox[i].TOW = msg.TOW;
@@ -163,8 +179,9 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             SensorData_.uBlox[i].VerticalAccuracy_m = msg.VerticalAccuracy_m;
             SensorData_.uBlox[i].VelocityAccuracy_ms = msg.VelocityAccuracy_ms;
             SensorData_.uBlox[i].pDOP = msg.pDOP;
+            ublox_counter++;
           } else if ( id == message::data_swift_id ) {
-            int i = index; // FIXME
+            size_t i = swift_counter;
             message::data_swift_t msg;
             msg.unpack(Payload.data()+counter, len);
             SensorData_.Swift[i].Static.status = msg.static_ReadStatus;
@@ -173,15 +190,17 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             SensorData_.Swift[i].Differential.status = msg.diff_ReadStatus;
             SensorData_.Swift[i].Differential.Pressure_Pa = msg.diff_Pressure_Pa;
             SensorData_.Swift[i].Differential.Temperature_C = msg.diff_Temperature_C;
+            swift_counter++;
           } else if ( id == message::data_ams5915_id ) {
-            int i = index; // FIXME
+            int i = ams5915_counter;
             message::data_ams5915_t msg;
             msg.unpack(Payload.data()+counter, len);
             SensorData_.Ams5915[i].status = msg.ReadStatus;
             SensorData_.Ams5915[i].Pressure_Pa = msg.Pressure_Pa;
             SensorData_.Ams5915[i].Temperature_C = msg.Temperature_C;
+            ams5915_counter++;
           } else if ( id == message::data_sbus_id ) {
-            int i = index; // FIXME
+            int i = sbus_counter;
             message::data_sbus_t msg;
             msg.unpack(Payload.data()+counter, len);
             for ( int j = 0; j < 16; j++ ) {
@@ -189,10 +208,12 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             }
             SensorData_.Sbus[i].FailSafe = msg.FailSafe;
             SensorData_.Sbus[i].LostFrames = msg.LostFrames;
+            sbus_counter++;
           } else if ( id == message::data_analog_id ) {
             message::data_analog_t msg;
             msg.unpack(Payload.data()+counter, len);
-            SensorData_.Analog[analog_counter].CalibratedValue = msg.calibrated_value;
+            size_t i = analog_counter;
+            SensorData_.Analog[i].CalibratedValue = msg.calibrated_value;
             analog_counter++;
           } else {
             printf("SensorNode received an unhandled message id: %d", id);
@@ -1061,7 +1082,7 @@ bool FlightManagementUnit::ReceiveMessage(uint8_t *message, std::vector<uint8_t>
   if (_bus->checkReceived()) {
     *message = _bus->read();
     uint8_t address = _bus->read();
-    printf("receving msg: %d (size = %d)\n", *message, _bus->available());
+    // printf("received msg: %d (size = %d)\n", *message, _bus->available());
     Payload->resize(_bus->available());
     _bus->read(Payload->data(),Payload->size());
     _bus->sendStatus(true);
@@ -1100,18 +1121,18 @@ void FlightManagementUnit::PublishSensors() {
   // }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
 
-    const float G = 9.807f;
-    const float d2r = 3.14159265359f/180.0f;
-    float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-    float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+    //const float G = 9.807f;
+    //const float d2r = 3.14159265359f/180.0f;
+    //float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+    //float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
 
     SensorNodes_.Mpu9250[i].status->setInt(SensorData_.Mpu9250[i].status);
-    SensorNodes_.Mpu9250[i].ax->setFloat((float) (SensorData_.Mpu9250[i].AccelX_ct) * accelScale);
-    SensorNodes_.Mpu9250[i].ay->setFloat((float) (SensorData_.Mpu9250[i].AccelY_ct) * accelScale);
-    SensorNodes_.Mpu9250[i].az->setFloat((float) (SensorData_.Mpu9250[i].AccelZ_ct) * accelScale);
-    SensorNodes_.Mpu9250[i].p->setFloat((float) (SensorData_.Mpu9250[i].GyroX_ct) * gyroScale);
-    SensorNodes_.Mpu9250[i].q->setFloat((float) (SensorData_.Mpu9250[i].GyroY_ct) * gyroScale);
-    SensorNodes_.Mpu9250[i].r->setFloat((float) (SensorData_.Mpu9250[i].GyroZ_ct) * gyroScale);
+    SensorNodes_.Mpu9250[i].ax->setFloat((float) (SensorData_.Mpu9250[i].AccelX_mss));
+    SensorNodes_.Mpu9250[i].ay->setFloat((float) (SensorData_.Mpu9250[i].AccelY_mss));
+    SensorNodes_.Mpu9250[i].az->setFloat((float) (SensorData_.Mpu9250[i].AccelZ_mss));
+    SensorNodes_.Mpu9250[i].p->setFloat((float) (SensorData_.Mpu9250[i].GyroX_rads));
+    SensorNodes_.Mpu9250[i].q->setFloat((float) (SensorData_.Mpu9250[i].GyroY_rads));
+    SensorNodes_.Mpu9250[i].r->setFloat((float) (SensorData_.Mpu9250[i].GyroZ_rads));
     // SensorNodes_.Mpu9250[i].hx->setFloat(SensorData_.Mpu9250[i].MagX_uT);
     // SensorNodes_.Mpu9250[i].hy->setFloat(SensorData_.Mpu9250[i].MagY_uT;
     // SensorNodes_.Mpu9250[i].hz->setFloat(SensorData_.Mpu9250[i].MagZ_uT);
@@ -1166,7 +1187,6 @@ void FlightManagementUnit::PublishSensors() {
   }
   for (size_t i=0; i < SensorData_.Analog.size(); i++) {
     // SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
-    printf("analog[%d] = %.2f\n", i, SensorData_.Analog[i].CalibratedValue);
     SensorNodes_.Analog[i].val->setFloat(SensorData_.Analog[i].CalibratedValue);
   }
 }

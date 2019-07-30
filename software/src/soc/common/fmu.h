@@ -89,16 +89,16 @@ class FlightManagementUnit {
     };
     struct Mpu9250SensorData {
       int8_t status;
-      int16_t AccelX_ct = 0; // x,y,z accelerometers, m/s/s
-      int16_t AccelY_ct = 0;
-      int16_t AccelZ_ct = 0;
-      int16_t GyroX_ct = 0; // x,y,z gyros, rad/s
-      int16_t GyroY_ct = 0;
-      int16_t GyroZ_ct = 0;
-      // int16_t MagX_ct = 0; // x,y,z magnetometers, uT
-      // int16_t MagY_ct = 0;
-      // int16_t MagZ_ct = 0;
-      // int16_t Temperature_ct = 0.0f; // Temperature, C
+      float AccelX_mss;        // x,y,z accelerometers, m/s/s
+      float AccelY_mss;
+      float AccelZ_mss;
+      float GyroX_rads;        // x,y,z gyros, rad/s
+      float GyroY_rads;
+      float GyroZ_rads;
+      //float MagX_uT;           // x,y,z magnetometers, uT
+      //float MagY_uT;
+      //float MagZ_uT;
+      //float Temperature_C;                      // Temperature, C
     };
     struct Mpu9250SensorNodes {
       ElementPtr status;
