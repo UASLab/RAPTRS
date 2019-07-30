@@ -621,8 +621,8 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
       AnalogSensor::Config config;
       config.DirectPin = kPwmVoltagePin;
       config.Calibration.clear();
-      config.Calibration.push_back(0.0);
       config.Calibration.push_back(kEffectorVoltageScale);
+      config.Calibration.push_back(0.0);
       classes_.Analog.push_back(AnalogSensor());
       classes_.Analog.back().SetConfig(config);
       return true;
@@ -635,8 +635,8 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
       AnalogSensor::Config config;
       config.DirectPin = kSbusVoltagePin;
       config.Calibration.clear();
-      config.Calibration.push_back(0.0);
       config.Calibration.push_back(kEffectorVoltageScale);
+      config.Calibration.push_back(0.0);
       classes_.Analog.push_back(AnalogSensor());
       classes_.Analog.back().SetConfig(config);
       return true;

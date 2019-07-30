@@ -1139,8 +1139,8 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       AnalogSensor::Config config;
       config.DirectPin = kInputVoltagePin;
       config.Calibration.clear();
-      config.Calibration.push_back(0.0);
       config.Calibration.push_back(kInputVoltageScale);
+      config.Calibration.push_back(0.0);
       classes_.Analog.push_back(AnalogSensor());
       classes_.Analog.back().SetConfig(config);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
@@ -1154,8 +1154,8 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       AnalogSensor::Config config;
       config.DirectPin = kRegulatedVoltagePin;
       config.Calibration.clear();
-      config.Calibration.push_back(0.0);
       config.Calibration.push_back(kRegulatedVoltageScale);
+      config.Calibration.push_back(0.0);
       classes_.Analog.push_back(AnalogSensor());
       classes_.Analog.back().SetConfig(config);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
@@ -1169,8 +1169,8 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       AnalogSensor::Config config;
       config.DirectPin = kPwmVoltagePin;
       config.Calibration.clear();
-      config.Calibration.push_back(0.0);
       config.Calibration.push_back(kEffectorVoltageScale);
+      config.Calibration.push_back(0.0);
       classes_.Analog.push_back(AnalogSensor());
       classes_.Analog.back().SetConfig(config);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
@@ -1184,8 +1184,8 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
       AnalogSensor::Config config;
       config.DirectPin = kSbusVoltagePin;
       config.Calibration.clear();
-      config.Calibration.push_back(0.0);
       config.Calibration.push_back(kEffectorVoltageScale);
+      config.Calibration.push_back(0.0);
       classes_.Analog.push_back(AnalogSensor());
       classes_.Analog.back().SetConfig(config);
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
