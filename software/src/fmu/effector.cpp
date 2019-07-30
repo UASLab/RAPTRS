@@ -147,6 +147,7 @@ void AircraftEffectors::ComputeOutputs(bool ThrottleSafed) {
         Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,*Effectors_[i].Input);
       }
     }
+    Serial.print("eff "); Serial.print(i); Serial.print(" "); Serial.print(*Effectors_[i].Input); Serial.print(" = "); Serial.println(Effectors_[i].Output);
   }
   for (size_t i=0; i < NodeEffectors_.size(); i++) {
     std::vector<float> NodeCommands;

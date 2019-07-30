@@ -43,7 +43,7 @@ void ControlGainClass::Configure(message::config_control_gain_t *msg, std::strin
     // pointer to log run mode data
     // DefinitionTreePtr->InitMember(OutputName+"/Mode",&data_.Mode);
     // pointer to log command data
-    DefinitionTreePtr->InitMember(OutputName,&data_.Command);
+    DefinitionTreePtr->InitMember(OutputName, &data_.Command);
 }
 
 /* gain block run method, outputs the mode and value */
@@ -80,7 +80,9 @@ void ControlGainClass::Run(Mode mode) {
 
 /* calculate the command and apply saturation, if enabled */
 void ControlGainClass::CalculateCommand() {
+  // Serial.print(*config_.Input); Serial.print(" "); Serial.print(config_.Gain);
   data_.Command = *config_.Input*config_.Gain;
+  // Serial.print(" = "); Serial.println(data_.Command);
   // saturate command
   if (config_.SaturateOutput) {
     if (data_.Command <= config_.LowerLimit) {
@@ -122,7 +124,8 @@ size_t ControlLaws::ActiveControlLevels() {
 /* computes control law data */
 void ControlLaws::Run(size_t ControlLevel) {
   for (size_t i=0; i < BaselineControlGroup_[ControlLevel].size(); i++) {
-      BaselineControlGroup_[ControlLevel][i]->Run(ControlFunctionClass::kEngage);
+    // Serial.print(i); Serial.print(": ");
+    BaselineControlGroup_[ControlLevel][i]->Run(ControlFunctionClass::kEngage);
   }
 }
 

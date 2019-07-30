@@ -1029,7 +1029,7 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config, ui
         } else {
           printf("ERROR: effector without Channel defined\n");
         }
-        msg.calibration[0] = 1.0;
+        msg.calibration[0] = 0.0;
         msg.calibration[1] = 0.0;
         msg.calibration[2] = 0.0;
         msg.calibration[3] = 0.0;
