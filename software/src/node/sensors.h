@@ -214,8 +214,6 @@ class AircraftSensors {
       std::vector<Ams5915Sensor> Ams5915;
       std::vector<SbusSensor> Sbus;
       std::vector<AnalogSensor> Analog;
-      AnalogSensor PwmVoltageSensor;
-      AnalogSensor SbusVoltageSensor;
     };
     bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload);
     void Begin();

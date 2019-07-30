@@ -823,7 +823,13 @@ void AnalogSensor::Begin() {
 
 /* get analog sensor data */
 int AnalogSensor::ReadSensor() {
-  Voltage_V = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
+  uint8_t pin;
+  if ( config_.DirectPin > 0 ) {
+    pin = config_.DirectPin;
+  } else {
+    pin = kAnalogPins[config_.Channel];
+  }
+  Voltage_V = ((float)analogRead(pin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
   CalibratedValue = PolyVal(config_.Calibration, Voltage_V);
 }
 
@@ -1130,7 +1136,14 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
 	HardFail("ERROR: Input voltage already initialized.");
       }
       AcquireInputVoltageData_ = true;
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.InputVoltage.Voltage_V);
+      AnalogSensor::Config config;
+      config.DirectPin = kInputVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(0.0);
+      config.Calibration.push_back(kInputVoltageScale);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
       return true;
     } else if ( msg.sensor == message::sensor_type::regulated_voltage ) {
       Serial.println("RegulatedVoltage");
@@ -1138,7 +1151,14 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
 	HardFail("ERROR: Regulated voltage already initialized.");
       }
       AcquireRegulatedVoltageData_ = true;
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.RegulatedVoltage.Voltage_V);
+      AnalogSensor::Config config;
+      config.DirectPin = kRegulatedVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(0.0);
+      config.Calibration.push_back(kRegulatedVoltageScale);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
       return true;
     } else if ( msg.sensor == message::sensor_type::pwm_voltage ) {
       Serial.println("PwmVoltage");
@@ -1146,7 +1166,14 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
 	HardFail("ERROR: Pwm voltage already initialized.");
       }
       AcquirePwmVoltageData_ = true;
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.PwmVoltage.Voltage_V);
+      AnalogSensor::Config config;
+      config.DirectPin = kPwmVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(0.0);
+      config.Calibration.push_back(kEffectorVoltageScale);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
       return true;
     } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("SbusVoltage");
@@ -1154,7 +1181,14 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
 	HardFail("ERROR: Sbus voltage already initialized.");
       }
       AcquireSbusVoltageData_ = true;
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.SbusVoltage.Voltage_V);
+      AnalogSensor::Config config;
+      config.DirectPin = kSbusVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(0.0);
+      config.Calibration.push_back(kEffectorVoltageScale);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
       return true;
     } else if ( msg.sensor == message::sensor_type::internal_bme280 ) {
       Serial.println("InternalBme280");
@@ -1376,22 +1410,6 @@ void AircraftSensors::ReadSyncSensors() {
   if (AcquireInternalBme280Data_) {
     classes_.InternalBme280.ReadSensor();
   }
-  if (AcquireInputVoltageData_) {
-    classes_.InputVoltage.ReadSensor();
-    //_V[0] = ((float)analogRead(kInputVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kInputVoltageScale;
-  }
-  if (AcquireRegulatedVoltageData_) {
-    classes_.RegulatedVoltage.ReadSensor();
-    //_V[0] = ((float)analogRead(kRegulatedVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kRegulatedVoltageScale;
-  }
-  if (AcquirePwmVoltageData_) {
-    classes_.PwmVoltage.ReadSensor();
-    //_V[0] = ((float)analogRead(kPwmVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
-  }
-  if (AcquireSbusVoltageData_) {
-    classes_.SbusVoltage.ReadSensor();
-    //_V[0] = ((float)analogRead(kSbusVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
-  }
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
     int8_t status;
     status = classes_.Mpu9250[i].ReadSensor();
@@ -1436,6 +1454,10 @@ void AircraftSensors::ReadSyncSensors() {
   }
   for (size_t i=0; i < classes_.Analog.size(); i++) {
     classes_.Analog[i].ReadSensor();
+    // if ( i == 0 ) {
+    //   Serial.print("analog: ");
+    //   Serial.println(classes_.Analog[i].CalibratedValue);
+    // }
   }
   for (size_t i=0; i < classes_.Nodes.size(); i++) {
     int8_t status;
@@ -1444,37 +1466,6 @@ void AircraftSensors::ReadSyncSensors() {
       ResetBfsBus_ = true;
     }
   }
-#if 0
-  for (size_t i=0; i < data_.Nodes.size(); i++) {
-    for (size_t j=0; j < data_.Nodes[i].PwmVoltage_V.size(); j++) {
-      data_.PwmVoltage_V.push_back(data_.Nodes[i].PwmVoltage_V[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].SbusVoltage_V.size(); j++) {
-      data_.SbusVoltage_V.push_back(data_.Nodes[i].SbusVoltage_V[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].Mpu9250.size(); j++) {
-      data_.Mpu9250.push_back(data_.Nodes[i].Mpu9250[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].Bme280.size(); j++) {
-      data_.Bme280.push_back(data_.Nodes[i].Bme280[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].uBlox.size(); j++) {
-      data_.uBlox.push_back(data_.Nodes[i].uBlox[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].Swift.size(); j++) {
-      data_.Swift.push_back(data_.Nodes[i].Swift[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].Ams5915.size(); j++) {
-      data_.Ams5915.push_back(data_.Nodes[i].Ams5915[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].Sbus.size(); j++) {
-      data_.Sbus.push_back(data_.Nodes[i].Sbus[j]);
-    }
-    for (size_t j=0; j < data_.Nodes[i].Analog.size(); j++) {
-      data_.Analog.push_back(data_.Nodes[i].Analog[j]);
-    }
-  }
-#endif
   if (ResetI2cBus_) {
     Wire1.resetBus();
   }
@@ -1532,30 +1523,6 @@ void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer) {
   if ( AcquireInternalBme280Data_ ) {
     message::data_bme280_t msg;
     classes_.InternalBme280.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  if ( AcquireInputVoltageData_ ) {
-    message::data_analog_t msg;
-    classes_.InputVoltage.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  if ( AcquireRegulatedVoltageData_ ) {
-    message::data_analog_t msg;
-    classes_.RegulatedVoltage.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  if ( AcquirePwmVoltageData_ ) {
-    message::data_analog_t msg;
-    classes_.PwmVoltage.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  if ( AcquireSbusVoltageData_ ) {
-    message::data_analog_t msg;
-    classes_.SbusVoltage.UpdateMessage(&msg);
     msg.pack();
     add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
   }

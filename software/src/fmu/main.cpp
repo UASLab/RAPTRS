@@ -51,6 +51,8 @@ AircraftMission::State MissionState;
 AircraftMission::Mode RequestedMode;
 // effector commands
 std::vector<float> EffectorCommands;
+// sensor data to soc
+std::vector<uint8_t> DataBuffer;
 
 // runs with the FMU integrated IMU data ready interrupt
 void ImuInterrupt() {
@@ -98,7 +100,6 @@ int main()
 // Serial.print("\tRead: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
         // buffer for transmitting data
-        std::vector<uint8_t> DataBuffer;
         Sensors.MakeCompoundMessage(&DataBuffer);
 // Serial.print("\tDataBuffer: ");
 // Serial.print(DataBuffer.size());

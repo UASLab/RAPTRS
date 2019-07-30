@@ -618,6 +618,13 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
 	HardFail("ERROR: Pwm voltage already initialized.");
       }
       AcquirePwmVoltageData_ = true;
+      AnalogSensor::Config config;
+      config.DirectPin = kPwmVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(0.0);
+      config.Calibration.push_back(kEffectorVoltageScale);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
       return true;
     } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("SbusVoltage");
@@ -625,6 +632,13 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
 	HardFail("ERROR: Sbus voltage already initialized.");
       }
       AcquireSbusVoltageData_ = true;
+      AnalogSensor::Config config;
+      config.DirectPin = kSbusVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(0.0);
+      config.Calibration.push_back(kEffectorVoltageScale);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
       return true;
     } else if ( msg.sensor == message::sensor_type::sbus ) {
       Serial.println("Sbus");
@@ -754,27 +768,9 @@ void AircraftSensors::Begin() {
   Serial.println(classes_.Analog.size());
 
   Serial.print("\tPwm voltage: ");
-  if (AcquirePwmVoltageData_) {
-    AnalogSensor::Config config;
-    config.DirectPin = kPwmVoltagePin;
-    config.Calibration.clear();
-    config.Calibration.push_back(0.0);
-    config.Calibration.push_back(kEffectorVoltageScale);
-    classes_.PwmVoltageSensor.SetConfig(config);
-    classes_.PwmVoltageSensor.Begin();
-  }
   Serial.println(AcquirePwmVoltageData_);
 
   Serial.print("\tSbus voltage: ");
-  if (AcquireSbusVoltageData_) {
-    AnalogSensor::Config config;
-    config.DirectPin = kSbusVoltagePin;
-    config.Calibration.clear();
-    config.Calibration.push_back(0.0);
-    config.Calibration.push_back(kEffectorVoltageScale);
-    classes_.SbusVoltageSensor.SetConfig(config);
-    classes_.SbusVoltageSensor.Begin();
-  }
   Serial.println(AcquireSbusVoltageData_);
 
   Serial.println("done!");
@@ -784,12 +780,6 @@ void AircraftSensors::Begin() {
 void AircraftSensors::ReadSyncSensors() {
   ResetI2cBus1_ = false;
   ResetI2cBus2_ = false;
-  if (AcquirePwmVoltageData_) {
-    classes_.PwmVoltageSensor.ReadSensor();
-  }
-  if (AcquireSbusVoltageData_) {
-    classes_.SbusVoltageSensor.ReadSensor();
-  }
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
     int8_t status;
     status = classes_.Mpu9250[i].ReadSensor();
@@ -945,13 +935,6 @@ void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer, std::vec
       msg.pack();
       add_msg(Buffer, msg.id, i, msg.len, msg.payload);
     }
-    // fixme ... order?
-    classes_.PwmVoltageSensor.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-    classes_.SbusVoltageSensor.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
   }
   SizeBuffer->clear();
   SizeBuffer->resize(sizeof(uint16_t));

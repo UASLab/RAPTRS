@@ -222,7 +222,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
       PayloadLocation += sizeof(NumberBme280Sensor);
       memcpy(&NumberuBloxSensor,Payload.data()+PayloadLocation,sizeof(NumberuBloxSensor));
       PayloadLocation += sizeof(NumberuBloxSensor);
-      memcpy(&NumberSwiftSensor,Payload.data()+PayloadLocation,sizeof(NumberSwiftSensor));
+      memcpy(&NumberSwiftSensor,Payload.data()+PayloadLocation,sizeof(NumberSwif2tSensor));
       PayloadLocation += sizeof(NumberSwiftSensor);
       memcpy(&NumberAms5915Sensor,Payload.data()+PayloadLocation,sizeof(NumberAms5915Sensor));
       PayloadLocation += sizeof(NumberAms5915Sensor);
@@ -381,6 +381,10 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   if ( Sensor["Type"] == "Time" ) {
     if ( node_address == 0 ) {
       printf("Configuring Time\n");
+      {
+        string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+        SensorNodes_.Time_us = deftree.initElement(Path, "Flight management unit time, us", LOG_UINT64, LOG_NONE);
+      }
       message::config_basic_t msg;
       msg.sensor = message::sensor_type::time;
       msg.output = Sensor["Output"].GetString();
@@ -395,6 +399,12 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "InputVoltage" ) {
     if ( node_address == 0 ) {
       printf("Configuring InputVoltage\n");
+      {
+        string Path = RootPath_+ "/" + Sensor["Output"].GetString();
+        SensorNodes_.Analog.push_back(AnalogSensorNodes());
+        SensorNodes_.Analog.back().val = deftree.initElement(Path, "InputVoltage_V", LOG_FLOAT, LOG_NONE);
+        SensorData_.Analog.push_back(AnalogSensorData());
+      }
       message::config_basic_t msg;
       msg.sensor = message::sensor_type::input_voltage;
       msg.output = Sensor["Output"].GetString();
@@ -409,6 +419,12 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "RegulatedVoltage" ) {
     if ( node_address == 0 ) {
       printf("Configuring RegulatedVoltage\n");
+      {
+        string Path = RootPath_+ "/" + Sensor["Output"].GetString();
+        SensorNodes_.Analog.push_back(AnalogSensorNodes());
+        SensorNodes_.Analog.back().val = deftree.initElement(Path, "RegulatedVoltage_V", LOG_FLOAT, LOG_NONE);
+        SensorData_.Analog.push_back(AnalogSensorData());
+      }
       message::config_basic_t msg;
       msg.sensor = message::sensor_type::regulated_voltage;
       msg.output = Sensor["Output"].GetString();
@@ -422,6 +438,12 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "PwmVoltage" ) {
     printf("Configuring PwmVoltage\n");
+    {
+      string Path = RootPath_+ "/" + Sensor["Output"].GetString();
+      SensorNodes_.Analog.push_back(AnalogSensorNodes());
+      SensorNodes_.Analog.back().val = deftree.initElement(Path, "PwmVoltage_V", LOG_FLOAT, LOG_NONE);
+      SensorData_.Analog.push_back(AnalogSensorData());
+    }
     message::config_basic_t msg;
     msg.sensor = message::sensor_type::pwm_voltage;
     msg.output = Sensor["Output"].GetString();
@@ -432,6 +454,12 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "SbusVoltage" ) {
     printf("Configuring SbusVoltage\n");
+    {
+      string Path = RootPath_+ "/" + Sensor["Output"].GetString();
+      SensorNodes_.Analog.push_back(AnalogSensorNodes());
+      SensorNodes_.Analog.back().val = deftree.initElement(Path, "SbusVoltage_V", LOG_FLOAT, LOG_NONE);
+      SensorData_.Analog.push_back(AnalogSensorData());
+    }
     message::config_basic_t msg;
     msg.sensor = message::sensor_type::sbus_voltage;
     msg.output = Sensor["Output"].GetString();
@@ -443,6 +471,12 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
   } else if ( Sensor["Type"] == "InternalBme280" ) {
     if ( node_address == 0 ) {
       printf("Configuring InternalBme280\n");
+      {
+        string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+        SensorNodes_.InternalBme280.press = deftree.initElement(Path+"/Pressure_Pa", "Flight management unit BME-280 static pressure, Pa", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.InternalBme280.temp = deftree.initElement(Path+"/Temperature_C", "Flight management unit BME-280 temperature, C", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.InternalBme280.hum = deftree.initElement(Path+"/Humidity_RH", "Flight management unit BME-280 percent relative humidity", LOG_FLOAT, LOG_NONE);
+      }
       message::config_basic_t msg;
       msg.sensor = message::sensor_type::internal_bme280;
       msg.output = Sensor["Output"].GetString();
@@ -456,6 +490,17 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Sbus" ) {
     printf("Configuring Sbus\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.Sbus.push_back(SbusSensorNodes());
+      size_t i = SensorNodes_.Sbus.size() - 1;
+      SensorNodes_.Sbus[i].failsafe = deftree.initElement(Path+"/FailSafe", "SBUS_" + to_string(i) + " fail safe status", LOG_UINT8, LOG_NONE);
+      SensorNodes_.Sbus[i].lost_frames = deftree.initElement(Path+"/LostFrames", "SBUS_" + to_string(i) + " number of lost frames", LOG_UINT64, LOG_NONE);
+      for (size_t j=0; j < 16; j++) {
+        SensorNodes_.Sbus[i].ch[j] = deftree.initElement(Path+"/Channels/"+to_string(j), "SBUS_" + to_string(i) + " channel" + to_string(j) + " normalized value", LOG_FLOAT, LOG_NONE);
+      }
+      SensorData_.Sbus.push_back(SbusSensorData());
+    }
     message::config_basic_t msg;
     msg.sensor = message::sensor_type::sbus;
     msg.output = Sensor["Output"].GetString();
@@ -501,6 +546,19 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( Sensor["Type"] == "InternalMpu9250" ) {
       if ( node_address == 0 ) {
         printf("Configuring InternalMpu9250\n");
+        {
+          string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+          SensorNodes_.InternalMpu9250.ax = deftree.initElement(Path+"/AccelX_mss", "Flight management unit MPU-9250 X accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.ay = deftree.initElement(Path+"/AccelY_mss", "Flight management unit MPU-9250 Y accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.az = deftree.initElement(Path+"/AccelZ_mss", "Flight management unit MPU-9250 Z accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.p = deftree.initElement(Path+"/GyroX_rads", "Flight management unit MPU-9250 X gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.q = deftree.initElement(Path+"/GyroY_rads", "Flight management unit MPU-9250 Y gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.r = deftree.initElement(Path+"/GyroZ_rads", "Flight management unit MPU-9250 Z gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.hx = deftree.initElement(Path+"/MagX_uT", "Flight management unit MPU-9250 X magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.hy = deftree.initElement(Path+"/MagY_uT", "Flight management unit MPU-9250 Y magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.hz = deftree.initElement(Path+"/MagZ_uT", "Flight management unit MPU-9250 Z magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+          SensorNodes_.InternalMpu9250.temp = deftree.initElement(Path+"/Temperature_C", "Flight management unit MPU-9250 temperature, C", LOG_FLOAT, LOG_NONE);
+        }
         msg.internal = true;
       } else {
         printf("ERROR: Cannot configure InternalMpu9250 on a Node\n");
@@ -512,6 +570,23 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
         msg.SRD = 0;
       }
     } else {
+      {
+        SensorNodes_.Sbus.push_back(SbusSensorNodes());
+        size_t i = SensorNodes_.Sbus.size() - 1;
+        string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+        SensorNodes_.Mpu9250[i].status = deftree.initElement(Path+"/Status", "MPU-9250_" + to_string(i) + " read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
+        SensorNodes_.Mpu9250[i].ax = deftree.initElement(Path+"/AccelX_mss", "MPU-9250_" + to_string(i) + " X accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.Mpu9250[i].ay = deftree.initElement(Path+"/AccelY_mss", "MPU-9250_" + to_string(i) + " Y accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.Mpu9250[i].az = deftree.initElement(Path+"/AccelZ_mss", "MPU-9250_" + to_string(i) + " Z accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.Mpu9250[i].p = deftree.initElement(Path+"/GyroX_rads", "MPU-9250_" + to_string(i) + " X gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.Mpu9250[i].q = deftree.initElement(Path+"/GyroY_rads", "MPU-9250_" + to_string(i) + " Y gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
+        SensorNodes_.Mpu9250[i].r = deftree.initElement(Path+"/GyroZ_rads", "MPU-9250_" + to_string(i) + " Z gyro, corrected for installation rotation, rad/s", LOG_FLOAT, LOG_NONE);
+        // SensorNodes_.Mpu9250[i].hx = deftree.initElement(Path+"/MagX_uT", "MPU-9250_" + to_string(i) + " X magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+        // SensorNodes_.Mpu9250[i].hy = deftree.initElement(Path+"/MagY_uT", "MPU-9250_" + to_string(i) + " Y magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+        // SensorNodes_.Mpu9250[i].hz = deftree.initElement(Path+"/MagZ_uT", "MPU-9250_" + to_string(i) + " Z magnetometer, corrected for installation rotation, uT", LOG_FLOAT, LOG_NONE);
+        // SensorNodes_.Mpu9250[i].temp = deftree.initElement(Path+"/Temperature_C", "MPU-9250_" + to_string(i) + " temperature, C", LOG_FLOAT, LOG_NONE);
+        SensorData_.Mpu9250.push_back(Mpu9250SensorData());
+      }
       msg.internal = false;
       if ( Sensor.HasMember("UseSpi") ) {
         msg.use_spi = Sensor["UseSpi"].GetInt();
@@ -549,6 +624,31 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "uBlox" ) {
     printf("Configuring uBlox\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.uBlox.push_back(uBloxSensorNodes());
+      size_t i = SensorNodes_.uBlox.size() - 1;
+      SensorNodes_.uBlox[i].fix = deftree.initElement(Path+"/Fix", "uBlox_" + to_string(i) + " fix status, true for 3D fix only", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].sats = deftree.initElement(Path+"/NumberSatellites", "uBlox_" + to_string(i) + " number of satellites used in solution", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].tow = deftree.initElement(Path+"/TOW", "uBlox_" + to_string(i) + " GPS time of the navigation epoch", LOG_UINT32, LOG_NONE);
+      SensorNodes_.uBlox[i].year = deftree.initElement(Path+"/Year", "uBlox_" + to_string(i) + " UTC year", LOG_UINT16, LOG_NONE);
+      SensorNodes_.uBlox[i].month = deftree.initElement(Path+"/Month", "uBlox_" + to_string(i) + " UTC month", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].day = deftree.initElement(Path+"/Day", "uBlox_" + to_string(i) + " UTC day", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].hour = deftree.initElement(Path+"/Hour", "uBlox_" + to_string(i) + " UTC hour", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].min = deftree.initElement(Path+"/Minute", "uBlox_" + to_string(i) + " UTC minute", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].sec = deftree.initElement(Path+"/Second", "uBlox_" + to_string(i) + " UTC second", LOG_UINT8, LOG_NONE);
+      SensorNodes_.uBlox[i].lat = deftree.initElement(Path+"/Latitude_rad", "uBlox_" + to_string(i) + " latitude, rad", LOG_DOUBLE, LOG_NONE);
+      SensorNodes_.uBlox[i].lon = deftree.initElement(Path+"/Longitude_rad", "uBlox_" + to_string(i) + " longitude, rad", LOG_DOUBLE, LOG_NONE);
+      SensorNodes_.uBlox[i].alt = deftree.initElement(Path+"/Altitude_m", "uBlox_" + to_string(i) + " altitude above mean sea level, m", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].vn = deftree.initElement(Path+"/NorthVelocity_ms", "uBlox_" + to_string(i) + " north velocity, m/s", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].ve = deftree.initElement(Path+"/EastVelocity_ms", "uBlox_" + to_string(i) + " east velocity, m/s", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].vd = deftree.initElement(Path+"/DownVelocity_ms", "uBlox_" + to_string(i) + " down velocity, m/s", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].horiz_acc = deftree.initElement(Path+"/HorizontalAccuracy_m", "uBlox_" + to_string(i) + " horizontal accuracy estimate, m", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].vert_acc = deftree.initElement(Path+"/VerticalAccuracy_m", "uBlox_" + to_string(i) + " vertical accuracy estimate, m", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].vel_acc = deftree.initElement(Path+"/VelocityAccuracy_ms", "uBlox_" + to_string(i) + " velocity accuracy estimate, m/s", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.uBlox[i].pdop = deftree.initElement(Path+"/pDOP", "uBlox_" + to_string(i) + " position dilution of precision", LOG_FLOAT, LOG_NONE);
+      SensorData_.uBlox.push_back(uBloxSensorData());
+    }
     message::config_ublox_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("Uart") ) {
@@ -569,6 +669,18 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Swift" ) {
     printf("Configuring Swift\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.Swift.push_back(SwiftSensorNodes());
+      size_t i = SensorNodes_.Swift.size() - 1;
+      SensorNodes_.Swift[i].Static.status = deftree.initElement(Path+"/Static/Status", "Swift_" + to_string(i) + " static pressure read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
+      SensorNodes_.Swift[i].Static.press = deftree.initElement(Path+"/Static/Pressure_Pa", "Swift_" + to_string(i) + " static pressure, Pa", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.Swift[i].Static.temp = deftree.initElement(Path+"/Static/Temperature_C", "Swift_" + to_string(i) + " static pressure transducer temperature, C", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.Swift[i].Differential.status = deftree.initElement(Path+"/Differential/Status", "Swift_" + to_string(i) + " differential pressure read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
+      SensorNodes_.Swift[i].Differential.press = deftree.initElement(Path+"/Differential/Pressure_Pa", "Swift_" + to_string(i) + " differential pressure, Pa", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.Swift[i].Differential.temp = deftree.initElement(Path+"/Differential/Temperature_C", "Swift_" + to_string(i) + " differential pressure transducer temperature, C", LOG_FLOAT, LOG_NONE);
+      SensorData_.Swift.push_back(SwiftSensorData());
+    }
     message::config_swift_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("I2c") ) {
@@ -608,6 +720,16 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Bme280" ) {
     printf("Configuring Bme280\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.Bme280.push_back(Bme280SensorNodes());
+      size_t i = SensorNodes_.Bme280.size() - 1;
+      SensorNodes_.Bme280[i].status = deftree.initElement(Path+"/Status", "BME-280_" + to_string(i) + " read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
+      SensorNodes_.Bme280[i].press = deftree.initElement(Path+"/Pressure_Pa", "BME-280_" + to_string(i) + " static pressure, Pa", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.Bme280[i].temp = deftree.initElement(Path+"/Temperature_C", "BME-280_" + to_string(i) + " temperature, C", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.Bme280[i].hum = deftree.initElement(Path+"/Humidity_RH", "BME-280_" + to_string(i) + " percent relative humidity", LOG_FLOAT, LOG_NONE);
+      SensorData_.Bme280.push_back(Bme280SensorData());
+    }
     message::config_bme280_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("UseSpi") ) {
@@ -630,6 +752,15 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Ams5915" ) {
     printf("Configuring Ams5915\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.Ams5915.push_back(Ams5915SensorNodes());
+      size_t i = SensorNodes_.Ams5915.size() - 1;
+      SensorNodes_.Ams5915[i].status = deftree.initElement(Path+"/Status", "AMS-5915_" + to_string(i) + " read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
+      SensorNodes_.Ams5915[i].press = deftree.initElement(Path+"/Pressure_Pa", "AMS-5915_" + to_string(i) + " pressure, Pa", LOG_FLOAT, LOG_NONE);
+      SensorNodes_.Ams5915[i].temp = deftree.initElement(Path+"/Temperature_C", "AMS-5915_" + to_string(i) + " pressure transducer temperature, C", LOG_FLOAT, LOG_NONE);
+      SensorData_.Ams5915.push_back(Ams5915SensorData());
+    }
     message::config_ams5915_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("I2c") ) {
@@ -652,6 +783,13 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
   } else if ( Sensor["Type"] == "Analog" ) {
     printf("Configuring Analog\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.Analog.push_back(AnalogSensorNodes());
+      size_t i = SensorNodes_.Analog.size() - 1;
+      SensorNodes_.Analog[i].val = deftree.initElement(Path+"/CalibratedValue", "Analog_" + to_string(i) + " calibrated value", LOG_FLOAT, LOG_NONE);
+      SensorData_.Analog.push_back(AnalogSensorData());
+    }
     message::config_analog_t msg;
     msg.output = Sensor["Output"].GetString();
     if ( Sensor.HasMember("Channel") ) {
@@ -931,22 +1069,22 @@ void FlightManagementUnit::RegisterSensors(const rapidjson::Value& Config) {
     SensorNodes_.InternalBme280.temp = deftree.initElement(Path+"/Temperature_C", "Flight management unit BME-280 temperature, C", LOG_FLOAT, LOG_NONE);
     SensorNodes_.InternalBme280.hum = deftree.initElement(Path+"/Humidity_RH", "Flight management unit BME-280 percent relative humidity", LOG_FLOAT, LOG_NONE);
   }
-  for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
-    string Path = RootPath_+"/"+GetSensorOutputName(Config,"InputVoltage",i);
-    SensorNodes_.input_volts[i] = deftree.initElement(Path, "Flight management unit input voltage, V", LOG_FLOAT, LOG_NONE);
-  }
-  for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
-    string Path = RootPath_+"/"+GetSensorOutputName(Config,"RegulatedVoltage",i);
-    SensorNodes_.reg_volts[i] = deftree.initElement(Path, "Flight management unit regulated voltage, V", LOG_FLOAT, LOG_NONE);
-  }
-  for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
-    string Path = RootPath_+"/"+GetSensorOutputName(Config,"PwmVoltage",i);
-    SensorNodes_.pwm_volts[i] = deftree.initElement(Path, "Flight management unit PWM servo voltage, V", LOG_FLOAT, LOG_NONE);
-  }
-  for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
-    string Path = RootPath_+"/"+GetSensorOutputName(Config,"SbusVoltage",i);
-    SensorNodes_.sbus_volts[i] = deftree.initElement(Path, "Flight management unit SBUS servo voltage, V", LOG_FLOAT, LOG_NONE);
-  }
+  // for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
+  //   string Path = RootPath_+"/"+GetSensorOutputName(Config,"InputVoltage",i);
+  //   SensorNodes_.input_volts[i] = deftree.initElement(Path, "Flight management unit input voltage, V", LOG_FLOAT, LOG_NONE);
+  // }
+  // for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
+  //   string Path = RootPath_+"/"+GetSensorOutputName(Config,"RegulatedVoltage",i);
+  //   SensorNodes_.reg_volts[i] = deftree.initElement(Path, "Flight management unit regulated voltage, V", LOG_FLOAT, LOG_NONE);
+  // }
+  // for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
+  //   string Path = RootPath_+"/"+GetSensorOutputName(Config,"PwmVoltage",i);
+  //   SensorNodes_.pwm_volts[i] = deftree.initElement(Path, "Flight management unit PWM servo voltage, V", LOG_FLOAT, LOG_NONE);
+  // }
+  // for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
+  //   string Path = RootPath_+"/"+GetSensorOutputName(Config,"SbusVoltage",i);
+  //   SensorNodes_.sbus_volts[i] = deftree.initElement(Path, "Flight management unit SBUS servo voltage, V", LOG_FLOAT, LOG_NONE);
+  // }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
     string Path = RootPath_+"/"+GetSensorOutputName(Config,"Mpu9250",i);
     SensorNodes_.Mpu9250[i].status = deftree.initElement(Path+"/Status", "MPU-9250_" + to_string(i) + " read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
@@ -1104,18 +1242,18 @@ void FlightManagementUnit::PublishSensors() {
   SensorNodes_.InternalBme280.press->setFloat(SensorData_.InternalBme280.Pressure_Pa);
   SensorNodes_.InternalBme280.temp->setFloat(SensorData_.InternalBme280.Temperature_C);
   SensorNodes_.InternalBme280.hum->setFloat(SensorData_.InternalBme280.Humidity_RH);
-  for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
-    SensorNodes_.input_volts[i]->setFloat(SensorData_.InputVoltage_V[i]);
-  }
-  for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
-    SensorNodes_.reg_volts[i]->setFloat(SensorData_.RegulatedVoltage_V[i]);
-  }
-  for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
-    SensorNodes_.pwm_volts[i]->setFloat(SensorData_.PwmVoltage_V[i]);
-  }
-  for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
-    SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
-  }
+  // for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
+  //   SensorNodes_.input_volts[i]->setFloat(SensorData_.InputVoltage_V[i]);
+  // }
+  // for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
+  //   SensorNodes_.reg_volts[i]->setFloat(SensorData_.RegulatedVoltage_V[i]);
+  // }
+  // for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
+  //   SensorNodes_.pwm_volts[i]->setFloat(SensorData_.PwmVoltage_V[i]);
+  // }
+  // for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
+  //   SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
+  // }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
 
     const float G = 9.807f;

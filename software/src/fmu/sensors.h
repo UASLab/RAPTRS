@@ -283,6 +283,7 @@ class AnalogSensor {
   public:
     struct Config {
       uint8_t Channel;
+      uint8_t DirectPin = 0; // allow specifying the actual pin instead of a channel
       std::vector<float> Calibration;
     };
     // Data
@@ -305,17 +306,6 @@ class SensorNodes {
     struct Config {
       uint8_t BfsAddr;
     };
-    // struct Data {
-    //   std::vector<float> PwmVoltage_V;
-    //   std::vector<float> SbusVoltage_V;
-    //   std::vector<Mpu9250Sensor::Data> Mpu9250;
-    //   std::vector<Bme280Sensor::Data> Bme280;
-    //   std::vector<uBloxSensor::Data> uBlox;
-    //   std::vector<SwiftSensor::Data> Swift;
-    //   std::vector<Ams5915Sensor::Data> Ams5915;
-    //   std::vector<SbusSensor::Data> Sbus;
-    //   std::vector<AnalogSensor::Data> Analog;
-    // };
     SensorNodes(uint8_t address);
     bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
@@ -336,10 +326,10 @@ class AircraftSensors {
   public:
     struct Classes {
       TimeSensor Time;
-      AnalogSensor InputVoltage;
-      AnalogSensor RegulatedVoltage;
-      AnalogSensor PwmVoltage;
-      AnalogSensor SbusVoltage;
+      //AnalogSensor InputVoltage;
+      //AnalogSensor RegulatedVoltage;
+      //AnalogSensor PwmVoltage;
+      //AnalogSensor SbusVoltage;
       InternalMpu9250Sensor InternalMpu9250;
       InternalBme280Sensor InternalBme280;
       std::vector<Mpu9250Sensor> Mpu9250;
@@ -351,23 +341,6 @@ class AircraftSensors {
       std::vector<AnalogSensor> Analog;
       std::vector<SensorNodes> Nodes;
     };
-    // struct Data {
-    //   std::vector<uint64_t> Time_us;
-    //   std::vector<InternalMpu9250Sensor::Data> InternalMpu9250;
-    //   std::vector<InternalBme280Sensor::Data> InternalBme280;
-    //   std::vector<float> InputVoltage_V;
-    //   std::vector<float> RegulatedVoltage_V;
-    //   std::vector<float> PwmVoltage_V;
-    //   std::vector<float> SbusVoltage_V;
-    //   std::vector<Mpu9250Sensor::Data> Mpu9250;
-    //   std::vector<Bme280Sensor::Data> Bme280;
-    //   std::vector<uBloxSensor::Data> uBlox;
-    //   std::vector<SwiftSensor::Data> Swift;
-    //   std::vector<Ams5915Sensor::Data> Ams5915;
-    //   std::vector<SbusSensor::Data> Sbus;
-    //   std::vector<AnalogSensor::Data> Analog;
-    //   std::vector<SensorNodes::Data> Nodes;
-    // };
     bool UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
     void ReadSyncSensors();
