@@ -560,14 +560,10 @@ void SbusSensor::End() {
 /* update the analog sensor configuration */
 void AnalogSensor::UpdateConfig(message::config_analog_t *msg) {
   config_.Channel = msg->channel;
-  int last_coeff = message::max_calibration - 1;
-  for (int i=0; i < message::max_calibration; i++) {
-    if ( fabs(msg->calibration[i]) > 0.000001 ) {
-      last_coeff = i;
+  for (int i = 0; i < message::max_calibration; i++) {
+    if ( !isnanf(msg->calibration[i]) ) {
+      config_.Calibration.push_back(msg->calibration[i]);
     }
-  }
-  for (int i = 0; i < last_coeff; i++) {
-    config_.Calibration.push_back(msg->calibration[i]);
   }
 }
 

@@ -38,6 +38,8 @@ bool AircraftMission::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
     config_.EngageSwitch.Threshold = msg.threshold;
     return true;
   } else if ( msg.switch_name == "Throttle-Safety-Switch" ) {
+    Serial.print("mission config throttle safety: ");
+    Serial.println(msg.source.c_str());
     if (DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str())) {
       config_.ThrottleSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str());
     } else {
@@ -134,11 +136,17 @@ void AircraftMission::UpdateState() {
   }
   if (*config_.ThrottleSwitch.Source*config_.ThrottleSwitch.Gain > config_.ThrottleSwitch.Threshold) {
     if (!ThrottleSafedLatch_) {
+      //Serial.print("src = "); Serial.print(*config_.ThrottleSwitch.Source);
+      //Serial.print(" gain = "); Serial.print(config_.ThrottleSwitch.Gain);
+      //Serial.print(" thresh = "); Serial.println(config_.ThrottleSwitch.Threshold);
       ThrottleSafed_ = false;
       ThrottleSafedLatch_ = true;
     }
   } else {
     if (!ThrottleSafedLatch_) {
+      //Serial.print("src = "); Serial.print(*config_.ThrottleSwitch.Source);
+      //Serial.print(" gain = "); Serial.print(config_.ThrottleSwitch.Gain);
+      //Serial.print(" thresh = "); Serial.println(config_.ThrottleSwitch.Threshold);
       ThrottleSafed_ = true;
       ThrottleSafedLatch_ = true;
     }

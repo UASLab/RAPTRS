@@ -84,6 +84,7 @@ bool AircraftBfsComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
 bool AircraftBfsComms::ReceiveEffectorCommand(std::vector<float> *EffectorCommands) {
   if (MessageReceived_) {
     if (ReceivedMessage_ == EffectorCommand) {
+      Serial.println("recv'd effectors");
       MessageReceived_ = false;
       EffectorCommands->resize(ReceivedPayload_.size()/sizeof(float));
       memcpy(EffectorCommands->data(),ReceivedPayload_.data(),ReceivedPayload_.size());

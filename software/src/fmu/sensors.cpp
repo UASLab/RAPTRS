@@ -792,14 +792,10 @@ void SbusSensor::End() {
 /* update the analog sensor configuration */
 bool AnalogSensor::UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.Channel = msg->channel;
-  int last_coeff = 0;
   for (int i=0; i < message::max_calibration; i++) {
-    if ( fabs(msg->calibration[i]) > 0.000001 ) {
-      last_coeff = i;
+    if ( !isnanf(msg->calibration[i]) ) {
+      config_.Calibration.push_back(msg->calibration[i]);
     }
-  }
-  for (int i=0; i < last_coeff; i++) {
-    config_.Calibration.push_back(msg->calibration[i]);
   }
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Voltage_V",(uint8_t*)&Voltage_V);
   DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/CalibratedValue",&CalibratedValue);
@@ -989,20 +985,25 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
   delayMicroseconds(10);
   Serial.print("Updating sensor configuration:");
   if ( address > 0 ) {
-    // this message is relayed to a node
-    int found = -1;
-    for ( size_t i = 0; i < classes_.Nodes.size(); i++ ) {
-      if ( classes_.Nodes[i].GetBfsAddr() == address ) {
-        found = i;
+    // this message is for a node
+    // only continue if this is a supported sensor config message ...
+    if ( id == message::config_basic_id or id == message::config_mpu9250_id or id == message::config_bme280_id or id == message::config_swift_id or id == message::config_ams5915_id or id == message::config_analog_id ) {
+      int found = -1;
+      for ( size_t i = 0; i < classes_.Nodes.size(); i++ ) {
+        if ( classes_.Nodes[i].GetBfsAddr() == address ) {
+          found = i;
+        }
       }
+      if ( found < 0 ) {
+        found = classes_.Nodes.size();
+        classes_.Nodes.push_back(SensorNodes(address));
+        // data_.Nodes.resize(classes_.Nodes.size());
+      }
+      classes_.Nodes[found].UpdateConfig(id, Payload, RootPath_, DefinitionTreePtr);
+      return true;
+    } else {
+      return false;
     }
-    if ( found < 0 ) {
-      found = classes_.Nodes.size();
-      classes_.Nodes.push_back(SensorNodes(address));
-      // data_.Nodes.resize(classes_.Nodes.size());
-    }
-    classes_.Nodes[found].UpdateConfig(id, Payload, RootPath_, DefinitionTreePtr);
-    return true;
   } else if ( id == message::config_basic_id ) {
     message::config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
@@ -1012,7 +1013,6 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
 	HardFail("ERROR: Time already initialized.");
       }
       AcquireTimeData_ = true;
-      // data_.Time_us.resize(1);
       std::string Output = msg.output;
       DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Time.Time_us);
       return true;
@@ -1473,102 +1473,6 @@ void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer) {
     classes_.Nodes[i].GetMessage(&NodeBuffer);
     add_compound_msg(Buffer, NodeBuffer.size(), NodeBuffer.data());
   }
-
-#if 0
-  size_t BufferLocation = 0;
-  Buffer->resize(SerializedDataMetadataSize+
-    sizeof(data_.Time_us[0])*data_.Time_us.size()+
-    sizeof(InternalMpu9250Sensor::Data)*data_.InternalMpu9250.size()+
-    sizeof(InternalBme280Sensor::Data)*data_.InternalBme280.size()+
-    sizeof(data_.InputVoltage_V[0])*data_.InputVoltage_V.size()+
-    sizeof(data_.RegulatedVoltage_V[0])*data_.RegulatedVoltage_V.size()+
-    sizeof(data_.PwmVoltage_V[0])*data_.PwmVoltage_V.size()+
-    sizeof(data_.SbusVoltage_V[0])*data_.SbusVoltage_V.size()+
-    sizeof(Mpu9250Sensor::Data)*data_.Mpu9250.size()+
-    sizeof(Bme280Sensor::Data)*data_.Bme280.size()+
-    sizeof(uBloxSensor::Data)*data_.uBlox.size()+
-    sizeof(SwiftSensor::Data)*data_.Swift.size()+
-    sizeof(SbusSensor::Data)*data_.Sbus.size()+
-    sizeof(Ams5915Sensor::Data)*data_.Ams5915.size()+
-    sizeof(AnalogSensor::Data)*data_.Analog.size());
-  // meta data
-  uint8_t AcquireInternalData,NumberPwmVoltageSensor,NumberSbusVoltageSensor,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
-  AcquireInternalData = 0x00;
-  if (AcquireTimeData_) {
-    AcquireInternalData |=  0x01;
-  }
-  if (AcquireInternalMpu9250Data_) {
-    AcquireInternalData |=  0x02;
-  }
-  if (data_.InternalBme280.size() > 0) {
-    AcquireInternalData |=  0x04;
-  }
-  if (AcquireInputVoltageData_) {
-    AcquireInternalData |=  0x08;
-  }
-  if (AcquireRegulatedVoltageData_) {
-    AcquireInternalData |=  0x10;
-  }
-  NumberPwmVoltageSensor = data_.PwmVoltage_V.size();
-  NumberSbusVoltageSensor = data_.SbusVoltage_V.size();
-  NumberMpu9250Sensor = data_.Mpu9250.size();
-  NumberBme280Sensor = data_.Bme280.size();
-  NumberuBloxSensor = data_.uBlox.size();
-  NumberSwiftSensor = data_.Swift.size();
-  NumberAms5915Sensor = data_.Ams5915.size();
-  NumberSbusSensor = data_.Sbus.size();
-  NumberAnalogSensor = data_.Analog.size();
-  // Serial.println(NumberSbusSensor);
-  memcpy(Buffer->data()+BufferLocation,&AcquireInternalData,sizeof(AcquireInternalData));
-  BufferLocation+=sizeof(AcquireInternalData);
-  memcpy(Buffer->data()+BufferLocation,&NumberPwmVoltageSensor,sizeof(NumberPwmVoltageSensor));
-  BufferLocation+=sizeof(NumberPwmVoltageSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberSbusVoltageSensor,sizeof(NumberSbusVoltageSensor));
-  BufferLocation+=sizeof(NumberSbusVoltageSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberMpu9250Sensor,sizeof(NumberMpu9250Sensor));
-  BufferLocation+=sizeof(NumberMpu9250Sensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberBme280Sensor,sizeof(NumberBme280Sensor));
-  BufferLocation+=sizeof(NumberBme280Sensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberuBloxSensor,sizeof(NumberuBloxSensor));
-  BufferLocation+=sizeof(NumberuBloxSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberSwiftSensor,sizeof(NumberSwiftSensor));
-  BufferLocation+=sizeof(NumberSwiftSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberAms5915Sensor,sizeof(NumberAms5915Sensor));
-  BufferLocation+=sizeof(NumberAms5915Sensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberSbusSensor,sizeof(NumberSbusSensor));
-  BufferLocation+=sizeof(NumberSbusSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberAnalogSensor,sizeof(NumberAnalogSensor));
-  BufferLocation+=sizeof(NumberAnalogSensor);
-  // sensor data
-  memcpy(Buffer->data()+BufferLocation,data_.Time_us.data(),data_.Time_us.size()*sizeof(data_.Time_us[0]));
-  BufferLocation+=data_.Time_us.size()*sizeof(data_.Time_us[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.InternalMpu9250.data(),data_.InternalMpu9250.size()*sizeof(InternalMpu9250Sensor::Data));
-  BufferLocation+=data_.InternalMpu9250.size()*sizeof(InternalMpu9250Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.InternalBme280.data(),data_.InternalBme280.size()*sizeof(InternalBme280Sensor::Data));
-  BufferLocation+=data_.InternalBme280.size()*sizeof(InternalBme280Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.InputVoltage_V.data(),data_.InputVoltage_V.size()*sizeof(data_.InputVoltage_V[0]));
-  BufferLocation+=data_.InputVoltage_V.size()*sizeof(data_.InputVoltage_V[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.RegulatedVoltage_V.data(),data_.RegulatedVoltage_V.size()*sizeof(data_.RegulatedVoltage_V[0]));
-  BufferLocation+=data_.RegulatedVoltage_V.size()*sizeof(data_.RegulatedVoltage_V[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.PwmVoltage_V.data(),data_.PwmVoltage_V.size()*sizeof(data_.PwmVoltage_V[0]));
-  BufferLocation+=data_.PwmVoltage_V.size()*sizeof(data_.PwmVoltage_V[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.SbusVoltage_V.data(),data_.SbusVoltage_V.size()*sizeof(data_.SbusVoltage_V[0]));
-  BufferLocation+=data_.SbusVoltage_V.size()*sizeof(data_.SbusVoltage_V[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.Mpu9250.data(),data_.Mpu9250.size()*sizeof(Mpu9250Sensor::Data));
-  BufferLocation+=data_.Mpu9250.size()*sizeof(Mpu9250Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Bme280.data(),data_.Bme280.size()*sizeof(Bme280Sensor::Data));
-  BufferLocation+=data_.Bme280.size()*sizeof(Bme280Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.uBlox.data(),data_.uBlox.size()*sizeof(uBloxSensor::Data));
-  BufferLocation+=data_.uBlox.size()*sizeof(uBloxSensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Swift.data(),data_.Swift.size()*sizeof(SwiftSensor::Data));
-  BufferLocation+=data_.Swift.size()*sizeof(SwiftSensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Ams5915.data(),data_.Ams5915.size()*sizeof(Ams5915Sensor::Data));
-  BufferLocation+=data_.Ams5915.size()*sizeof(Ams5915Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Sbus.data(),data_.Sbus.size()*sizeof(SbusSensor::Data));
-  BufferLocation+=data_.Sbus.size()*sizeof(SbusSensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Analog.data(),data_.Analog.size()*sizeof(AnalogSensor::Data));
-  BufferLocation+=data_.Analog.size()*sizeof(AnalogSensor::Data);
-#endif
 }
 
 /* free all sensor resources and reset sensor vectors and states */

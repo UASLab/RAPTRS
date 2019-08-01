@@ -134,7 +134,7 @@
                 { "type": "string", "name": "input" },
                 { "type": "uint8_t", "name": "channel" }, 
                 { "type": "float", "name": "calibration[max_calibration]" },
-                { "type": "uint8_t", "name": "safed_command" }
+                { "type": "float", "name": "safed_command" }
            ]
         },
         {

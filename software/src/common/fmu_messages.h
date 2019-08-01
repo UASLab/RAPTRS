@@ -666,7 +666,7 @@ struct config_effector_t {
     string input;
     uint8_t channel;
     float calibration[max_calibration];
-    uint8_t safed_command;
+    float safed_command;
 
     // internal structure for packing
     uint8_t payload[message_max_len];
@@ -676,7 +676,7 @@ struct config_effector_t {
         uint8_t input_len;
         uint8_t channel;
         float calibration[max_calibration];
-        uint8_t safed_command;
+        float safed_command;
     };
     #pragma pack(pop)
 

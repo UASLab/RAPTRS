@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "fmu.h"
 #include "millis.h"
-
+#include "math.h"
 #include <string>
 using std::to_string;
 using std::cout;
@@ -813,10 +813,10 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     } else {
         printf("ERROR: no analog channel specified");
     }
-    msg.calibration[0] = 1.0;
-    msg.calibration[1] = 0.0;
-    msg.calibration[2] = 0.0;
-    msg.calibration[3] = 0.0;
+    msg.calibration[0] = nanf("");
+    msg.calibration[1] = nanf("");
+    msg.calibration[2] = nanf("");
+    msg.calibration[3] = nanf("");
     if ( Sensor.HasMember("Calibration") ) {
       if ( Sensor["Calibration"].IsArray() and Sensor["Calibration"].Size() <= 4 ) {
         for ( size_t i = 0; i < Sensor["Calibration"].Size(); i++ ) {
@@ -874,7 +874,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
       msg.gain = sw["Gain"].GetFloat();
     }
     if ( sw.HasMember("Threshold") ) {
-      msg.gain = sw["Threshold"].GetFloat();
+      msg.threshold = sw["Threshold"].GetFloat();
     }
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -894,7 +894,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
       msg.gain = sw["Gain"].GetFloat();
     }
     if ( sw.HasMember("Threshold") ) {
-      msg.gain = sw["Threshold"].GetFloat();
+      msg.threshold = sw["Threshold"].GetFloat();
     }
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
@@ -1029,12 +1029,12 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config, ui
         } else {
           printf("ERROR: effector without Channel defined\n");
         }
-        msg.calibration[0] = 0.0;
-        msg.calibration[1] = 0.0;
-        msg.calibration[2] = 0.0;
-        msg.calibration[3] = 0.0;
+        msg.calibration[0] = nanf("");
+        msg.calibration[1] = nanf("");
+        msg.calibration[2] = nanf("");
+        msg.calibration[3] = nanf("");
         if ( Effector.HasMember("Calibration") ) {
-          if ( Effector["Calibration"].IsArray() and Effector["Calibration"].Size() <= 4 ) {
+          if ( Effector["Calibration"].IsArray() and Effector["Calibration"].Size() <= message::max_calibration ) {
             for ( size_t i = 0; i < Effector["Calibration"].Size(); i++ ) {
               msg.calibration[i] = Effector["Calibration"][i].GetFloat();
             }
@@ -1042,13 +1042,18 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config, ui
             printf("ERROR: effector calibration incorrect\n");
           }
         }
+        printf("eff calib: ");
+        for ( int i = 0; i < message::max_calibration; i++ ) {
+          printf("%f ", msg.calibration[i]);
+        }
+        printf("\n");
         if ( Effector.HasMember("Safed-Command") ) {
           msg.safed_command = Effector["Safed-Command"].GetInt();
         } else if ( Effector["Type"] == "Motor" ){
           printf("ERROR: effector type motor without a safed-command\n");
         }
         msg.pack();
-        SendMessage(msg.id, 0, msg.payload, msg.len);
+        SendMessage(msg.id, node_address, msg.payload, msg.len);
         if ( ! WaitForAck(msg.id, 0, 1000) ) {
           printf("ERROR: effector command message failed ack!\n");
         }

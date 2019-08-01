@@ -36,14 +36,10 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) 
     } else if ( msg.effector == message::effector_type::sbus ) {
       eff.Type = kSbus;
     }
-    int last_coeff = 0;
     for (int i = 0; i < message::max_calibration; i++) {
-      if ( fabs(msg.calibration[i]) > 0.000001 ) {
-        last_coeff = i;
+      if ( !isnanf(msg.calibration[i]) ) {
+        eff.Calibration.push_back(msg.calibration[i]);
       }
-    }
-    for (int i = 0; i < message::max_calibration; i++) {
-      eff.Calibration.push_back(msg.calibration[i]);
     }
     eff.Channel = msg.channel;
     analogWriteResolution(kPwmResolution);

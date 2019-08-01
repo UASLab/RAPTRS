@@ -44,17 +44,16 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, uint8_t address, std::vector<ui
     } else {
       HardFail("ERROR: Effector input not found in global data.");
     }
-    int last_coeff = 0;
+    Serial.print("config eff cal: ");
     for (int i=0; i < message::max_calibration; i++) {
-      if ( fabs(msg.calibration[i]) > 0.000001 ) {
-        last_coeff = i;
+      Serial.print(i); Serial.print(":"); Serial.print(msg.calibration[i]); Serial.print("  ");
+      if ( !isnanf(msg.calibration[i]) ) {
+        Effectors_.back().Calibration.push_back(msg.calibration[i]);
       }
-    }
-    for (int i=0; i < last_coeff; i++) {
-      Effectors_.back().Calibration.push_back(msg.calibration[i]);
     }
     Effectors_.back().Channel = msg.channel;
   } else {
+    Serial.print("config node effector: ");
     // node effector
     int found = -1;
     for ( size_t i = 0; i < NodeEffectors_.size(); i++ ) {
@@ -63,6 +62,7 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, uint8_t address, std::vector<ui
       }
     }
     if ( found < 0 ){
+      Serial.print("creating new entry ");
       found = NodeEffectors_.size();
       NodeEffectors_.push_back(NodeData());
       NodeEffectors_.back().Address = address;
@@ -71,6 +71,7 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, uint8_t address, std::vector<ui
       // start communication with node
       NodeEffectors_.back().node->Begin();
     }
+    Serial.print("index: "); Serial.println(found);
     // send config messages
     NodeEffectors_[found].node->SetConfigurationMode();
     if ( msg.effector == message::effector_type::motor ) {
@@ -107,9 +108,16 @@ void AircraftEffectors::SetCommands(message::command_effectors_t *msg, bool Thro
   std::vector<float> EffectorCommands_;
   size_t EffectorIndex = 0;
   for (size_t i=0; i < Effectors_.size(); i++) {
-        if (Effectors_[i].Type != kMotor) {
+    if (Effectors_[i].Type != kMotor) {
       Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,EffectorCommands_[EffectorIndex]);
     } else {
+      //Serial.print("safe: "); Serial.println(ThrottleSafed);
+      //Serial.print("safed_command: "); Serial.println(Effectors_[i].SafedCommand);
+      //Serial.print("cal: ");
+      //for ( int i = 0; i < Effectors_[i].Calibration.size(); i++ ) {
+      //  Serial.print(Effectors_[i].Calibration[i]); Serial.print(" ");
+      //}
+      //Serial.println("");
       if (ThrottleSafed) {
         Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,Effectors_[i].SafedCommand);
       } else {
@@ -141,15 +149,24 @@ void AircraftEffectors::ComputeOutputs(bool ThrottleSafed) {
     if (Effectors_[i].Type != kMotor) {
       Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,*Effectors_[i].Input);
     } else {
+      //Serial.print("safe: "); Serial.println(ThrottleSafed);
+      //Serial.print("safed_command: "); Serial.println(Effectors_[i].SafedCommand);
+      //Serial.print("cal: ");
+      //for ( int j = 0; j < Effectors_[i].Calibration.size(); j++ ) {
+      //  Serial.print(Effectors_[i].Calibration[j]); Serial.print(" ");
+      //}
+      //Serial.println("");
       if (ThrottleSafed) {
         Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,Effectors_[i].SafedCommand);
       } else {
         Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,*Effectors_[i].Input);
       }
     }
-    Serial.print("eff "); Serial.print(i); Serial.print(" "); Serial.print(*Effectors_[i].Input); Serial.print(" = "); Serial.println(Effectors_[i].Output);
+    // Serial.print("eff "); Serial.print(i); Serial.print(" "); Serial.print(*Effectors_[i].Input); Serial.print(" = "); Serial.println(Effectors_[i].Output);
   }
+  Serial.print("do node eff's: "); Serial.println(NodeEffectors_.size());
   for (size_t i=0; i < NodeEffectors_.size(); i++) {
+    Serial.print("node effectors: "); Serial.println(i);
     std::vector<float> NodeCommands;
     for (size_t j=0; j < NodeEffectors_[i].Inputs.size(); j++) {
       if (NodeEffectors_[i].Types[j] != kMotor) {
@@ -172,6 +189,7 @@ void AircraftEffectors::CommandEffectors() {
   uint16_t SbusCmds[16];
   for (size_t i=0; i < Effectors_.size(); i++) {
     if ((Effectors_[i].Type == kPwm)||(Effectors_[i].Type == kMotor)) {
+      // Serial.print("pwm: "); Serial.print(i); Serial.print(" "); Serial.print(Effectors_[i].Channel); Serial.print(" = "); Serial.println(Effectors_[i].Output);
       analogWrite(kPwmPins[Effectors_[i].Channel],Effectors_[i].Output/config_.Period*config_.Resolution);
     }
     if (Effectors_[i].Type == kSbus) {
