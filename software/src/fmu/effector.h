@@ -68,7 +68,7 @@ class AircraftEffectors {
     Config config_;
     std::vector<Data> Effectors_;
     std::vector<NodeData> NodeEffectors_;
-    std::vector<float> EffectorCommands_;
+    //std::vector<float> EffectorCommands_;
 };
 
 #endif

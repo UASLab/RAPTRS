@@ -50,7 +50,7 @@ AircraftMission::State MissionState;
 // requested mode
 AircraftMission::Mode RequestedMode;
 // effector commands
-std::vector<float> EffectorCommands;
+// std::vector<float> EffectorCommands;
 // sensor data to soc
 std::vector<uint8_t> DataBuffer;
 

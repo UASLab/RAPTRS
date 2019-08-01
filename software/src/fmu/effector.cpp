@@ -105,11 +105,9 @@ void AircraftEffectors::Begin() {
 }
 
 void AircraftEffectors::SetCommands(message::command_effectors_t *msg, bool ThrottleSafed) {
-  std::vector<float> EffectorCommands_;
-  size_t EffectorIndex = 0;
-  for (size_t i=0; i < Effectors_.size(); i++) {
+  for ( size_t i = 0; i < Effectors_.size(); i++ ) {
     if (Effectors_[i].Type != kMotor) {
-      Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,EffectorCommands_[EffectorIndex]);
+      Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,msg->command[i]);
     } else {
       //Serial.print("safe: "); Serial.println(ThrottleSafed);
       //Serial.print("safed_command: "); Serial.println(Effectors_[i].SafedCommand);
@@ -121,21 +119,21 @@ void AircraftEffectors::SetCommands(message::command_effectors_t *msg, bool Thro
       if (ThrottleSafed) {
         Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,Effectors_[i].SafedCommand);
       } else {
-        Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,EffectorCommands_[EffectorIndex]);
+        Effectors_[i].Output = PolyVal(Effectors_[i].Calibration,msg->command[i]);
       }
     }
-    EffectorIndex++;
   }
+  size_t EffectorIndex = Effectors_.size();
   for (size_t i=0; i < NodeEffectors_.size(); i++) {
     std::vector<float> NodeCommands;
     for (size_t j=0; j < NodeEffectors_[i].Inputs.size(); j++) {
       if (NodeEffectors_[i].Types[j] != kMotor) {
-        NodeCommands.push_back(EffectorCommands_[EffectorIndex]);
+        NodeCommands.push_back(msg->command[EffectorIndex]);
       } else {
         if (ThrottleSafed) {
           NodeCommands.push_back(NodeEffectors_[i].SafedCommands[j]);
         } else {
-          NodeCommands.push_back(EffectorCommands_[EffectorIndex]);
+          NodeCommands.push_back(msg->command[EffectorIndex]);
         }
       }
       EffectorIndex++;
