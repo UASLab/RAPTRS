@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 /* handle effector configuration messages */
 bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   if ( id == message::config_effector_id ) {
-    Serial.print("Updating effector configuration...");
+    Serial.print("Configuring effector: ");
     if ( sbus_ == NULL ) {
       sbus_ = new SBUS(kSbusUart);
       sbus_->begin();
@@ -42,6 +42,7 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) 
       }
     }
     eff.Channel = msg.channel;
+    Serial.println(eff.Channel);
     analogWriteResolution(kPwmResolution);
     analogWriteFrequency(kPwmPins[eff.Channel],kPwmFrequency);
     config_.Resolution = powf(2,kPwmResolution) - 1.0f;

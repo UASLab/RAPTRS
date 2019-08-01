@@ -604,12 +604,11 @@ void AnalogSensor::End() {}
 /* updates the sensor configuration */
 bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   delayMicroseconds(10);
-  Serial.println("Updating sensor configuration...");
   if ( id == message::config_basic_id ) {
     message::config_basic_t msg;
     msg.unpack(Payload->data(), Payload->size());
     if ( msg.sensor == message::sensor_type::pwm_voltage ) {
-      Serial.println("PwmVoltage");
+      Serial.println("Configuring PwmVoltage");
       if (AcquirePwmVoltageData_) {
 	HardFail("ERROR: Pwm voltage already initialized.");
       }
@@ -623,7 +622,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
       classes_.Analog.back().SetConfig(config);
       return true;
     } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
-      Serial.println("SbusVoltage");
+      Serial.println("Configuring SbusVoltage");
       if (AcquireSbusVoltageData_) {
 	HardFail("ERROR: Sbus voltage already initialized.");
       }
@@ -637,47 +636,47 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
       classes_.Analog.back().SetConfig(config);
       return true;
     } else if ( msg.sensor == message::sensor_type::sbus ) {
-      Serial.println("Sbus");
+      Serial.println("Configuring Sbus");
       classes_.Sbus.push_back(SbusSensor());
       return true;
     }
   } else if ( id == message::config_mpu9250_id ) {
-    Serial.println("Mpu9250");
+    Serial.println("Configuring Mpu9250");
     message::config_mpu9250_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Mpu9250.push_back(Mpu9250Sensor());
     classes_.Mpu9250.back().UpdateConfig(&msg);
     return true;
   } else if ( id == message::config_bme280_id ) {
-    Serial.println("Bme280");
+    Serial.println("Configuring Bme280");
     message::config_bme280_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Bme280.push_back(Bme280Sensor());
     classes_.Bme280.back().UpdateConfig(&msg);
     return true;
   } else if ( id  == message::config_ublox_id ) {
-    Serial.println("uBlox");
+    Serial.println("Configuring uBlox");
     message::config_ublox_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.uBlox.push_back(uBloxSensor());
     classes_.uBlox.back().UpdateConfig(&msg);
     return true;
   } else if ( id == message::config_swift_id ) {
-    Serial.println("Swift");
+    Serial.println("Configuring Swift");
     message::config_swift_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Swift.push_back(SwiftSensor());
     classes_.Swift.back().UpdateConfig(&msg);
     return true;
   } else if ( id == message::config_ams5915_id ) {
-    Serial.println("Ams5915");
+    Serial.println("Configuring Ams5915");
     message::config_ams5915_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Ams5915.push_back(Ams5915Sensor());
     classes_.Ams5915.back().UpdateConfig(&msg);
     return true;
   } else if ( id == message::config_analog_id ) {
-    Serial.println("Analog");
+    Serial.println("Configuring Analog");
     message::config_analog_t msg;
     msg.unpack(Payload->data(), Payload->size());
     classes_.Analog.push_back(AnalogSensor());

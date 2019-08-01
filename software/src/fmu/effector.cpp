@@ -162,9 +162,9 @@ void AircraftEffectors::ComputeOutputs(bool ThrottleSafed) {
     }
     // Serial.print("eff "); Serial.print(i); Serial.print(" "); Serial.print(*Effectors_[i].Input); Serial.print(" = "); Serial.println(Effectors_[i].Output);
   }
-  Serial.print("do node eff's: "); Serial.println(NodeEffectors_.size());
+  // Serial.print("do node eff's: "); Serial.println(NodeEffectors_.size());
   for (size_t i=0; i < NodeEffectors_.size(); i++) {
-    Serial.print("node effectors: "); Serial.println(i);
+    // Serial.print("node effectors: "); Serial.println(i);
     std::vector<float> NodeCommands;
     for (size_t j=0; j < NodeEffectors_[i].Inputs.size(); j++) {
       if (NodeEffectors_[i].Types[j] != kMotor) {

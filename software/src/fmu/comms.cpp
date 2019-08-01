@@ -48,7 +48,7 @@ bool AircraftSocComms::ReceiveMessage(uint8_t *message, uint8_t *address, std::v
   if (bus_->checkReceived()) {
     *message = (uint8_t) bus_->read();
     *address = (uint8_t) bus_->read();
-    Serial.print("received id: "); Serial.print(*message); Serial.print(" addr: "); Serial.println(*address);
+    // Serial.print("received id: "); Serial.print(*message); Serial.print(" addr: "); Serial.println(*address);
     Payload->resize(bus_->available());
     bus_->read(Payload->data(),Payload->size());
     bus_->sendStatus(true);

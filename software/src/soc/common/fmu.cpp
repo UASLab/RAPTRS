@@ -79,16 +79,6 @@ void FlightManagementUnit::Configure(const rapidjson::Value& Config) {
 
   // switch FMU to run mode
   SendModeCommand(kRunMode);
-
-  // get the updated configuration from the sensor meta data
-  std::cout << "\t\tReading Sensors config back from FMU..." << std::flush;
-  size_t i=0;
-  while(i < 100) {
-    if (ReceiveSensorData(false /*publish*/)) {
-      i++;
-    }
-  }
-  std::cout << "done!" << std::endl;
 }
 
 /* Sends a mode command to the FMU */
@@ -216,133 +206,11 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             SensorData_.Analog[i].CalibratedValue = msg.calibrated_value;
             analog_counter++;
           } else {
-            printf("SensorNode received an unhandled message id: %d", id);
+            printf("SensorNode received an unhandled message id: %d\n", id);
           }
         }
         counter += len;
       } // while processing compound message
-
-#if 0
-    if (message == kSensorData) {
-      // meta data
-      uint8_t AcquireInternalData,NumberPwmVoltageSensor,NumberSbusVoltageSensor,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
-      memcpy(&AcquireInternalData,Payload.data()+PayloadLocation,sizeof(AcquireInternalData));
-      PayloadLocation += sizeof(AcquireInternalData);
-      memcpy(&NumberPwmVoltageSensor,Payload.data()+PayloadLocation,sizeof(NumberPwmVoltageSensor));
-      PayloadLocation += sizeof(NumberPwmVoltageSensor);
-      memcpy(&NumberSbusVoltageSensor,Payload.data()+PayloadLocation,sizeof(NumberSbusVoltageSensor));
-      PayloadLocation += sizeof(NumberSbusVoltageSensor);
-      memcpy(&NumberMpu9250Sensor,Payload.data()+PayloadLocation,sizeof(NumberMpu9250Sensor));
-      PayloadLocation += sizeof(NumberMpu9250Sensor);
-      memcpy(&NumberBme280Sensor,Payload.data()+PayloadLocation,sizeof(NumberBme280Sensor));
-      PayloadLocation += sizeof(NumberBme280Sensor);
-      memcpy(&NumberuBloxSensor,Payload.data()+PayloadLocation,sizeof(NumberuBloxSensor));
-      PayloadLocation += sizeof(NumberuBloxSensor);
-      memcpy(&NumberSwiftSensor,Payload.data()+PayloadLocation,sizeof(NumberSwif2tSensor));
-      PayloadLocation += sizeof(NumberSwiftSensor);
-      memcpy(&NumberAms5915Sensor,Payload.data()+PayloadLocation,sizeof(NumberAms5915Sensor));
-      PayloadLocation += sizeof(NumberAms5915Sensor);
-      memcpy(&NumberSbusSensor,Payload.data()+PayloadLocation,sizeof(NumberSbusSensor));
-      PayloadLocation += sizeof(NumberSbusSensor);
-      memcpy(&NumberAnalogSensor,Payload.data()+PayloadLocation,sizeof(NumberAnalogSensor));
-      PayloadLocation += sizeof(NumberAnalogSensor);
-      // resize data buffers
-      if (AcquireInternalData & 0x01) {
-        //SensorData_.Time_us.resize(1);
-        //SensorNodes_.Time_us.resize(1);
-      }
-      if (AcquireInternalData & 0x02) {
-        SensorData_.InternalMpu9250.resize(1);
-        SensorNodes_.InternalMpu9250.resize(1);
-      }
-      if (AcquireInternalData & 0x04) {
-        SensorData_.InternalBme280.resize(1);
-        SensorNodes_.InternalBme280.resize(1);
-      }
-      if (AcquireInternalData & 0x08) {
-        SensorData_.InputVoltage_V.resize(1);
-        SensorNodes_.input_volts.resize(1);
-      }
-      if (AcquireInternalData & 0x10) {
-        SensorData_.RegulatedVoltage_V.resize(1);
-        SensorNodes_.reg_volts.resize(1);
-      }
-      SensorData_.PwmVoltage_V.resize(NumberPwmVoltageSensor);
-      SensorData_.SbusVoltage_V.resize(NumberSbusVoltageSensor);
-      SensorData_.Mpu9250.resize(NumberMpu9250Sensor);
-      SensorData_.Bme280.resize(NumberBme280Sensor);
-      SensorData_.uBlox.resize(NumberuBloxSensor);
-      SensorData_.Swift.resize(NumberSwiftSensor);
-      SensorData_.Ams5915.resize(NumberAms5915Sensor);
-      SensorData_.Sbus.resize(NumberSbusSensor);
-      SensorData_.Analog.resize(NumberAnalogSensor);
-      if ( SensorNodes_.pwm_volts.size() < NumberPwmVoltageSensor ) {
-        cout << "WARNING: RESIZING pwm_volts size to: "<< (int)NumberPwmVoltageSensor << endl;
-        SensorNodes_.pwm_volts.resize(NumberPwmVoltageSensor);
-      }
-      if ( SensorNodes_.sbus_volts.size() < NumberSbusVoltageSensor ) {
-        cout << "WARNING: RESIZING sbus_volts size to: "<< (int)NumberSbusVoltageSensor << endl;
-        SensorNodes_.sbus_volts.resize(NumberSbusVoltageSensor);
-      }
-      if ( SensorNodes_.Mpu9250.size() < NumberMpu9250Sensor ) {
-        cout << "WARNING: RESIZING Mpu9250 size to: "<< (int)NumberMpu9250Sensor << endl;
-        SensorNodes_.Mpu9250.resize(NumberMpu9250Sensor);
-      }
-      if ( SensorNodes_.Bme280.size() < NumberBme280Sensor ) {
-        cout << "WARNING: RESIZING Bme280 size to: "<< (int)NumberBme280Sensor << endl;
-        SensorNodes_.Bme280.resize(NumberBme280Sensor);
-      }
-      if ( SensorNodes_.uBlox.size() < NumberuBloxSensor ) {
-        cout << "WARNING: RESIZING uBlox size to: "<< (int)NumberuBloxSensor << endl;
-        SensorNodes_.uBlox.resize(NumberuBloxSensor);
-      }
-      if ( SensorNodes_.Swift.size() < NumberSwiftSensor ) {
-        cout << "WARNING: RESIZING Swift size to: "<< (int)NumberSwiftSensor << endl;
-        SensorNodes_.Swift.resize(NumberSwiftSensor);
-      }
-      if ( SensorNodes_.Ams5915.size() < NumberAms5915Sensor ) {
-        cout << "WARNING: RESIZING Ams5915 size to: "<< (int)NumberAms5915Sensor << endl;
-        SensorNodes_.Ams5915.resize(NumberAms5915Sensor);
-      }
-      if ( SensorNodes_.Sbus.size() < NumberSbusSensor ) {
-        cout << "WARNING: RESIZING Sbus size to: "<< (int)NumberSbusSensor << endl;
-        SensorNodes_.Sbus.resize(NumberSbusSensor);
-      }
-      if ( SensorNodes_.Analog.size() < NumberAnalogSensor ) {
-        cout << "WARNING: RESIZING Analog size to: "<< (int)NumberAnalogSensor << endl;
-        SensorNodes_.Analog.resize(NumberAnalogSensor);
-      }
-
-      // sensor data
-      memcpy(SensorData_.Time_us.data(),Payload.data()+PayloadLocation,SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]));
-      PayloadLocation += SensorData_.Time_us.size()*sizeof(SensorData_.Time_us[0]);
-      memcpy(SensorData_.InternalMpu9250.data(),Payload.data()+PayloadLocation,SensorData_.InternalMpu9250.size()*sizeof(InternalMpu9250SensorData));
-      PayloadLocation += SensorData_.InternalMpu9250.size()*sizeof(InternalMpu9250SensorData);
-      memcpy(SensorData_.InternalBme280.data(),Payload.data()+PayloadLocation,SensorData_.InternalBme280.size()*sizeof(InternalBme280SensorData));
-      PayloadLocation += SensorData_.InternalBme280.size()*sizeof(InternalBme280SensorData);
-      memcpy(SensorData_.InputVoltage_V.data(),Payload.data()+PayloadLocation,SensorData_.InputVoltage_V.size()*sizeof(SensorData_.InputVoltage_V[0]));
-      PayloadLocation += SensorData_.InputVoltage_V.size()*sizeof(SensorData_.InputVoltage_V[0]);
-      memcpy(SensorData_.RegulatedVoltage_V.data(),Payload.data()+PayloadLocation,SensorData_.RegulatedVoltage_V.size()*sizeof(SensorData_.RegulatedVoltage_V[0]));
-      PayloadLocation += SensorData_.RegulatedVoltage_V.size()*sizeof(SensorData_.RegulatedVoltage_V[0]);
-      memcpy(SensorData_.PwmVoltage_V.data(),Payload.data()+PayloadLocation,SensorData_.PwmVoltage_V.size()*sizeof(SensorData_.PwmVoltage_V[0]));
-      PayloadLocation += SensorData_.PwmVoltage_V.size()*sizeof(SensorData_.PwmVoltage_V[0]);
-      memcpy(SensorData_.SbusVoltage_V.data(),Payload.data()+PayloadLocation,SensorData_.SbusVoltage_V.size()*sizeof(SensorData_.SbusVoltage_V[0]));
-      PayloadLocation += SensorData_.SbusVoltage_V.size()*sizeof(SensorData_.SbusVoltage_V[0]);
-      memcpy(SensorData_.Mpu9250.data(),Payload.data()+PayloadLocation,SensorData_.Mpu9250.size()*sizeof(Mpu9250SensorData));
-      PayloadLocation += SensorData_.Mpu9250.size()*sizeof(Mpu9250SensorData);
-      memcpy(SensorData_.Bme280.data(),Payload.data()+PayloadLocation,SensorData_.Bme280.size()*sizeof(Bme280SensorData));
-      PayloadLocation += SensorData_.Bme280.size()*sizeof(Bme280SensorData);
-      memcpy(SensorData_.uBlox.data(),Payload.data()+PayloadLocation,SensorData_.uBlox.size()*sizeof(uBloxSensorData));
-      PayloadLocation += SensorData_.uBlox.size()*sizeof(uBloxSensorData);
-      memcpy(SensorData_.Swift.data(),Payload.data()+PayloadLocation,SensorData_.Swift.size()*sizeof(SwiftSensorData));
-      PayloadLocation += SensorData_.Swift.size()*sizeof(SwiftSensorData);
-      memcpy(SensorData_.Ams5915.data(),Payload.data()+PayloadLocation,SensorData_.Ams5915.size()*sizeof(Ams5915SensorData));
-      PayloadLocation += SensorData_.Ams5915.size()*sizeof(Ams5915SensorData);
-      memcpy(SensorData_.Sbus.data(),Payload.data()+PayloadLocation,SensorData_.Sbus.size()*sizeof(SbusSensorData));
-      PayloadLocation += SensorData_.Sbus.size()*sizeof(SbusSensorData);
-      memcpy(SensorData_.Analog.data(),Payload.data()+PayloadLocation,SensorData_.Analog.size()*sizeof(AnalogSensorData));
-      PayloadLocation += SensorData_.Analog.size()*sizeof(AnalogSensorData);
-#endif
       
       if ( publish ) {
           // copy the incoming sensor data into the definition tree
