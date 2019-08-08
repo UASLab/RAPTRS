@@ -1445,8 +1445,6 @@ struct data_compound_t {
         if ( size > message_max_len ) {
             return false;
         }
-        // copy values
-        _compact_t *_buf = (_compact_t *)payload;
         return true;
     }
 
@@ -1455,7 +1453,6 @@ struct data_compound_t {
             return false;
         }
         memcpy(payload, external_message, message_size);
-        _compact_t *_buf = (_compact_t *)payload;
         len = sizeof(_compact_t);
         return true;
     }

@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "Node.h"
 
+// Fixme: replace all the implicit messaging with actual messages?
+
 /* class declaration, i2c bus, address, and rate */
 Node::Node(i2c_t3& bus,uint8_t addr,uint32_t rate) {
   bus_ = &bus;

@@ -980,18 +980,6 @@ void FlightManagementUnit::PublishSensors() {
   SensorNodes_.InternalBme280.press->setFloat(SensorData_.InternalBme280.Pressure_Pa);
   SensorNodes_.InternalBme280.temp->setFloat(SensorData_.InternalBme280.Temperature_C);
   SensorNodes_.InternalBme280.hum->setFloat(SensorData_.InternalBme280.Humidity_RH);
-  // for (size_t i=0; i < SensorData_.InputVoltage_V.size(); i++) {
-  //   SensorNodes_.input_volts[i]->setFloat(SensorData_.InputVoltage_V[i]);
-  // }
-  // for (size_t i=0; i < SensorData_.RegulatedVoltage_V.size(); i++) {
-  //   SensorNodes_.reg_volts[i]->setFloat(SensorData_.RegulatedVoltage_V[i]);
-  // }
-  // for (size_t i=0; i < SensorData_.PwmVoltage_V.size(); i++) {
-  //   SensorNodes_.pwm_volts[i]->setFloat(SensorData_.PwmVoltage_V[i]);
-  // }
-  // for (size_t i=0; i < SensorData_.SbusVoltage_V.size(); i++) {
-  //   SensorNodes_.sbus_volts[i]->setFloat(SensorData_.SbusVoltage_V[i]);
-  // }
   for (size_t i=0; i < SensorData_.Mpu9250.size(); i++) {
 
     //const float G = 9.807f;
