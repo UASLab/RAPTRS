@@ -198,11 +198,16 @@ int main(int argc, char* argv[]) {
 
           for (size_t i=0; i < ControlLevels.size(); i++) {
             // Run excitation at active level
+            std::cout << ControlLevels[i] << std::endl;
+            std::cout << deftree.getElement("/Control/cmdRoll_rps") -> getFloat() << std::endl;
+
             Excitation.Run(ControlLevels[i]);
+            std::cout << deftree.getElement("/Control/cmdRoll_rps") -> getFloat() << std::endl;
 
             // Run controller at active level
             Control.SetLevel(ControlLevels[i]);
             Control.RunTest(Mission.GetTestRunMode());
+            std::cout << deftree.getElement("/Control/cmdRoll_rps") -> getFloat() << std::endl;
           }
         }
 

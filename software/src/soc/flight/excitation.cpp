@@ -77,41 +77,62 @@ void ExcitationSystem::SetExcitation(std::string ExcitEngaged) {
 
 // Run all excitations at a given control level
 void ExcitationSystem::Run(std::string ControlLevel) {
-  float tCur_s = 0.0f;
-  float tLatch_s = 0.0f;
+  // Get the current time
+  float tCur_s = time_node_->getFloat() / 1e6;
+
+  // If "None" clear the latch and the states
+  if (ExcitEngaged_ == "None") {
+    tStart_s = 0;
+    tEngaged_s = 0;
+    Engaged_ = 0;
+
+    ExciteWrapMap_[ExcitEngaged_]->Reset();
+  }
 
   // Execute the excitation if the level matches
   if (ExciteLevelMap_[ExcitEngaged_] == ControlLevel) {
-    // Get the current time, and time since latched in Engaged
-    tCur_s = time_node_->getFloat() / 1e6;
-    if (Latched_ == 0) {
-      tLatch_s = tCur_s;
+    // Get time since Engaged
+    if (Engaged_ == 0) {
+      tStart_s = tCur_s;
+      Engaged_ = 1;
     }
+    tEngaged_s = tCur_s - tStart_s;
 
     // Run the Excitation, using the Wrapper Class
-    ExciteWrapMap_[ExcitEngaged_]->Run(tLatch_s);
+    ExciteWrapMap_[ExcitEngaged_]->Run(tEngaged_s);
   }
 }
 
+void ExcitationWrapper::Reset() {
+  // Loop through the Waves
+  for (size_t iWave = 0; iWave < WaveVec_.size(); ++iWave) {
+    // Apply the Excitation to the Signal
+    // ElementPtr NodeExcite = WaveVec_[iWave].NodeExcite;
+    // NodeExcite->setFloat( 0.0f );
+  }
+}
 
+void ExcitationWrapper::Run(float tEngaged_s) {
 
-
-void ExcitationWrapper::Run(float tLatch_s) {
+  float Excite = 0.0f;
+  float ExciteScaled = 0.0f;
 
   // Loop through the Waves
   for (size_t iWave = 0; iWave < WaveVec_.size(); ++iWave) {
     // Excitation time
-    float tExcite_s = tLatch_s - WaveVec_[iWave].TimeStart_s;
+    float tExcite_s = tEngaged_s - WaveVec_[iWave].TimeStart_s;
 
     // Excecute the Wave
-    float Excite = 0.0f;
-    WaveVec_[iWave].WaveFunc->Run(tExcite_s, &Excite);
-    float ExciteScaled = WaveVec_[iWave].Scale * Excite;
+    if (tExcite_s >= 0.0f) {
+      WaveVec_[iWave].WaveFunc->Run(tExcite_s, &Excite);
+      float ExciteScaled = WaveVec_[iWave].Scale * Excite;
+    }
 
     // Apply the Excitation to the Signal
     ElementPtr NodeSignal = WaveVec_[iWave].NodeSignal;
     NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
 
+    // Apply the Excitation to the Excitation Log
     ElementPtr NodeExcite = WaveVec_[iWave].NodeExcite;
     NodeExcite->setFloat( ExciteScaled );
   }

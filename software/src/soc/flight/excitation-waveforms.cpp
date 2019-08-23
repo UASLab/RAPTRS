@@ -223,9 +223,10 @@ void MultiSine::Configure(const rapidjson::Value& Config) {
 
 void MultiSine::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+
   if (tExc_s < tDur_s_) {
-    // Compute the Waveform: sum(Amp .* cos(Freq * t + phase))
-    *Excite = (Amp_ * (Freq_rps_ * tExc_s + Phase_rad_).cos()).sum();
+    // Compute the Waveform: sum(Amp .* sin(Freq * t + phase))
+    *Excite = (Amp_ * (Freq_rps_ * tExc_s + Phase_rad_).sin()).sum();
   }
 }
 

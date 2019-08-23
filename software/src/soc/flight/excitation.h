@@ -72,7 +72,8 @@ Where:
 class ExcitationWrapper {
   public:
     void Configure(std::string ExcitePath, const rapidjson::Value& WaveDef, const rapidjson::Value& Waveforms);
-    void Run(float time);
+    void Run(float tEngaged_s);
+    void Reset();
 
     struct WaveStruct {
       float TimeStart_s;
@@ -95,7 +96,9 @@ class ExcitationSystem {
   private:
     std::string RootPath_ = "/Excitation";
     std::string ExcitEngaged_ = "None";
-    bool Latched_ = 0;
+    bool Engaged_ = 0;
+    float tStart_s = 0;
+    float tEngaged_s = 0;
     ElementPtr time_node_;
     std::map<std::string, std::string> ExciteLevelMap_;
     std::map<std::string, std::shared_ptr<ExcitationWrapper>> ExciteWrapMap_;
