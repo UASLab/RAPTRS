@@ -73,7 +73,6 @@ class ExcitationWrapper {
   public:
     void Configure(std::string ExcitePath, const rapidjson::Value& WaveDef, const rapidjson::Value& Waveforms);
     void Run(float tEngaged_s);
-    void Reset();
 
     struct WaveStruct {
       float TimeStart_s;

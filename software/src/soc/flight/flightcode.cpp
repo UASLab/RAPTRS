@@ -112,7 +112,8 @@ int main(int argc, char* argv[]) {
       std::cout << std::endl;
 
       std::cout << "\tConfiguring control laws..." << std::flush;
-      Control.Configure(AircraftConfiguration["Control"]);
+      Control.Configure( AircraftConfiguration["Control"] );
+      Control.ConfigureEffectors( Effectors.GetKeys() );
       std::cout << "done!" << std::endl;
       deftree.PrettyPrint("/Control/");
       std::cout << std::endl;
@@ -166,7 +167,6 @@ int main(int argc, char* argv[]) {
       if ( sim ) {
         sim_sensor_update(); // update sim sensors
       }
-      float time = 1e-6 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
 
       if (SenProc.Initialized()) {
         // Run the Baseline Sensor Processing
@@ -179,6 +179,7 @@ int main(int argc, char* argv[]) {
         // Run the Baseline Control Laws
         Control.SetBaseline(Mission.GetBaselineController());
         Control.RunBaseline(Mission.GetBaselineRunMode());
+        Control.EffectorBaseline(Mission.GetBaselineRunMode());
         profBaseline->setInt(micros() - profBaselineStart_us);
 
         // Setup the Test systems
@@ -193,22 +194,19 @@ int main(int argc, char* argv[]) {
           // Run Test Sensor-Processing
           SenProc.RunTest(Mission.GetTestRunMode());
 
-          // loop through control levels running excitations and control laws
+          // Loop through control levels running excitations and control laws
           std::vector<std::string> ControlLevels = Control.GetTestLevels();
-
           for (size_t i=0; i < ControlLevels.size(); i++) {
             // Run excitation at active level
-            std::cout << ControlLevels[i] << std::endl;
-            std::cout << deftree.getElement("/Control/cmdRoll_rps") -> getFloat() << std::endl;
-
             Excitation.Run(ControlLevels[i]);
-            std::cout << deftree.getElement("/Control/cmdRoll_rps") -> getFloat() << std::endl;
 
             // Run controller at active level
             Control.SetLevel(ControlLevels[i]);
             Control.RunTest(Mission.GetTestRunMode());
-            std::cout << deftree.getElement("/Control/cmdRoll_rps") -> getFloat() << std::endl;
           }
+
+          // Copy the /Control/Test Effectors to /Control
+          Control.EffectorTest(Mission.GetTestRunMode());
         }
 
         profTest->setInt(micros() - profTestStart_us);
@@ -219,33 +217,32 @@ int main(int argc, char* argv[]) {
           sim_cmd_update();
         }
 
-        // send effector commands to FMU
+        // Send effector commands to FMU
         Fmu.SendEffectorCommands(Effectors.Run());
 
-        /* Print some status */
-        std::string BaseCntrl = Mission.GetBaselineController();
-        GenericFunction::Mode BaseMode = Mission.GetBaselineRunMode();
-        std::string TestCntrl = Mission.GetTestController();
-        GenericFunction::Mode TestMode = Mission.GetTestRunMode();
-        std::string ExcitEngaged = Mission.GetExcitation();
+        // Print some status
+        float tCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
+        float dt_ms = tCurr_ms - timePrev_ms;
+        timePrev_ms = tCurr_ms;
 
-        float timeCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
-        float dt_ms = timeCurr_ms - timePrev_ms;
-        timePrev_ms = timeCurr_ms;
-
-        std::cout << BaseCntrl << ":" << BaseMode << "\t"
-                  << TestCntrl << ":" << TestMode << "\t"
-                  << ExcitEngaged
+        std::cout << Mission.GetBaselineController() << ":" << Mission.GetBaselineRunMode() << "\t"
+                  << Mission.GetTestController() << ":" << Mission.GetTestRunMode() << "\t"
+                  << Mission.GetExcitation()
                   << "\tdt (ms):  " << dt_ms
                   << std::endl;
-
       }
-      // run telemetry
+
+      // Run Telemetry
       Telemetry.Send();
-      // run datalog
+
+      // Run Datalog
       Datalog.LogBinaryData();
+
+      // Process Telnet
       telnet.process();
-      profMainLoop->setInt(micros()-profMainStart_us);
+
+      // Profile
+      profMainLoop->setInt(micros() - profMainStart_us);
     }
   }
 

@@ -111,16 +111,19 @@ class ControlSystem {
     // Configuration Methods
     void Configure(const rapidjson::Value& Config);
     void ConfigureSet(std::string SetPath, const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef, GroupMap *SetGroupMap, ControlMap *SetControlMap, NodeMap *SetNodeMap);
+    void ConfigureEffectors(std::vector<std::string> EffKeyVec);
 
     // Baseline Controller
     std::string GetBaseline();
     void SetBaseline(std::string GroupSel);
     void RunBaseline(GenericFunction::Mode mode);
+    void EffectorBaseline(GenericFunction::Mode mode);
 
     // Test Controller
     std::string GetTest();
     void SetTest(std::string TestGroupSel);
     void RunTest(GenericFunction::Mode mode);
+    void EffectorTest(GenericFunction::Mode mode);
 
     std::vector<std::string> GetTestLevels();
     std::string GetLevel();
@@ -137,5 +140,6 @@ class ControlSystem {
     std::string TestGroupSel_;
     std::string TestLevelSel_;
 
+    NodeVec BaselineEffNodeVec_, TestEffNodeVec_, EffNodeVec_;
     NodeMap BaselineNodeMap_, TestNodeMap_;
 };

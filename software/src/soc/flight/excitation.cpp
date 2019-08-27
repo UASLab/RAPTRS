@@ -85,8 +85,6 @@ void ExcitationSystem::Run(std::string ControlLevel) {
     tStart_s = 0;
     tEngaged_s = 0;
     Engaged_ = 0;
-
-    ExciteWrapMap_[ExcitEngaged_]->Reset();
   }
 
   // Execute the excitation if the level matches
@@ -103,14 +101,6 @@ void ExcitationSystem::Run(std::string ControlLevel) {
   }
 }
 
-void ExcitationWrapper::Reset() {
-  // Loop through the Waves
-  for (size_t iWave = 0; iWave < WaveVec_.size(); ++iWave) {
-    // Apply the Excitation to the Signal
-    // ElementPtr NodeExcite = WaveVec_[iWave].NodeExcite;
-    // NodeExcite->setFloat( 0.0f );
-  }
-}
 
 void ExcitationWrapper::Run(float tEngaged_s) {
 
@@ -125,16 +115,16 @@ void ExcitationWrapper::Run(float tEngaged_s) {
     // Excecute the Wave
     if (tExcite_s >= 0.0f) {
       WaveVec_[iWave].WaveFunc->Run(tExcite_s, &Excite);
-      float ExciteScaled = WaveVec_[iWave].Scale * Excite;
+      ExciteScaled = WaveVec_[iWave].Scale * Excite;
     }
-
-    // Apply the Excitation to the Signal
-    ElementPtr NodeSignal = WaveVec_[iWave].NodeSignal;
-    NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
 
     // Apply the Excitation to the Excitation Log
     ElementPtr NodeExcite = WaveVec_[iWave].NodeExcite;
     NodeExcite->setFloat( ExciteScaled );
+
+    // Apply the Excitation to the Signal
+    ElementPtr NodeSignal = WaveVec_[iWave].NodeSignal;
+    NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
   }
 }
 

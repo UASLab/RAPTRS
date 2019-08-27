@@ -144,11 +144,11 @@ void ControlSystem::ConfigureSet(
 
         NodeVecCtrl.push_back(deftree.getElement(ControlPath + "/" + Key));
         NodeVecSet.push_back(deftree.getElement(SetPath + "/" + Key));
-        NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
+        // NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
 
         // Copy Node defintions
         NodeVecSet.back()->copyFrom(NodeVecCtrl.back());
-        NodeVecRoot.back()->copyFrom(NodeVecCtrl.back());
+        // NodeVecRoot.back()->copyFrom(NodeVecCtrl.back());
       }
 
       // Create the Map of deftree elements, this is to make copying engaged controller outputs faster during runtime
@@ -165,6 +165,33 @@ void ControlSystem::ConfigureSet(
     (*SetGroupMap).insert(std::make_pair(GroupName, GroupStructVec));
 
   } // Groups defined in the Set
+}
+
+void ControlSystem::ConfigureEffectors( std::vector<std::string> EffKeyVec ) {
+  for (size_t iKey = 0; iKey < EffKeyVec.size(); ++iKey) {
+    std::string EffKey = EffKeyVec[iKey].substr (EffKeyVec[iKey].rfind("/") + 1);
+    EffNodeVec_.push_back(deftree.getElement(RootPath_ + "/" + EffKey, true));
+    BaselineEffNodeVec_.push_back(deftree.getElement(BaselinePath_ + "/" + EffKey, true));
+    TestEffNodeVec_.push_back(deftree.getElement(TestPath_ + "/" + EffKey, true));
+  }
+}
+
+void ControlSystem::EffectorBaseline(GenericFunction::Mode mode) {
+  // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
+  if (mode == GenericFunction::kEngage) {
+    for (size_t iNode = 0; iNode < BaselineEffNodeVec_.size(); ++iNode) {
+      EffNodeVec_[iNode]->setDouble(BaselineEffNodeVec_[iNode]->getDouble());
+    }
+  }
+}
+
+void ControlSystem::EffectorTest(GenericFunction::Mode mode) {
+  // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
+  if (mode == GenericFunction::kEngage) {
+    for (size_t iNode = 0; iNode < TestEffNodeVec_.size(); ++iNode) {
+      EffNodeVec_[iNode]->setDouble(TestEffNodeVec_[iNode]->getDouble());
+    }
+  }
 }
 
 void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Value& Controller) {
@@ -250,12 +277,6 @@ void ControlSystem::RunBaseline(GenericFunction::Mode mode) {
 
     for (size_t iNode = 0; iNode < NodeVecCtrl.size(); ++iNode) {
       NodeVecSet[iNode]->setDouble(NodeVecCtrl[iNode]->getDouble());
-
-      // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
-      if (mode == GenericFunction::kEngage) {
-        NodeVec NodeVecRoot = BaselineNodeMap_[ControlName].Root;
-        NodeVecRoot[iNode]->setDouble(NodeVecCtrl[iNode]->getDouble());
-      }
     }
   }
 }
@@ -269,21 +290,25 @@ void ControlSystem::SetTest(std::string TestGroupSel) {
   TestGroupSel_ = TestGroupSel;
 }
 
+// Get the Test Levels
 std::vector<std::string> ControlSystem::GetTestLevels() {
   std::vector<std::string> LevelVec;
   LevelVec.clear();
 
-  for (size_t iVec = 0; iVec < TestGroupMap_[TestGroupSel_].size(); ++iVec) {
-    LevelVec.push_back (TestGroupMap_[TestGroupSel_][iVec].Level);
+  GroupVec TestGroupVec = TestGroupMap_[TestGroupSel_];
+  for (size_t iVec = 0; iVec < TestGroupVec.size(); ++iVec) {
+    LevelVec.push_back (TestGroupVec[iVec].Level);
   }
 
   return LevelVec;
 }
 
+// Get Current Level
 std::string ControlSystem::GetLevel() {
   return TestLevelSel_;
 }
 
+// Set Current Level
 void ControlSystem::SetLevel(std::string TestLevelSel) {
   TestLevelSel_ = TestLevelSel;
 }
@@ -294,12 +319,12 @@ void ControlSystem::RunTest(GenericFunction::Mode mode) {
   GroupVec TestGroupVec = TestGroupMap_[TestGroupSel_];
 
   // Loop through each level
-  for (size_t iVec = 0; iVec < TestGroupMap_[TestGroupSel_].size(); ++iVec) {
-    std::string Level = TestGroupMap_[TestGroupSel_][iVec].Level;
+  for (size_t iVec = 0; iVec < TestGroupVec.size(); ++iVec) {
+    std::string Level = TestGroupVec[iVec].Level;
 
     // Only Execute the selected level
     if (Level == TestLevelSel_) {
-      std::string ControlName = TestGroupMap_[TestGroupSel_][iVec].Controller;
+      std::string ControlName = TestGroupVec[iVec].Controller;
 
       // Run the Controller, using the Map of Wrapper Classes.
       TestControlMap_[ControlName]->Run(mode);
@@ -310,12 +335,6 @@ void ControlSystem::RunTest(GenericFunction::Mode mode) {
 
       for (size_t iNode = 0; iNode < NodeVecCtrl.size(); ++iNode) {
         NodeVecSet[iNode]->setDouble(NodeVecCtrl[iNode]->getDouble());
-
-        // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
-        if (mode == GenericFunction::kEngage) {
-          NodeVec NodeVecRoot = TestNodeMap_[ControlName].Root;
-          NodeVecRoot[iNode]->setDouble(NodeVecCtrl[iNode]->getDouble());
-        }
       }
     }
   }

@@ -22,10 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EFFECTOR_HXX_
 
 #include "hardware-defs.h"
-#include "definition-tree2.h"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "configuration.h"
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -43,10 +41,12 @@ class AircraftEffectors {
     void Configure(const rapidjson::Value& Config);
     std::vector<float> Run();
     bool Configured();
+    std::vector<std::string> GetKeys();
   private:
     std::string RootPath_ = "/Effectors";
     bool Configured_ = false;
-    std::vector<ElementPtr> input_nodes;
+    std::vector<std::string> EffKeyVec_;
+    std::vector<ElementPtr> EffNodeVec_;
 };
 
 #endif
