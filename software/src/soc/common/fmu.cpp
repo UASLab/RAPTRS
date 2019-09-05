@@ -791,76 +791,82 @@ Limits are optional and saturate the output if defined
 */
 bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) {
   std::vector<uint8_t> Payload;
-  if ( Config.HasMember("Fmu") ) {
-    std::string block_name = Config["Fmu"].GetString();
-    if ( Config.HasMember(block_name.c_str()) ) {
-      if ( Config[block_name.c_str()].IsArray() ) {
-        // iterate through levels
-        for ( size_t j = 0; j < Config[block_name.c_str()].Size(); j++ ) {
-          const rapidjson::Value &Level = Config[block_name.c_str()][j];
-          if ( Level.HasMember("Level") and Level.HasMember("Components") and Level["Components"].IsArray() ) {
-            printf("Control laws size: %d\n", Level["Components"].Size());
-            for ( size_t i = 0; i < Level["Components"].Size(); i++ ) {
-              printf("  component: %d\n", i);
-              const rapidjson::Value &Component = Level["Components"][i];
-              if ( Component.HasMember("Type") and Component["Type"] == "Gain" ) {
-                message::config_control_gain_t msg;
-                if ( Component.HasMember("Input") ) {
-                  msg.input = Component["Input"].GetString();
-                } else {
-                  printf("ERROR: component does not specified an input\n");
-                }
-                if ( Component.HasMember("Output") ) {
-                  msg.output = Component["Output"].GetString();
-                } else {
-                  printf("ERROR: component does not specified an output\n");
-                }
-                if ( Component.HasMember("Gain") ) {
-                  msg.gain = Component["Gain"].GetFloat();
-                } else {
-                  printf("ERROR: component does not specified a gain\n");
-                }
-                if ( Component.HasMember("Limits") ) {
-                  msg.has_limits = true;
-                  const rapidjson::Value &Limits = Component["Limits"];
-                  if ( Limits.HasMember("Lower") ) {
-                    msg.lower_limit = Limits["Lower"].GetFloat();
-                  } else {
-                    printf("ERROR: no lower limit in control\n");
-                  }
-                  if ( Limits.HasMember("Upper") ) {
-                    msg.upper_limit = Limits["Upper"].GetFloat();
-                  } else {
-                    printf("ERROR: no upper limit in control\n");
-                  }
-                } else {
-                  msg.has_limits = false;
-                }
-                msg.pack();
-                SendMessage(msg.id, 0, msg.payload, msg.len);
-                if ( !WaitForAck(msg.id, 0, 1000) ) {
-                  return false;
-                }
-              } else {
-                printf("ignore component that isn't a gain\n");
-              }
-            }
-            // success if we made it to here
-            return true;
+  if ( !Config.HasMember("Fmu") or !Config["Fmu"].IsArray() ) {
+    printf("ERROR: Fmu section not found in Control (or value not an array)\n");
+    return false;
+  }
+  if ( !Config.HasMember("GroupDef") ) {
+    printf("ERROR: GroupDef section not found in Control\n");
+    return false;
+  }
+  if ( !Config.HasMember("ControlDef") ) {
+    printf("ERROR: ControlDef section not found in Control\n");
+    return false;
+  }
+  for ( size_t i = 0; i < Config["Fmu"].Size(); i++ ) {
+    std::string group_name = Config["Fmu"][i].GetString();
+    if ( !Config["GroupDef"].HasMember(group_name.c_str()) ) {
+      printf("ERROR: %s section not found in Control/GroupDef\n", group_name.c_str());
+      return false;
+    }
+    if ( !Config["GroupDef"][group_name.c_str()].HasMember("Pilot") ) {
+      printf("ERROR: Control/GroupDef/%s/Pilot not found\n", group_name.c_str());
+      return false;
+    }
+    std::string control_name = Config["GroupDef"][group_name.c_str()]["Pilot"].GetString();
+    if ( !Config["ControlDef"].HasMember(control_name.c_str()) or !Config["ControlDef"][control_name.c_str()].IsArray() ) {
+      printf("ERROR: Control/ControlDef/%s not found or not an array\n", control_name.c_str());
+      return false;
+    }
+    printf("Control laws size: %d\n", Config["ControlDef"][control_name.c_str()].Size());
+    for ( size_t j = 0; j < Config["ControlDef"][control_name.c_str()].Size(); j++ ) {
+      printf("  component: %d\n", i);
+      const rapidjson::Value &Component = Config["ControlDef"][control_name.c_str()][j];
+      if ( Component.HasMember("Type") and Component["Type"] == "Gain" ) {
+        message::config_control_gain_t msg;
+        if ( Component.HasMember("Input") ) {
+          msg.input = Component["Input"].GetString();
+        } else {
+          printf("ERROR: component does not specified an input\n");
+        }
+        if ( Component.HasMember("Output") ) {
+          msg.output = Component["Output"].GetString();
+        } else {
+          printf("ERROR: component does not specified an output\n");
+        }
+        if ( Component.HasMember("Gain") ) {
+          msg.gain = Component["Gain"].GetFloat();
+        } else {
+          printf("ERROR: component does not specified a gain\n");
+        }
+        if ( Component.HasMember("Limits") ) {
+          msg.has_limits = true;
+          const rapidjson::Value &Limits = Component["Limits"];
+          if ( Limits.HasMember("Lower") ) {
+            msg.lower_limit = Limits["Lower"].GetFloat();
           } else {
-            printf("ERROR: Level or Components not specified correctly in Control\n");
+            printf("ERROR: no lower limit in control\n");
           }
+          if ( Limits.HasMember("Upper") ) {
+            msg.upper_limit = Limits["Upper"].GetFloat();
+          } else {
+            printf("ERROR: no upper limit in control\n");
+          }
+        } else {
+          msg.has_limits = false;
+        }
+        msg.pack();
+        SendMessage(msg.id, 0, msg.payload, msg.len);
+        if ( !WaitForAck(msg.id, 0, 1000) ) {
+          return false;
         }
       } else {
-        printf("ERROR: %s not an array\n", block_name.c_str());
+        printf("ignore component that isn't a gain\n");
       }
-    } else {
-      printf("ERROR: could not find baseline control law: %s\n", block_name.c_str());
     }
-  } else {
-    printf("ERROR: Fmu key not found in Control\n");
   }
-  return false;
+  // success if we made it to here
+  return true;
 }
 
 /* Configures the FMU effectors */
