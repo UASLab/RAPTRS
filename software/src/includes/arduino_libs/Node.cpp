@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "Node.h"
 
+// Fixme: replace all the implicit messaging with actual messages?
+
 /* class declaration, i2c bus, address, and rate */
 Node::Node(i2c_t3& bus,uint8_t addr,uint32_t rate) {
   bus_ = &bus;
@@ -43,6 +45,12 @@ void Node::Configure(String ConfigString) {
   delay(500);
 }
 
+/* sends a configuration string to the node */
+void Node::Configure(uint8_t id, std::vector<uint8_t> *Payload) {
+  SendMessage(id, *Payload);
+  delay(500);
+}
+
 void Node::SetConfigurationMode() {
   std::vector<uint8_t> Payload;
   Payload.push_back(ConfigurationMode);
@@ -61,55 +69,15 @@ bool Node::ReadSensorData() {
   std::vector<uint8_t> Buffer;
   Message message;
   size_t dataSize = 0;
-  BuildMessage(SensorMetaData,Payload,&Buffer);
+  BuildMessage(SensorDataSize,Payload,&Buffer);
   bus_->beginTransmission(addr_);
   bus_->write(Buffer.data(),Buffer.size());
   bus_->endTransmission(I2C_NOSTOP,I2cHeaderTimeout_us);
-  bus_->requestFrom(addr_,MetaDataLength_+headerLength_+checksumLength_,I2C_STOP,I2cHeaderTimeout_us);
+  bus_->requestFrom(addr_,2+headerLength_+checksumLength_,I2C_STOP,I2cHeaderTimeout_us);
   if (ReceiveMessage(&message,&Payload)) {
-    if (message == SensorMetaData) {
-      size_t PayloadLocation = 0;
-      // meta data
-      uint8_t AcquireInternalData,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
-      memcpy(&AcquireInternalData,Payload.data()+PayloadLocation,sizeof(AcquireInternalData));
-      PayloadLocation += sizeof(AcquireInternalData);
-      memcpy(&NumberMpu9250Sensor,Payload.data()+PayloadLocation,sizeof(NumberMpu9250Sensor));
-      PayloadLocation += sizeof(NumberMpu9250Sensor);
-      memcpy(&NumberBme280Sensor,Payload.data()+PayloadLocation,sizeof(NumberBme280Sensor));
-      PayloadLocation += sizeof(NumberBme280Sensor);
-      memcpy(&NumberuBloxSensor,Payload.data()+PayloadLocation,sizeof(NumberuBloxSensor));
-      PayloadLocation += sizeof(NumberuBloxSensor);
-      memcpy(&NumberSwiftSensor,Payload.data()+PayloadLocation,sizeof(NumberSwiftSensor));
-      PayloadLocation += sizeof(NumberSwiftSensor);
-      memcpy(&NumberAms5915Sensor,Payload.data()+PayloadLocation,sizeof(NumberAms5915Sensor));
-      PayloadLocation += sizeof(NumberAms5915Sensor);
-      memcpy(&NumberSbusSensor,Payload.data()+PayloadLocation,sizeof(NumberSbusSensor));
-      PayloadLocation += sizeof(NumberSbusSensor);
-      memcpy(&NumberAnalogSensor,Payload.data()+PayloadLocation,sizeof(NumberAnalogSensor));
-      PayloadLocation += sizeof(NumberAnalogSensor);
-      // resize data buffers
-      if (AcquireInternalData & 0x20) {
-        SensorData_.PwmVoltage_V.resize(1);
-      }
-      if (AcquireInternalData & 0x40) {
-        SensorData_.SbusVoltage_V.resize(1);
-      }
-      SensorData_.Mpu9250.resize(NumberMpu9250Sensor);
-      SensorData_.Bme280.resize(NumberBme280Sensor);
-      SensorData_.uBlox.resize(NumberuBloxSensor);
-      SensorData_.Swift.resize(NumberSwiftSensor);
-      SensorData_.Ams5915.resize(NumberAms5915Sensor);
-      SensorData_.Sbus.resize(NumberSbusSensor);
-      SensorData_.Analog.resize(NumberAnalogSensor);
-      dataSize = sizeof(SensorData_.PwmVoltage_V[0])*SensorData_.PwmVoltage_V.size()+
-        sizeof(SensorData_.SbusVoltage_V[0])*SensorData_.SbusVoltage_V.size()+
-        sizeof(Mpu9250SensorData)*SensorData_.Mpu9250.size()+
-        sizeof(Bme280SensorData)*SensorData_.Bme280.size()+
-        sizeof(uBloxSensorData)*SensorData_.uBlox.size()+
-        sizeof(SwiftSensorData)*SensorData_.Swift.size()+
-        sizeof(SbusSensorData)*SensorData_.Sbus.size()+
-        sizeof(Ams5915SensorData)*SensorData_.Ams5915.size()+
-        sizeof(AnalogSensorData)*SensorData_.Analog.size();
+    if (message == SensorDataSize) {
+      dataSize = *(uint16_t *)Payload.data();
+      // Serial.print("expected node size: "); Serial.println(dataSize);
     } else {
       return false;
     }
@@ -125,25 +93,7 @@ bool Node::ReadSensorData() {
   if (ReceiveMessage(&message,&Payload)) {
     if (message == SensorData) {
       size_t PayloadLocation = 0;
-      // sensor data
-      memcpy(SensorData_.PwmVoltage_V.data(),Payload.data()+PayloadLocation,SensorData_.PwmVoltage_V.size()*sizeof(SensorData_.PwmVoltage_V[0]));
-      PayloadLocation += SensorData_.PwmVoltage_V.size()*sizeof(SensorData_.PwmVoltage_V[0]);
-      memcpy(SensorData_.SbusVoltage_V.data(),Payload.data()+PayloadLocation,SensorData_.SbusVoltage_V.size()*sizeof(SensorData_.SbusVoltage_V[0]));
-      PayloadLocation += SensorData_.SbusVoltage_V.size()*sizeof(SensorData_.SbusVoltage_V[0]);
-      memcpy(SensorData_.Mpu9250.data(),Payload.data()+PayloadLocation,SensorData_.Mpu9250.size()*sizeof(Mpu9250SensorData));
-      PayloadLocation += SensorData_.Mpu9250.size()*sizeof(Mpu9250SensorData);
-      memcpy(SensorData_.Bme280.data(),Payload.data()+PayloadLocation,SensorData_.Bme280.size()*sizeof(Bme280SensorData));
-      PayloadLocation += SensorData_.Bme280.size()*sizeof(Bme280SensorData);
-      memcpy(SensorData_.uBlox.data(),Payload.data()+PayloadLocation,SensorData_.uBlox.size()*sizeof(uBloxSensorData));
-      PayloadLocation += SensorData_.uBlox.size()*sizeof(uBloxSensorData);
-      memcpy(SensorData_.Swift.data(),Payload.data()+PayloadLocation,SensorData_.Swift.size()*sizeof(SwiftSensorData));
-      PayloadLocation += SensorData_.Swift.size()*sizeof(SwiftSensorData);
-      memcpy(SensorData_.Ams5915.data(),Payload.data()+PayloadLocation,SensorData_.Ams5915.size()*sizeof(Ams5915SensorData));
-      PayloadLocation += SensorData_.Ams5915.size()*sizeof(Ams5915SensorData);
-      memcpy(SensorData_.Sbus.data(),Payload.data()+PayloadLocation,SensorData_.Sbus.size()*sizeof(SbusSensorData));
-      PayloadLocation += SensorData_.Sbus.size()*sizeof(SbusSensorData);
-      memcpy(SensorData_.Analog.data(),Payload.data()+PayloadLocation,SensorData_.Analog.size()*sizeof(AnalogSensorData));
-      PayloadLocation += SensorData_.Analog.size()*sizeof(AnalogSensorData);
+      // Serial.print("received node sensor data: "); Serial.println(Payload.size());
       DataBuffer_ = Payload;
       return true;
     } else {
@@ -154,53 +104,9 @@ bool Node::ReadSensorData() {
   }
 }
 
-/* returns the number of pwm voltage sensors in the last ReadSensorData */
-uint8_t Node::GetNumberPwmVoltageSensor() {
-  return (uint8_t)SensorData_.PwmVoltage_V.size();
-}
-
-/* returns the number of sbus voltage sensors in the last ReadSensorData */
-uint8_t Node::GetNumberSbusVoltageSensor() {
-  return (uint8_t)SensorData_.SbusVoltage_V.size();
-}
-
-/* returns the number of MPU9250 sensors in the last ReadSensorData */
-uint8_t Node::GetNumberMpu9250Sensor() {
-  return (uint8_t)SensorData_.Mpu9250.size();
-}
-
-/* returns the number of BME280 sensors in the last ReadSensorData */
-uint8_t Node::GetNumberBme280Sensor() {
-  return (uint8_t)SensorData_.Bme280.size();
-}
-
-/* returns the number of uBlox sensors in the last ReadSensorData */
-uint8_t Node::GetNumberuBloxSensor() {
-  return (uint8_t)SensorData_.uBlox.size();
-}
-
-/* returns the number of Swift sensors in the last ReadSensorData */
-uint8_t Node::GetNumberSwiftSensor() {
-  return (uint8_t)SensorData_.Swift.size();
-}
-
-/* returns the number of AMS5915 sensors in the last ReadSensorData */
-uint8_t Node::GetNumberAms5915Sensor() {
-  return (uint8_t)SensorData_.Ams5915.size();
-}
-
-/* returns the number of SBUS sensors in the last ReadSensorData */
-uint8_t Node::GetNumberSbusSensor() {
-  return (uint8_t)SensorData_.Sbus.size();
-}
-
-/* returns the number of analog sensors in the last ReadSensorData */
-uint8_t Node::GetNumberAnalogSensor() {
-  return (uint8_t)SensorData_.Analog.size();
-}
-
 /* returns the sensor data buffer from the last ReadSensorData */
 void Node::GetSensorDataBuffer(std::vector<uint8_t> *SensorDataBuffer) {
+  // fixme: flatten?
   *SensorDataBuffer = DataBuffer_;
 }
 
@@ -213,7 +119,7 @@ void Node::SendEffectorCommand(std::vector<float> Commands) {
 }
 
 /* builds and sends a BFS message given a message ID and payload */
-void Node::SendMessage(Message message,std::vector<uint8_t> &Payload) {
+void Node::SendMessage(uint8_t message, std::vector<uint8_t> &Payload) {
   std::vector<uint8_t> TxBuffer;
   BuildMessage(message,Payload,&TxBuffer);
   // transmit
@@ -223,14 +129,14 @@ void Node::SendMessage(Message message,std::vector<uint8_t> &Payload) {
 }
 
 /* builds a BFS message given a message ID and payload */
-void Node::BuildMessage(Message message,std::vector<uint8_t> &Payload,std::vector<uint8_t> *TxBuffer) {
+void Node::BuildMessage(uint8_t message, std::vector<uint8_t> &Payload, std::vector<uint8_t> *TxBuffer) {
   if (Payload.size() < (kBufferMaxSize-headerLength_-checksumLength_)) {
     TxBuffer->resize(Payload.size()+headerLength_+checksumLength_);
     // header
     Buffer_[0] = header_[0];
     Buffer_[1] = header_[1];
     // message ID
-    Buffer_[2] = (uint8_t)message;
+    Buffer_[2] = message;
     // payload length
     Buffer_[3] = Payload.size() & 0xff;
     Buffer_[4] = Payload.size() >> 8;

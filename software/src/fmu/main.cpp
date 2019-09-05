@@ -50,7 +50,9 @@ AircraftMission::State MissionState;
 // requested mode
 AircraftMission::Mode RequestedMode;
 // effector commands
-std::vector<float> EffectorCommands;
+// std::vector<float> EffectorCommands;
+// sensor data to soc
+std::vector<uint8_t> DataBuffer;
 
 // runs with the FMU integrated IMU data ready interrupt
 void ImuInterrupt() {
@@ -98,12 +100,11 @@ int main()
 // Serial.print("\tRead: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
         // buffer for transmitting data
-        std::vector<uint8_t> DataBuffer;
-        Sensors.GetDataBuffer(&DataBuffer);
+        Sensors.MakeCompoundMessage(&DataBuffer);
 // Serial.print("\tDataBuffer: ");
 // Serial.print(DataBuffer.size());
         // transmit data to SOC
-        SocComms.SendSensorData(DataBuffer);
+        SocComms.SendMessage(message::data_compound_id, DataBuffer.data(), DataBuffer.size());
 // Serial.print("\tSync: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
 
@@ -130,31 +131,38 @@ int main()
 // Serial.print("\tEffectors: ");
 // Serial.println(float(micros_64() - ts) * 1e-3, 2);
       }
-      // effector commands from SOC
-      if (SocComms.ReceiveEffectorCommand(&EffectorCommands)) {
-        if (Mission.UseSocEffectorComands()) {
-          // set the received commands to be used
-          Effectors.SetCommands(EffectorCommands,Mission.ThrottleSafed());
-        }
-// Serial.print("\tSOC: ");
-// Serial.println(float(micros_64() - ts) * 1e-3, 2);
-      }
 // Serial.print("\tDone: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
     }
-    if (MissionMode == AircraftMission::Configuration) {
-      // buffer for receiving configurations
-      std::vector<char> ConfigBuffer;
-      // update configuration
-      if (SocComms.ReceiveConfigMessage(&ConfigBuffer)) {
-        Config.Update(ConfigBuffer.data(),&Mission,&Sensors,&Control,&Effectors,&GlobalData);
+    // check for new messages from SOC
+    uint8_t id;
+    uint8_t address;
+    std::vector<uint8_t> Payload;
+    if ( SocComms.ReceiveMessage(&id, &address, &Payload) ) {
+      if ( id == message::command_mode_id ) {
+        // request mode
+        message::command_mode_t msg;
+        msg.unpack(Payload.data(), Payload.size());
+        Serial.print("new mode: "); Serial.println(msg.mode);
+        Mission.SetRequestedMode((AircraftMission::Mode)msg.mode);
+      } else if ( MissionMode == AircraftMission::Run ) {
+        if (id == message::command_effectors_id ) {
+          // receive the effector commands
+          if (Mission.UseSocEffectorComands()) {
+            message::command_effectors_t msg;
+            msg.unpack(Payload.data(), Payload.size());
+            Effectors.SetCommands(&msg, Mission.ThrottleSafed());
+          }
+        }
+      } else if (MissionMode == AircraftMission::Configuration) {
+        if ( Config.Update(id, address, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {
+          Serial.println("Config.Update() returned true, sending ack");
+          SocComms.SendAck(id, 0);
+        } else {
+          Serial.print("Unhandled message while in Configuration mode, id: ");
+          Serial.println(id);
+        }
       }
     }
-    // request mode
-    if (SocComms.ReceiveModeCommand(&RequestedMode)) {
-      Mission.SetRequestedMode(RequestedMode);
-    }
-    // check for new messages from SOC
-    SocComms.CheckMessages();
   }
 }

@@ -35,14 +35,14 @@ void AircraftBfsComms::Begin() {
   Serial.println("done!");
 }
 
-/* sends sensor meta data message */
+/* sends sensor data message */
 void AircraftBfsComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
   SendMessage(SensorData,DataBuffer);
 }
 
-/* sends sensor data message */
-void AircraftBfsComms::SendSensorMetaData(std::vector<uint8_t> &DataBuffer) {
-  SendMessage(SensorMetaData,DataBuffer);
+/* sends sensor data size message */
+void AircraftBfsComms::SendSensorDataSize(std::vector<uint8_t> &DataBuffer) {
+  SendMessage(SensorDataSize,DataBuffer);
 }
 
 /* returns mode command if a mode command message has been received */
@@ -124,7 +124,7 @@ void AircraftBfsComms::SendMessage(Message message,std::vector<uint8_t> &Payload
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftBfsComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
+bool AircraftBfsComms::ReceiveMessage(Message *message, std::vector<uint8_t> *Payload) {
   while(bus_->available()) {
     RxByte_ = bus_->read();
     // header
@@ -208,8 +208,10 @@ void AircraftBfsComms::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_
 }
 
 /* returns the last received message */
-void AircraftBfsComms::GetMessage(Message *message) {
+void AircraftBfsComms::GetMessage(Message *message, std::vector<uint8_t> *Payload) {
   *message = ReceivedMessage_;
+  Payload->resize(ReceivedPayload_.size());
+  memcpy(Payload->data(), ReceivedPayload_.data(), ReceivedPayload_.size());
 }
 
 /* register function with i2c on receive */
@@ -220,4 +222,12 @@ void AircraftBfsComms::OnReceive(void (*function)(size_t len)) {
 /* register function with i2c on receive */
 void AircraftBfsComms::OnRequest(void (*function)(void)) {
   bus_->onRequest(function);
+}
+
+bool AircraftBfsComms::NewReceived() {
+  return MessageReceived_;
+}
+
+void AircraftBfsComms::ClearReceived() {
+  MessageReceived_ = false;
 }

@@ -23,8 +23,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "Arduino.h"
 #include "definition-tree.h"
-#include "ArduinoJson.h"
 #include <memory>
+
+#include "fmu_messages.h"
+
+/* base function class methods */
 
 class ControlFunctionClass {
   public:
@@ -35,13 +38,13 @@ class ControlFunctionClass {
       kHold,
       kEngage
     };
-    virtual void Configure(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    virtual void Configure(message::config_control_gain_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     virtual void Run(Mode mode);
 };
 
 class ControlGainClass: public ControlFunctionClass {
   public:
-    void Configure(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    void Configure(message::config_control_gain_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void Run(Mode mode);
   private:
     struct Config {
@@ -62,7 +65,7 @@ class ControlGainClass: public ControlFunctionClass {
 
 class ControlLaws {
   public:
-    void Configure(const char *JsonString,DefinitionTree *DefinitionTreePtr);
+    bool Configure(uint8_t id, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     bool Configured();
     size_t ActiveControlLevels();
     void Run(size_t ControlLevel);

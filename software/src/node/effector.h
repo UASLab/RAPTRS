@@ -22,21 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EFFECTOR_H_
 
 #include "Arduino.h"
-#include "ArduinoJson.h"
 #include "SBUS.h"
 #include "hardware-defs.h"
 #include "utils.h"
 #include <memory>
 
+#include "fmu_messages.h"
+
 class AircraftEffectors {
   public:
-    void UpdateConfig(const char *JsonString);
+    bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload);
     void SetCommands(std::vector<float> Commands);
     void ComputeOutputs();
     void CommandEffectors();
     void End();
   private:
-    SBUS *sbus_;
+    SBUS *sbus_ = NULL;
     enum EffectorType {
       kPwm,
       kSbus

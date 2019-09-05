@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define EFFECTOR_H_
 
 #include "Arduino.h"
-#include "ArduinoJson.h"
 #include "SBUS.h"
 #include "Node.h"
 #include "definition-tree.h"
@@ -30,11 +29,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "utils.h"
 #include <memory>
 
+#include "fmu_messages.h"
+
 class AircraftEffectors {
   public:
-    void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
-    void SetCommands(std::vector<float> Commands,bool ThrottleSafed);
+    void SetCommands(message::command_effectors_t *msg, bool ThrottleSafed);
     void ComputeOutputs(bool ThrottleSafed);
     void CommandEffectors();
     void End();
@@ -67,7 +68,7 @@ class AircraftEffectors {
     Config config_;
     std::vector<Data> Effectors_;
     std::vector<NodeData> NodeEffectors_;
-    std::vector<float> EffectorCommands_;
+    //std::vector<float> EffectorCommands_;
 };
 
 #endif

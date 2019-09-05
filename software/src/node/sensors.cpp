@@ -20,98 +20,50 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "sensors.h"
 
+static void HardFail(std::string message) {
+  while (true) {
+    Serial.println(message.c_str());
+    delay(1000);
+  }
+}
+
 /* update MPU9250 sensor configuration */
-void Mpu9250Sensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("UseSpi")) {
-      config_.UseSpi = Config["UseSpi"];
-      if (config_.UseSpi) {
-        if (Config.containsKey("CsPin")) {
-          config_.CsPin = Config["CsPin"];
-        } else {
-          while(1){
-            Serial.println("ERROR: CS Pin missing from MPU9250 configuration.");
-          }
-        }
-        if (Config.containsKey("MosiPin")) {
-          config_.MosiPin = Config["MosiPin"];
-        }
-        if (Config.containsKey("MisoPin")) {
-          config_.MisoPin = Config["MisoPin"];
-        }
-        if (Config.containsKey("SckPin")) {
-          config_.SckPin = Config["SckPin"];
-        }
-        if (Config.containsKey("Spi")) {
-          config_.Spi = Config["Spi"];
-        }
-      } else {
-        if (Config.containsKey("Address")) {
-          config_.Addr = Config["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: I2C address missing from MPU9250 configuration.");
-          }
-        }
-        if (Config.containsKey("I2c")) {
-          config_.I2c = Config["I2c"];
-        }
-      }
-    } else {
-      if (Config.containsKey("Address")) {
-        config_.Addr = Config["Address"];
-      } else {
-        while(1){
-          Serial.println("ERROR: I2C address missing from MPU9250 configuration.");
-        }
-      }
-      if (Config.containsKey("I2c")) {
-        config_.I2c = Config["I2c"];
-      }
-    }
-    if (Config.containsKey("Rotation")) {
-      JsonArray &Rotation = Config["Rotation"];
-      if (Rotation.size() != 9) {
-        while(1){
-          Serial.println("ERROR: MPU9250 rotation matrix size incorrect.");
-        }
-      } else {
-        config_.Rotation(0,0) = Rotation[0];
-        config_.Rotation(0,1) = Rotation[1];
-        config_.Rotation(0,2) = Rotation[2];
-        config_.Rotation(1,0) = Rotation[3];
-        config_.Rotation(1,1) = Rotation[4];
-        config_.Rotation(1,2) = Rotation[5];
-        config_.Rotation(2,0) = Rotation[6];
-        config_.Rotation(2,1) = Rotation[7];
-        config_.Rotation(2,2) = Rotation[8];
-      }
-    }
-    if (Config.containsKey("DLPF-Bandwidth")) {
-      if (Config["DLPF-Bandwidth"] == "184Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
-      } else if (Config["DLPF-Bandwidth"] == "92Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
-      } else if (Config["DLPF-Bandwidth"] == "41Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
-      } else if (Config["DLPF-Bandwidth"] == "20Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
-      } else if (Config["DLPF-Bandwidth"] == "10Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
-      } else if (Config["DLPF-Bandwidth"] == "5Hz") {
-        config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
-      } else {
-        while(1){
-          Serial.println("ERROR: Requested MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
-        }
-      }
-    }
+void Mpu9250Sensor::UpdateConfig(message::config_mpu9250_t *msg) {
+  config_.UseSpi = msg->use_spi;
+  if (config_.UseSpi) {
+    config_.CsPin = msg->cs_pin;
+    config_.MosiPin = msg->mosi_pin;
+    config_.MisoPin = msg->miso_pin;
+    config_.SckPin = msg->sck_pin;
+    config_.Spi = msg->spi_bus;
   } else {
-    while(1){
-      Serial.println("ERROR: Mpu9250 sensor failed to parse.");
-      Serial.println(JsonString);
+    config_.I2c = msg->i2c_bus;
+    config_.Addr = msg->i2c_addr;
+  }
+  config_.Rotation(0,0) = msg->orientation[0];
+  config_.Rotation(0,1) = msg->orientation[1];
+  config_.Rotation(0,2) = msg->orientation[2];
+  config_.Rotation(1,0) = msg->orientation[3];
+  config_.Rotation(1,1) = msg->orientation[4];
+  config_.Rotation(1,2) = msg->orientation[5];
+  config_.Rotation(2,0) = msg->orientation[6];
+  config_.Rotation(2,1) = msg->orientation[7];
+  config_.Rotation(2,2) = msg->orientation[8];
+  if ( msg->DLPF_bandwidth_hz > 0 ) {
+    if (msg->DLPF_bandwidth_hz == 184) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_184HZ;
+    } else if (msg->DLPF_bandwidth_hz == 92) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_92HZ;
+    } else if (msg->DLPF_bandwidth_hz == 41) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_41HZ;
+    } else if (msg->DLPF_bandwidth_hz == 20) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;
+    } else if (msg->DLPF_bandwidth_hz == 10) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_10HZ;
+    } else if (msg->DLPF_bandwidth_hz == 5) {
+      config_.Bandwidth = MPU9250::DLPF_BANDWIDTH_5HZ;
+    } else {
+      HardFail("ERROR: Requested internal MPU9250 DLPF-Bandwidth is not an available option. Available options: 184Hz, 92Hz, 41Hz, 20Hz, 10Hz, 5Hz");
     }
   }
 }
@@ -172,12 +124,13 @@ void Mpu9250Sensor::Begin() {
 }
 
 /* get the MPU9250 sensor data */
-int Mpu9250Sensor::GetData(Data *DataPtr) {
+int Mpu9250Sensor::ReadSensor() {
   Eigen::Matrix<float,3,1> Accel_Imu_mss;
   Eigen::Matrix<float,3,1> Gyro_Imu_rads;
   Eigen::Matrix<float,3,1> Mag_Imu_uT;
 
   status_ = Mpu_->readSensor();
+
   Accel_Imu_mss(0,0) = Mpu_->getAccelX_mss();
   Accel_Imu_mss(1,0) = Mpu_->getAccelY_mss();
   Accel_Imu_mss(2,0) = Mpu_->getAccelZ_mss();
@@ -192,24 +145,23 @@ int Mpu9250Sensor::GetData(Data *DataPtr) {
   Gyro_rads_ = config_.Rotation * Gyro_Imu_rads;
   Mag_uT_ = config_.Rotation * Mag_Imu_uT;
 
-  const float G = 9.807f;
-  const float d2r = 3.14159265359f/180.0f;
-  float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-  float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
-
-  data_.ReadStatus = status_;
-  data_.AccelX_ct = (int) (Accel_mss_(0,0) / accelScale);
-  data_.AccelY_ct = (int) (Accel_mss_(1,0) / accelScale);
-  data_.AccelZ_ct = (int) (Accel_mss_(2,0) / accelScale);
-  data_.GyroX_ct = (int) (Gyro_rads_(0,0) / gyroScale);
-  data_.GyroY_ct = (int) (Gyro_rads_(1,0) / gyroScale);
-  data_.GyroZ_ct = (int) (Gyro_rads_(2,0) / gyroScale);
-  // data_.MagX_ct = Mag_uT(0,0);
-  // data_.MagY_ct = Mag_uT(1,0);
-  // data_.MagZ_ct = Mag_uT(2,0);
-  // data_.Temperature_ct = Mpu_->getTemperature_C();
-  *DataPtr = data_;
   return status_;
+}
+
+/* get the MPU9250 sensor data */
+void Mpu9250Sensor::UpdateMessage(message::data_mpu9250_short_t *msg) {
+  // const float G = 9.807f;
+  // const float d2r = 3.14159265359f/180.0f;
+  // float accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+  // float gyroScale = 2000.0f/32767.5f * d2r; // setting the gyro scale to 2000DPS
+
+  msg->ReadStatus = status_;
+  msg->AccelX_mss = Accel_mss_(0,0);
+  msg->AccelY_mss = Accel_mss_(1,0);
+  msg->AccelZ_mss = Accel_mss_(2,0);
+  msg->GyroX_rads = Gyro_rads_(0,0);
+  msg->GyroY_rads = Gyro_rads_(1,0);
+  msg->GyroZ_rads = Gyro_rads_(2,0);
 }
 
 /* free the MPU9250 sensor resources */
@@ -218,61 +170,17 @@ void Mpu9250Sensor::End() {
 }
 
 /* update the BME280 sensor configuration */
-void Bme280Sensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("UseSpi")) {
-      config_.UseSpi = Config["UseSpi"];
-      if (config_.UseSpi) {
-        if (Config.containsKey("CsPin")) {
-          config_.CsPin = Config["CsPin"];
-        } else {
-          while(1){
-            Serial.println("ERROR: CS Pin missing from BME280 configuration.");
-          }
-        }
-        if (Config.containsKey("MosiPin")) {
-          config_.MosiPin = Config["MosiPin"];
-        }
-        if (Config.containsKey("MisoPin")) {
-          config_.MisoPin = Config["MisoPin"];
-        }
-        if (Config.containsKey("SckPin")) {
-          config_.SckPin = Config["SckPin"];
-        }
-        if (Config.containsKey("Spi")) {
-          config_.Spi = Config["Spi"];
-        }
-      } else {
-        if (Config.containsKey("Address")) {
-          config_.Addr = Config["Address"];
-        } else {
-          while(1){
-            Serial.println("ERROR: I2C address missing from BME280 configuration.");
-          }
-        }
-        if (Config.containsKey("I2c")) {
-          config_.I2c = Config["I2c"];
-        }
-      }
-    } else {
-      if (Config.containsKey("Address")) {
-        config_.Addr = Config["Address"];
-      } else {
-        while(1){
-          Serial.println("ERROR: I2C address missing from BME280 configuration.");
-        }
-      }
-      if (Config.containsKey("I2c")) {
-        config_.I2c = Config["I2c"];
-      }
-    }
+void Bme280Sensor::UpdateConfig(message::config_bme280_t *msg) {
+  config_.UseSpi = msg->use_spi;
+  if (config_.UseSpi) {
+    config_.CsPin = msg->cs_pin;
+    config_.MosiPin = msg->mosi_pin;
+    config_.MisoPin = msg->miso_pin;
+    config_.SckPin = msg->sck_pin;
+    config_.Spi = msg->spi_bus;
   } else {
-    while(1){
-      Serial.println("ERROR: Bme280 sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    config_.I2c = msg->i2c_bus;
+    config_.Addr = msg->i2c_addr;
   }
 }
 
@@ -314,14 +222,17 @@ void Bme280Sensor::Begin() {
 }
 
 /* get data from the BME280 */
-int Bme280Sensor::GetData(Data *DataPtr) {
+int Bme280Sensor::ReadSensor() {
   status_ = Bme_->readSensor();
-  data_.Pressure_Pa = Bme_->getPressure_Pa();
-  data_.Temperature_C = Bme_->getTemperature_C();
-  data_.Humidity_RH = Bme_->getHumidity_RH();
-  data_.ReadStatus = status_;
-  *DataPtr = data_;
   return status_;
+}
+
+/* get data from the BME280 */
+void Bme280Sensor::UpdateMessage(message::data_bme280_t *msg) {
+  msg->Pressure_Pa = Bme_->getPressure_Pa();
+  msg->Temperature_C = Bme_->getTemperature_C();
+  msg->Humidity_RH = Bme_->getHumidity_RH();
+  msg->ReadStatus = status_;
 }
 
 /* free resources used by the BME280 sensor */
@@ -330,23 +241,12 @@ void Bme280Sensor::End() {
 }
 
 /* update the uBlox configuration */
-void uBloxSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if (Config.containsKey("Uart")&&Config.containsKey("Baud")) {
-      config_.Uart = Config["Uart"];
-      config_.Baud = Config["Baud"];
-    } else {
-      while(1){
-        Serial.println("ERROR: UART port or baudrate missing from GPS configuration.");
-      }
-    }
+void uBloxSensor::UpdateConfig(message::config_ublox_t *msg) {
+  if (msg->uart and msg->baud) {
+    config_.Uart = msg->uart;
+    config_.Baud = msg->baud;
   } else {
-    while(1){
-      Serial.println("ERROR: uBlox sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: uBlox port or baudrate missing from GPS configuration.");
   }
 }
 
@@ -392,37 +292,35 @@ void uBloxSensor::Begin() {
 }
 
 /* update the private data structure with new uBlox data, if available */
-void uBloxSensor::UpdateData() {
-  if (ublox_->read(&uBloxData_)) {
-    if (uBloxData_.fixType == 3) {
-      data_.Fix = true;
-    } else {
-      data_.Fix = false;
-    }
-    data_.NumberSatellites = uBloxData_.numSV;
-    data_.TOW = uBloxData_.iTOW;
-    data_.Year = uBloxData_.utcYear;
-    data_.Month = uBloxData_.utcMonth;
-    data_.Day = uBloxData_.utcDay;
-    data_.Hour = uBloxData_.utcHour;
-    data_.Min = uBloxData_.utcMin;
-    data_.Sec = uBloxData_.utcSec;
-    data_.Latitude_rad = uBloxData_.lat*kD2R;
-    data_.Longitude_rad = uBloxData_.lon*kD2R;
-    data_.Altitude_m = uBloxData_.hMSL;
-    data_.NorthVelocity_ms = uBloxData_.velN;
-    data_.EastVelocity_ms = uBloxData_.velE;
-    data_.DownVelocity_ms = uBloxData_.velD;
-    data_.HorizontalAccuracy_m = uBloxData_.hAcc;
-    data_.VerticalAccuracy_m = uBloxData_.vAcc;
-    data_.VelocityAccuracy_ms = uBloxData_.sAcc;
-    data_.pDOP = uBloxData_.pDOP;
-  }
+int uBloxSensor::ReadSensor() {
+  return ublox_->read(&uBloxData_);
 }
 
-/* get the private data structure */
-void uBloxSensor::GetData(Data *DataPtr) {
-  *DataPtr = data_;
+/* update the private data structure with new uBlox data, if available */
+void uBloxSensor::UpdateMessage(message::data_ublox_t *msg) {
+  if (uBloxData_.fixType == 3) {
+    msg->Fix = true;
+  } else {
+    msg->Fix = false;
+  }
+  msg->NumberSatellites = uBloxData_.numSV;
+  msg->TOW = uBloxData_.iTOW;
+  msg->Year = uBloxData_.utcYear;
+  msg->Month = uBloxData_.utcMonth;
+  msg->Day = uBloxData_.utcDay;
+  msg->Hour = uBloxData_.utcHour;
+  msg->Min = uBloxData_.utcMin;
+  msg->Sec = uBloxData_.utcSec;
+  msg->Latitude_rad = uBloxData_.lat*kD2R;
+  msg->Longitude_rad = uBloxData_.lon*kD2R;
+  msg->Altitude_m = uBloxData_.hMSL;
+  msg->NorthVelocity_ms = uBloxData_.velN;
+  msg->EastVelocity_ms = uBloxData_.velE;
+  msg->DownVelocity_ms = uBloxData_.velD;
+  msg->HorizontalAccuracy_m = uBloxData_.hAcc;
+  msg->VerticalAccuracy_m = uBloxData_.vAcc;
+  msg->VelocityAccuracy_ms = uBloxData_.sAcc;
+  msg->pDOP = uBloxData_.pDOP;
 }
 
 /* free resources used by the uBlox sensor */
@@ -457,74 +355,55 @@ void uBloxSensor::End() {
 }
 
 /* update the AMS5915 configuration */
-void Ams5915Sensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Address")&&Config.containsKey("Transducer")){
-      config_.Addr = Config["Address"];
-      if (Config["Transducer"] == "AMS5915-0005-D") {
-        config_.Transducer = AMS5915::AMS5915_0005_D;
-      } else if (Config["Transducer"] == "AMS5915-0010-D") {
-        config_.Transducer = AMS5915::AMS5915_0010_D;
-      } else if (Config["Transducer"] == "AMS5915-0005-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0005_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0010-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0010_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0020-D") {
-        config_.Transducer = AMS5915::AMS5915_0020_D;
-      } else if (Config["Transducer"] == "AMS5915-0050-D") {
-        config_.Transducer = AMS5915::AMS5915_0050_D;
-      } else if (Config["Transducer"] == "AMS5915-0100-D") {
-        config_.Transducer = AMS5915::AMS5915_0100_D;
-      } else if (Config["Transducer"] == "AMS5915-0020-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0020_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0050-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0050_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0100-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0100_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0200-D") {
-        config_.Transducer = AMS5915::AMS5915_0200_D;
-      } else if (Config["Transducer"] == "AMS5915-0350-D") {
-        config_.Transducer = AMS5915::AMS5915_0350_D;
-      } else if (Config["Transducer"] == "AMS5915-1000-D") {
-        config_.Transducer = AMS5915::AMS5915_1000_D;
-      } else if (Config["Transducer"] == "AMS5915-2000-D") {
-        config_.Transducer = AMS5915::AMS5915_2000_D;
-      } else if (Config["Transducer"] == "AMS5915-4000-D") {
-        config_.Transducer = AMS5915::AMS5915_4000_D;
-      } else if (Config["Transducer"] == "AMS5915-7000-D") {
-        config_.Transducer = AMS5915::AMS5915_7000_D;
-      } else if (Config["Transducer"] == "AMS5915-10000-D") {
-        config_.Transducer = AMS5915::AMS5915_10000_D;
-      } else if (Config["Transducer"] == "AMS5915-0200-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0200_D_B;
-      } else if (Config["Transducer"] == "AMS5915-0350-D-B") {
-        config_.Transducer = AMS5915::AMS5915_0350_D_B;
-      } else if (Config["Transducer"] == "AMS5915-1000-D-B") {
-        config_.Transducer = AMS5915::AMS5915_1000_D_B;
-      } else if (Config["Transducer"] == "AMS5915-1000-A") {
-        config_.Transducer = AMS5915::AMS5915_1000_A;
-      } else if (Config["Transducer"] == "AMS5915-1200-B") {
-        config_.Transducer = AMS5915::AMS5915_1200_B;
-      } else {
-        while(1){
-          Serial.println("ERROR: Requested AMS5915 transducer is not an available option.");
-        }
-      }
-    } else {
-      while(1){
-        Serial.println("ERROR: I2C address or transducer missing from pressure sensor configuration.");
-      }
-    }
-    if (Config.containsKey("I2c")) {
-      config_.I2c = Config["I2c"];
-    }
+void Ams5915Sensor::UpdateConfig(message::config_ams5915_t *msg) {
+  config_.Addr = msg->i2c_addr;
+  config_.I2c = msg->i2c_bus;
+  if (msg->transducer == "AMS5915-0005-D") {
+    config_.Transducer = AMS5915::AMS5915_0005_D;
+  } else if (msg->transducer == "AMS5915-0010-D") {
+    config_.Transducer = AMS5915::AMS5915_0010_D;
+  } else if (msg->transducer == "AMS5915-0005-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0005_D_B;
+  } else if (msg->transducer == "AMS5915-0010-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0010_D_B;
+  } else if (msg->transducer == "AMS5915-0020-D") {
+    config_.Transducer = AMS5915::AMS5915_0020_D;
+  } else if (msg->transducer == "AMS5915-0050-D") {
+    config_.Transducer = AMS5915::AMS5915_0050_D;
+  } else if (msg->transducer == "AMS5915-0100-D") {
+    config_.Transducer = AMS5915::AMS5915_0100_D;
+  } else if (msg->transducer == "AMS5915-0020-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0020_D_B;
+  } else if (msg->transducer == "AMS5915-0050-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0050_D_B;
+  } else if (msg->transducer == "AMS5915-0100-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0100_D_B;
+  } else if (msg->transducer == "AMS5915-0200-D") {
+    config_.Transducer = AMS5915::AMS5915_0200_D;
+  } else if (msg->transducer == "AMS5915-0350-D") {
+    config_.Transducer = AMS5915::AMS5915_0350_D;
+  } else if (msg->transducer == "AMS5915-1000-D") {
+    config_.Transducer = AMS5915::AMS5915_1000_D;
+  } else if (msg->transducer == "AMS5915-2000-D") {
+    config_.Transducer = AMS5915::AMS5915_2000_D;
+  } else if (msg->transducer == "AMS5915-4000-D") {
+    config_.Transducer = AMS5915::AMS5915_4000_D;
+  } else if (msg->transducer == "AMS5915-7000-D") {
+    config_.Transducer = AMS5915::AMS5915_7000_D;
+  } else if (msg->transducer == "AMS5915-10000-D") {
+    config_.Transducer = AMS5915::AMS5915_10000_D;
+  } else if (msg->transducer == "AMS5915-0200-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0200_D_B;
+  } else if (msg->transducer == "AMS5915-0350-D-B") {
+    config_.Transducer = AMS5915::AMS5915_0350_D_B;
+  } else if (msg->transducer == "AMS5915-1000-D-B") {
+    config_.Transducer = AMS5915::AMS5915_1000_D_B;
+  } else if (msg->transducer == "AMS5915-1000-A") {
+    config_.Transducer = AMS5915::AMS5915_1000_A;
+  } else if (msg->transducer == "AMS5915-1200-B") {
+    config_.Transducer = AMS5915::AMS5915_1200_B;
   } else {
-    while(1){
-      Serial.println("ERROR: Ams5915 sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: Requested AMS5915 transducer is not an available option.");
   }
 }
 
@@ -550,13 +429,16 @@ void Ams5915Sensor::Begin() {
 }
 
 /* get data from the AMS5915 */
-int Ams5915Sensor::GetData(Data *DataPtr) {
+int Ams5915Sensor::ReadSensor() {
   status_ = ams_->readSensor();
-  data_.Pressure_Pa = ams_->getPressure_Pa();
-  data_.Temperature_C = ams_->getTemperature_C();
-  data_.ReadStatus = status_;
-  *DataPtr = data_;
   return status_;
+}
+
+/* get data from the AMS5915 */
+void Ams5915Sensor::UpdateMessage(message::data_ams5915_t *msg) {
+  msg->ReadStatus = status_;
+  msg->Pressure_Pa = ams_->getPressure_Pa();
+  msg->Temperature_C = ams_->getTemperature_C();
 }
 
 /* free resources used by the AMS5915 */
@@ -565,56 +447,23 @@ void Ams5915Sensor::End() {
 }
 
 /* update the Swift sensor configuration */
-void SwiftSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Static")&&Config.containsKey("Differential")){
-      JsonObject &Static = Config["Static"];
-      if (Static.containsKey("Address")) {
-        config_.Static.Addr = Static["Address"];
-        config_.Static.Transducer = AMS5915::AMS5915_1200_B;
-      } else {
-        while(1){
-          Serial.println("ERROR: Static pressure I2C address missing from pitot configuration.");
-        }
-      }
-      JsonObject &Diff = Config["Differential"];
-      if (Diff.containsKey("Address")&&Diff.containsKey("Transducer")) {
-        config_.Differential.Addr = Diff["Address"];
-        if (Diff["Transducer"] == "AMS5915-0020-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0020_D;
-        } else if (Diff["Transducer"] == "AMS5915-0005-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0005_D;
-        } else if (Diff["Transducer"] == "AMS5915-0010-D") {
-          config_.Differential.Transducer = AMS5915::AMS5915_0010_D;
-        } else {
-          while(1){
-            Serial.println("ERROR: Incompatible differential pressure transducer in pitot configuration.");
-          }
-        }
-      } else {
-        while(1){
-          Serial.println("ERROR: Differential pressure I2C address or transducer missing from pitot configuration.");
-        }
-      }
-    } else {
-      while(1){
-        Serial.println("ERROR: Static pressure object or differential pressure object missing from pitot configuration.");
-      }
-    }
-    if (Config.containsKey("I2c")) {
-      config_.Static.I2c = Config["I2c"];
-      config_.Differential.I2c = Config["I2c"];
-    }
-    StaticAms.SetConfig(config_.Static);
-    DiffAms.SetConfig(config_.Differential);
+void SwiftSensor::UpdateConfig(message::config_swift_t *msg) {
+  config_.Static.Addr = msg->static_i2c_addr;
+  config_.Static.Transducer = AMS5915::AMS5915_1200_B;
+  config_.Differential.Addr = msg->diff_i2c_addr;
+  if (msg->diff_transducer == "AMS5915-0020-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0020_D;
+  } else if (msg->diff_transducer == "AMS5915-0005-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0005_D;
+  } else if (msg->diff_transducer == "AMS5915-0010-D") {
+    config_.Differential.Transducer = AMS5915::AMS5915_0010_D;
   } else {
-    while(1){
-      Serial.println("ERROR: Swift sensor failed to parse.");
-      Serial.println(JsonString);
-    }
+    HardFail("ERROR: Incompatible differential pressure transducer in pitot configuration.");
   }
+  StaticAms.SetConfig(config_.Static);
+  DiffAms.SetConfig(config_.Differential);
+  config_.Static.I2c = msg->i2c_bus;
+  config_.Differential.I2c = msg->i2c_bus;
 }
 
 /* set the Swift sensor configuration */
@@ -636,15 +485,29 @@ void SwiftSensor::Begin() {
 }
 
 /* get data from the Swift sensor */
-int SwiftSensor::GetData(Data *DataPtr) {
-  StaticStatus_ = StaticAms.GetData(&data_.Static);
-  DiffStatus_ = DiffAms.GetData(&data_.Differential);
-  *DataPtr = data_;
-  if ((StaticStatus_ < 0)||(DiffStatus_ < 0)) {
-    return -1;
+int SwiftSensor::ReadSensor() {
+  StaticStatus_ = StaticAms.ReadSensor();
+  DiffStatus_ = DiffAms.ReadSensor();
+  if ( StaticStatus_ < 0 or DiffStatus_ < 0 ) {
+    return 0;
   } else {
     return 1;
   }
+}
+
+/* get data from the Swift sensor */
+void SwiftSensor::UpdateMessage(message::data_swift_t *msg) {
+  // this is a slightly odd way to extract data from the individual
+  // ams sensors, but C++ class privacy ...
+  message::data_ams5915_t ams_msg;
+  StaticAms.UpdateMessage(&ams_msg);
+  msg->static_ReadStatus = ams_msg.ReadStatus;
+  msg->static_Pressure_Pa = ams_msg.Pressure_Pa;
+  msg->static_Temperature_C = ams_msg.Temperature_C;
+  DiffAms.UpdateMessage(&ams_msg);
+  msg->diff_ReadStatus = ams_msg.ReadStatus;
+  msg->diff_Pressure_Pa = ams_msg.Pressure_Pa;
+  msg->diff_Temperature_C = ams_msg.Temperature_C;
 }
 
 /* free resources used by the Swift sensor */
@@ -654,17 +517,8 @@ void SwiftSensor::End(){
 }
 
 /* update the SBUS receiver configuration */
-void SbusSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-
-  } else {
-    while(1){
-      Serial.println("ERROR: Sbus sensor failed to parse.");
-      Serial.println(JsonString);
-    }
-  }
+void SbusSensor::UpdateConfig() {
+  // pass
 }
 
 /* set the SBUS receiver configuration */
@@ -684,19 +538,17 @@ void SbusSensor::Begin() {
 }
 
 /* update the private data structure with SBUS receiver data, if available */
-void SbusSensor::UpdateData() {
-  if (sbus_->readCal(&channels_[0],&failsafe_,&lostframes_)) {
-    for (size_t i=0; i < 16; i++) {
-      data_.Channels[i] = channels_[i];
-    }
-    data_.FailSafe = (bool)failsafe_;
-    data_.LostFrames = lostframes_;
-  }
+int SbusSensor::ReadSensor() {
+  return sbus_->readCal(&channels_[0],&failsafe_,&lostframes_);
 }
 
-/* get the SBUS private data structure */
-void SbusSensor::GetData(Data *DataPtr) {
-  *DataPtr = data_;
+/* update the private data structure with SBUS receiver data, if available */
+void SbusSensor::UpdateMessage(message::data_sbus_t *msg) {
+  for (size_t i=0; i < 16; i++) {
+    msg->channels[i] = channels_[i];
+  }
+  msg->FailSafe = (bool)failsafe_;
+  msg->LostFrames = lostframes_;
 }
 
 /* free resources used by the SBUS receiver */
@@ -706,27 +558,11 @@ void SbusSensor::End() {
 }
 
 /* update the analog sensor configuration */
-void AnalogSensor::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  if (Config.success()) {
-    if(Config.containsKey("Channel")){
-      config_.Channel = Config["Channel"];
-    } else {
-      while(1){
-        Serial.println("ERROR: Analog channel number missing from analog configuration.");
-      }
-    }
-    if (Config.containsKey("Calibration")) {
-      JsonArray &Calibration = Config["Calibration"];
-      for (size_t i=0; i < Calibration.size(); i++) {
-        config_.Calibration.push_back(Calibration[i]);
-      }
-    }
-  } else {
-    while(1){
-      Serial.println("ERROR: Analog sensor failed to parse.");
-      Serial.println(JsonString);
+void AnalogSensor::UpdateConfig(message::config_analog_t *msg) {
+  config_.Channel = msg->channel;
+  for (int i = 0; i < message::max_calibration; i++) {
+    if ( !isnanf(msg->calibration[i]) ) {
+      config_.Calibration.push_back(msg->calibration[i]);
     }
   }
 }
@@ -747,97 +583,107 @@ void AnalogSensor::Begin() {
 }
 
 /* get analog sensor data */
-void AnalogSensor::GetData(Data *DataPtr) {
-  Voltage_V_ = ((float)analogRead(kAnalogPins[config_.Channel]))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
-  data_.CalibratedValue = PolyVal(config_.Calibration, Voltage_V_);
-  *DataPtr = data_;
+int AnalogSensor::ReadSensor() {
+  uint8_t pin;
+  if ( config_.DirectPin > 0 ) {
+    pin = config_.DirectPin;
+  } else {
+    pin = kAnalogPins[config_.Channel];
+  }
+  Voltage_V_ = ((float)analogRead(pin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f);
+}
+
+/* get analog sensor data */
+void AnalogSensor::UpdateMessage(message::data_analog_t *msg) {
+  msg->calibrated_value = PolyVal(config_.Calibration, Voltage_V_);
 }
 
 /* free resources used by the analog sensors */
 void AnalogSensor::End() {}
 
 /* updates the sensor configuration */
-void AircraftSensors::UpdateConfig(const char *JsonString) {
-  DynamicJsonBuffer ConfigBuffer;
-  std::vector<char> buffer;
+bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
   delayMicroseconds(10);
-  Serial.println("Updating sensor configuration...");
-  Serial.print("\tParsing: ");
-  Serial.println(JsonString);
-
-  JsonObject &Sensor = ConfigBuffer.parseObject(JsonString);
-  buffer.resize(ConfigBuffer.size());
-
-  Serial.print("\tSuccess: ");
-  Serial.println(Sensor.success());
-
-  if (Sensor.success()) {
-    if (Sensor.containsKey("Type")) {
-      if (Sensor["Type"] == "PwmVoltage") {
-        if (AcquirePwmVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Pwm voltage already initialized.");
-          }
-        }
-        AcquirePwmVoltageData_ = true;
+  if ( id == message::config_basic_id ) {
+    message::config_basic_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    if ( msg.sensor == message::sensor_type::pwm_voltage ) {
+      Serial.println("Configuring PwmVoltage");
+      if (AcquirePwmVoltageData_) {
+	HardFail("ERROR: Pwm voltage already initialized.");
       }
-      if (Sensor["Type"] == "SbusVoltage") {
-        if (AcquireSbusVoltageData_) {
-          while(1){
-            Serial.println("ERROR: Sbus voltage already initialized.");
-          }
-        }
-        AcquireSbusVoltageData_ = true;
+      AcquirePwmVoltageData_ = true;
+      AnalogSensor::Config config;
+      config.DirectPin = kPwmVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(kEffectorVoltageScale);
+      config.Calibration.push_back(0.0);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
+      return true;
+    } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
+      Serial.println("Configuring SbusVoltage");
+      if (AcquireSbusVoltageData_) {
+	HardFail("ERROR: Sbus voltage already initialized.");
       }
-      if (Sensor["Type"] == "Mpu9250") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Mpu9250Sensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Mpu9250.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Bme280") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Bme280Sensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Bme280.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "uBlox") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        uBloxSensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.uBlox.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Swift") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        SwiftSensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Swift.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Ams5915") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        Ams5915Sensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Ams5915.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Sbus") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        SbusSensor TempSensor;
-        classes_.Sbus.push_back(TempSensor);
-      }
-      if (Sensor["Type"] == "Analog") {
-        Sensor.printTo(buffer.data(),buffer.size());
-        AnalogSensor TempSensor;
-        TempSensor.UpdateConfig(buffer.data());
-        classes_.Analog.push_back(TempSensor);
-      }
+      AcquireSbusVoltageData_ = true;
+      AnalogSensor::Config config;
+      config.DirectPin = kSbusVoltagePin;
+      config.Calibration.clear();
+      config.Calibration.push_back(kEffectorVoltageScale);
+      config.Calibration.push_back(0.0);
+      classes_.Analog.push_back(AnalogSensor());
+      classes_.Analog.back().SetConfig(config);
+      return true;
+    } else if ( msg.sensor == message::sensor_type::sbus ) {
+      Serial.println("Configuring Sbus");
+      classes_.Sbus.push_back(SbusSensor());
+      return true;
     }
-  } else {
-    while(1){
-      Serial.println("ERROR: Sensor Configuration failed to parse.");
-      Serial.println(JsonString);
-    }
+  } else if ( id == message::config_mpu9250_id ) {
+    Serial.println("Configuring Mpu9250");
+    message::config_mpu9250_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Mpu9250.push_back(Mpu9250Sensor());
+    classes_.Mpu9250.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_bme280_id ) {
+    Serial.println("Configuring Bme280");
+    message::config_bme280_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Bme280.push_back(Bme280Sensor());
+    classes_.Bme280.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id  == message::config_ublox_id ) {
+    Serial.println("Configuring uBlox");
+    message::config_ublox_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.uBlox.push_back(uBloxSensor());
+    classes_.uBlox.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_swift_id ) {
+    Serial.println("Configuring Swift");
+    message::config_swift_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Swift.push_back(SwiftSensor());
+    classes_.Swift.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_ams5915_id ) {
+    Serial.println("Configuring Ams5915");
+    message::config_ams5915_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Ams5915.push_back(Ams5915Sensor());
+    classes_.Ams5915.back().UpdateConfig(&msg);
+    return true;
+  } else if ( id == message::config_analog_id ) {
+    Serial.println("Configuring Analog");
+    message::config_analog_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes_.Analog.push_back(AnalogSensor());
+    classes_.Analog.back().UpdateConfig(&msg);
+    return true;
   }
-  Serial.println("done!");
+  return false;
 }
 
 /* begin communication with all sensors */
@@ -868,65 +714,59 @@ void AircraftSensors::Begin() {
   // begin all sensors
 
   Serial.print("\tMpu9250: ");
-  data_.Mpu9250.resize(classes_.Mpu9250.size());
+  // data_.Mpu9250.resize(classes_.Mpu9250.size());
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
     classes_.Mpu9250[i].Begin();
   }
   Serial.println(classes_.Mpu9250.size());
 
   Serial.print("\tBme280: ");
-  data_.Bme280.resize(classes_.Bme280.size());
+  // data_.Bme280.resize(classes_.Bme280.size());
   for (size_t i=0; i < classes_.Bme280.size(); i++) {
     classes_.Bme280[i].Begin();
   }
   Serial.println(classes_.Bme280.size());
 
   Serial.print("\tuBlox: ");
-  data_.uBlox.resize(classes_.uBlox.size());
+  // data_.uBlox.resize(classes_.uBlox.size());
   for (size_t i=0; i < classes_.uBlox.size(); i++) {
     classes_.uBlox[i].Begin();
   }
   Serial.println(classes_.uBlox.size());
 
   Serial.print("\tSwift: ");
-  data_.Swift.resize(classes_.Swift.size());
+  // data_.Swift.resize(classes_.Swift.size());
   for (size_t i=0; i < classes_.Swift.size(); i++) {
     classes_.Swift[i].Begin();
   }
   Serial.println(classes_.Swift.size());
 
   Serial.print("\tAms5915: ");
-  data_.Ams5915.resize(classes_.Ams5915.size());
+  // data_.Ams5915.resize(classes_.Ams5915.size());
   for (size_t i=0; i < classes_.Ams5915.size(); i++) {
     classes_.Ams5915[i].Begin();
   }
   Serial.println(classes_.Ams5915.size());
 
   Serial.print("\tSbus: ");
-  data_.Sbus.resize(classes_.Sbus.size());
+  // data_.Sbus.resize(classes_.Sbus.size());
   for (size_t i=0; i < classes_.Sbus.size(); i++) {
     classes_.Sbus[i].Begin();
   }
   Serial.println(classes_.Sbus.size());
 
-  Serial.print("\tSbus voltage: ");
-  if (AcquireSbusVoltageData_) {
-    data_.SbusVoltage_V.resize(1);
-  }
-  Serial.println(AcquireSbusVoltageData_);
-
   Serial.print("\tAnalog: ");
-  data_.Analog.resize(classes_.Analog.size());
+  // data_.Analog.resize(classes_.Analog.size());
   for (size_t i=0; i < classes_.Analog.size(); i++) {
     classes_.Analog[i].Begin();
   }
   Serial.println(classes_.Analog.size());
 
   Serial.print("\tPwm voltage: ");
-  if (AcquirePwmVoltageData_) {
-    data_.PwmVoltage_V.resize(1);
-  }
   Serial.println(AcquirePwmVoltageData_);
+
+  Serial.print("\tSbus voltage: ");
+  Serial.println(AcquireSbusVoltageData_);
 
   Serial.println("done!");
 }
@@ -935,15 +775,9 @@ void AircraftSensors::Begin() {
 void AircraftSensors::ReadSyncSensors() {
   ResetI2cBus1_ = false;
   ResetI2cBus2_ = false;
-  if (AcquirePwmVoltageData_) {
-    data_.PwmVoltage_V[0] = ((float)analogRead(kPwmVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
-  }
-  if (AcquireSbusVoltageData_) {
-    data_.SbusVoltage_V[0] = ((float)analogRead(kSbusVoltagePin))*3.3f/(powf(2,kAnalogReadResolution)-1.0f)*kEffectorVoltageScale;
-  }
   for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
     int8_t status;
-    status = classes_.Mpu9250[i].GetData(&data_.Mpu9250[i]);
+    status = classes_.Mpu9250[i].ReadSensor();
     if (status < 0) {
       Mpu9250Sensor::Config TempConfig;
       classes_.Mpu9250[i].GetConfig(&TempConfig);
@@ -958,7 +792,7 @@ void AircraftSensors::ReadSyncSensors() {
   }
   for (size_t i=0; i < classes_.Bme280.size(); i++) {
     int8_t status;
-    status = classes_.Bme280[i].GetData(&data_.Bme280[i]);
+    status = classes_.Bme280[i].ReadSensor();
     if (status < 0) {
       Bme280Sensor::Config TempConfig;
       classes_.Bme280[i].GetConfig(&TempConfig);
@@ -971,12 +805,9 @@ void AircraftSensors::ReadSyncSensors() {
       }
     }
   }
-  for (size_t i=0; i < classes_.uBlox.size(); i++) {
-    classes_.uBlox[i].GetData(&data_.uBlox[i]);
-  }
   for (size_t i=0; i < classes_.Swift.size(); i++) {
     int8_t status;
-    status = classes_.Swift[i].GetData(&data_.Swift[i]);
+    status = classes_.Swift[i].ReadSensor();
     if (status < 0) {
       SwiftSensor::Config TempConfig;
       classes_.Swift[i].GetConfig(&TempConfig);
@@ -989,7 +820,7 @@ void AircraftSensors::ReadSyncSensors() {
   }
   for (size_t i=0; i < classes_.Ams5915.size(); i++) {
     int8_t status;
-    status = classes_.Ams5915[i].GetData(&data_.Ams5915[i]);
+    status = classes_.Ams5915[i].ReadSensor();
     if (status < 0) {
       Ams5915Sensor::Config TempConfig;
       classes_.Ams5915[i].GetConfig(&TempConfig);
@@ -1001,10 +832,10 @@ void AircraftSensors::ReadSyncSensors() {
     }
   }
   for (size_t i=0; i < classes_.Sbus.size(); i++) {
-    classes_.Sbus[i].GetData(&data_.Sbus[i]);
+    classes_.Sbus[i].ReadSensor();
   }
   for (size_t i=0; i < classes_.Analog.size(); i++) {
-    classes_.Analog[i].GetData(&data_.Analog[i]);
+    classes_.Analog[i].ReadSensor();
   }
   if (ResetI2cBus1_) {
     Wire1.resetBus();
@@ -1017,87 +848,92 @@ void AircraftSensors::ReadSyncSensors() {
 /* read all asynchronous sensors and store in data struct */
 void AircraftSensors::ReadAsyncSensors() {
   for (size_t i=0; i < classes_.uBlox.size(); i++) {
-    classes_.uBlox[i].UpdateData();
+    classes_.uBlox[i].ReadSensor();
   }
   for (size_t i=0; i < classes_.Sbus.size(); i++) {
-    classes_.Sbus[i].UpdateData();
+    classes_.Sbus[i].ReadSensor();
   }
 }
 
 /* get data struct */
-void AircraftSensors::GetData(Data *DataPtr) {
-  *DataPtr = data_;
+// void AircraftSensors::GetData(Data *DataPtr) {
+//   *DataPtr = data_;
+// }
+
+static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uint8_t len, uint8_t *payload) {
+  if ( Buffer->size() + len > Buffer->capacity() ) {
+    Buffer->resize(Buffer->size() + len);
+    Serial.print("Notice: increasing Buffer size to: ");
+    Serial.println(Buffer->capacity());
+  }
+  Buffer->push_back(id);
+  Buffer->push_back(index);     // I think I can get rid of this byte (fixme?)
+  Buffer->push_back(len);
+  Buffer->insert(Buffer->end(), payload, payload + len);
 }
 
 /* get data buffer */
-void AircraftSensors::GetDataBuffer(std::vector<uint8_t> *Buffer) {
-  size_t BufferLocation = 0;
-  Buffer->resize(sizeof(data_.PwmVoltage_V[0])*data_.PwmVoltage_V.size()+
-    sizeof(data_.SbusVoltage_V[0])*data_.SbusVoltage_V.size()+
-    sizeof(Mpu9250Sensor::Data)*data_.Mpu9250.size()+
-    sizeof(Bme280Sensor::Data)*data_.Bme280.size()+
-    sizeof(uBloxSensor::Data)*data_.uBlox.size()+
-    sizeof(SwiftSensor::Data)*data_.Swift.size()+
-    sizeof(SbusSensor::Data)*data_.Sbus.size()+
-    sizeof(Ams5915Sensor::Data)*data_.Ams5915.size()+
-    sizeof(AnalogSensor::Data)*data_.Analog.size());
-  // sensor data
-  memcpy(Buffer->data()+BufferLocation,data_.PwmVoltage_V.data(),data_.PwmVoltage_V.size()*sizeof(data_.PwmVoltage_V[0]));
-  BufferLocation+=data_.PwmVoltage_V.size()*sizeof(data_.PwmVoltage_V[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.SbusVoltage_V.data(),data_.SbusVoltage_V.size()*sizeof(data_.SbusVoltage_V[0]));
-  BufferLocation+=data_.SbusVoltage_V.size()*sizeof(data_.SbusVoltage_V[0]);
-  memcpy(Buffer->data()+BufferLocation,data_.Mpu9250.data(),data_.Mpu9250.size()*sizeof(Mpu9250Sensor::Data));
-  BufferLocation+=data_.Mpu9250.size()*sizeof(Mpu9250Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Bme280.data(),data_.Bme280.size()*sizeof(Bme280Sensor::Data));
-  BufferLocation+=data_.Bme280.size()*sizeof(Bme280Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.uBlox.data(),data_.uBlox.size()*sizeof(uBloxSensor::Data));
-  BufferLocation+=data_.uBlox.size()*sizeof(uBloxSensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Swift.data(),data_.Swift.size()*sizeof(SwiftSensor::Data));
-  BufferLocation+=data_.Swift.size()*sizeof(SwiftSensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Ams5915.data(),data_.Ams5915.size()*sizeof(Ams5915Sensor::Data));
-  BufferLocation+=data_.Ams5915.size()*sizeof(Ams5915Sensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Sbus.data(),data_.Sbus.size()*sizeof(SbusSensor::Data));
-  BufferLocation+=data_.Sbus.size()*sizeof(SbusSensor::Data);
-  memcpy(Buffer->data()+BufferLocation,data_.Analog.data(),data_.Analog.size()*sizeof(AnalogSensor::Data));
-  BufferLocation+=data_.Analog.size()*sizeof(AnalogSensor::Data);
-}
-
-/* get meta data buffer */
-void AircraftSensors::GetMetaDataBuffer(std::vector<uint8_t> *Buffer) {
-  size_t BufferLocation = 0;
-  Buffer->resize(SerializedDataMetadataSize);
-  // meta data
-  uint8_t AcquireInternalData,NumberMpu9250Sensor,NumberBme280Sensor,NumberuBloxSensor,NumberSwiftSensor,NumberAms5915Sensor,NumberSbusSensor,NumberAnalogSensor;
-  AcquireInternalData = 0x00;
-  if (AcquirePwmVoltageData_) {
-    AcquireInternalData |=  0x20;
+void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer, std::vector<uint8_t> *SizeBuffer) {
+  Buffer->clear();
+  {
+    message::data_mpu9250_short_t msg;
+    for ( size_t i = 0; i < classes_.Mpu9250.size(); i++ ) {
+      classes_.Mpu9250[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
   }
-  if (AcquireSbusVoltageData_) {
-    AcquireInternalData |=  0x40;
+  {
+    message::data_bme280_t msg;
+    for ( size_t i = 0; i < classes_.Bme280.size(); i++ ) {
+      classes_.Bme280[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
   }
-  NumberMpu9250Sensor = data_.Mpu9250.size();
-  NumberBme280Sensor = data_.Bme280.size();
-  NumberuBloxSensor = data_.uBlox.size();
-  NumberSwiftSensor = data_.Swift.size();
-  NumberAms5915Sensor = data_.Ams5915.size();
-  NumberSbusSensor = data_.Sbus.size();
-  NumberAnalogSensor = data_.Analog.size();
-  memcpy(Buffer->data()+BufferLocation,&AcquireInternalData,sizeof(AcquireInternalData));
-  BufferLocation+=sizeof(AcquireInternalData);
-  memcpy(Buffer->data()+BufferLocation,&NumberMpu9250Sensor,sizeof(NumberMpu9250Sensor));
-  BufferLocation+=sizeof(NumberMpu9250Sensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberBme280Sensor,sizeof(NumberBme280Sensor));
-  BufferLocation+=sizeof(NumberBme280Sensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberuBloxSensor,sizeof(NumberuBloxSensor));
-  BufferLocation+=sizeof(NumberuBloxSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberSwiftSensor,sizeof(NumberSwiftSensor));
-  BufferLocation+=sizeof(NumberSwiftSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberAms5915Sensor,sizeof(NumberAms5915Sensor));
-  BufferLocation+=sizeof(NumberAms5915Sensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberSbusSensor,sizeof(NumberSbusSensor));
-  BufferLocation+=sizeof(NumberSbusSensor);
-  memcpy(Buffer->data()+BufferLocation,&NumberAnalogSensor,sizeof(NumberAnalogSensor));
-  BufferLocation+=sizeof(NumberAnalogSensor);
+  {
+    message::data_ublox_t msg;
+    for ( size_t i = 0; i < classes_.uBlox.size(); i++ ) {
+      classes_.uBlox[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
+  }
+  {
+    message::data_swift_t msg;
+    for ( size_t i = 0; i < classes_.Swift.size(); i++ ) {
+      classes_.Swift[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
+  }
+  {
+    message::data_sbus_t msg;
+    for ( size_t i = 0; i < classes_.Sbus.size(); i++ ) {
+      classes_.Sbus[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
+  }
+  {
+    message::data_ams5915_t msg;
+    for ( size_t i = 0; i < classes_.Ams5915.size(); i++ ) {
+      classes_.Ams5915[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
+  }
+  {
+    message::data_analog_t msg;
+    for ( size_t i = 0; i < classes_.Analog.size(); i++ ) {
+      classes_.Analog[i].UpdateMessage(&msg);
+      msg.pack();
+      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
+    }
+  }
+  SizeBuffer->clear();
+  SizeBuffer->resize(sizeof(uint16_t));
+  *(uint16_t *)(SizeBuffer->data()) = Buffer->size();
 }
 
 /* free all sensor resources and reset sensor vectors and states */
@@ -1133,16 +969,6 @@ void AircraftSensors::End() {
   classes_.Ams5915.clear();
   classes_.Sbus.clear();
   classes_.Analog.clear();
-  data_.PwmVoltage_V.clear();
-  data_.SbusVoltage_V.clear();
-  data_.Mpu9250.clear();
-  data_.Bme280.clear();
-  data_.uBlox.clear();
-  data_.Swift.clear();
-  data_.Ams5915.clear();
-  data_.Sbus.clear();
-  data_.Analog.clear();
-  // reset data acquisition flags
   AcquirePwmVoltageData_ = false;
   AcquireSbusVoltageData_ = false;
   Serial.println("done!");

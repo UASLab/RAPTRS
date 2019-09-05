@@ -25,7 +25,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "control.h"
 #include "mission.h"
 #include "sensors.h"
-#include "ArduinoJson.h"
 #include "hardware-defs.h"
 #include "definition-tree.h"
 #include "EEPROM.h"
@@ -37,7 +36,7 @@ class AircraftConfiguration {
       uint8_t BfsAddr;
     };
     void Load();
-    void Update(const char* JsonString,AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr);
+    bool Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr);
   private:
     Config config_;
 };

@@ -30,11 +30,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "EEPROM.h"
 #include "Eigen.h"
 #include "Vector.h"
-#include "ArduinoJson.h"
 #include "utils.h"
 #include "hardware-defs.h"
 #include "definition-tree.h"
 #include "Arduino.h"
+
+#include "fmu_messages.h"
+
+/* class for the fmu Time */
+class TimeSensor {
+  public:
+    // Data
+    uint64_t Time_us = 0;
+    int ReadSensor();
+    void UpdateMessage(message::data_time_t *msg);
+};
 
 /* class for the fmu integrated MPU-9250 */
 class InternalMpu9250Sensor {
@@ -45,28 +55,28 @@ class InternalMpu9250Sensor {
       MPU9250::DlpfBandwidth Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;              // MPU-9250 DLPF bandwidth setting
       uint8_t SRD = 19;                                                             // Sample rate divider
     };
-    struct Data {
-      float AccelX_mss;        // x,y,z accelerometers, m/s/s
-      float AccelY_mss;
-      float AccelZ_mss;
-      float GyroX_rads;        // x,y,z gyros, rad/s
-      float GyroY_rads;
-      float GyroZ_rads;
-      float MagX_uT;           // x,y,z magnetometers, uT
-      float MagY_uT;
-      float MagZ_uT;
-      float Temperature_C;     // Temperature, C
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    float AccelX_mss;        // x,y,z accelerometers, m/s/s
+    float AccelY_mss;
+    float AccelZ_mss;
+    float GyroX_rads;        // x,y,z gyros, rad/s
+    float GyroY_rads;
+    float GyroZ_rads;
+    float MagX_uT;           // x,y,z magnetometers, uT
+    float MagY_uT;
+    float MagZ_uT;
+    float Temperature_C;     // Temperature, C
+    bool UpdateConfig(message::config_mpu9250_t *msg,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_mpu9250_t *msg);
     void End();
   private:
     MPU9250 *Mpu_;
     Config config_;
-    Data data_;
+    int8_t status_;
     Eigen::Matrix<float,3,1> Accel_mss_;
     Eigen::Matrix<float,3,1> Gyro_rads_;
     Eigen::Matrix<float,3,1> Mag_uT_;
@@ -83,29 +93,28 @@ class Mpu9250Sensor {
       MPU9250::DlpfBandwidth Bandwidth = MPU9250::DLPF_BANDWIDTH_20HZ;              // MPU-9250 DLPF bandwidth setting
       uint8_t SRD = 0;                                                              // Sample rate divider
     };
-    struct Data {
-      int8_t ReadStatus = -1;
-      int16_t AccelX_ct = 0; // x,y,z accelerometers, counts
-      int16_t AccelY_ct = 0;
-      int16_t AccelZ_ct = 0;
-      int16_t GyroX_ct = 0; // x,y,z gyros, counts
-      int16_t GyroY_ct = 0;
-      int16_t GyroZ_ct = 0;
-      // int16_t MagX_ct = 0;    // x,y,z magnetometers, counts
-      // int16_t MagY_ct = 0;
-      // int16_t MagZ_ct = 0;
-      // int16_t Temperature_ct = 0.0f;   // Temperature, counts                                 // Temperature, C
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    // int8_t ReadStatus = -1;
+    // float AccelX_mss = 0;       // x,y,z accelerometers
+    // float AccelY_mss = 0;
+    // float AccelZ_mss = 0;
+    // float GyroX_rads = 0;       // x,y,z gyros
+    // float GyroY_rads = 0;
+    // float GyroZ_rads = 0;
+    // float MagX_uT = 0;       // x,y,z magnetometers
+    // float MagY_uT = 0;
+    // float MagZ_uT = 0;
+    // float Temperature_C = 0.0f;
+    bool UpdateConfig(message::config_mpu9250_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    int GetData(Data *DataPtr);
+    int ReadSensor();
+  void UpdateMessage(message::data_mpu9250_short_t *msg);
     void End();
   private:
     MPU9250 *Mpu_;
     Config config_;
-    Data data_;
     int8_t status_;
     Eigen::Matrix<float,3,1> Accel_mss_;
     Eigen::Matrix<float,3,1> Gyro_rads_;
@@ -116,21 +125,21 @@ class Mpu9250Sensor {
 class InternalBme280Sensor {
   public:
     struct Config {};
-    struct Data {
-      float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
-      float Temperature_C = 0.0f;                                                   // Temperature, C
-      float Humidity_RH = 0.0f;                                                     // Relative humidity
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    uint8_t status_ = 0;
+    float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
+    float Temperature_C = 0.0f;                                                   // Temperature, C
+    float Humidity_RH = 0.0f;                                                     // Relative humidity
+    bool UpdateConfig(std::string Output,std::string RootPath,DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_bme280_t *msg);
     void End();
   private:
     BME280 *Bme_;
     Config config_;
-    Data data_;
 };
 
 /* class for external BME-280 sensors */
@@ -141,22 +150,21 @@ class Bme280Sensor {
       uint8_t Addr;
       uint8_t CsPin;
     };
-    struct Data {
-      int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
-      float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
-      float Temperature_C = 0.0f;                                                   // Temperature, C
-      float Humidity_RH = 0.0f;                                                     // Relative humidity
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
+    float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
+    float Temperature_C = 0.0f;                                                   // Temperature, C
+    float Humidity_RH = 0.0f;                                                     // Relative humidity
+    bool UpdateConfig(message::config_bme280_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    int GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_bme280_t *msg);
     void End();
   private:
     BME280 *Bme_;
     Config config_;
-    Data data_;
     int8_t status_;
 };
 
@@ -167,39 +175,37 @@ class uBloxSensor {
       uint8_t Uart;                                                                 // UART port
       uint32_t Baud;                                                                // Baudrate
     };
-    struct Data {
-      bool Fix;                                 // True for 3D fix only
-      uint8_t NumberSatellites;                 // Number of satellites used in solution
-      uint32_t TOW;                             // GPS time of the navigation epoch
-      uint16_t Year;                            // UTC year
-      uint8_t Month;                            // UTC month
-      uint8_t Day;                              // UTC day
-      uint8_t Hour;                             // UTC hour
-      uint8_t Min;                              // UTC minute
-      uint8_t Sec;                              // UTC second
-      double Latitude_rad;                      // Latitude (rad), Longitude (rad), Altitude (m)
-      double Longitude_rad;
-      float Altitude_m;
-      float NorthVelocity_ms;                   // NED Velocity, m/s
-      float EastVelocity_ms;
-      float DownVelocity_ms;
-      float HorizontalAccuracy_m;               // Accuracy Horizontal (m)
-      float VerticalAccuracy_m;                 // Accuracy Vertical (m)
-      float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
-      float pDOP;                               // Position DOP
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    bool Fix;                                 // True for 3D fix only
+    uint8_t NumberSatellites;                 // Number of satellites used in solution
+    uint32_t TOW;                             // GPS time of the navigation epoch
+    uint16_t Year;                            // UTC year
+    uint8_t Month;                            // UTC month
+    uint8_t Day;                              // UTC day
+    uint8_t Hour;                             // UTC hour
+    uint8_t Min;                              // UTC minute
+    uint8_t Sec;                              // UTC second
+    double Latitude_rad;                      // Latitude (rad), Longitude (rad), Altitude (m)
+    double Longitude_rad;
+    float Altitude_m;
+    float NorthVelocity_ms;                   // NED Velocity, m/s
+    float EastVelocity_ms;
+    float DownVelocity_ms;
+    float HorizontalAccuracy_m;               // Accuracy Horizontal (m)
+    float VerticalAccuracy_m;                 // Accuracy Vertical (m)
+    float VelocityAccuracy_ms;                // Accuracy Speed (m/s)
+    float pDOP;                               // Position DOP
+    bool UpdateConfig(message::config_ublox_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void UpdateData();
-    void GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_ublox_t *msg);
     void End();
   private:
     UBLOX *ublox_;
     gpsData uBloxData_;
     Config config_;
-    Data data_;
     const float kD2R = PI/180.0f;
 };
 
@@ -210,21 +216,20 @@ class Ams5915Sensor {
       uint8_t Addr;                                                                 // I2C address
       AMS5915::Transducer Transducer;                                               // Transducer type
     };
-    struct Data {
-      int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
-      float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
-      float Temperature_C = 0.0f;                                                   // Temperature, C
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
+    float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
+    float Temperature_C = 0.0f;                                                   // Temperature, C
+    bool UpdateConfig(message::config_ams5915_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    int GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_ams5915_t *msg);
     void End();
   private:
     AMS5915 *ams_;
     Config config_;
-    Data data_;
     int8_t status_;
 };
 
@@ -235,20 +240,17 @@ class SwiftSensor {
       Ams5915Sensor::Config Static;
       Ams5915Sensor::Config Differential;
     };
-    struct Data {
-      Ams5915Sensor::Data Static;
-      Ams5915Sensor::Data Differential;
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    bool UpdateConfig(message::config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    int GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_swift_t *msg);
     void End();
   private:
     Ams5915Sensor StaticAms, DiffAms;
     Config config_;
-    Data data_;
     int8_t StaticStatus_;
     int8_t DiffStatus_;
 };
@@ -257,17 +259,16 @@ class SwiftSensor {
 class SbusSensor {
   public:
     struct Config {};
-    struct Data {
-      float Channels[16] = {0.0f};
-      bool FailSafe = false;
-      uint64_t LostFrames = 0;
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    //float Channels[16] = {0.0f};
+    //bool FailSafe = false;
+    //uint64_t LostFrames = 0;
+  bool UpdateConfig(std::string output, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void UpdateData();
-    void GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_sbus_t *msg);
     void End();
   private:
     float channels_[16];
@@ -275,7 +276,6 @@ class SbusSensor {
     uint64_t lostframes_;
     SBUS *sbus_;
     Config config_;
-    Data data_;
 };
 
 /* class for analog sensors */
@@ -283,22 +283,21 @@ class AnalogSensor {
   public:
     struct Config {
       uint8_t Channel;
+      uint8_t DirectPin = 0; // allow specifying the actual pin instead of a channel
       std::vector<float> Calibration;
     };
-    struct Data {
-      // float Voltage_V = 0.0f;
-      float CalibratedValue = 0.0f;
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    // Data
+    float Voltage_V = 0.0f;
+    float CalibratedValue = 0.0f;
+    bool UpdateConfig(message::config_analog_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
-    void GetData(Data *DataPtr);
+    int ReadSensor();
+    void UpdateMessage(message::data_analog_t *msg);
     void End();
   private:
     Config config_;
-    Data data_;
-    float Voltage_V_;
 };
 
 /* class for nodes */
@@ -307,35 +306,32 @@ class SensorNodes {
     struct Config {
       uint8_t BfsAddr;
     };
-    struct Data {
-      std::vector<float> PwmVoltage_V;
-      std::vector<float> SbusVoltage_V;
-      std::vector<Mpu9250Sensor::Data> Mpu9250;
-      std::vector<Bme280Sensor::Data> Bme280;
-      std::vector<uBloxSensor::Data> uBlox;
-      std::vector<SwiftSensor::Data> Swift;
-      std::vector<Ams5915Sensor::Data> Ams5915;
-      std::vector<SbusSensor::Data> Sbus;
-      std::vector<AnalogSensor::Data> Analog;
-    };
-    void UpdateConfig(const char *JsonString,std::string RootPath,DefinitionTree *DefinitionTreePtr);
+    SensorNodes(uint8_t address);
+    bool UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
-    void Begin(Data *DataPtr);
-    int GetData(Data *DataPtr);
+    uint8_t GetBfsAddr() { return config_.BfsAddr; }
+    void Begin(/*Data *DataPtr*/);
+    int ReadSensor();
+    int GetMessage(std::vector<uint8_t> *NodeMessageBuffer);
     void End();
   private:
     Config config_;
-    Data data_;
-    class Node *node_;
+    // Data data_;
+    class Node *node_ = NULL;
 };
 
 /* aircraft sensors class wrapping the individual sensor classes */
 class AircraftSensors {
   public:
     struct Classes {
+      TimeSensor Time;
+      //AnalogSensor InputVoltage;
+      //AnalogSensor RegulatedVoltage;
+      //AnalogSensor PwmVoltage;
+      //AnalogSensor SbusVoltage;
       InternalMpu9250Sensor InternalMpu9250;
-      std::vector<InternalBme280Sensor> InternalBme280;
+      InternalBme280Sensor InternalBme280;
       std::vector<Mpu9250Sensor> Mpu9250;
       std::vector<Bme280Sensor> Bme280;
       std::vector<uBloxSensor> uBlox;
@@ -345,37 +341,19 @@ class AircraftSensors {
       std::vector<AnalogSensor> Analog;
       std::vector<SensorNodes> Nodes;
     };
-    struct Data {
-      std::vector<uint64_t> Time_us;
-      std::vector<InternalMpu9250Sensor::Data> InternalMpu9250;
-      std::vector<InternalBme280Sensor::Data> InternalBme280;
-      std::vector<float> InputVoltage_V;
-      std::vector<float> RegulatedVoltage_V;
-      std::vector<float> PwmVoltage_V;
-      std::vector<float> SbusVoltage_V;
-      std::vector<Mpu9250Sensor::Data> Mpu9250;
-      std::vector<Bme280Sensor::Data> Bme280;
-      std::vector<uBloxSensor::Data> uBlox;
-      std::vector<SwiftSensor::Data> Swift;
-      std::vector<Ams5915Sensor::Data> Ams5915;
-      std::vector<SbusSensor::Data> Sbus;
-      std::vector<AnalogSensor::Data> Analog;
-      std::vector<SensorNodes::Data> Nodes;
-    };
-    void UpdateConfig(const char *JsonString,DefinitionTree *DefinitionTreePtr);
+    bool UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
     void ReadSyncSensors();
     void ReadAsyncSensors();
-    void GetData(Data *DataPtr);
-    void GetDataBuffer(std::vector<uint8_t> *Buffer);
+    void MakeCompoundMessage(std::vector<uint8_t> *Buffer);
     void End();
   private:
     std::string RootPath_ = "/Sensors";
     Classes classes_;
-    Data data_;
     bool ResetI2cBus_;
     bool ResetBfsBus_;
     bool AcquireInternalMpu9250Data_ = false;
+    bool AcquireInternalBme280Data_ = false;
     bool AcquireTimeData_ = false;
     bool AcquireInputVoltageData_ = false;
     bool AcquireRegulatedVoltageData_ = false;

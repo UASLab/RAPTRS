@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 
 #include "comms.h"
+#include "fmu_messages.h"
 
 /* class declaration, hardware serial bus and baudrate */
 AircraftSocComms::AircraftSocComms(HardwareSerial& bus,uint32_t baud) {
@@ -33,79 +34,21 @@ void AircraftSocComms::Begin() {
   Serial.println("done!");
 }
 
-/* sends sensor data message */
-void AircraftSocComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
-  SendMessage(SensorData,DataBuffer);
-}
-
-/* returns mode command if a mode command message has been received */
-bool AircraftSocComms::ReceiveModeCommand(AircraftMission::Mode *mode) {
-  if (MessageReceived_) {
-    if (ReceivedMessage_ == ModeCommand) {
-      MessageReceived_ = false;
-      if (ReceivedPayload_.size() == 1) {
-        *mode = (AircraftMission::Mode)ReceivedPayload_[0];
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
-/* returns configuration string if a configuration message has been received */
-bool AircraftSocComms::ReceiveConfigMessage(std::vector<char> *ConfigString) {
-  if (MessageReceived_) {
-    if (ReceivedMessage_ == Configuration) {
-      MessageReceived_ = false;
-      ConfigString->resize(ReceivedPayload_.size());
-      memcpy(ConfigString->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
-/* returns effector command if a mode command message has been received */
-bool AircraftSocComms::ReceiveEffectorCommand(std::vector<float> *EffectorCommands) {
-  if (MessageReceived_) {
-    if (ReceivedMessage_ == EffectorCommand) {
-      MessageReceived_ = false;
-      EffectorCommands->resize(ReceivedPayload_.size()/sizeof(float));
-      memcpy(EffectorCommands->data(),ReceivedPayload_.data(),ReceivedPayload_.size());
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
-/* checks for valid BFS messages received */
-void AircraftSocComms::CheckMessages() {
-  MessageReceived_ = ReceiveMessage(&ReceivedMessage_,&ReceivedPayload_);
-}
-
 /* builds and sends a BFS message given a message ID and payload */
-void AircraftSocComms::SendMessage(Message message,std::vector<uint8_t> &Payload) {
+void AircraftSocComms::SendMessage(uint8_t message, uint8_t *Payload, int len) {
   bus_->beginTransmission();
-  bus_->write((uint8_t) message);
-  bus_->write(Payload.data(),Payload.size());
+  bus_->write(message);
+  bus_->write(0);
+  bus_->write(Payload, len);
   bus_->sendTransmission();
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftSocComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
+bool AircraftSocComms::ReceiveMessage(uint8_t *message, uint8_t *address, std::vector<uint8_t> *Payload) {
   if (bus_->checkReceived()) {
-    *message = (Message) bus_->read();
+    *message = (uint8_t) bus_->read();
+    *address = (uint8_t) bus_->read();
+    // Serial.print("received id: "); Serial.print(*message); Serial.print(" addr: "); Serial.println(*address);
     Payload->resize(bus_->available());
     bus_->read(Payload->data(),Payload->size());
     bus_->sendStatus(true);
@@ -113,4 +56,13 @@ bool AircraftSocComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Pay
   } else {
     return false;
   }
+}
+
+void AircraftSocComms::SendAck(uint8_t id, uint8_t subid) {
+  message::config_ack_t msg;
+  msg.ack_id = id;
+  msg.ack_subid = subid;
+  msg.pack();
+  SendMessage(msg.id, msg.payload, msg.len);
+  Serial.print("SendAck: "); Serial.println(id);
 }

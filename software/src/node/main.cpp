@@ -33,8 +33,6 @@ AircraftBfsComms *BfsComms;
 AircraftConfiguration Config;
 // class for sensor configuration and data acquisition
 AircraftSensors Sensors;
-// struct for sensor data
-AircraftSensors::Data SensorData;
 // class for mission management (modes and states)
 AircraftMission Mission;
 // class for effectors
@@ -47,9 +45,8 @@ AircraftMission::State MissionState;
 AircraftMission::Mode RequestedMode;
 // effector commands
 std::vector<float> EffectorCommands;
-// buffer for transmitting metadata
-std::vector<uint8_t> MetaDataBuffer;
-// buffer for transmitting data
+// buffers for transmitting data messages
+std::vector<uint8_t> SizeBuffer;
 std::vector<uint8_t> DataBuffer;
 
 unsigned long tnow, tprev;
@@ -57,9 +54,10 @@ unsigned long tnow, tprev;
 // send messages on request
 void RequestMessage() {
   AircraftBfsComms::Message message;
-  BfsComms->GetMessage(&message);
-  if (message == AircraftBfsComms::SensorMetaData) {
-    BfsComms->SendSensorMetaData(MetaDataBuffer);
+  std::vector<uint8_t> Payload;
+  BfsComms->GetMessage(&message, &Payload);
+  if (message == AircraftBfsComms::SensorDataSize) {
+    BfsComms->SendSensorDataSize(SizeBuffer);
   }
   if (message == AircraftBfsComms::SensorData) {
     BfsComms->SendSensorData(DataBuffer);
@@ -119,12 +117,8 @@ void loop() {
       Mission.ClearSyncDataCollection();
       // read synchronous sensors
       Sensors.ReadSyncSensors();
-      // get the current data
-      Sensors.GetData(&SensorData);
-      // buffer for transmitting meta data
-      Sensors.GetMetaDataBuffer(&MetaDataBuffer);
       // buffer for transmitting data
-      Sensors.GetDataBuffer(&DataBuffer);
+      Sensors.MakeCompoundMessage(&DataBuffer, &SizeBuffer);
     }
     if (MissionState == AircraftMission::AsyncDataCollection) {
       // read the asynchronous sensors
@@ -143,10 +137,14 @@ void loop() {
   }
   if (MissionMode == AircraftMission::Configuration) {
     // buffer for receiving configurations
-    std::vector<char> ConfigBuffer;
-    // update configuration
-    if (BfsComms->ReceiveConfigMessage(&ConfigBuffer)) {
-      Config.Update(ConfigBuffer.data(),&Sensors,&Effectors);
+    if ( BfsComms->NewReceived() ) {
+      AircraftBfsComms::Message message;
+      std::vector<uint8_t> Payload;
+      BfsComms->GetMessage(&message, &Payload);
+      // update configuration
+      if ( Config.Update(message, &Payload, &Sensors, &Effectors) ) {
+        BfsComms->ClearReceived();
+      }
     }
   }
   // request mode

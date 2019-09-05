@@ -31,26 +31,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 class AircraftSocComms {
   public:
     enum Message {
-      ModeCommand,
-      Configuration,
-      SensorData,
-      EffectorCommand
+      ModeCommand,              // not used
+      Configuration,            // not used
+      SensorData,               // eventually will go away
+      EffectorCommand           // not used
     };
     AircraftSocComms(HardwareSerial& bus,uint32_t baud);
     void Begin();
-    void SendSensorData(std::vector<uint8_t> &DataBuffer);
-    bool ReceiveModeCommand(AircraftMission::Mode *mode);
-    bool ReceiveConfigMessage(std::vector<char> *ConfigString);
-    bool ReceiveEffectorCommand(std::vector<float> *EffectorCommands);
-    void CheckMessages();
-    void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
+    void SendMessage(uint8_t message, uint8_t *Payload, int len);
+    bool ReceiveMessage(uint8_t *message, uint8_t *address, std::vector<uint8_t> *Payload);
+    void SendAck(uint8_t id, uint8_t subid);
   private:
     SerialLink *bus_;
     uint32_t baud_;
-    bool MessageReceived_ = false;
-    Message ReceivedMessage_;
-    std::vector<uint8_t> ReceivedPayload_;
 };
 
 #endif

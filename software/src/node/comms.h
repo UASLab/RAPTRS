@@ -32,23 +32,25 @@ class AircraftBfsComms {
     enum Message {
       ModeCommand,
       Configuration,
-      SensorMetaData,
+      SensorDataSize,
       SensorData,
       EffectorCommand
     };
     AircraftBfsComms(i2c_t3& bus,uint8_t addr,i2c_pins pins,uint32_t rate);
     void Begin();
-    void SendSensorMetaData(std::vector<uint8_t> &DataBuffer);
+    void SendSensorDataSize(std::vector<uint8_t> &DataBuffer);
     void SendSensorData(std::vector<uint8_t> &DataBuffer);
     bool ReceiveModeCommand(AircraftMission::Mode *mode);
     bool ReceiveConfigMessage(std::vector<char> *ConfigString);
     bool ReceiveEffectorCommand(std::vector<float> *EffectorCommands);
     void CheckMessages();
     void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
-    void GetMessage(Message *message);
+    bool ReceiveMessage(Message *message, std::vector<uint8_t> *Payload);
+    void GetMessage(Message *message, std::vector<uint8_t> *Payload);
     void OnReceive(void (*function)(size_t len));
     void OnRequest(void (*function)(void));
+    bool NewReceived();
+    void ClearReceived();
   private:
     i2c_t3 *bus_;
     uint8_t addr_;

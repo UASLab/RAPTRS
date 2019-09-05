@@ -30,30 +30,17 @@ void AircraftConfiguration::Load() {
   Serial.println("done!");
 }
 
-/* Update configuration structure from JSON payloads */
-void AircraftConfiguration::Update(const char* JsonString,AircraftSensors *AircraftSensorsPtr,AircraftEffectors *AircraftEffectorsPtr) {
-  DynamicJsonBuffer ConfigBuffer;
-  std::vector<char> buffer;
-  JsonObject &Config = ConfigBuffer.parseObject(JsonString);
-  buffer.resize(ConfigBuffer.size());
-  if (Config.success()) {
-    if (Config.containsKey("Sensors")) {
-      JsonArray &Sensors = Config["Sensors"];
-      for (size_t j=0; j < Sensors.size(); j++) {
-        JsonObject &Sensor = Sensors[j];
-        Sensor.printTo(buffer.data(),buffer.size());
-        AircraftSensorsPtr->UpdateConfig(buffer.data());
-      }
-    }
-    if (Config.containsKey("Effectors")) {
-      JsonArray &Effectors = Config["Effectors"];
-      Effectors.printTo(buffer.data(),buffer.size());
-      AircraftEffectorsPtr->UpdateConfig(buffer.data());
-    }
-  }
-  else {
-    Serial.println("ERROR: Node Config Message Failed to Parse: ");
-    Serial.println(JsonString);
+/* Update configuration structure from messages */
+bool AircraftConfiguration::Update(uint8_t id, std::vector<uint8_t> *Payload, AircraftSensors *AircraftSensorsPtr, AircraftEffectors *AircraftEffectorsPtr) {
+  if ( AircraftSensorsPtr->UpdateConfig(id, Payload) ) {
+    // successfully parsed an aircraft sensor config message
+    return true;
+  } else if ( AircraftEffectorsPtr->UpdateConfig(id, Payload) ) {
+    // successfully parsed an effector config message
+    return true;
+  } else {
+    // not a configuration message
+    return false;
   }
 }
 
