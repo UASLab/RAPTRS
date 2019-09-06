@@ -86,5 +86,6 @@ void AircraftEffectors::End() {
   Effectors_.clear();
   EffectorCommands_.clear();
   delete sbus_;
+  sbus_ = NULL;
   kSbusUart.end();
 }
