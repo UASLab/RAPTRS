@@ -94,7 +94,6 @@ void FlightManagementUnit::SendModeCommand(Mode mode) {
 bool FlightManagementUnit::ReceiveSensorData(bool publish) {
   uint8_t message;
   std::vector<uint8_t> Payload;
-  size_t PayloadLocation = 0;
   bool freshdata = 0;
   while (ReceiveMessage(&message,&Payload)) {
     // printf("received msg: %d\n", message);

@@ -72,8 +72,8 @@ void CircleMgr::update() {
     return;
   }
 
-  float gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
-                      + ve_node->getFloat() * ve_node->getFloat());
+  /* float gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
+                         + ve_node->getFloat() * ve_node->getFloat()); */
   float track_deg = track_node->getFloat() * r2d;
   double lat_deg = lat_rad_node->getDouble() * r2d;
   double lon_deg = lon_rad_node->getDouble() * r2d;

@@ -40,11 +40,10 @@ void Incline::SetDamping() {
 
   uint8_t RxBuffer[2] = {}; // 1-byte status, 1-Byte checksum
   count = -1;
-  int status = -1;
   if ((count = read(InclineFileDesc_, RxBuffer, 2)) > 0) {
 
     uint8_t status = RxBuffer[0];
-    uint8_t checkshum = RxBuffer[1];
+    uint8_t checksum = RxBuffer[1];
 
     if (status != 0) {
       std::cout << "Status: " << unsigned(status) << std::endl;
@@ -62,8 +61,8 @@ void Incline::GetAngle(InclineData *InclineDataPtr) {
 
   const uint8_t SendBuff[3] = {01,224,00}; // Read angle on Axis1
 
-  uint16_t RxPayloadSize;
-  uint8_t RxPayload[sizeof(InclineDataPtr->Angle_deg)];
+  // uint16_t RxPayloadSize;
+  // uint8_t RxPayload[sizeof(InclineDataPtr->Angle_deg)];
 
   union{
     int32_t val;

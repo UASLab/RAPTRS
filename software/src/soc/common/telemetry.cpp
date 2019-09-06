@@ -250,7 +250,7 @@ void TelemetryClient::Send() {
   
   if ( usePower && (count+5)%10 == 0 ) { // 5hz
     message_system_health_v5_t health;
-    health.index;
+    // health.index;
     health.timestamp_sec = timestamp_sec;
     health.system_load_avg = 0.0;
     health.avionics_vcc = PowerNodes.AvionicsVolt->getFloat();

@@ -806,7 +806,7 @@ bool sim_cmd_update() {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
   }
 
-  int result = sock_cmd.send( response.c_str(), response.length(), 0 );
+  unsigned int result = sock_cmd.send( response.c_str(), response.length(), 0 );
   if ( result != response.length() ) {
     return false;
   }

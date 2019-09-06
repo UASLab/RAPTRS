@@ -163,7 +163,7 @@ bool DelayClass::Initialized() { return true; }
 void DelayClass::Run(Mode mode) {
   DelayBuffer_.push_back( Input_node_->getFloat() );
   float Val = 0.0;
-  while ( DelayBuffer_.size() > 0 && DelayBuffer_.size() > DelayFrames_ ) {
+  while ( DelayBuffer_.size() > 0 && DelayBuffer_.size() > (unsigned int)DelayFrames_ ) {
     Val = DelayBuffer_.front();
     DelayBuffer_.pop_front();
   }

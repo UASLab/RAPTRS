@@ -38,8 +38,7 @@ void ControlSystem::Configure(const rapidjson::Value& Config) {
   if (!Config.HasMember("Fmu")) { // Fmu not defined
     throw std::runtime_error(std::string("ERROR - Fmu Defintion not found in Control."));
   }
-  const rapidjson::Value& FmuDef = Config["Fmu"];
-
+  /* const rapidjson::Value& FmuDef = Config["Fmu"]; */
 
   // Loop through Baseline  Controller Groups
   // Create new instance of each unique Controller encountered

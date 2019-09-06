@@ -48,5 +48,5 @@ void MinCellVolt::Run(GenericFunction::Mode mode) {
 }
 
 void MinCellVolt::Clear() {
-  GenericFunction::Mode Mode = kStandby;
+  // GenericFunction::Mode Mode = kStandby;
 }

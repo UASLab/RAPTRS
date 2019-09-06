@@ -111,7 +111,7 @@ void SerialLink::endTransmission()
   _status = NACK;
   /* write frame */
   _bus->write(_send_buf,_send_fpos);
-  elapsedMicros sendTime = 0;
+  /* elapsedMicros sendTime = 0; */
   /* wait for ACK */
   while (_status != ACK) {
     checkReceived();
@@ -141,7 +141,7 @@ void SerialLink::endTransmission(unsigned int timeout)
   /* write frame */
   _bus->write(_send_buf,_send_fpos);
   /* wait for ACK */
-  elapsedMicros t = 0, sendTime = 0;
+  elapsedMicros t = 0 /*, sendTime = 0*/ ;
   while ((_status != ACK) && (t < timeout)) {
     checkReceived();
   }
