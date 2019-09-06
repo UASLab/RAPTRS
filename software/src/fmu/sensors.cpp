@@ -1533,6 +1533,7 @@ void AircraftSensors::End() {
   // reset data acquisition flags
   AcquireTimeData_ = false;
   AcquireInternalMpu9250Data_ = false;
+  AcquireInternalBme280Data_ = false;
   AcquireInputVoltageData_ = false;
   AcquireRegulatedVoltageData_ = false;
   AcquirePwmVoltageData_ = false;
