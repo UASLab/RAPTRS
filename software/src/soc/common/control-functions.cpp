@@ -40,9 +40,8 @@ void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath
   ff_node = deftree.initElement(SystemPath + "/" + OutputKey + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
   fb_node = deftree.initElement(SystemPath + "/" + OutputKey + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
 
-  float dt = 0.0f;
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
     UseFixedTimeSample = true;
   } else {
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
@@ -69,8 +68,11 @@ bool PID2Class::Initialized() {return true;}
 
 void PID2Class::Run(Mode mode) {
   // sample time
+  float dt = 0.0f;
   if(!UseFixedTimeSample) {
     dt = time_node->getFloat();
+  } else {
+    dt = dt_;
   }
 
   // Run
@@ -113,9 +115,8 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) 
   ff_node = deftree.initElement(SystemPath + "/" + OutputKey + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
   fb_node = deftree.initElement(SystemPath + "/" + OutputKey + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
 
-
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
     UseFixedTimeSample = true;
   } else {
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
@@ -140,8 +141,11 @@ bool PIDClass::Initialized() {return true;}
 
 void PIDClass::Run(Mode mode) {
   // sample time
+  float dt = 0.0f;
   if(!UseFixedTimeSample) {
     dt = time_node->getFloat();
+  } else {
+    dt = dt_;
   }
 
   // Run

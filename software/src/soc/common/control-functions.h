@@ -64,7 +64,7 @@ class PID2Class: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    float dt;
+    float dt_ = 0.0f;
     bool UseFixedTimeSample = false;
     ElementPtr reference_node;
     ElementPtr feedback_node;
@@ -112,7 +112,7 @@ class PIDClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    float dt;
+    float dt_ = 0.0f;
     bool UseFixedTimeSample = false;
     float Min = std::numeric_limits<float>::lowest();
     float Max = std::numeric_limits<float>::max();
