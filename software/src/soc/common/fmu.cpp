@@ -210,7 +210,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
         }
         counter += len;
       } // while processing compound message
-      
+
       if ( publish ) {
           // copy the incoming sensor data into the definition tree
           PublishSensors();
@@ -627,7 +627,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.i2c_addr = Sensor["Address"].GetInt();
     } else if ( !msg.use_spi ) {
       printf("ERROR: no i2c address specified\n");
-    }      
+    }
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 1000) ) {
@@ -729,20 +729,29 @@ void FlightManagementUnit::ConfigureSensors(const rapidjson::Value& Config, uint
 /* Configures the FMU mission manager */
 bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Config) {
   message::config_mission_t msg;
-  if ( Config.HasMember("Fmu-Soc-Switch") ) {
-    const rapidjson::Value &sw = Config["Fmu-Soc-Switch"];
-    msg.switch_name = "Fmu-Soc-Switch";
+  if ( Config.HasMember("Soc-Engage-Switch") ) {
+    const rapidjson::Value &sw = Config["Soc-Engage-Switch"];
+    msg.switch_name = "Soc-Engage-Switch";
     if ( sw.HasMember("Source") ) {
       msg.source = sw["Source"].GetString();
     } else {
-      printf("ERROR: no fmu-soc-switch source field specified\n");
+      printf("ERROR: no Soc-Engage-Switch source field specified\n");
     }
     if ( sw.HasMember("Gain") ) {
       msg.gain = sw["Gain"].GetFloat();
+    } else {
+      printf("ERROR: no Soc-Engage-Switch gain field specified\n");
     }
-    if ( sw.HasMember("Threshold") ) {
-      msg.threshold = sw["Threshold"].GetFloat();
+    if ( sw.HasMember("ModeSel") ) {
+      if ( sw.HasMember("Threshold") ) {
+        msg.threshold = sw["ModeSel"]["Soc"].GetFloat();
+      } else {
+        printf("ERROR: no Soc-Engage-Switch Soc field specified\n");
+      }
+    } else {
+      printf("ERROR: no Soc-Engage-Switch ModeSel field specified\n");
     }
+
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
     if ( ! WaitForAck(msg.id, 0, 1000) ) {
@@ -755,14 +764,23 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
     if ( sw.HasMember("Source") ) {
       msg.source = sw["Source"].GetString();
     } else {
-      printf("ERROR: no throttle-safety-switch source field specified\n");
+      printf("ERROR: no Throttle-Safety-Switch source field specified\n");
     }
     if ( sw.HasMember("Gain") ) {
       msg.gain = sw["Gain"].GetFloat();
+    } else {
+      printf("ERROR: no Throttle-Safety-Switch Gain field specified\n");
     }
-    if ( sw.HasMember("Threshold") ) {
-      msg.threshold = sw["Threshold"].GetFloat();
+    if ( sw.HasMember("ModeSel") ) {
+      if ( sw.HasMember("Threshold") ) {
+        msg.threshold = sw["ModeSel"]["Engage"].GetFloat();
+      } else {
+        printf("ERROR: no Throttle-Safety-Switch Engage field specified\n");
+      }
+    } else {
+      printf("ERROR: no Throttle-Safety-Switch ModeSel field specified\n");
     }
+
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
     if ( ! WaitForAck(msg.id, 0, 1000) ) {

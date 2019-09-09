@@ -87,49 +87,49 @@ int main(int argc, char* argv[]) {
   std::cout << "Configuring Simulation HIL..." << std::endl;
   bool sim = sim_init(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
-  deftree.PrettyPrint("/");
+  // deftree.PrettyPrint("/");
   std::cout << std::endl;
 
   /* configure FMU */
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
-  deftree.PrettyPrint("/Sensors/");
+  // deftree.PrettyPrint("/Sensors/");
   std::cout << std::endl;
 
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
     std::cout << "\tConfiguring sensor processing..." << std::flush;
     SenProc.Configure(AircraftConfiguration["Sensor-Processing"]);
     std::cout << "done!" << std::endl;
-    deftree.PrettyPrint("/Sensor-Processing/");
+    // deftree.PrettyPrint("/Sensor-Processing/");
     std::cout << std::endl;
 
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring effectors..." << std::flush;
       Effectors.Configure(AircraftConfiguration["Effectors"]);
       std::cout << "done!" << std::endl;
-      deftree.PrettyPrint("/Effectors/");
+      // deftree.PrettyPrint("/Effectors/");
       std::cout << std::endl;
 
       std::cout << "\tConfiguring control laws..." << std::flush;
       Control.Configure( AircraftConfiguration["Control"] );
       Control.ConfigureEffectors( Effectors.GetKeys() );
       std::cout << "done!" << std::endl;
-      deftree.PrettyPrint("/Control/");
+      // deftree.PrettyPrint("/Control/");
       std::cout << std::endl;
 
       if (AircraftConfiguration.HasMember("Excitation")) {
         std::cout << "\tConfiguring excitations..." << std::flush;
         Excitation.Configure(AircraftConfiguration["Excitation"]);
         std::cout << "done!" << std::endl;
-        deftree.PrettyPrint("/Excitation/");
+        // deftree.PrettyPrint("/Excitation/");
         std::cout << std::endl;
       }
 
       std::cout << "\tConfiguring mission manager..." << std::flush;
       Mission.Configure(AircraftConfiguration["Mission-Manager"]);
       std::cout << "done!" << std::endl;
-      deftree.PrettyPrint("/Mission-Manager/");
+      // deftree.PrettyPrint("/Mission-Manager/");
       std::cout << std::endl;
     }
   }

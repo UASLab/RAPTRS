@@ -28,7 +28,7 @@ bool AircraftMission::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, De
   }
   message::config_mission_t msg;
   msg.unpack(Payload->data(), Payload->size());
-  if ( msg.switch_name == "Fmu-Soc-Switch" ) {
+  if ( msg.switch_name == "Soc-Engage-Switch" ) {
     if (DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str())) {
       config_.EngageSwitch.Source = DefinitionTreePtr->GetValuePtr<float*>(msg.source.c_str());
     } else {
