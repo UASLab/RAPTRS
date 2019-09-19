@@ -12,7 +12,7 @@
 #include <exception>
 #include <stdexcept>
 
-const char InclinePort[] = "/dev/ttyO1";
+const char InclinePort[] = "/dev/ttyUSB0";
 const speed_t InclineBaud = B115200;
 
 struct InclineData {
@@ -22,8 +22,8 @@ struct InclineData {
 class Incline {
   public:
     Incline();
-    bool GetAngle(InclineData *InclineDataPtr);
-    bool SetDamping();
+    void GetAngle(InclineData *InclineDataPtr);
+    void SetDamping();
   private:
     int InclineFileDesc_;
     void OpenPort();
