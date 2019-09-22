@@ -6,6 +6,7 @@
 #include "definition-tree2.h"
 #include "configuration.h"
 #include "fmu.h"
+#include "sensor-processing.h"
 #include "mission.h"
 #include "control.h"
 #include "effector.h"
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]) {
   /* declare classes */
   Configuration Config;
   FlightManagementUnit Fmu;
+  SensorProcessing SenProc;
   MissionManager Mission;
   ControlLaws Control;
   AircraftEffectors Effectors;
@@ -64,28 +66,40 @@ int main(int argc, char* argv[]) {
   std::cout << "\tInitializing FMU..." << std::flush;
   Fmu.Begin();
   std::cout << "done!" << std::endl;
+
   /* configure classes and register with global defs */
   std::cout << "Configuring aircraft." << std::endl;
   rapidjson::Document AircraftConfiguration;
   std::cout << "\tLoading configuration..." << std::flush;
   Config.LoadConfiguration(argv[1], &AircraftConfiguration);
   std::cout << "done!" << std::endl;
+
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
+
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
+    std::cout << "\tConfiguring sensor processing..." << std::flush;
+    SenProc.Configure(AircraftConfiguration["Sensor-Processing"]);
+    std::cout << "done!" << std::endl;
+
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring mission manager..." << std::flush;
       Mission.Configure(AircraftConfiguration["Mission-Manager"]);
       std::cout << "done!" << std::endl;
+
       std::cout << "\tConfiguring control laws..." << std::flush;
       Control.Configure(AircraftConfiguration["Control"]);
       std::cout << "done!" << std::endl;
+
       std::cout << "\tConfiguring effectors..." << std::flush;
       Effectors.Configure(AircraftConfiguration["Effectors"]);
       std::cout << "done!" << std::endl;
     }
   }
+
+  deftree.PrettyPrint("/");
+  std::cout << std::endl;
 
   // Define Delays
   int DelayMove = 2000000; // delay for 2 second after servo move
@@ -136,7 +150,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Enter the Analog String for Surface Pot (Enter to skip): ";
     std::getline(std::cin, AnalogString);
     std::cin.ignore(50, '\n');
-    std::string AnalogPath = "/Sensors/" + AnalogString + "/Voltage_V";
+    // std::string AnalogPath = "/Sensors/" + AnalogString + "/Voltage_V";
+    std::string AnalogPath = "/Sensors/" + AnalogString + "/CalibratedValue";
     std::cout << "Reading Analog from: " << AnalogPath << std::endl;
 
     //Get Starting Command
