@@ -235,19 +235,9 @@ int main(int argc, char* argv[]) {
         float dt_ms = timeCurr_ms - timePrev_ms;
         timePrev_ms = timeCurr_ms;
 
-        // std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
-        //           << "\tdt (ms):  " << dt_ms
-        //           << std::endl;
-
-float pTip = deftree.getElement("/Sensors/5Hole/Tip/Pressure_Pa") -> getFloat();
-float pAlpha1 = deftree.getElement("/Sensors/5Hole/Alpha1/Pressure_Pa") -> getFloat();
-float pAlpha2 = deftree.getElement("/Sensors/5Hole/Alpha2/Pressure_Pa") -> getFloat();
-float pBeta1 = deftree.getElement("/Sensors/5Hole/Beta1/Pressure_Pa") -> getFloat();
-float pBeta2 = deftree.getElement("/Sensors/5Hole/Beta2/Pressure_Pa") -> getFloat();
-float pStatic = deftree.getElement("/Sensors/5Hole/Static/Pressure_Pa") -> getFloat();
-
-
-std::cout << pTip << "\t" << pAlpha1 << "\t" << pAlpha2 << "\t" << pBeta1 << "\t" << pBeta1 << "\t" << pBeta2 << std::endl;
+        std::cout << CtrlEngaged << "\t" << SenProcEngaged << "\t" << ExcitEngaged
+                  << "\tdt (ms):  " << dt_ms
+                  << std::endl;
 
       }
       // run telemetry
