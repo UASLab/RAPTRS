@@ -209,7 +209,7 @@ Note that the "Baseline" set and the "Test" set will create independent instance
     "Allocator": [...],
     "Effector": [...]
   }
-},
+}
 
 ```
 Controllers are defined in "ControlDef" as arrays of components. Components will be executed in the order defined.
@@ -236,7 +236,6 @@ Signal references that start with "../" will reference outputs of the next highe
     "num": [-0.030, 0.030], "den": [1.0, -0.8919]},
   {"Type": "Sum", "Inputs": ["../refYaw_rps", "cmdYaw_damp_rps"], "Output": "cmdYaw_rps"}
 ]
-
 
 ```
 ### Constant
@@ -355,15 +354,15 @@ a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
 Implements a pseudo inverse control allocation.
 ```json
 {"Type": "PseudoInverse",
-          "Inputs": ["../cmdRoll_rps", "../cmdPitch_rps", "../cmdYaw_rps"],
-          "Outputs": ["cmdElev_rad", "cmdRud_rad", "cmdAilR_rad", "cmdFlapR_rad", "cmdFlapL_rad", "cmdAilL_rad"],
-          "Effectiveness": [
-            [0.00000, -0.1418,-1.33413, -0.5634, 0.5634, 1.33413],
-            [-2.2716, 0.00000, 0.06000, 0.05800, 0.05800, 0.06000],
-            [0.00000,-1.59190, 0.00000, 0.00000, 0.00000, 0.00000]],
-          "Min": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
-          "Max": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
-        }
+  "Inputs": ["../cmdRoll_rps", "../cmdPitch_rps", "../cmdYaw_rps"],
+  "Outputs": ["cmdElev_rad", "cmdRud_rad", "cmdAilR_rad", "cmdFlapR_rad", "cmdFlapL_rad", "cmdAilL_rad"],
+  "Effectiveness": [
+    [0.00000, -0.1418,-1.33413, -0.5634, 0.5634, 1.33413],
+    [-2.2716, 0.00000, 0.06000, 0.05800, 0.05800, 0.06000],
+    [0.00000,-1.59190, 0.00000, 0.00000, 0.00000, 0.00000]],
+  "Min": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
+  "Max": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
+}
 ```
 Where:
   * Input gives the path of the allocator inputs / objectives (i.e. ../PitchMomentCmd)
@@ -392,33 +391,33 @@ Data types for the input and output are both float.
 
 ## Excitation
 Excitation outputs are collected in the "/Excitation/" directory. Similar to control laws, excitation groups can be defined consisting of multiple wave inputs, as defined in "ExciteDef". A group is applied PRIOR to execution of the defined controller level. Groups can be referenced in the mission manager test point structure, allowing different excitations for each pre-defined test point. For example, the following defines an excitation group consisting of multisine inputs.
-```
+```json
 "Excitation": {
-    "Time": "/Sensors/Fmu/Time_us",
-    "ExciteDef": {
-      "RTSM": {"Level": "Alloc", "Waveforms": [
-        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
-        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
-        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
-      ]}
-    },
+  "Time": "/Sensors/Fmu/Time_us",
+  "ExciteDef": {
+    "RTSM": {"Level": "Alloc", "Waveforms": [
+      {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+      {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+      {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
+    ]}
+  },
 
-    "WaveDef": {
-      "OMS_1": {...},
-      "OMS_2": {...},
-      "OMS_3": {...}
-    }
+  "WaveDef": {
+    "OMS_1": {...},
+    "OMS_2": {...},
+    "OMS_3": {...}
   }
+}
 
 ```
 
 The basic waveforms are defined within "WaveDef", enabling them to be re-used on different signals, with different start times, and with different scale factors.
-```
+```json
 "OMS_1": { "Type": "MultiSine", "Duration": 10,
-      "Frequency": [0.62831853071795862,4.39822971502571,8.1681408993334639,11.938052083641214,15.707963267948969,19.477874452256717,23.247785636564469,27.017696820872224,30.787608005179976,34.557519189487721,38.32743037379548,42.097341558103231,45.867252742410983,49.637163926718735],
-      "Phase": [6.1333837562683,3.7697783413786747,4.3326309124460112,5.7825002989603558,3.6123449608782874,3.8799569048390872,6.3167977328030709,4.6577199432535883,5.2790228241172983,8.05687689770693,7.08109780771917,2.4467121117324315,5.00303679294031,4.0729726069734049],
-      "Amplitude": [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    }
+  "Frequency": [0.62831853071795862,4.39822971502571,8.1681408993334639,11.938052083641214,15.707963267948969,19.477874452256717,23.247785636564469,27.017696820872224,30.787608005179976,34.557519189487721,38.32743037379548,42.097341558103231,45.867252742410983,49.637163926718735],
+  "Phase": [6.1333837562683,3.7697783413786747,4.3326309124460112,5.7825002989603558,3.6123449608782874,3.8799569048390872,6.3167977328030709,4.6577199432535883,5.2790228241172983,8.05687689770693,7.08109780771917,2.4467121117324315,5.00303679294031,4.0729726069734049],
+  "Amplitude": [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+}
 ```
 
 ### Pulse
@@ -582,18 +581,18 @@ Where:
 Similar to Sensors, Effectors simply lists an array of all effectors on the vehicle. Effectors on nodes are added by specifying the node address and listing the effectors. For example, this specifies 3 effectors connected to the FMU (a motor and two servos) and 4 effectors connected to the node.
 ```json
 "Effectors": [
-    { "Type": "Motor", "Input": "/Control/cmdMotor_nd", "Channel": 0, "Calibration": [800, 1200], "Safed-Command": 0},
-    { "Type": "Pwm", "Input": "/Control/cmdElev_rad", "Channel": 1, "Calibration": [ 0.0, 0.0, 945.56893619, 1532.92371906]},
-    { "Type": "Pwm", "Input": "/Control/cmdRud_rad", "Channel": 2, "Calibration": [ -406.23428499, -72.84894531, -822.84212170, 1495.85430736]},
-    { "Type": "Node", "Address": 3,
-      "Effectors": [
-        { "Type": "Pwm", "Input": "/Control/cmdAilR_rad", "Channel": 0, "Calibration": [ 0.0, 24.74931945, -877.03584524, 1501.05819261]},
-        { "Type": "Pwm", "Input": "/Control/cmdFlapR_rad", "Channel": 2, "Calibration": [ 0.0, -167.40715677, 830.81057931, 1499.57954854]},
-        { "Type": "Pwm", "Input": "/Control/cmdFlapL_rad", "Channel": 5, "Calibration": [ -280.29921208, 75.65078940, -855.43748599, 1442.51416948]},
-        { "Type": "Pwm", "Input": "/Control/cmdAilL_rad", "Channel": 7, "Calibration": [ 0.0, -64.70244278, 828.18022105, 1519.68482092]}
-      ]
-    }
-  ]
+  { "Type": "Motor", "Input": "/Control/cmdMotor_nd", "Channel": 0, "Calibration": [800, 1200], "Safed-Command": 0},
+  { "Type": "Pwm", "Input": "/Control/cmdElev_rad", "Channel": 1, "Calibration": [ 0.0, 0.0, 945.56893619, 1532.92371906]},
+  { "Type": "Pwm", "Input": "/Control/cmdRud_rad", "Channel": 2, "Calibration": [ -406.23428499, -72.84894531, -822.84212170, 1495.85430736]},
+  { "Type": "Node", "Address": 3,
+    "Effectors": [
+      { "Type": "Pwm", "Input": "/Control/cmdAilR_rad", "Channel": 0, "Calibration": [ 0.0, 24.74931945, -877.03584524, 1501.05819261]},
+      { "Type": "Pwm", "Input": "/Control/cmdFlapR_rad", "Channel": 2, "Calibration": [ 0.0, -167.40715677, 830.81057931, 1499.57954854]},
+      { "Type": "Pwm", "Input": "/Control/cmdFlapL_rad", "Channel": 5, "Calibration": [ -280.29921208, 75.65078940, -855.43748599, 1442.51416948]},
+      { "Type": "Pwm", "Input": "/Control/cmdAilL_rad", "Channel": 7, "Calibration": [ 0.0, -64.70244278, 828.18022105, 1519.68482092]}
+    ]
+  }
+]
 ```
 
 Three types of effectors are available: motor, PWM, and SBUS. All three have the input signal, channel number, and calibration as configurable items. The input signal is the source of the effector command and is typically an output from a control law. The channel number refers to the PWM or SBUS channel number the effector is connected to. Calibration is a vector of polynomial coefficients given in descending order, which converts the input signal from engineering units (i.e. trailing edge down angle value) to PWM or SBUS command. The motor effector type is the same as PWM, except it also includes a "Safed-Command", which specifies the value to be commanded when the throttle is safed.
@@ -614,27 +613,29 @@ The mission manager configures the switches used to define the vehicle's state a
 
 
 ```json
-  "Mission-Manager": {
-    "Soc-Engage-Switch": {"Source": "/Sensors/Sbus/Channels/0", "Gain": 1,
-      "ModeSel": {"Fmu": -2, "Soc": 0}},
-    "Throttle-Safety-Switch": {"Source": "/Sensors/Sbus/Channels/1", "Gain": 1,
-      "ModeSel": {"Safe": -2, "Engage": 0.5}},
-    "Test-Mode-Switch": {"Source": "/Sensors/Sbus/Channels/8", "Gain": 1,
-      "ModeSel": {"Standby": -2, "Arm": -0.5, "Engage": 0.5}},
-    "Test-Select-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Gain": 1,
-      "ModeSel": {"Decrement": -2, "Excite": -0.5, "Increment": 0.5}},
-    "Trigger-Switch": {"Source": "/Sensors/Sbus/Channels/10", "Gain": 1,
-      "ModeSel": {"Standby": -2, "Trigger": 0.0}},
+"Mission-Manager": {
+  "Soc-Engage-Switch": {"Source": "/Sensors/Sbus/Channels/0", "Gain": 1,
+    "ModeSel": {"Fmu": -2, "Soc": 0}},
+  "Throttle-Safety-Switch": {"Source": "/Sensors/Sbus/Channels/1", "Gain": 1,
+    "ModeSel": {"Safe": -2, "Engage": 0.5}},
+  "Test-Mode-Switch": {"Source": "/Sensors/Sbus/Channels/8", "Gain": 1,
+    "ModeSel": {"Standby": -2, "Arm": -0.5, "Engage": 0.5}},
+  "Test-Select-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Gain": 1,
+    "ModeSel": {"Decrement": -2, "Excite": -0.5, "Increment": 0.5}},
+  "Trigger-Switch": {"Source": "/Sensors/Sbus/Channels/10", "Gain": 1,
+    "ModeSel": {"Standby": -2, "Trigger": 0.0}},
 
-    "Baseline-Select-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Gain": 1,
-      "ControlSel": {"PilotRate": -2, "PilotAttitudeMan": -0.5, "PilotAttitudeMan": 0.5}},
+  "Baseline-Select-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Gain": 1,
+    "ControlSel": {"PilotRate": -2, "PilotAttitudeMan": -0.5, "PilotAttitudeMan": 0.5}},
 
+  "Test-Points": []
+}
 ```
 Test points can be defined for the sensor-processing, control law, and excitation to use. This is useful to predefine all research test points in a flight.
 ```json
 "Test-Points": [
-      { "Test-ID": "0", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM"},
-      { "Test-ID": "1", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Long"},
-      { "Test-ID": "2", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Large"}
+  { "Test-ID": "0", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM"},
+  { "Test-ID": "1", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Long"},
+  { "Test-ID": "2", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Large"}
 ]
 ```
