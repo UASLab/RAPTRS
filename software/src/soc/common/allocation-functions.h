@@ -24,19 +24,16 @@ Example JSON configuration:
   "Max": [M]
 }
 Where:
-   * Input gives the full path of the allocator inputs / objectives (i.e. /Control/PitchMomentCmd)
+   * Input gives the path of the allocator inputs / objectives (i.e. ../PitchMomentCmd)
    * Output gives the relative path of the allocator outputs / effector commands (i.e Elevator)
    * Effectiveness gives the control effectiveness (i.e. change in moment for a unit change in effector output)
-     The order is MxN where M is the number of outputs / effectors and N is the number of inputs / objectives. So,
-     for a situation with 3 objectives (i.e. pitch, roll, yaw moments) and 7 control surfaces, Effectiveness would
+     The order is NxM where M is the number of outputs / effectors and N is the number of inputs / objectives. So,
+     for a situation with 3 objectives (i.e. pitch, roll, yaw moments) and 4 control surfaces, Effectiveness would
      be given as:
-     "Effectiveness":[[PitchEff_Surf0,RollEff_Surf0,YawEff_Surf0],
-                      [PitchEff_Surf1,RollEff_Surf1,YawEff_Surf1],
-                      .
-                      .
-                      .
-                      [PitchEff_Surf6,RollEff_Surf6,YawEff_Surf6]]
-   * Limits gives the upper and lower limits for each output / effector command.
+     "Effectiveness":[[RollEff_Surf0, RollEff_Surf1, RollEff_Surf2, RollEff_Surf3],
+                      [PitchEff_Surf0, PitchEff_Surf1, PitchEff_Surf2, PitchEff_Surf3],
+                      [YawEff_Surf0, YawEff_Surf1, YawEff_Surf2, YawEff_Surf3],]
+   * Min and Max gives the upper and lower limits for each output / effector command.
 */
 
 class PseudoInverseAllocation: public GenericFunction {
