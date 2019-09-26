@@ -1,6 +1,10 @@
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Curt Olson
+*/
 
-#ifndef TELEMETRY_HXX_
-#define TELEMETRY_HXX_
+#pragma once
 
 #include "definition-tree2.h"
 #include "hardware-defs.h"
@@ -144,5 +148,3 @@ class TelemetryServer {
     bool process_message();
     vector<string> split( const string& str, const char* sep, int maxsplit=0 );
 };
-
-#endif

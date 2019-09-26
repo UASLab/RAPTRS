@@ -1,7 +1,10 @@
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan
+*/
 
-
-#ifndef INCLINE_HXX_
-#define INCLINE_HXX_
+#pragma once
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -28,5 +31,3 @@ class Incline {
     int InclineFileDesc_;
     void OpenPort();
 };
-
-#endif

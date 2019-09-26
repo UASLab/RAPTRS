@@ -1,3 +1,9 @@
+'''
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Curt Olson
+'''
+
 import struct
 
 # Message id constants
@@ -1003,4 +1009,3 @@ class data_compound():
         return msg
 
     def unpack(self, msg):
-

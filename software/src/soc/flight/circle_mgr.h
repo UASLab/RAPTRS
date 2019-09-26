@@ -1,12 +1,6 @@
-/**
- * \file: circle_mgr.hxx
- *
- * Configure autopilot settings to fly to a specified coordinate
- *
- * Copyright (C) 2015 - Curtis L. Olson curtolson@flightgear.org
- *
- */
-
+/*
+  Copyright (C) 2015 - Curtis L. Olson curtolson@flightgear.org
+*/
 
 #pragma once
 
@@ -21,13 +15,13 @@ using std::string;
 class CircleMgr {
 
 private:
-  
+
   bool initialized{false};
   bool pos_set{false};
   SGWayPoint target;
   float direction;
   float radius_m;
-  
+
 public:
 
   CircleMgr();

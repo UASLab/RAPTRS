@@ -1,7 +1,8 @@
-//
-// FILE: sim-interface.cpp
-// DESCRIPTION: aquire live sensor data from an running copy of JSBSim
-//
+/*
+Copyright (c) 2018 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan, Curt Olson
+*/
 
 #include <stdlib.h>
 #include <iostream>

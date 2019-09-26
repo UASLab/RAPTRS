@@ -1,3 +1,9 @@
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Curt Olson
+*/
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -139,7 +145,7 @@ void TelemetryClient::Send() {
     timestamp_sec = TimeNodes.Time_us->getLong() / 1000000.0;
   }
   // cout << count << " " << timestamp_sec << endl;
-  
+
   if ( useGps && (count+0)%10 == 0 ) { // 5hz
     message_gps_v4_t gps;
     gps.index = 0;
@@ -159,7 +165,7 @@ void TelemetryClient::Send() {
     gps.pack();
     SendPacket(gps.id, gps.payload, gps.len);
   }
-  
+
   if ( (count+1)%10 == 0 ) {	// 5hz
     message_airdata_v7_t air;
     air.index = 0;
@@ -191,7 +197,7 @@ void TelemetryClient::Send() {
     air.pack();
     SendPacket(air.id, air.payload, air.len);
   }
-  
+
   if ( useImu && (count+2)%10 == 0) { // 5hz
     message_imu_v4_t imu;
     imu.index = 0;
@@ -210,7 +216,7 @@ void TelemetryClient::Send() {
     imu.pack();
     SendPacket(imu.id, imu.payload, imu.len);
   }
-  
+
   if ( useAttitude && (count+3)%5 == 0 ) { // 10hz
     message_filter_v4_t nav;
     nav.index = 0;
@@ -235,7 +241,7 @@ void TelemetryClient::Send() {
     nav.pack();
     SendPacket(nav.id, nav.payload, nav.len);
   }
-  
+
   if ( useSbus && (count+4)%10 == 0 ) { // 5hz
     message_pilot_v3_t pilot;
     pilot.index = 0;
@@ -247,7 +253,7 @@ void TelemetryClient::Send() {
     pilot.pack();
     SendPacket(pilot.id, pilot.payload, pilot.len);
   }
-  
+
   if ( usePower && (count+5)%10 == 0 ) { // 5hz
     message_system_health_v5_t health;
     // health.index;

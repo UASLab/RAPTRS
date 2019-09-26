@@ -1,4 +1,8 @@
-// definition-tree2.hxx - Curtis Olson
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Curtis Olson
+*/
 
 #pragma once
 
@@ -28,7 +32,7 @@ enum log_tag_t {
   LOG_INT64, LOG_UINT64, LOG_LONG,
   LOG_FLOAT, LOG_DOUBLE
 };
-    
+
 class Element {
 
  private:
@@ -45,11 +49,11 @@ class Element {
   } x = {0};
 
  public:
-    
+
   string description;
   log_tag_t datalog{LOG_NONE};
   log_tag_t telemetry{LOG_NONE};
-    
+
   Element() {}
   ~Element() {}
 
@@ -57,7 +61,7 @@ class Element {
     this->x = src->x;
     this->tag = src->tag;
   }
-  
+
   void setBool( bool val ) { x.b = val; tag = BOOL; }
   void setInt( int val ) { x.i = val; tag = INT; }
   void setLong( long long val ) { x.ll = val; tag = LONGLONG; }
@@ -125,7 +129,7 @@ class Element {
     default: return "no type";
     }
   }
-    
+
   string getValueAsString() {
     switch(tag) {
     case BOOL: return to_string(x.b);
@@ -136,7 +140,7 @@ class Element {
     default: return "no value";
     }
   }
-    
+
   log_tag_t getLoggingType() {
     return datalog;
   }
@@ -149,9 +153,9 @@ class Element {
 typedef map<string, ElementPtr> def_tree_t ;
 
 class DefinitionTree2 {
-    
+
  public:
-    
+
 
   DefinitionTree2() {}
   ~DefinitionTree2() {}
@@ -166,9 +170,9 @@ class DefinitionTree2 {
   void PrettyPrint(string Prefix);
 
   void Erase(string name);
-    
+
  private:
-    
+
   def_tree_t data;
 };
 

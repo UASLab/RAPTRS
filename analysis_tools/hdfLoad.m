@@ -6,13 +6,19 @@ function [data, desc] = hdfLoad(fileLoad, rootPath)
 % ext = '.h5';
 % 
 % fileLoad = fullfile(basePath, ac, [ac, fltStr], [ac, fltStr, ext]);
-% 
+%
 % rootPath = '/';
 % h5disp(fileLoad, rootPath, 'min');
 % [data, desc] = hdfLoad(fileLoad, rootPath);
 
 % fileSave = strrep(fileLoad, '.h5', '.mat');
 % save(fileSave, 'data', 'desc');
+
+
+% Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+% MIT License; See LICENSE.md for complete details
+% Author: Chris Regan
+
 
 %%
 
@@ -38,7 +44,7 @@ for iGroup = 1:numGroup
     groupPath = currInfo.Groups(iGroup).Name;
     [~, groupName] = fileparts(groupPath); % Use fileparts to pull the last portion of the string
     groupNameValid = matlab.lang.makeValidName(groupName); % Fix invalid Matlab names
-    
+
     [data.(groupNameValid), desc.(groupNameValid)] = hdfLoad(fileLoad, groupPath);
 end
 
@@ -48,13 +54,12 @@ for iDataset = 1:numDataset
     currDataset = currInfo.Datasets(iDataset);
     dataName = currDataset.Name;
     dataNameValid = matlab.lang.makeValidName(dataName); % Fix invalid Matlab names
-    
+
     % Store the dataset info into a description structure
     desc.(dataNameValid) = currDataset;
-    
+
     % Read the data from the file into the data structure
     pathDataset = [currInfo.Name, '/', dataName];
     data.(dataNameValid) = h5read(fileLoad, pathDataset);
     % data.(currNameValid) = h5read(filename, pathDataset, start, count, stride);
 end
-
