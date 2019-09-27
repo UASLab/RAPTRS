@@ -83,6 +83,14 @@ int main(int argc, char* argv[]) {
   // deftree.PrettyPrint("/Sensors/");
   std::cout << std::endl;
 
+  if (AircraftConfiguration.HasMember("Route")) {
+    std::cout << "\tConfiguring route following..." << std::endl;
+    route_mgr.init(AircraftConfiguration["Route"]);
+  } else if (AircraftConfiguration.HasMember("Circle")) {
+    std::cout << "\tConfiguring circle hold..." << std::endl;
+    circle_mgr.init(AircraftConfiguration["Circle"]);
+  }
+
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
     std::cout << "\tConfiguring sensor processing..." << std::flush;
     SenProc.Configure(AircraftConfiguration["Sensor-Processing"]);
@@ -129,11 +137,15 @@ int main(int argc, char* argv[]) {
   /* profiling */
   ElementPtr profMainLoop = deftree.initElement("/Mission/profMainLoop", "Main loop time us", LOG_UINT32, LOG_NONE);
   ElementPtr profBaseline = deftree.initElement("/Mission/profBaseline", "Baseline Sensor processing time us", LOG_UINT32, LOG_NONE);
-  ElementPtr profTest = deftree.initElement("/Mission/profTest", "Test System time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profSenProc = deftree.initElement("/Mission/profSenProc", "Test Sensor-Processing System time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profControl = deftree.initElement("/Mission/profSenProc", "Test profControl System time us", LOG_UINT32, LOG_NONE);
+  ElementPtr profRoute = deftree.initElement("/Mission/profRoute", "Route System time us", LOG_UINT32, LOG_NONE);
   ElementPtr profResponse = deftree.initElement("/Mission/profResponse", "Time from receive sensor data to send back effector commands us", LOG_UINT32, LOG_NONE);
   uint64_t profMainStart_us = 0;
   uint64_t profBaselineStart_us = 0;
-  uint64_t profTestStart_us = 0;
+  uint64_t profSenProcStart_us = 0;
+  uint64_t profRouteStart_us = 0;
+  uint64_t profControlStart_us = 0;
   uint64_t profResponseStart_us = 0;
 
   std::cout << "\tConfiguring datalog..." << std::flush;
@@ -173,12 +185,22 @@ int main(int argc, char* argv[]) {
         Control.SetTest(Mission.GetTestController());
         Excitation.SetExcitation(Mission.GetExcitation());
 
-        // Run Test systems
-        profTestStart_us = micros(); // Start Test timer
+        // Run Test Sensor-Processing
+        profSenProcStart_us = micros(); // Start Test timer
         if (Mission.GetTestRunMode() > 0) { // Armed or Engaged
-
-          // Run Test Sensor-Processing
           SenProc.RunTest(Mission.GetTestRunMode());
+        }
+        profSenProc->setInt(micros() - profSenProcStart_us);
+
+        // Run Route Manager
+        profRouteStart_us = micros(); // Start Test timer
+        route_mgr.update();
+        circle_mgr.update();
+        profRoute->setInt(micros() - profRouteStart_us);
+
+        // Run Test Control and Excitation
+        profControlStart_us = micros(); // Start Test timer
+        if (Mission.GetTestRunMode() > 0) { // Armed or Engaged
 
           // Loop through control levels running excitations and control laws
           std::vector<std::string> ControlLevels = Control.GetTestLevels();
@@ -194,8 +216,8 @@ int main(int argc, char* argv[]) {
           // Copy the /Control/Test Effectors to /Control
           Control.EffectorTest(Mission.GetTestRunMode());
         }
+        profControl->setInt(micros() - profControlStart_us);
 
-        profTest->setInt(micros() - profTestStart_us);
         profResponse->setInt(micros() - profResponseStart_us);
 
         // Write out commands for Sim
