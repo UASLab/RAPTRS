@@ -36,7 +36,9 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) 
     Effectors_.push_back(eff); // keep!
     return true;
   }
-  return false;
+
+  configured_ = true;
+  Serial.println("done!");
 }
 
 /* sets the effector angle commands to the given values */
@@ -53,7 +55,8 @@ void AircraftEffectors::ComputeOutputs() {
 
 /* commands the PWM and SBUS effectors */
 void AircraftEffectors::CommandEffectors() {
-  if (sbus_) {
+
+  if (configured_) {
     uint16_t SbusCmds[16];
     for (size_t i=0; i < Effectors_.size(); i++) {
       if (Effectors_[i].Type == kPwm) {
