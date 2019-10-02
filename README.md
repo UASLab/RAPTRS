@@ -5,7 +5,7 @@
 ### Development Environment
 The following steps are used to create a development environment:
 1. Install [Debian Stretch](https://www.debian.org/) to a Virtual Machine (VM) or development computer.
-2. Ensure that [build-essential](https://packages.debian.org/stretch/build-essential) and [crossbuild-essential-armhf](crossbuild-essential-armhf) are installed.
+2. Ensure that [build-essential](https://packages.debian.org/stretch/build-essential) and [crossbuild-essential-armhf](https://packages.debian.org/buster/crossbuild-essential-armhf) are installed.
 3. Clone this [repository](https://github.com/bolderflight/RAPTRS) to your VM or development computer.
 4. Install [Arudino](https://www.arduino.cc/en/Main/Software) and [Teensyduino](https://www.pjrc.com/teensy/td_download.html)
 
