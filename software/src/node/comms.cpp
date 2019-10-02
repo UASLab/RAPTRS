@@ -1,21 +1,7 @@
 /*
-comms.cpp
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
 #include "comms.h"
@@ -35,14 +21,14 @@ void AircraftBfsComms::Begin() {
   Serial.println("done!");
 }
 
-/* sends sensor meta data message */
+/* sends sensor data message */
 void AircraftBfsComms::SendSensorData(std::vector<uint8_t> &DataBuffer) {
   SendMessage(SensorData,DataBuffer);
 }
 
-/* sends sensor data message */
-void AircraftBfsComms::SendSensorMetaData(std::vector<uint8_t> &DataBuffer) {
-  SendMessage(SensorMetaData,DataBuffer);
+/* sends sensor data size message */
+void AircraftBfsComms::SendSensorDataSize(std::vector<uint8_t> &DataBuffer) {
+  SendMessage(SensorDataSize,DataBuffer);
 }
 
 /* returns mode command if a mode command message has been received */
@@ -124,7 +110,7 @@ void AircraftBfsComms::SendMessage(Message message,std::vector<uint8_t> &Payload
 }
 
 /* parses BFS messages returning message ID and payload on success */
-bool AircraftBfsComms::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
+bool AircraftBfsComms::ReceiveMessage(Message *message, std::vector<uint8_t> *Payload) {
   while(bus_->available()) {
     RxByte_ = bus_->read();
     // header
@@ -208,8 +194,10 @@ void AircraftBfsComms::CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_
 }
 
 /* returns the last received message */
-void AircraftBfsComms::GetMessage(Message *message) {
+void AircraftBfsComms::GetMessage(Message *message, std::vector<uint8_t> *Payload) {
   *message = ReceivedMessage_;
+  Payload->resize(ReceivedPayload_.size());
+  memcpy(Payload->data(), ReceivedPayload_.data(), ReceivedPayload_.size());
 }
 
 /* register function with i2c on receive */
@@ -220,4 +208,12 @@ void AircraftBfsComms::OnReceive(void (*function)(size_t len)) {
 /* register function with i2c on receive */
 void AircraftBfsComms::OnRequest(void (*function)(void)) {
   bus_->onRequest(function);
+}
+
+bool AircraftBfsComms::NewReceived() {
+  return MessageReceived_;
+}
+
+void AircraftBfsComms::ClearReceived() {
+  MessageReceived_ = false;
 }

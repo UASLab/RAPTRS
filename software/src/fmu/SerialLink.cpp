@@ -1,23 +1,7 @@
 /*
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
-and associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, 
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or 
-substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
 #include "SerialLink.h"
@@ -27,7 +11,7 @@ SerialLink::SerialLink(HardwareSerial& bus)
 {
   _bus = &bus;
 }
-/* 
+/*
 * Starting the bus at the specified baud rate.
 */
 void SerialLink::begin(unsigned int baud)
@@ -55,7 +39,7 @@ void SerialLink::beginTransmission()
 unsigned int SerialLink::write(unsigned char data)
 {
   if (_payload_len < _max_payload_len) {
-    _send_crc = _send_crc_16.xmodem_upd(&data,1);   
+    _send_crc = _send_crc_16.xmodem_upd(&data,1);
     if ((data == _frame_byte) || (data == _esc_byte)) {
       _send_buf[_send_fpos++] = _esc_byte;
       _send_buf[_send_fpos++] = data ^ _invert_byte;
@@ -84,7 +68,7 @@ unsigned int SerialLink::write(unsigned char *data, unsigned int len)
       _send_buf[_send_fpos++] = data[i] ^ _invert_byte;
     } else {
       _send_buf[_send_fpos++] = data[i];
-    }    
+    }
   }
   return len;
 }
@@ -102,7 +86,7 @@ void SerialLink::endTransmission()
       _send_buf[_send_fpos++] = _esc_byte;
       _send_buf[_send_fpos++] = crc_bytes[i] ^ _invert_byte;
     } else {
-      _send_buf[_send_fpos++] = crc_bytes[i];    
+      _send_buf[_send_fpos++] = crc_bytes[i];
     }
   }
   /* framing byte */
@@ -131,7 +115,7 @@ void SerialLink::endTransmission(unsigned int timeout)
       _send_buf[_send_fpos++] = _esc_byte;
       _send_buf[_send_fpos++] = crc_bytes[i] ^ _invert_byte;
     } else {
-      _send_buf[_send_fpos++] = crc_bytes[i];    
+      _send_buf[_send_fpos++] = crc_bytes[i];
     }
   }
   /* framing byte */
@@ -160,7 +144,7 @@ void SerialLink::sendTransmission()
       _send_buf[_send_fpos++] = _esc_byte;
       _send_buf[_send_fpos++] = crc_bytes[i] ^ _invert_byte;
     } else {
-      _send_buf[_send_fpos++] = crc_bytes[i];    
+      _send_buf[_send_fpos++] = crc_bytes[i];
     }
   }
   /* framing byte */
@@ -189,7 +173,7 @@ bool SerialLink::checkReceived()
         /* frame end */
         if (_recv_fpos == 1) {
           // Do nothing
-        } else 
+        } else
         if (_recv_fpos >= _header_len + _footer_len - 1) {
           /* passed crc check, good packet */
           crc = _recv_crc_16.xmodem(&_recv_buf[1],_recv_fpos - 3);
@@ -203,7 +187,7 @@ bool SerialLink::checkReceived()
               _status = _recv_type;
               return false;
             }
-            
+
             return true;
           /* did not pass crc, bad packet */
           } else {
@@ -227,7 +211,7 @@ bool SerialLink::checkReceived()
       /* prevent buffer overflow */
       } else if (_recv_fpos >= BUFFER_SIZE) {
         _recv_fpos = 0;
-        _escape = false;        
+        _escape = false;
       } else {
         /* read into buffer */
         _recv_buf[_recv_fpos++] = c;
@@ -293,7 +277,7 @@ void SerialLink::sendStatus(bool ack)
       buf[pos++] = _esc_byte;
       buf[pos++] = crc_bytes[i] ^ _invert_byte;
     } else {
-      buf[pos++] = crc_bytes[i];    
+      buf[pos++] = crc_bytes[i];
     }
   }
   /* framing byte */

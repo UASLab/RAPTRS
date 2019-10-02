@@ -1,217 +1,325 @@
 /*
-control.cc
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor and Chris Regan
 */
 
 #include "control.h"
 
-using std::cout;
-using std::endl;
-
-/* see control.hxx for configuration details */
-
 /* configures control laws given a JSON value and registers data with global defs */
-void ControlLaws::Configure(const rapidjson::Value& Config) {
-  std::map<std::string,std::string> OutputKeysMap;
-  // configuring Soc control laws, baseline control laws are on FMU
-  if (Config.HasMember("Soc")) {
-    const rapidjson::Value& SocConfig = Config["Soc"];
-    // iterate over Soc control law names
-    for (auto &GroupName : SocConfig.GetArray()) {
-      // grab Soc control law definition
-      if (Config.HasMember(GroupName.GetString())) {
-        // store the group key
-        SocGroupKeys_.push_back(GroupName.GetString());
-        // json group definition
-        const rapidjson::Value& GroupDefinition = Config[GroupName.GetString()];
-        // resize the control group by the number of levels
-        SocControlGroups_[SocGroupKeys_.back()].resize(GroupDefinition.Size());
-        // resize the data keys by the number of levels
-        SocDataKeys_[SocGroupKeys_.back()].resize(GroupDefinition.Size());
-        // iterate over the levels
-        for (rapidjson::Value::ConstValueIterator Member = GroupDefinition.Begin(); Member != GroupDefinition.End(); ++Member) {
-          if (Member->HasMember("Level")&&Member->HasMember("Components")) {
-            auto level = std::distance(GroupDefinition.Begin(),Member);
-            // store the level names
-            SocLevelNames_[SocGroupKeys_.back()].push_back((*Member)["Level"].GetString());
-            // path for the Soc functions /Control/"Group-Name"
-            std::string PathName = RootPath_+"/"+SocGroupKeys_.back()+"/"+SocLevelNames_[SocGroupKeys_.back()].back();
-            // json components on a given level
-            const rapidjson::Value& Components = (*Member)["Components"];
-            // iterate over the components on each level
-            for (auto &Func : Components.GetArray()) {
-              if (Func.HasMember("Type")) {
-                if (Func["Type"] == "Constant") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<ConstantClass>());
-                }
-                if (Func["Type"] == "Gain") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<GainClass>());
-                }
-                if (Func["Type"] == "Sum") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<SumClass>());
-                }
-                if (Func["Type"] == "Product") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<ProductClass>());
-                }
-                if (Func["Type"] == "Delay") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<DelayClass>());
-                }
-                if (Func["Type"] == "PID2") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<PID2Class>());
-                }
-                if (Func["Type"] == "PID") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<PIDClass>());
-                }
-                if (Func["Type"] == "SS") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<SSClass>());
-                }
-                if (Func["Type"] == "Filter") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<GeneralFilter>());
-                }
-                if (Func["Type"] == "PseudoInverse") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<PseudoInverseAllocation>());
-                }
-                if (Func["Type"] == "Tecs") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<TecsClass>());
-                }
-                if (Func["Type"] == "Latch") {
-                  SocControlGroups_[SocGroupKeys_.back()][level].push_back(std::make_shared<LatchClass>());
-                }
-                // configure the function
-                SocControlGroups_[SocGroupKeys_.back()][level].back()->Configure(Func,PathName);
-              } else {
-                throw std::runtime_error(std::string("ERROR")+PathName+std::string(": Type not specified in configuration."));
-              }
-            }
-            // getting a list of all Soc keys and adding to superset of output keys
-            // modify the key to remove the intermediate path
-            // (i.e. /Control/GroupName/Pitch --> /Control/Pitch)
-            deftree.GetKeys(PathName,&SocDataKeys_[SocGroupKeys_.back()][level]);
-            for (auto Key : SocDataKeys_[SocGroupKeys_.back()][level]) {
-              std::string MemberName = RootPath_+Key.substr(Key.rfind("/"));
-              if ((Key.substr(Key.rfind("/"))!="/Mode")&&(Key.substr(Key.rfind("/"))!="/Saturated")) {
-                OutputKeysMap[MemberName] = MemberName;
-              }
-            }
-            /* Soc outputs to superset of outputs */
-            // iterate through output keys and check for matching keys in Soc
-            for (auto OutputElem : OutputKeysMap) {
-              // current output key
-              std::string OutputKey = OutputElem.second;
-              // iterate through Soc keys
-              for (auto GroupKey : SocGroupKeys_) {
-                // iterate through all levels
-                for (auto Levels = SocLevelNames_[GroupKey].begin(); Levels != SocLevelNames_[GroupKey].end(); ++Levels) {
-                  auto Level = std::distance(SocLevelNames_[GroupKey].begin(),Levels);
-                  for (auto SocKey : SocDataKeys_[GroupKey][Level]) {
-                    // check for a match with output keys
-                    if (SocKey.substr(SocKey.rfind("/"))==OutputKey.substr(OutputKey.rfind("/"))) {
-                      std::string KeyName = SocKey.substr(SocKey.rfind("/"));
-                      // setup Soc data pointer
-                      ElementPtr soc_ele = deftree.getElement(SocKey);
-                      if (soc_ele) {
-                        SocDataPtr_[GroupKey][KeyName] = soc_ele;
-                        ElementPtr out_ele = deftree.initElement(OutputKey,soc_ele->description, soc_ele->datalog, soc_ele->telemetry);
-                        if ( out_ele ) {
-                          OutputDataPtr_[KeyName] = out_ele;
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          } else {
-            throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Level name or components not specified in configuration."));
-          }
-        }
-      } else {
-        throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Group name not found in configuration."));
+void ControlSystem::Configure(const rapidjson::Value& Config) {
+  // Load Control Definitions
+  if (!Config.HasMember("ControlDef")) { // ControlDef not defined
+    throw std::runtime_error(std::string("ERROR - ControlDef not found in Control."));
+  }
+  const rapidjson::Value& ControlDef = Config["ControlDef"];
+
+  // Load Controller Group Definition
+  if (!Config.HasMember("GroupDef")) { // GroupDef not defined
+    throw std::runtime_error(std::string("ERROR - GroupDef not found in Control."));
+  }
+  const rapidjson::Value& GroupDef = Config["GroupDef"];
+
+  // Load Fmu Set of Controller Groups
+  if (!Config.HasMember("Fmu")) { // Fmu not defined
+    throw std::runtime_error(std::string("ERROR - Fmu Defintion not found in Control."));
+  }
+  /* const rapidjson::Value& FmuDef = Config["Fmu"]; */
+
+  // Loop through Baseline  Controller Groups
+  // Create new instance of each unique Controller encountered
+  // deftree entries will be in /Control/Baseline/<Controller1>/...
+  // Levels don't really have a function for the Baseline controller, but are retained anyway
+  // Controllers are executed in the order defined in the GroupDef.
+  // Controller components are executed in the order defined.
+
+  // Load Baseline Set of Controller Groups
+  if (!Config.HasMember("Baseline")) { // Baseline not defined
+    throw std::runtime_error(std::string("ERROR - Baseline Defintion not found in Control."));
+  }
+  const rapidjson::Value& BaselineDef = Config["Baseline"];
+
+  BaselinePath_ = RootPath_ + "/Baseline";
+  ConfigureSet(BaselinePath_, BaselineDef, GroupDef, ControlDef, &BaselineGroupMap_, &BaselineControlMap_, &BaselineNodeMap_);
+
+  // Loop through Test Controller Groups
+  // Create new instance of each unique Controller encountered
+  // deftree entries will be in /Control/Test/<Controller1>/...
+  // Levels are used to insert excitations.
+  // Controllers are executed in the order defined in the GroupDef.
+  // Controller components are executed in the order defined.
+
+  // Load Test Set of Controller Groups
+  if (!Config.HasMember("Test")) { // Fmu not defined
+    throw std::runtime_error(std::string("ERROR - Test Control Defintion not found in Control."));
+  }
+  const rapidjson::Value& TestDef = Config["Test"];
+
+  TestPath_ = RootPath_ + "/Test";
+  ConfigureSet(TestPath_, TestDef, GroupDef, ControlDef, &TestGroupMap_, &TestControlMap_, &TestNodeMap_);
+
+}
+
+void ControlSystem::ConfigureSet(
+  std::string SetPath,
+  const rapidjson::Value& SetDef, const rapidjson::Value& GroupDef, const rapidjson::Value& ControlDef,
+  GroupMap *SetGroupMap, ControlMap *SetControlMap, NodeMap *SetNodeMap)
+  {
+
+  GroupVec GroupStructVec;
+  // Loop through each of the Groups defined in the Set
+  for (rapidjson::Value::ConstValueIterator SetDefInst = SetDef.Begin(); SetDefInst != SetDef.End(); ++SetDefInst) {
+    std::string GroupName = (*SetDefInst).GetString();
+
+    // Check that the defined Group Exists in GroupDef
+    if (!GroupDef.HasMember(GroupName.c_str())) {
+      throw std::runtime_error(std::string("ERROR - ") + GroupName + std::string(" not defined in not found in GroupDef."));
+    }
+
+    // Load the Group defintion
+    const rapidjson::Value& GroupList = GroupDef[GroupName.c_str()];
+
+    // Loop through each of the defined (Level, Controller) pairs in the Group
+    GroupStructVec.clear();
+    NodeStruct NodeStructure;
+    for (rapidjson::Value::ConstMemberIterator GroupInst = GroupList.MemberBegin(); GroupInst != GroupList.MemberEnd(); ++GroupInst) {
+      // Get the (Level, Controller)
+      std::string LevelName = GroupInst->name.GetString();
+      std::string ControlName = GroupInst->value.GetString();
+
+      // Add the (Level, Controller) to the Vector
+      GroupStruct GroupStructInst;
+      GroupStructInst.Level = LevelName;
+      GroupStructInst.Controller = ControlName;
+
+      GroupStructVec.push_back(GroupStructInst);
+
+      // Complete Path for Controller
+      std::string ControlPath = SetPath + "/" + ControlName;
+
+      // Check that the defined Controller Exists in ControlDef
+      if (!ControlDef.HasMember(ControlName.c_str())) {
+        throw std::runtime_error(std::string("ERROR - ") + GroupName + std::string(" not defined in not found in GroupDef."));
       }
-    }
-  } else {
-    std::cout << "WARNING" << RootPath_ << ": Soc Control configuration not defined." << std::endl;
-  }
-}
 
-/* sets the control law that is engaged and currently output */
-void ControlLaws::SetEngagedController(std::string ControlGroupName) {
-  EngagedGroup_ = ControlGroupName;
-}
+      // Load the Controller defintion
+      const rapidjson::Value& ControlDefElem = ControlDef[ControlName.c_str()];
 
-/* sets the control law that is running and computing states to enable a transient free engage */
-void ControlLaws::SetArmedController(std::string ControlGroupName) {
-  ArmedGroup_ = ControlGroupName;
-}
+      // Make sure Controller is not alread defined in the Map, only want a single instance
+      if ((*SetControlMap).count(ControlName) == 0) {
+        // Create a Shared Pointer to an instance of the ComponentWrapper
+        ComponentWrapperPtr CompWrapPtr = std::make_shared<ComponentWrapper>();
 
-/* returns the number of levels for the engaged control law */
-size_t ControlLaws::ActiveControlLevels() {
-  if (EngagedGroup_ == "Baseline") {
-    return 0;
-  } else {
-    return SocControlGroups_[EngagedGroup_].size();
-  }
-}
+        // Call the ComponentWrapper Config, this configures the individual components
+        CompWrapPtr->Configure(ControlPath, ControlDefElem);
 
-/* returns the name of the level for the engaged control law */
-std::string ControlLaws::GetActiveLevel(size_t ControlLevel) {
-  if (EngagedGroup_ == "Baseline") {
-    return "";
-  } else {
-    return SocLevelNames_[EngagedGroup_][ControlLevel];
-  }
-}
-
-/* computes control law data */
-void ControlLaws::RunEngaged(size_t ControlLevel) {
-  if (EngagedGroup_ != "Baseline") {
-    // running engaged Soc control laws
-    for (auto Func : SocControlGroups_[EngagedGroup_][ControlLevel]) {
-      Func->Run(GenericFunction::kEngage);
-    }
-    // output Soc control laws
-    for (auto Key : SocDataKeys_[EngagedGroup_][ControlLevel]) {
-      std::string KeyName = Key.substr(Key.rfind("/"));
-      if ((KeyName!="/Mode")&&(KeyName!="/Saturated")) {
-        OutputDataPtr_[KeyName]->copyFrom(SocDataPtr_[EngagedGroup_][KeyName]);
+        // Add the ComponentWrapper Pointer to ControlMap
+        (*SetControlMap).insert(std::make_pair(ControlName, CompWrapPtr));
       }
+
+      // Get all the Output Nodes, copy up to higher level and root
+      std::vector<std::string> KeyVec;
+      deftree.GetKeys(ControlPath, &KeyVec);
+
+      // Loop over Keys, create Vectors of Nodes
+      NodeVec NodeVecRoot, NodeVecSet, NodeVecCtrl;
+      for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
+
+        std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/") + 1); // Get just the Key signal name
+
+        NodeVecCtrl.push_back(deftree.getElement(ControlPath + "/" + Key));
+        NodeVecSet.push_back(deftree.getElement(SetPath + "/" + Key));
+        // NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
+
+        // Copy Node defintions
+        NodeVecSet.back()->copyFrom(NodeVecCtrl.back());
+        // NodeVecRoot.back()->copyFrom(NodeVecCtrl.back());
+      }
+
+      // Create the Map of deftree elements, this is to make copying engaged controller outputs faster during runtime
+      NodeStructure.Controller = NodeVecCtrl;
+      NodeStructure.Set = NodeVecSet;
+      NodeStructure.Root = NodeVecRoot;
+
+      // Node Maps: Controller, Set, and Root
+      (*SetNodeMap).insert(std::make_pair(ControlName, NodeStructure));
+
+    } // (Level, Controller) pairs in the Group
+
+    // Add the Vector (Level, Controller) to the Group Map
+    (*SetGroupMap).insert(std::make_pair(GroupName, GroupStructVec));
+
+  } // Groups defined in the Set
+}
+
+void ControlSystem::ConfigureEffectors( std::vector<std::string> EffKeyVec ) {
+  for (size_t iKey = 0; iKey < EffKeyVec.size(); ++iKey) {
+    std::string EffKey = EffKeyVec[iKey].substr (EffKeyVec[iKey].rfind("/") + 1);
+    EffNodeVec_.push_back(deftree.getElement(RootPath_ + "/" + EffKey, true));
+    BaselineEffNodeVec_.push_back(deftree.getElement(BaselinePath_ + "/" + EffKey, true));
+    TestEffNodeVec_.push_back(deftree.getElement(TestPath_ + "/" + EffKey, true));
+  }
+}
+
+void ControlSystem::EffectorBaseline(GenericFunction::Mode mode) {
+  // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
+  if (mode == GenericFunction::kEngage) {
+    for (size_t iNode = 0; iNode < BaselineEffNodeVec_.size(); ++iNode) {
+      EffNodeVec_[iNode]->setDouble(BaselineEffNodeVec_[iNode]->getDouble());
     }
   }
 }
 
-/* computes control law data */
-void ControlLaws::RunArmed() {
-  // iterate through all groups
-  for (auto Group : SocGroupKeys_) {
-    // iterate through all levels
-    for (auto Levels = SocControlGroups_[Group].begin(); Levels != SocControlGroups_[Group].end(); ++Levels) {
-      auto Level = std::distance(SocControlGroups_[Group].begin(),Levels);
-      // iterate through all functions
-      for (auto Func : SocControlGroups_[Group][Level]) {
-        // make sure we don't run the engaged group
-        if (Group != EngagedGroup_) {
-          // run as arm if the armed group, otherwise standby
-          if (Group == ArmedGroup_) {
-            Func->Run(GenericFunction::kArm);
-          } else {
-            Func->Run(GenericFunction::kStandby);
-          }
-        }
+void ControlSystem::EffectorTest(GenericFunction::Mode mode) {
+  // If this is the engaged controller copy deftree elements  1 level higher (to: /Control)
+  if (mode == GenericFunction::kEngage) {
+    for (size_t iNode = 0; iNode < TestEffNodeVec_.size(); ++iNode) {
+      EffNodeVec_[iNode]->setDouble(TestEffNodeVec_[iNode]->getDouble());
+    }
+  }
+}
+
+void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Value& Controller) {
+  // Loop through each Component of the defined Controller
+  for (rapidjson::Value::ConstValueIterator ControlInst = Controller.Begin(); ControlInst != Controller.End(); ++ControlInst) {
+    const rapidjson::Value& Component = (*ControlInst);
+
+    // Component type
+    if (!Component.HasMember("Type")) {
+      throw std::runtime_error(std::string("ERROR - ") + ControlPath + std::string(" Type not found in Controller Componet."));
+    }
+    std::string ComponentType;
+    LoadVal(Component, "Type", &ComponentType, true);
+
+    // Create the Component Object, append to vector
+    if (ComponentType == "Constant") {
+      ComponentVec_.push_back(std::make_shared<ConstantClass>());
+    } else if (ComponentType == "Gain") {
+      ComponentVec_.push_back(std::make_shared<GainClass>());
+    } else if (ComponentType == "Sum") {
+      ComponentVec_.push_back(std::make_shared<SumClass>());
+    } else if (ComponentType == "Product") {
+      ComponentVec_.push_back(std::make_shared<ProductClass>());
+    } else if (ComponentType == "Delay") {
+      ComponentVec_.push_back(std::make_shared<DelayClass>());
+    } else if (ComponentType == "PID2") {
+      ComponentVec_.push_back(std::make_shared<PID2Class>());
+    } else if (ComponentType == "PID") {
+      ComponentVec_.push_back(std::make_shared<PIDClass>());
+    } else if (ComponentType == "SS") {
+      ComponentVec_.push_back(std::make_shared<SSClass>());
+    } else if (ComponentType == "Filter") {
+      ComponentVec_.push_back(std::make_shared<GeneralFilter>());
+    } else if (ComponentType == "PseudoInverse") {
+      ComponentVec_.push_back(std::make_shared<PseudoInverseAllocation>());
+    } else if (ComponentType == "Tecs") {
+      ComponentVec_.push_back(std::make_shared<TecsClass>());
+    } else if (ComponentType == "Latch") {
+      ComponentVec_.push_back(std::make_shared<LatchClass>());
+    } else {
+      throw std::runtime_error(std::string("ERROR - ") + ComponentType + std::string(": Controller Component type does not match known types."));
+    }
+
+    // Call Configuration for Component
+    ComponentVec_.back()->Configure(Component, ControlPath);
+  }
+}
+
+void ComponentWrapper::Run (GenericFunction::Mode mode) {
+  // Loop through the Components
+  for (size_t iComponent = 0; iComponent < ComponentVec_.size(); ++iComponent) {
+
+    // Excecute the Component
+    ComponentVec_[iComponent]->Run(mode);
+  }
+}
+
+
+/* Baseline Controllers */
+std::string ControlSystem::GetBaseline() {
+  return BaselineGroupSel_;
+}
+
+void ControlSystem::SetBaseline(std::string BaselineGroupSel) {
+  BaselineGroupSel_ = BaselineGroupSel;
+}
+
+// Run the selected Baseline controller group in the specified mode
+void ControlSystem::RunBaseline(GenericFunction::Mode mode) {
+
+  GroupVec BaselineGroupVec = BaselineGroupMap_[BaselineGroupSel_];
+
+  // Loop through each level
+  for (size_t iVec = 0; iVec < BaselineGroupVec.size(); ++iVec) {
+    std::string ControlName = BaselineGroupVec[iVec].Controller;
+
+    // Run the Controller, using the Map of Wrapper Classes.
+    BaselineControlMap_[ControlName]->Run(mode);
+
+    // Copy deftree elements 1 level higher (to: /Control/Baseline)
+    NodeVec NodeVecCtrl = BaselineNodeMap_[ControlName].Controller;
+    NodeVec NodeVecSet = BaselineNodeMap_[ControlName].Set;
+
+    for (size_t iNode = 0; iNode < NodeVecCtrl.size(); ++iNode) {
+      NodeVecSet[iNode]->setDouble(NodeVecCtrl[iNode]->getDouble());
+    }
+  }
+}
+
+/* Test Controllers */
+std::string ControlSystem::GetTest() {
+  return TestGroupSel_;
+}
+
+void ControlSystem::SetTest(std::string TestGroupSel) {
+  TestGroupSel_ = TestGroupSel;
+}
+
+// Get the Test Levels
+std::vector<std::string> ControlSystem::GetTestLevels() {
+  std::vector<std::string> LevelVec;
+  LevelVec.clear();
+
+  GroupVec TestGroupVec = TestGroupMap_[TestGroupSel_];
+  for (size_t iVec = 0; iVec < TestGroupVec.size(); ++iVec) {
+    LevelVec.push_back (TestGroupVec[iVec].Level);
+  }
+
+  return LevelVec;
+}
+
+// Get Current Level
+std::string ControlSystem::GetLevel() {
+  return TestLevelSel_;
+}
+
+// Set Current Level
+void ControlSystem::SetLevel(std::string TestLevelSel) {
+  TestLevelSel_ = TestLevelSel;
+}
+
+// Run the selected Test controller group in the specified mode
+void ControlSystem::RunTest(GenericFunction::Mode mode) {
+
+  GroupVec TestGroupVec = TestGroupMap_[TestGroupSel_];
+
+  // Loop through each level
+  for (size_t iVec = 0; iVec < TestGroupVec.size(); ++iVec) {
+    std::string Level = TestGroupVec[iVec].Level;
+
+    // Only Execute the selected level
+    if (Level == TestLevelSel_) {
+      std::string ControlName = TestGroupVec[iVec].Controller;
+
+      // Run the Controller, using the Map of Wrapper Classes.
+      TestControlMap_[ControlName]->Run(mode);
+
+      // Copy deftree elements 1 level higher (to: /Control/Test)
+      NodeVec NodeVecCtrl = TestNodeMap_[ControlName].Controller;
+      NodeVec NodeVecSet = TestNodeMap_[ControlName].Set;
+
+      for (size_t iNode = 0; iNode < NodeVecCtrl.size(); ++iNode) {
+        NodeVecSet[iNode]->setDouble(NodeVecCtrl[iNode]->getDouble());
       }
     }
   }

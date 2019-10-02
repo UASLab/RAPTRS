@@ -1,7 +1,8 @@
-//
-// FILE: sim-interface.cpp
-// DESCRIPTION: aquire live sensor data from an running copy of JSBSim
-//
+/*
+Copyright (c) 2018 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan, Curt Olson
+*/
 
 #include <stdlib.h>
 #include <iostream>
@@ -806,7 +807,7 @@ bool sim_cmd_update() {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
   }
 
-  int result = sock_cmd.send( response.c_str(), response.length(), 0 );
+  unsigned int result = sock_cmd.send( response.c_str(), response.length(), 0 );
   if ( result != response.length() ) {
     return false;
   }

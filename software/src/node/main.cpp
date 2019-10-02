@@ -1,21 +1,7 @@
 /*
-node.ino
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
 #include "WProgram.h"
@@ -33,8 +19,6 @@ AircraftBfsComms *BfsComms;
 AircraftConfiguration Config;
 // class for sensor configuration and data acquisition
 AircraftSensors Sensors;
-// struct for sensor data
-AircraftSensors::Data SensorData;
 // class for mission management (modes and states)
 AircraftMission Mission;
 // class for effectors
@@ -47,9 +31,8 @@ AircraftMission::State MissionState;
 AircraftMission::Mode RequestedMode;
 // effector commands
 std::vector<float> EffectorCommands;
-// buffer for transmitting metadata
-std::vector<uint8_t> MetaDataBuffer;
-// buffer for transmitting data
+// buffers for transmitting data messages
+std::vector<uint8_t> SizeBuffer;
 std::vector<uint8_t> DataBuffer;
 
 unsigned long tnow, tprev;
@@ -57,9 +40,10 @@ unsigned long tnow, tprev;
 // send messages on request
 void RequestMessage() {
   AircraftBfsComms::Message message;
-  BfsComms->GetMessage(&message);
-  if (message == AircraftBfsComms::SensorMetaData) {
-    BfsComms->SendSensorMetaData(MetaDataBuffer);
+  std::vector<uint8_t> Payload;
+  BfsComms->GetMessage(&message, &Payload);
+  if (message == AircraftBfsComms::SensorDataSize) {
+    BfsComms->SendSensorDataSize(SizeBuffer);
   }
   if (message == AircraftBfsComms::SensorData) {
     BfsComms->SendSensorData(DataBuffer);
@@ -119,12 +103,8 @@ void loop() {
       Mission.ClearSyncDataCollection();
       // read synchronous sensors
       Sensors.ReadSyncSensors();
-      // get the current data
-      Sensors.GetData(&SensorData);
-      // buffer for transmitting meta data
-      Sensors.GetMetaDataBuffer(&MetaDataBuffer);
       // buffer for transmitting data
-      Sensors.GetDataBuffer(&DataBuffer);
+      Sensors.MakeCompoundMessage(&DataBuffer, &SizeBuffer);
     }
     if (MissionState == AircraftMission::AsyncDataCollection) {
       // read the asynchronous sensors
@@ -143,10 +123,14 @@ void loop() {
   }
   if (MissionMode == AircraftMission::Configuration) {
     // buffer for receiving configurations
-    std::vector<char> ConfigBuffer;
-    // update configuration
-    if (BfsComms->ReceiveConfigMessage(&ConfigBuffer)) {
-      Config.Update(ConfigBuffer.data(),&Sensors,&Effectors);
+    if ( BfsComms->NewReceived() ) {
+      AircraftBfsComms::Message message;
+      std::vector<uint8_t> Payload;
+      BfsComms->GetMessage(&message, &Payload);
+      // update configuration
+      if ( Config.Update(message, &Payload, &Sensors, &Effectors) ) {
+        BfsComms->ClearReceived();
+      }
     }
   }
   // request mode
