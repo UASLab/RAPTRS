@@ -25,6 +25,7 @@ if not root.hasChild("messages"):
     quit()
 
 type_code = { "double": 'd', "float": 'f',
+              "uint64_t": "Q", "int64_t": "q",
               "uint32_t": 'L', "int32_t": 'l',
               "uint16_t": 'H', "int16_t": 'h',
               "uint8_t": 'B', "int8_t": 'b',
@@ -199,7 +200,7 @@ def gen_cpp_header():
         result.append("    // public info fields")
         id = id_dict[m.getString("name")]
         result.append("    static const uint8_t id = %s;" % id)
-        result.append("    uint16_t len = 0;")
+        result.append("    int len = 0;")
         result.append("")
         
         # generate pack code
@@ -222,9 +223,10 @@ def gen_cpp_header():
         result.append("            return false;")
         result.append("        }")
 
-        # copy values
-        result.append("        // copy values")
-        result.append("        _compact_t *_buf = (_compact_t *)payload;")
+        if count > 0:
+            # copy values
+            result.append("        // copy values")
+            result.append("        _compact_t *_buf = (_compact_t *)payload;")
         for j in range(count):
             line = "        ";
             f = m.getChild("fields[%d]" % j)
@@ -284,7 +286,8 @@ def gen_cpp_header():
         result.append("            return false;")
         result.append("        }")
         result.append("        memcpy(payload, external_message, message_size);")
-        result.append("        _compact_t *_buf = (_compact_t *)payload;");
+        if count > 0:
+            result.append("        _compact_t *_buf = (_compact_t *)payload;");
         result.append("        len = sizeof(_compact_t);")
         for j in range(count):
             line = "        ";
