@@ -165,6 +165,8 @@ void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value
       WaveStructInst.WaveFunc = std::make_shared<Pulse_1_Cos>();
     } else if (WaveType == "MultiSine") {
       WaveStructInst.WaveFunc = std::make_shared<MultiSine>();
+    } else if (WaveType == "Sampled") {
+      WaveStructInst.WaveFunc = std::make_shared<Sampled>();
     } else {
       throw std::runtime_error(std::string("ERROR - ") + WaveType + std::string(": Wave type does not match known types."));
     }

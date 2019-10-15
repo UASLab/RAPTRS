@@ -208,3 +208,29 @@ class MultiSine: public Waveform {
     Eigen::ArrayXf Freq_rps_;
     Eigen::ArrayXf Phase_rad_;
 };
+
+/*
+Sampled Class - Adds a Pre-defined time history to the signal
+Example JSON configuration:
+{
+  "Type": "Sampled"
+  "Duration": X,
+  "dt": X,
+  "Sample": [X]
+  }
+}
+Where:
+   * Duration is the duration time of the chirp
+   * Sample is a vector of each element of the time history
+*/
+
+class Sampled: public Waveform {
+  public:
+    void Configure(const rapidjson::Value& Config);
+    void Run(float tExc_s, float *Excite);
+    void Clear();
+  private:
+    float tDur_s_ = 0.0f;
+    float dt_s_ = 0.0f;
+    Eigen::ArrayXf Sample_;
+};

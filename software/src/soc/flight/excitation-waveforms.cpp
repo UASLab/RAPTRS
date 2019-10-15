@@ -222,3 +222,26 @@ void MultiSine::Clear() {
   Phase_rad_.resize(0,1);
   tDur_s_ = 0.0f;
 }
+
+
+
+void Sampled::Configure(const rapidjson::Value& Config) {
+  LoadVal(Config, "Duration", &tDur_s_, true);
+  LoadVal(Config, "dt", &dt_s_, true);
+  LoadVal(Config, "Sample", &Sample_, true);
+}
+
+void Sampled::Run(float tExc_s, float *Excite) {
+  *Excite = 0.0f;
+
+  if (tExc_s < tDur_s_) {
+    size_t iSamp = (size_t) (tExc_s / dt_s_);
+    *Excite = Sample_[iSamp];
+  }
+}
+
+void Sampled::Clear() {
+  tDur_s_ = 0.0f;
+  dt_s_ = 0.0f;
+  Sample_.resize(0,1);
+}
