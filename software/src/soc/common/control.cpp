@@ -73,7 +73,7 @@ void ControlSystem::ConfigureSet(
 
     // Check that the defined Group Exists in GroupDef
     if (!GroupDef.HasMember(GroupName.c_str())) {
-      throw std::runtime_error(std::string("ERROR - ") + GroupName + std::string(" not defined in not found in GroupDef."));
+      throw std::runtime_error(std::string("ERROR - ") + GroupName + std::string(" not found in GroupDef."));
     }
 
     // Load the Group defintion
@@ -99,7 +99,7 @@ void ControlSystem::ConfigureSet(
 
       // Check that the defined Controller Exists in ControlDef
       if (!ControlDef.HasMember(ControlName.c_str())) {
-        throw std::runtime_error(std::string("ERROR - ") + GroupName + std::string(" not defined in not found in GroupDef."));
+        throw std::runtime_error(std::string("ERROR - ") + GroupName + std::string(" not found in ControlDef."));
       }
 
       // Load the Controller defintion
