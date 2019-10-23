@@ -97,14 +97,14 @@ private:
 Linear Chirp Class - Adds a linear chirp to the signal for the specified duration
 Example JSON configuration:
 {
-  "Type": "LinearChirp",
-  "Amplitude": [start,end],
-  "Frequency": [start,end]
+  "Type": "LinearChirp", "Duration": X,
+  "AmpStart": X, "AmpEnd": X,
+  "FreqStart": X, "FreqEnd": X
 }
 Where:
    * Duration is the duration time of the chirp
-   * Amplitude is an array specifying the starting and ending chirp Amplitude
-   * Frequency is an array specifying the starting and ending Frequency in rad/sec
+   * Amplitude is starting and ending chirp Amplitude
+   * Frequency is starting and ending Frequency in rad/sec
 */
 
 class LinearChirp: public Waveform {
@@ -127,10 +127,9 @@ class LinearChirp: public Waveform {
 Log Chirp Class - Adds a log chirp to the signal for the specified duration
 Example JSON configuration:
 {
-  "Type": "LogChirp"
-  "Duration": X,
-  "Amplitude": [start,end],
-  "Frequency": [start,end]
+  "Type": "LogChirp", "Duration": X,
+  "AmpStart": X, "AmpEnd": X,
+  "FreqStart": X, "FreqEnd": X
   }
 }
 Where:
