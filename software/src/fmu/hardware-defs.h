@@ -11,7 +11,7 @@ Author: Brian Taylor
 #include "Arduino.h"
 
 // FMU Software Version
-const String SoftwareVersion = "0.10.1 - mAEWing2";
+const String SoftwareVersion = "0.10.1";
 
 // Debug port
 const uint32_t kDebugBaud = 115200;                           // Baudrate for status and debug messages
@@ -23,8 +23,7 @@ const uint32_t kSocBaud = 1500000;                            // Baudrate for co
 // BFS bus
 static i2c_t3 &kBfsPort = Wire;                               // I2C port
 const i2c_pins kBfsPins = I2C_PINS_18_19;                     // I2C pins
-const uint32_t kBfsRate = 3000000;                            // I2C rate
-// const uint32_t kBfsRate = 6000000;                            // I2C rate
+const uint32_t kBfsRate = 6000000;                            // I2C rate
 const uint8_t kBfsInt1Pin = 20;
 const uint8_t kBfsInt2Pin = 17;
 
