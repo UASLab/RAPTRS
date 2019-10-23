@@ -11,7 +11,7 @@ Author: Brian Taylor
 #include "Arduino.h"
 
 // Node Software Version
-const String SoftwareVersion = "0.8.3 - mAEWing2";
+const String SoftwareVersion = "0.10.1 - mAEWing2";
 
 // Debug port
 const uint32_t kDebugBaud = 115200;                           // Baudrate for status and debug messages

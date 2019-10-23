@@ -153,7 +153,7 @@ NODE_CXX = $(NODE_COMPILER)/arm-none-eabi-g++
 NODE_OBJCOPY = $(NODE_COMPILER)/arm-none-eabi-objcopy
 NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 # compiler options
-SOC_CPPFLAGS = -Wall -g -Wno-psabi -I/usr/include/eigen3 -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
+SOC_CPPFLAGS = -Wall -O3 -Wno-psabi -I/usr/include/eigen3 -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SOC_CXXFLAGS = -std=c++17
 SIM_CPPFLAGS = -Wall -O3 -Wno-psabi -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SIM_CXXFLAGS = -std=c++17
