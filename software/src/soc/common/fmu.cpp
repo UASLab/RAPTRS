@@ -488,7 +488,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       }
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
@@ -616,7 +616,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       printf("ERROR: no i2c address specified\n");
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
@@ -647,7 +647,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       printf("ERROR: no transducer type specified\n");
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
@@ -681,7 +681,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       }
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
@@ -730,7 +730,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
       printf("ERROR: no Soc-Engage-Switch gain field specified\n");
     }
     if ( sw.HasMember("ModeSel") ) {
-      if ( sw.HasMember("Threshold") ) {
+      if ( sw["ModeSel"].HasMember("Soc") ) {
         msg.threshold = sw["ModeSel"]["Soc"].GetFloat();
       } else {
         printf("ERROR: no Soc-Engage-Switch Soc field specified\n");
@@ -759,7 +759,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
       printf("ERROR: no Throttle-Safety-Switch Gain field specified\n");
     }
     if ( sw.HasMember("ModeSel") ) {
-      if ( sw.HasMember("Threshold") ) {
+      if ( sw["ModeSel"].HasMember("Engage") ) {
         msg.threshold = sw["ModeSel"]["Engage"].GetFloat();
       } else {
         printf("ERROR: no Throttle-Safety-Switch Engage field specified\n");
