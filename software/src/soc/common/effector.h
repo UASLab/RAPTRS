@@ -1,31 +1,14 @@
 /*
-effector.hxx
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor and Chris Regan
 */
 
-#ifndef EFFECTOR_HXX_
-#define EFFECTOR_HXX_
+#pragma once
 
 #include "hardware-defs.h"
-#include "definition-tree2.h"
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+#include "configuration.h"
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -43,10 +26,10 @@ class AircraftEffectors {
     void Configure(const rapidjson::Value& Config);
     std::vector<float> Run();
     bool Configured();
+    std::vector<std::string> GetKeys();
   private:
     std::string RootPath_ = "/Effectors";
     bool Configured_ = false;
-    std::vector<ElementPtr> input_nodes;
+    std::vector<std::string> EffKeyVec_;
+    std::vector<ElementPtr> EffNodeVec_;
 };
-
-#endif

@@ -1,23 +1,7 @@
 /*
-* Brian R Taylor
-* brian.taylor@bolderflight.com
-* 
-* Copyright (c) 2018 Bolder Flight Systems
-* 
-* Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
-* and associated documentation files (the "Software"), to deal in the Software without restriction, 
-* including without limitation the rights to use, copy, modify, merge, publish, distribute, 
-* sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
-* furnished to do so, subject to the following conditions:
-* 
-* The above copyright notice and this permission notice shall be included in all copies or 
-* substantial portions of the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
-* BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-* DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
 #include "messages.h"
@@ -59,7 +43,7 @@ void (*unpack_msg[NUM_MSG_ID]) (void *packed,void *unpacked);
 
 #pragma pack(push,1)
 
-/* 
+/*
 * FMU configuration message. Configures the sample rate divider to set
 * the flight computer frame rate, where the frequency is 1000 / (1 + srd).
 * Also configures the FMU orientation relative to the aircraft as a yaw,
@@ -133,7 +117,7 @@ struct msg_mpu9250_config {
 * External BME-280 configuration. Specify the address of the FMU or Node the
 * sensor is connected to, whether it's communicating over SPI (only available
 * on the FMU with a fixed CS pin) or I2C, the I2C bus (only one bus available
-* on the FMU with two available on the Node), and the I2C address 
+* on the FMU with two available on the Node), and the I2C address
 * (two available).
 */
 struct msg_bme280_config {
@@ -144,7 +128,7 @@ struct msg_bme280_config {
 };
 /*
 * uBlox GNSS configuration. Specify the address of the FMU or Node the
-* sensor is connected to, the UART port (ports 1 and 2 available on Node, 
+* sensor is connected to, the UART port (ports 1 and 2 available on Node,
 * ports 3 and 4 available on FMU), and the baud rate (see listed rates).
 */
 struct msg_ublox_config {
@@ -161,9 +145,9 @@ struct msg_sbus_config {
   unsigned int bfs_addr : 3;              // bfs addr of component (0 - 7)
 };
 /*
-* Swift air data configuration. The Swift consists of a static and 
+* Swift air data configuration. The Swift consists of a static and
 * differential AMS-5915 pressure transducer. Three differential
-* transducers are available by request for the Swift depending on 
+* transducers are available by request for the Swift depending on
 * the speed range needed. Specify the address of the FMU or Node
 * the Swift is connected to, the I2C bus (only one bus available
 * on the FMU with two available on the Node), the static and
@@ -179,7 +163,7 @@ struct msg_swift_config {
 };
 /*
 * AMS-5915 pressure transduce configuration. Specify the address
-* of the FMU or Node the sensor is connected to, the I2C bus 
+* of the FMU or Node the sensor is connected to, the I2C bus
 * (only one bus available on the FMU with two available on the Node),
 * the I2C address, and the transducer type (see the listed types).
 */
@@ -192,8 +176,8 @@ struct msg_ams5915_config {
 /*
 * Analog sensor configuration. Data output is given as both a voltage value
 * and a calibrated output (i.e. using a POT to measure control surface
-* position). Specify the address of the FMU or Node for the analog input 
-* (2 available on the FMU, 8 available on the Node), the channel number for 
+* position). Specify the address of the FMU or Node for the analog input
+* (2 available on the FMU, 8 available on the Node), the channel number for
 * the analog input, the number of polynomial coefficients used in calibiration
 * and an array of those coefficients given in descending order.
 */
@@ -213,7 +197,7 @@ struct msg_analog_config {
 /*
 * Digital sensor configuration. Data output is given as a boolean value.
 * Specify the address of the FMU or Node for the digital input (2 available
-* on the FMU, 4 available on the Node), the channel number, and whether a 
+* on the FMU, 4 available on the Node), the channel number, and whether a
 * high digital reading should result in a true or false data output.
 */
 struct msg_digital_config {
@@ -221,7 +205,7 @@ struct msg_digital_config {
   unsigned int ch : 2;                    // digital channel number (2 GPIO on FMU, 4 digital pins on Node)
   unsigned int active_high : 1;           // 0 = read high, output 0, 1 = read high, output 1
 };
-/* 
+/*
 * Voltage sensor configuration. On the FMU available data includes: input
 * voltage (6.5 - 36V), regulated voltage (nominally ~5V), PWM servo voltage
 * (0 - 9.9V), and SBUS servo voltage (0 - 9.9V). On the Node, PWM and SBUS
@@ -232,7 +216,7 @@ struct msg_voltage_config {
   unsigned int bfs_addr : 3;              // bfs addr of component (0 - 7)
   unsigned int type : 2;                  // voltage measurement (0 = input, 1 = regulated, 2 = pwm, 3 = sbus)
 };
-/* 
+/*
 * Time data, includes a rolling frame counter to sync data and a counter
 * of the total number of frames. Coupled with the SRD, this can be used
 * to generate a time value.
@@ -241,7 +225,7 @@ struct msg_time_data {
   unsigned int frame_counter : 3;         // a rolling frame counter to sync data packets
   unsigned int frames : 25;               // counts the total number of frames
 };
-/* 
+/*
 * Accelerometer data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes three axis accelerometer values with a range
@@ -254,7 +238,7 @@ struct msg_accel_data {
   unsigned int accel_y_mss : 19;
   unsigned int accel_z_mss : 19;
 };
-/* 
+/*
 * Gyro data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes three axis gyro values with a range
@@ -267,7 +251,7 @@ struct msg_gyro_data {
   unsigned int gyro_y_rads : 22;
   unsigned int gyro_z_rads : 22;
 };
-/* 
+/*
 * Magnetometer data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes three axis mag values with a range
@@ -280,12 +264,12 @@ struct msg_mag_data {
   unsigned int mag_y_ut : 18;
   unsigned int mag_z_ut : 18;
 };
-/* 
+/*
 * Inceptor data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes boolean values for whether a frame was lost,
 * whether the receiver is in failsafe mode, and 16 channels of normalized
-* pilot input data. 
+* pilot input data.
 */
 struct msg_inceptor_data {
   unsigned int frame_counter : 3;         // a rolling frame counter to sync data packets
@@ -293,23 +277,23 @@ struct msg_inceptor_data {
   unsigned int lost_frame : 1;            // 0 = frame received, 1 = frame lost
   unsigned int failsafe_activated : 1;    // 0 = failsafe inactive, 1 = failsafe active
   unsigned int ch0 : 11;                  // SBUS channel data, +/- 1 range
-  unsigned int ch1 : 11;                  
-  unsigned int ch2 : 11;                  
-  unsigned int ch3 : 11;                  
-  unsigned int ch4 : 11;                  
-  unsigned int ch5 : 11;                  
-  unsigned int ch6 : 11;                  
-  unsigned int ch7 : 11;                  
-  unsigned int ch8 : 11;                  
-  unsigned int ch9 : 11;                  
-  unsigned int ch10 : 11;                 
-  unsigned int ch11 : 11;                 
-  unsigned int ch12 : 11;                 
-  unsigned int ch13 : 11;                 
-  unsigned int ch14 : 11;                 
-  unsigned int ch15 : 11;                   
+  unsigned int ch1 : 11;
+  unsigned int ch2 : 11;
+  unsigned int ch3 : 11;
+  unsigned int ch4 : 11;
+  unsigned int ch5 : 11;
+  unsigned int ch6 : 11;
+  unsigned int ch7 : 11;
+  unsigned int ch8 : 11;
+  unsigned int ch9 : 11;
+  unsigned int ch10 : 11;
+  unsigned int ch11 : 11;
+  unsigned int ch12 : 11;
+  unsigned int ch13 : 11;
+  unsigned int ch14 : 11;
+  unsigned int ch15 : 11;
 };
-/* 
+/*
 * Temperature data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Temperature data is valid in the range -40 to +80 C.
@@ -319,12 +303,12 @@ struct msg_temperature_data {
   unsigned int time_offset_us : 15;       // time offset from the frame start time, us
   unsigned int temp_c : 14;               // temperature, C, -40 to +80 C
 };
-/* 
+/*
 * GNSS data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. GNSS data includes a boolean value of whether a good fix has
 * been acheived, the number of satellites being tracked, the GPS time of week,
-* the latitude, longitude, altitude, NED velocity, estimates of horizontal, 
+* the latitude, longitude, altitude, NED velocity, estimates of horizontal,
 * vertical and speed accuracy, and the position dilution of precision.
 */
 struct msg_gnss_data {
@@ -344,7 +328,7 @@ struct msg_gnss_data {
   unsigned int speed_acc_ms : 17;         // speed accuracy estimate, m/s
   unsigned int pdop : 14;                 // position dilution of precision
 };
-/* 
+/*
 * Static pressure data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Pressure data is valid in the range from 30000 to 110000 Pa.
@@ -354,7 +338,7 @@ struct msg_static_press_data {
   unsigned int time_offset_us : 15;       // time offset from the frame start time, us
   unsigned int press_pa : 22;             // pressure, pa 30000 to 110000 Pa
 };
-/* 
+/*
 * Differential pressure data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Pressure data is valid in the range +/- 20000 Pa.
@@ -364,7 +348,7 @@ struct msg_diff_press_data {
   unsigned int time_offset_us : 15;       // time offset from the frame start time, us
   unsigned int press_pa : 22;
 };
-/* 
+/*
 * Analog data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Voltage given in the range of 0 - 3.3V as well as a
@@ -376,7 +360,7 @@ struct msg_analog_data {
   unsigned int voltage : 13;              // measured voltage
   unsigned int cal_value : 32;            // calibrated value
 };
-/* 
+/*
 * Digital data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Digital output is given as a boolean.
@@ -386,7 +370,7 @@ struct msg_digital_data {
   unsigned int time_offset_us : 15;       // time offset from the frame start time, us
   unsigned int digout : 1;                // high or low
 };
-/* 
+/*
 * Voltage data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Voltage data is valid from 0 - 36V.
@@ -504,7 +488,7 @@ Msg_t *msg_init()
   msg_unpacked_len[MSG_DIFF_PRESS_DATA]   = sizeof(struct diff_press_data);
   msg_unpacked_len[MSG_ANALOG_DATA]       = sizeof(struct analog_data);
   msg_unpacked_len[MSG_DIGITAL_DATA]      = sizeof(struct digital_data);
-  msg_unpacked_len[MSG_VOLTAGE_DATA]      = sizeof(struct voltage_data);  
+  msg_unpacked_len[MSG_VOLTAGE_DATA]      = sizeof(struct voltage_data);
   /* array of function pointers to pack messages */
   pack_msg[MSG_FMU_CFG]           = pack_fmu_config;
   pack_msg[MSG_INT_MPU9250_CFG]   = pack_int_mpu9250_config;
@@ -607,7 +591,7 @@ MsgError_t msg_build_tx(Msg_t *self,unsigned int hash,MsgId_t msg,void *payload)
   }
   if ((msg < 0) || (msg >= NUM_MSG_ID)) {
     self->tx_status = MSG_ERROR_INCORRECT_ID;
-    return MSG_ERROR_INCORRECT_ID;    
+    return MSG_ERROR_INCORRECT_ID;
   }
   /* header */
   self->tx_buffer[0] = 0x42;
@@ -619,7 +603,7 @@ MsgError_t msg_build_tx(Msg_t *self,unsigned int hash,MsgId_t msg,void *payload)
   self->tx_buffer[5] = (hash >> 24) & 0xFF;
   /* msg id */
   self->tx_buffer[6] = ((unsigned short) msg) & 0xFF;
-  self->tx_buffer[7] = (((unsigned short) msg) >> 8) & 0xFF;  
+  self->tx_buffer[7] = (((unsigned short) msg) >> 8) & 0xFF;
   /* pack the payload */
   (*pack_msg[msg])(payload,(void *)packed_buffer);
   memcpy(self->tx_buffer + MSG_HEADER_LEN,packed_buffer,msg_packed_len[msg]);
@@ -645,31 +629,31 @@ MsgError_t msg_build_status(Msg_t *self)
 unsigned char *msg_tx_buffer(Msg_t *self)
 {
   if (!self) {return NULL;}
-  return self->tx_buffer;  
+  return self->tx_buffer;
 }
 
 unsigned int msg_tx_len(Msg_t *self)
 {
   if (!self) {return 0;}
-  return self->tx_len;  
+  return self->tx_len;
 }
 
 unsigned int msg_tx_hash(Msg_t *self)
 {
   if (!self) {return 0;}
-  return self->tx_hash;  
+  return self->tx_hash;
 }
 
 MsgId_t msg_tx_id(Msg_t *self)
 {
   if (!self) {return 0;}
-  return self->tx_id;  
+  return self->tx_id;
 }
 
 void *msg_tx_payload(Msg_t *self)
 {
   if (!self) {return NULL;}
-  return self->tx_payload;    
+  return self->tx_payload;
 }
 
 MsgError_t msg_parse_rx(Msg_t *self,unsigned char byte)
@@ -677,7 +661,7 @@ MsgError_t msg_parse_rx(Msg_t *self,unsigned char byte)
   unsigned short computed_checksum, recv_checksum;
   if (!self) {
     self->rx_status = MSG_ERROR_NULL_PTR;
-    return MSG_ERROR_NULL_PTR;    
+    return MSG_ERROR_NULL_PTR;
   }
   /* sync on header */
   if (self->rx_state < ARRAY_SIZE(MSG_HEADER)) {
@@ -696,7 +680,7 @@ MsgError_t msg_parse_rx(Msg_t *self,unsigned char byte)
     self->temp_rx_id = (MsgId_t)(self->temp_rx_buffer[MSG_HEADER_LEN - 1] << 8) | self->temp_rx_buffer[MSG_HEADER_LEN - 2];
     if ((self->temp_rx_id < 0) || (self->temp_rx_id >= NUM_MSG_ID)) {
       self->rx_status = MSG_ERROR_INCORRECT_ID;
-      return MSG_ERROR_INCORRECT_ID;    
+      return MSG_ERROR_INCORRECT_ID;
     }
     self->temp_rx_buffer[self->rx_state] = byte;
     ++self->rx_state;
@@ -714,20 +698,20 @@ MsgError_t msg_parse_rx(Msg_t *self,unsigned char byte)
       self->rx_len = MSG_HEADER_LEN + msg_packed_len[self->rx_id] + MSG_CHECKSUM_LEN;
       memcpy(self->rx_buffer,self->temp_rx_buffer,self->rx_len);
       self->rx_hash = (unsigned int)(self->rx_buffer[MSG_HEADER_LEN - 3] << 24) | (self->rx_buffer[MSG_HEADER_LEN - 4] << 16) | (self->rx_buffer[MSG_HEADER_LEN - 5] << 8) | self->rx_buffer[MSG_HEADER_LEN - 6];
-      (*unpack_msg[self->rx_id])(self->rx_buffer + MSG_HEADER_LEN,self->rx_payload);   
-      self->rx_state = 0;   
+      (*unpack_msg[self->rx_id])(self->rx_buffer + MSG_HEADER_LEN,self->rx_payload);
+      self->rx_state = 0;
       self->rx_status = MSG_ERROR_SUCCESS;
-      return MSG_ERROR_SUCCESS;          
+      return MSG_ERROR_SUCCESS;
     } else {
       self->rx_state = 0;
       self->rx_status = MSG_ERROR_INCORRECT_CHECKSUM;
-      return MSG_ERROR_INCORRECT_CHECKSUM;    
+      return MSG_ERROR_INCORRECT_CHECKSUM;
     }
   } else {
     self->rx_state = 0;
   }
   self->rx_status = MSG_ERROR_INCOMPLETE_MSG;
-  return MSG_ERROR_INCOMPLETE_MSG;     
+  return MSG_ERROR_INCOMPLETE_MSG;
 }
 
 MsgError_t msg_parse_status(Msg_t *self)
@@ -739,31 +723,31 @@ MsgError_t msg_parse_status(Msg_t *self)
 unsigned char *msg_rx_buffer(Msg_t *self)
 {
   if (!self) {return NULL;}
-  return self->rx_buffer;  
+  return self->rx_buffer;
 }
 
 unsigned int msg_rx_len(Msg_t *self)
 {
   if (!self) {return 0;}
-  return self->rx_len;  
+  return self->rx_len;
 }
 
 unsigned int msg_rx_hash(Msg_t *self)
 {
   if (!self) {return 0;}
-  return self->rx_hash;  
+  return self->rx_hash;
 }
 
 MsgId_t msg_rx_id(Msg_t *self)
 {
   if (!self) {return 0;}
-  return self->rx_id;  
+  return self->rx_id;
 }
 
 void *msg_rx_payload(Msg_t *self)
 {
   if (!self) {return NULL;}
-  return self->rx_payload;    
+  return self->rx_payload;
 }
 
 void pack_fmu_config(void *unpacked, void *packed)
@@ -832,7 +816,7 @@ void pack_mpu9250_config(void *unpacked, void *packed)
   if ((unpacked) && (packed)) {
     ((struct msg_mpu9250_config *)packed)->bfs_addr    = ((struct mpu9250_config *)unpacked)->bfs_addr;
     ((struct msg_mpu9250_config *)packed)->use_spi     = ((struct mpu9250_config *)unpacked)->use_spi;
-    ((struct msg_mpu9250_config *)packed)->bus         = (((struct mpu9250_config *)unpacked)->bus == 1) ? 0 : 1; 
+    ((struct msg_mpu9250_config *)packed)->bus         = (((struct mpu9250_config *)unpacked)->bus == 1) ? 0 : 1;
     ((struct msg_mpu9250_config *)packed)->addr        = (((struct mpu9250_config *)unpacked)->addr == 0x68) ? 0 : 1;
     ((struct msg_mpu9250_config *)packed)->accel_range = ((struct mpu9250_config *)unpacked)->accel_range;
     ((struct msg_mpu9250_config *)packed)->gyro_range  = ((struct mpu9250_config *)unpacked)->gyro_range;
@@ -855,7 +839,7 @@ void unpack_mpu9250_config(void *packed, void *unpacked)
   if ((unpacked) && (packed)) {
     ((struct mpu9250_config *)unpacked)->bfs_addr    = ((struct msg_mpu9250_config *)packed)->bfs_addr;
     ((struct mpu9250_config *)unpacked)->use_spi     = ((struct msg_mpu9250_config *)packed)->use_spi;
-    ((struct mpu9250_config *)unpacked)->bus         = (((struct msg_mpu9250_config *)packed)->bus == 0) ? 1 : 2; 
+    ((struct mpu9250_config *)unpacked)->bus         = (((struct msg_mpu9250_config *)packed)->bus == 0) ? 1 : 2;
     ((struct mpu9250_config *)unpacked)->addr        = (((struct msg_mpu9250_config *)packed)->addr == 0) ? 0x68 : 0x69;
     ((struct mpu9250_config *)unpacked)->accel_range = ((struct msg_mpu9250_config *)packed)->accel_range;
     ((struct mpu9250_config *)unpacked)->gyro_range  = ((struct msg_mpu9250_config *)packed)->gyro_range;
@@ -878,7 +862,7 @@ void pack_bme280_config(void *unpacked, void *packed)
   if ((unpacked) && (packed)) {
     ((struct msg_bme280_config *)packed)->bfs_addr    = ((struct bme280_config *)unpacked)->bfs_addr;
     ((struct msg_bme280_config *)packed)->use_spi     = ((struct bme280_config *)unpacked)->use_spi;
-    ((struct msg_bme280_config *)packed)->bus         = (((struct bme280_config *)unpacked)->bus == 1) ? 0 : 1; 
+    ((struct msg_bme280_config *)packed)->bus         = (((struct bme280_config *)unpacked)->bus == 1) ? 0 : 1;
     ((struct msg_bme280_config *)packed)->addr        = (((struct bme280_config *)unpacked)->addr == 0x76) ? 0 : 1;
   }
 }
@@ -888,7 +872,7 @@ void unpack_bme280_config(void *packed, void *unpacked)
   if ((unpacked) && (packed)) {
     ((struct bme280_config *)unpacked)->bfs_addr    = ((struct msg_bme280_config *)packed)->bfs_addr;
     ((struct bme280_config *)unpacked)->use_spi     = ((struct msg_bme280_config *)packed)->use_spi;
-    ((struct bme280_config *)unpacked)->bus         = (((struct msg_bme280_config *)packed)->bus == 0) ? 1 : 2; 
+    ((struct bme280_config *)unpacked)->bus         = (((struct msg_bme280_config *)packed)->bus == 0) ? 1 : 2;
     ((struct bme280_config *)unpacked)->addr        = (((struct msg_bme280_config *)packed)->addr == 0) ? 0x76 : 0x77;
   }
 }
@@ -958,7 +942,7 @@ void unpack_ublox_config(void *packed, void *unpacked)
       }
       default: {
         ((struct ublox_config *)unpacked)->baud    = 115200;
-        break;        
+        break;
       }
     }
   }
@@ -982,7 +966,7 @@ void pack_swift_config(void *unpacked, void *packed)
 {
   if ((unpacked) && (packed)) {
     ((struct msg_swift_config *)packed)->bfs_addr      = ((struct swift_config *)unpacked)->bfs_addr;
-    ((struct msg_swift_config *)packed)->bus           = (((struct swift_config *)unpacked)->bus == 1) ? 0 : 1; 
+    ((struct msg_swift_config *)packed)->bus           = (((struct swift_config *)unpacked)->bus == 1) ? 0 : 1;
     ((struct msg_swift_config *)packed)->static_addr   = ((struct swift_config *)unpacked)->static_addr;
     ((struct msg_swift_config *)packed)->diff_addr     = ((struct swift_config *)unpacked)->diff_addr;
     switch (((struct swift_config *)unpacked)->diff_type) {
@@ -1003,7 +987,7 @@ void unpack_swift_config(void *packed, void *unpacked)
 {
   if ((unpacked) && (packed)) {
     ((struct swift_config *)unpacked)->bfs_addr      = ((struct msg_swift_config *)packed)->bfs_addr;
-    ((struct swift_config *)unpacked)->bus           = (((struct msg_swift_config *)packed)->bus == 0) ? 1 : 2; 
+    ((struct swift_config *)unpacked)->bus           = (((struct msg_swift_config *)packed)->bus == 0) ? 1 : 2;
     ((struct swift_config *)unpacked)->static_addr   = ((struct msg_swift_config *)packed)->static_addr;
     ((struct swift_config *)unpacked)->diff_addr     = ((struct msg_swift_config *)packed)->diff_addr;
     switch (((struct msg_swift_config *)packed)->diff_type) {
@@ -1024,7 +1008,7 @@ void pack_ams5915_config(void *unpacked, void *packed)
 {
   if ((unpacked) && (packed)) {
     ((struct msg_ams5915_config *)packed)->bfs_addr      = ((struct ams5915_config *)unpacked)->bfs_addr;
-    ((struct msg_ams5915_config *)packed)->bus           = (((struct ams5915_config *)unpacked)->bus == 1) ? 0 : 1; 
+    ((struct msg_ams5915_config *)packed)->bus           = (((struct ams5915_config *)unpacked)->bus == 1) ? 0 : 1;
     ((struct msg_ams5915_config *)packed)->addr          = ((struct ams5915_config *)unpacked)->addr;
     ((struct msg_ams5915_config *)packed)->type          = ((struct ams5915_config *)unpacked)->type;
   }
@@ -1034,7 +1018,7 @@ void unpack_ams5915_config(void *packed, void *unpacked)
 {
   if ((unpacked) && (packed)) {
     ((struct ams5915_config *)unpacked)->bfs_addr      = ((struct msg_ams5915_config *)packed)->bfs_addr;
-    ((struct ams5915_config *)unpacked)->bus           = (((struct msg_ams5915_config *)packed)->bus == 0) ? 1 : 2; 
+    ((struct ams5915_config *)unpacked)->bus           = (((struct msg_ams5915_config *)packed)->bus == 0) ? 1 : 2;
     ((struct ams5915_config *)unpacked)->addr          = ((struct msg_ams5915_config *)packed)->addr;
     ((struct ams5915_config *)unpacked)->type          = ((struct msg_ams5915_config *)packed)->type;
   }
@@ -1045,7 +1029,7 @@ void pack_analog_config(void *unpacked, void *packed)
   unsigned int i, temp[8];
   if ((unpacked) && (packed)) {
     ((struct msg_analog_config *)packed)->bfs_addr      = ((struct analog_config *)unpacked)->bfs_addr;
-    ((struct msg_analog_config *)packed)->ch            = ((struct analog_config *)unpacked)->ch; 
+    ((struct msg_analog_config *)packed)->ch            = ((struct analog_config *)unpacked)->ch;
     ((struct msg_analog_config *)packed)->coeff_len     = ((struct analog_config *)unpacked)->coeff_len;
     for (i = 0; i < ARRAY_SIZE(temp); ++i) {
       memcpy(&temp[i],&((struct analog_config *)unpacked)->coeff[i],sizeof(temp[i]));
@@ -1066,7 +1050,7 @@ void unpack_analog_config(void *packed, void *unpacked)
   unsigned int i, temp[8];
   if ((unpacked) && (packed)) {
     ((struct analog_config *)unpacked)->bfs_addr    = ((struct msg_analog_config *)packed)->bfs_addr;
-    ((struct analog_config *)unpacked)->ch          = ((struct msg_analog_config *)packed)->ch; 
+    ((struct analog_config *)unpacked)->ch          = ((struct msg_analog_config *)packed)->ch;
     ((struct analog_config *)unpacked)->coeff_len   = ((struct msg_analog_config *)packed)->coeff_len;
     temp[0]                                         = ((struct msg_analog_config *)packed)->coeff0;
     temp[1]                                         = ((struct msg_analog_config *)packed)->coeff1;
@@ -1086,7 +1070,7 @@ void pack_digital_config(void *unpacked, void *packed)
 {
   if ((unpacked) && (packed)) {
     ((struct msg_digital_config *)packed)->bfs_addr      = ((struct digital_config *)unpacked)->bfs_addr;
-    ((struct msg_digital_config *)packed)->ch            = ((struct digital_config *)unpacked)->ch; 
+    ((struct msg_digital_config *)packed)->ch            = ((struct digital_config *)unpacked)->ch;
     ((struct msg_digital_config *)packed)->active_high   = ((struct digital_config *)unpacked)->active_high;
   }
 }
@@ -1095,7 +1079,7 @@ void unpack_digital_config(void *packed, void *unpacked)
 {
   if ((unpacked) && (packed)) {
     ((struct digital_config *)unpacked)->bfs_addr      = ((struct msg_digital_config *)packed)->bfs_addr;
-    ((struct digital_config *)unpacked)->ch            = ((struct msg_digital_config *)packed)->ch; 
+    ((struct digital_config *)unpacked)->ch            = ((struct msg_digital_config *)packed)->ch;
     ((struct digital_config *)unpacked)->active_high   = ((struct msg_digital_config *)packed)->active_high;
   }
 }
@@ -1181,9 +1165,9 @@ void pack_mag_data(void *unpacked, void *packed)
   if ((unpacked) && (packed)) {
     ((struct msg_mag_data *)packed)->frame_counter   = ((struct mag_data *)unpacked)->frame_counter;
     ((struct msg_mag_data *)packed)->time_offset_us  = ((struct mag_data *)unpacked)->time_offset_us;
-    ((struct msg_mag_data *)packed)->mag_x_ut        = ((struct mag_data *)unpacked)->mag_x_ut * 131071.5f / 1000.0f + 131071.5f; 
-    ((struct msg_mag_data *)packed)->mag_y_ut        = ((struct mag_data *)unpacked)->mag_y_ut * 131071.5f / 1000.0f + 131071.5f; 
-    ((struct msg_mag_data *)packed)->mag_z_ut        = ((struct mag_data *)unpacked)->mag_z_ut * 131071.5f / 1000.0f + 131071.5f; 
+    ((struct msg_mag_data *)packed)->mag_x_ut        = ((struct mag_data *)unpacked)->mag_x_ut * 131071.5f / 1000.0f + 131071.5f;
+    ((struct msg_mag_data *)packed)->mag_y_ut        = ((struct mag_data *)unpacked)->mag_y_ut * 131071.5f / 1000.0f + 131071.5f;
+    ((struct msg_mag_data *)packed)->mag_z_ut        = ((struct mag_data *)unpacked)->mag_z_ut * 131071.5f / 1000.0f + 131071.5f;
   }
 }
 
@@ -1324,7 +1308,7 @@ void unpack_static_press_data(void *packed, void *unpacked)
   if ((unpacked) && (packed)) {
     ((struct static_press_data *)unpacked)->frame_counter   = ((struct msg_static_press_data *)packed)->frame_counter;
     ((struct static_press_data *)unpacked)->time_offset_us  = ((struct msg_static_press_data *)packed)->time_offset_us;
-    ((struct static_press_data *)unpacked)->press_pa        = (float) ((struct msg_static_press_data *)packed)->press_pa * 80000.0f / 4194303.0f + 30000.0f; 
+    ((struct static_press_data *)unpacked)->press_pa        = (float) ((struct msg_static_press_data *)packed)->press_pa * 80000.0f / 4194303.0f + 30000.0f;
   }
 }
 

@@ -5,7 +5,7 @@
 ### Development Environment
 The following steps are used to create a development environment:
 1. Install [Debian Stretch](https://www.debian.org/) to a Virtual Machine (VM) or development computer.
-2. Ensure that [build-essential](https://packages.debian.org/stretch/build-essential) and [crossbuild-essential-armhf](crossbuild-essential-armhf) are installed.
+2. Ensure that [build-essential](https://packages.debian.org/stretch/build-essential) and [crossbuild-essential-armhf](https://packages.debian.org/buster/crossbuild-essential-armhf) are installed.
 3. Clone this [repository](https://github.com/bolderflight/RAPTRS) to your VM or development computer.
 4. Install [Arudino](https://www.arduino.cc/en/Main/Software) and [Teensyduino](https://www.pjrc.com/teensy/td_download.html)
 
@@ -39,7 +39,7 @@ Use the makefile in /RAPTRS/software to build flight software binaries, which ar
    * _make node_: builds the node software
    * _make upload_fmu_: uploads the fmu software
    * _make upload_node_: uploads the node software
-   
+
 Additionally, within /RAPTRS/software/src there is an Arduino program called _write-addr_, which writes the BFS-Bus address for the FMU and Nodes using the Arduino serial monitor and following the prompts. This must be run prior to uploading FMU or Node software.
 
 While the FMU and Node software is flashed by _make upload_fmu_ and _make upload_node_, the flight and datalog-server software should be transfered to the BeagleBone Black using SFTP or SCP.
@@ -50,21 +50,24 @@ Aircraft configuration is done via a JSON file that is read by the BeagleBone Bl
 ### Flight
 On the BeagleBone Black:
 1. Setup the UARTS by running this [script](https://www.dropbox.com/s/4zfucbmtxqe7tgx/setup-uarts.sh?dl=0)
-2. Start the datalog server
+2. Start the datalog server and telemetry; ignored hangup (nohup), start in background
 ```
 $ nohup ./datalog-server &
+$ nohup ./telemetry-server &
 ```
-3. Start the flight code
+3. Start the flight code; ignored hangup (nohup), start in background, send output to out.txt
 ```
-$ nohup ./flight config.json &
+$ nohup ./flight config.json > out.txt &
 ```
-4. You can check that the datalog file (_dataX.bin_) is growing and disconnect from the BeagleBone Black.
-5. After the flight, download the datalog file and convert to HDF5 using 'bin2hdf_clo.py' in /RAPTRS/analysis-tools. Note that this script requires python3 and h5py installed.
+4. You can check the output of flight
+```
+$ tail -f out.txt
+```
+5. You can check that the datalog file (_dataX.bin_) is growing and disconnect from the BeagleBone Black.
+6. After the flight, download the datalog file and convert to HDF5 using 'bin2hdf_clo.py' in /RAPTRS/analysis-tools. Note that this script requires python3 and h5py installed.
 ```
 $ python3 bin2hdf_clo.py data0.bin
 ```
 
 ## Feedback
 Pull requests improving our software or documentation are always appreciated.
-
-

@@ -1,25 +1,10 @@
 /*
-fmu.hxx
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor, Curtis Olson, Chris Regan
 */
 
-#ifndef FMU_HXX_
-#define FMU_HXX_
+#pragma once
 
 #include "hardware-defs.h"
 #include "definition-tree2.h"
@@ -89,16 +74,16 @@ class FlightManagementUnit {
     };
     struct Mpu9250SensorData {
       int8_t status;
-      int16_t AccelX_ct = 0; // x,y,z accelerometers, m/s/s
-      int16_t AccelY_ct = 0;
-      int16_t AccelZ_ct = 0;
-      int16_t GyroX_ct = 0; // x,y,z gyros, rad/s
-      int16_t GyroY_ct = 0;
-      int16_t GyroZ_ct = 0;
-      // int16_t MagX_ct = 0; // x,y,z magnetometers, uT
-      // int16_t MagY_ct = 0;
-      // int16_t MagZ_ct = 0;
-      // int16_t Temperature_ct = 0.0f; // Temperature, C
+      float AccelX_mss;        // x,y,z accelerometers, m/s/s
+      float AccelY_mss;
+      float AccelZ_mss;
+      float GyroX_rads;        // x,y,z gyros, rad/s
+      float GyroY_rads;
+      float GyroZ_rads;
+      //float MagX_uT;           // x,y,z magnetometers, uT
+      //float MagY_uT;
+      //float MagZ_uT;
+      //float Temperature_C;                      // Temperature, C
     };
     struct Mpu9250SensorNodes {
       ElementPtr status;
@@ -192,13 +177,13 @@ class FlightManagementUnit {
       ElementPtr val;
     };
     struct SensorData {
-      std::vector<uint64_t> Time_us;
-      std::vector<InternalMpu9250SensorData> InternalMpu9250;
-      std::vector<InternalBme280SensorData> InternalBme280;
-      std::vector<float> InputVoltage_V;
-      std::vector<float> RegulatedVoltage_V;
-      std::vector<float> PwmVoltage_V;
-      std::vector<float> SbusVoltage_V;
+      uint64_t Time_us;
+      InternalMpu9250SensorData InternalMpu9250;
+      InternalBme280SensorData InternalBme280;
+      //std::vector<float> InputVoltage_V;
+      //std::vector<float> RegulatedVoltage_V;
+      //std::vector<float> PwmVoltage_V;
+      //std::vector<float> SbusVoltage_V;
       std::vector<Mpu9250SensorData> Mpu9250;
       std::vector<Bme280SensorData> Bme280;
       std::vector<uBloxSensorData> uBlox;
@@ -208,13 +193,13 @@ class FlightManagementUnit {
       std::vector<AnalogSensorData> Analog;
     };
     struct SensorNodes {
-      vector<ElementPtr> Time_us;
-      vector<InternalMpu9250SensorNodes> InternalMpu9250;
-      vector<InternalBme280SensorNodes> InternalBme280;
-      vector<ElementPtr> input_volts;
-      vector<ElementPtr> reg_volts;
-      vector<ElementPtr> pwm_volts;
-      vector<ElementPtr> sbus_volts;
+      ElementPtr Time_us;
+      InternalMpu9250SensorNodes InternalMpu9250;
+      InternalBme280SensorNodes InternalBme280;
+      //vector<ElementPtr> input_volts;
+      //vector<ElementPtr> reg_volts;
+      //vector<ElementPtr> pwm_volts;
+      //vector<ElementPtr> sbus_volts;
       vector<Mpu9250SensorNodes> Mpu9250;
       vector<Bme280SensorNodes> Bme280;
       vector<uBloxSensorNodes> uBlox;
@@ -231,15 +216,14 @@ class FlightManagementUnit {
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const
-    void ConfigureSensors(const rapidjson::Value& Config);
-    void ConfigureMissionManager(const rapidjson::Value& Config);
-    void ConfigureControlLaws(const rapidjson::Value& Config);
-    void ConfigureEffectors(const rapidjson::Value& Config);
-    void RegisterSensors(const rapidjson::Value& Config);
-    std::string GetSensorOutputName(const rapidjson::Value& Config,std::string Key,size_t index);
-    void SendMessage(Message message,std::vector<uint8_t> &Payload);
-    bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
+    bool WaitForAck(uint8_t id, uint8_t subid, float timeout_millis=500);
+    bool GenConfigMessage(const rapidjson::Value& Sensor, uint8_t node_address);
+    void ConfigureSensors(const rapidjson::Value& Config, uint8_t node_address);
+    bool ConfigureMissionManager(const rapidjson::Value& Config);
+    bool ConfigureControlLaws(const rapidjson::Value& Config);
+    void ConfigureEffectors(const rapidjson::Value& Config, uint8_t node_address);
+    void SendMessage(Message message, uint8_t address, std::vector<uint8_t> &Payload);
+    void SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len);
+    bool ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload);
     void PublishSensors();
 };
-
-#endif

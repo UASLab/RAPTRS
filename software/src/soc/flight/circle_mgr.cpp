@@ -1,13 +1,12 @@
-/**
- * \file: circle_mgr.cxx
- *
- * Task: configure autopilot settings to fly to a circle around a specified
- * point.  Compensate circle track using wind estimate to try to achieve a
- * better circle form.
- *
- * Copyright (C) 2011 - Curtis L. Olson curtolson@flightgear.org
- *
- */
+/*
+  Copyright (C) 2011 - Curtis L. Olson curtolson@flightgear.org
+*/
+
+/*
+  Task: configure autopilot settings to fly to a circle around a specified
+  point.  Compensate circle track using wind estimate to try to achieve a
+  better circle form.
+*/
 
 #include <cstdio>
 #include <cmath>
@@ -72,8 +71,8 @@ void CircleMgr::update() {
     return;
   }
 
-  float gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
-                      + ve_node->getFloat() * ve_node->getFloat());
+  /* float gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
+                         + ve_node->getFloat() * ve_node->getFloat()); */
   float track_deg = track_node->getFloat() * r2d;
   double lat_deg = lat_rad_node->getDouble() * r2d;
   double lon_deg = lon_rad_node->getDouble() * r2d;

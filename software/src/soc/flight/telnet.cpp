@@ -1,15 +1,8 @@
-// \file telnet.cxx
-// telnet property server class.
-//
-// Written by Curtis Olson, started September 2000.
-// Modified by Bernie Bright, May 2002.
-// Adapted from FlightGear props.hxx/cxx code November 2009.
-//
-// Copyright (C) 2000  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU LGPL
-//
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor, Chris Regan, Curt Olson (original author)
+*/
 
 #include <unistd.h>
 #include <sstream>

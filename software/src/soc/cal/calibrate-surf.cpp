@@ -1,5 +1,7 @@
 /*
-
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan
 */
 
 #include "hardware-defs.h"
@@ -46,7 +48,7 @@ int main(int argc, char* argv[]) {
   FlightManagementUnit Fmu;
   SensorProcessing SenProc;
   MissionManager Mission;
-  ControlLaws Control;
+  ControlSystem Control;
   AircraftEffectors Effectors;
 
   /* Setup Inclinometer */

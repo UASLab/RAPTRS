@@ -1,32 +1,15 @@
 /*
-general-functions.hxx
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
-#ifndef GENERAL_FUNCTIONS_HXX_
-#define GENERAL_FUNCTIONS_HXX_
+#pragma once
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
 #include "generic-function.h"
+#include "configuration.h"
 
+#include <limits>
 #include <deque>
 using std::deque;
 
@@ -51,15 +34,8 @@ class ConstantClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      float Constant = 0.0f;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-    };
-    Config config_;
-    Data data_;
+    float Val_ = 0.0f;
+    ElementPtr Output_node_;
     std::string OutputKey_;
 };
 
@@ -71,10 +47,7 @@ Example JSON configuration:
   "Output": "OutputName",
   "Input": "InputName",
   "Gain": X,
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Min": X, "Max": X
 }
 Where:
    * Output gives a convenient name for the block (i.e. SpeedControl).
@@ -91,20 +64,14 @@ class GainClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr input_node;
-      float Gain = 1.0f;
-      bool SaturateOutput = false;
-      float UpperLimit, LowerLimit = 0.0f;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-      ElementPtr saturated_node;
-    };
-    Config config_;
-    Data data_;
-    std::string InputKey_,SaturatedKey_,OutputKey_;
+    float Gain_ = 1.0f;
+    float Min_ = std::numeric_limits<float>::lowest();
+    float Max_ = std::numeric_limits<float>::max();
+
+    ElementPtr Input_node_;
+    ElementPtr Output_node_;
+
+    std::string InputKey_, OutputKey_;
 };
 
 /*
@@ -114,10 +81,7 @@ Example JSON configuration:
   "Type": "Sum",
   "Output": "OutputName",
   "Inputs": ["InputName1","InputName2",...],
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Min": X, "Max": X
 }
 Where:
    * Output gives a convenient name for the block (i.e. SpeedReference).
@@ -134,20 +98,14 @@ class SumClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      std::vector<ElementPtr > input_nodes;
-      bool SaturateOutput = false;
-      float UpperLimit, LowerLimit = 0.0f;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-      ElementPtr saturated_node;
-    };
-    Config config_;
-    Data data_;
+    float Min_ = std::numeric_limits<float>::lowest();
+    float Max_ = std::numeric_limits<float>::max();
+
+    std::vector<ElementPtr > Input_nodes_;
+    ElementPtr Output_node_;
+
     std::vector<std::string> InputKeys_;
-    std::string SaturatedKey_,OutputKey_;
+    std::string OutputKey_;
 };
 
 /*
@@ -157,10 +115,7 @@ Example JSON configuration:
   "Type": "Product",
   "Output": "OutputName",
   "Inputs": ["InputName1","InputName2",...],
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Min": X, "Max": X
 }
 Where:
    * Output gives a convenient name for the block (i.e. SpeedReference).
@@ -177,20 +132,14 @@ class ProductClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      std::vector<ElementPtr > input_nodes;
-      bool SaturateOutput = false;
-      float UpperLimit, LowerLimit = 0.0f;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-      ElementPtr saturated_node;
-    };
-    Config config_;
-    Data data_;
+    float Min_ = std::numeric_limits<float>::lowest();
+    float Max_ = std::numeric_limits<float>::max();
+
+    std::vector<ElementPtr > Input_nodes_;
+    ElementPtr Output_node_;
+
     std::vector<std::string> InputKeys_;
-    std::string SaturatedKey_,OutputKey_;
+    std::string OutputKey_;
 };
 
 /*
@@ -216,19 +165,13 @@ class DelayClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr input_node;
-      int delay_frames = 0;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-      deque<float> buffer;
-    };
-    Config config_;
-    Data data_;
-    std::string InputKey_;
-    std::string OutputKey_;
+    int DelayFrames_ = 0;
+    deque<float> DelayBuffer_;
+
+    ElementPtr Input_node_;
+    ElementPtr Output_node_;
+
+    std::string InputKey_,OutputKey_;
 };
 
 /*
@@ -253,17 +196,10 @@ class LatchClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr input_node;
-    };
-    struct Data {
-      uint8_t Mode = kStandby;
-      ElementPtr output_node;
-    };
-    bool initLatch_ = false;
-    Config config_;
-    Data data_;
+    ElementPtr Input_node_;
+    ElementPtr Output_node_;
+
+    bool InitLatch_ = false;
+
     std::string InputKey_,OutputKey_;
 };
-
-#endif

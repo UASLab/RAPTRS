@@ -1,12 +1,8 @@
 /*
-* Modified for C++ and provided an "update" method to continue a CRC that
-* has already been started.
-* Brian Taylor
-* brian.taylor@bolderflight.com
+Included by: Brian Taylor
 */
 
-
-/*	
+/*
  * Copyright 2001-2010 Georges Menie (www.menie.org)
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
@@ -71,7 +67,7 @@ static const unsigned short crc16tab[256]= {
 	0xef1f,0xff3e,0xcf5d,0xdf7c,0xaf9b,0xbfba,0x8fd9,0x9ff8,
 	0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
-  
+
 unsigned short CRC16::xmodem(unsigned char *buf, unsigned int len)
 {
 	_crc = 0;
@@ -83,5 +79,5 @@ unsigned short CRC16::xmodem_upd(unsigned char *buf, unsigned int len)
 	while (len--) {
 		_crc = (_crc << 8) ^ crc16tab[((_crc >> 8) ^ *buf++) & 0x00FF];
 	}
-	return _crc;	
+	return _crc;
 }
