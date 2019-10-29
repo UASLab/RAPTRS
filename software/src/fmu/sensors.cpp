@@ -996,7 +996,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     if ( msg.sensor == message::sensor_type::time ) {
       Serial.println("Time");
       if (AcquireTimeData_) {
-	HardFail("ERROR: Time already initialized.");
+	       HardFail("ERROR: Time already initialized.");
       }
       AcquireTimeData_ = true;
       std::string Output = msg.output;
@@ -1005,7 +1005,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     } else if ( msg.sensor == message::sensor_type::input_voltage ) {
       Serial.println("InputVoltage");
       if (AcquireInputVoltageData_) {
-	HardFail("ERROR: Input voltage already initialized.");
+	       HardFail("ERROR: Input voltage already initialized.");
       }
       AcquireInputVoltageData_ = true;
       AnalogSensor::Config config;
@@ -1020,7 +1020,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     } else if ( msg.sensor == message::sensor_type::regulated_voltage ) {
       Serial.println("RegulatedVoltage");
       if (AcquireRegulatedVoltageData_) {
-	HardFail("ERROR: Regulated voltage already initialized.");
+	       HardFail("ERROR: Regulated voltage already initialized.");
       }
       AcquireRegulatedVoltageData_ = true;
       AnalogSensor::Config config;
@@ -1035,7 +1035,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     } else if ( msg.sensor == message::sensor_type::pwm_voltage ) {
       Serial.println("PwmVoltage");
       if (AcquirePwmVoltageData_) {
-	HardFail("ERROR: Pwm voltage already initialized.");
+        HardFail("ERROR: Pwm voltage already initialized.");
       }
       AcquirePwmVoltageData_ = true;
       AnalogSensor::Config config;
@@ -1050,7 +1050,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("SbusVoltage");
       if (AcquireSbusVoltageData_) {
-	HardFail("ERROR: Sbus voltage already initialized.");
+        HardFail("ERROR: Sbus voltage already initialized.");
       }
       AcquireSbusVoltageData_ = true;
       AnalogSensor::Config config;
@@ -1065,7 +1065,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     } else if ( msg.sensor == message::sensor_type::internal_bme280 ) {
       Serial.println("InternalBme280");
       if (AcquireInternalBme280Data_) {
-	HardFail("ERROR: Internal BME280 already initialized.");
+        HardFail("ERROR: Internal BME280 already initialized.");
       }
       AcquireInternalBme280Data_ = true;
       classes_.InternalBme280.UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
@@ -1082,7 +1082,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     if ( msg.internal ) {
       Serial.println("InternalMpu9250");
       if (AcquireInternalMpu9250Data_) {
-	HardFail("ERROR: Internal MPU9250 already initialized.");
+        HardFail("ERROR: Internal MPU9250 already initialized.");
       }
       AcquireInternalMpu9250Data_ = true;
       classes_.InternalMpu9250.UpdateConfig(&msg, RootPath_, DefinitionTreePtr);

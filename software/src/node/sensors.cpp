@@ -72,7 +72,7 @@ void Mpu9250Sensor::Begin() {
     } else {
       _spi = &SPI;
     }
-    Mpu_ = new MPU9250(*_spi,config_.CsPin);
+    Mpu_ = new MPU9250(*_spi,config_.CsPin, false); // Set useMag = false
     _spi->setMOSI(config_.MosiPin);
     _spi->setMISO(config_.MisoPin);
     _spi->setSCK(config_.SckPin);

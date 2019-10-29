@@ -4,9 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-
-#ifndef COMMS_H_
-#define COMMS_H_
+#pragma once
 
 #include "mission.h"
 #include "SerialLink.h"
@@ -31,5 +29,3 @@ class AircraftSocComms {
     SerialLink *bus_;
     uint32_t baud_;
 };
-
-#endif

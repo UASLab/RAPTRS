@@ -55,12 +55,14 @@ void Node::SetConfigurationMode() {
   std::vector<uint8_t> Payload;
   Payload.push_back(ConfigurationMode);
   SendMessage(ModeCommand,Payload);
+  delay(500);
 }
 
 void Node::SetRunMode() {
   std::vector<uint8_t> Payload;
   Payload.push_back(RunMode);
   SendMessage(ModeCommand,Payload);
+  delay(500);
 }
 
 /* reads sensor data from the node */
@@ -133,20 +135,20 @@ void Node::BuildMessage(uint8_t message, std::vector<uint8_t> &Payload, std::vec
   if (Payload.size() < (kBufferMaxSize-headerLength_-checksumLength_)) {
     TxBuffer->resize(Payload.size()+headerLength_+checksumLength_);
     // header
-    Buffer_[0] = header_[0];
-    Buffer_[1] = header_[1];
+    TxBuffer_[0] = header_[0];
+    TxBuffer_[1] = header_[1];
     // message ID
-    Buffer_[2] = message;
+    TxBuffer_[2] = message;
     // payload length
-    Buffer_[3] = Payload.size() & 0xff;
-    Buffer_[4] = Payload.size() >> 8;
+    TxBuffer_[3] = Payload.size() & 0xff;
+    TxBuffer_[4] = Payload.size() >> 8;
     // payload
-    memcpy(Buffer_+headerLength_,Payload.data(),Payload.size());
+    memcpy(TxBuffer_+headerLength_,Payload.data(),Payload.size());
     // checksum
-    CalcChecksum((size_t)(Payload.size()+headerLength_),Buffer_,Checksum_);
-    Buffer_[Payload.size()+headerLength_] = Checksum_[0];
-    Buffer_[Payload.size()+headerLength_+1] = Checksum_[1];
-    memcpy(TxBuffer->data(),Buffer_,TxBuffer->size());
+    CalcChecksum((size_t)(Payload.size()+headerLength_),TxBuffer_,TxChecksum_);
+    TxBuffer_[Payload.size()+headerLength_] = TxChecksum_[0];
+    TxBuffer_[Payload.size()+headerLength_+1] = TxChecksum_[1];
+    memcpy(TxBuffer->data(),TxBuffer_,TxBuffer->size());
   }
 }
 
@@ -155,68 +157,68 @@ bool Node::ReceiveMessage(Message *message,std::vector<uint8_t> *Payload) {
   while(bus_->available()) {
     RxByte_ = bus_->read();
     // header
-    if (ParserState_ < 2) {
-      if (RxByte_ == header_[ParserState_]) {
-        Buffer_[ParserState_] = RxByte_;
-        ParserState_++;
+    if (RxParserState_ < 2) {
+      if (RxByte_ == header_[RxParserState_]) {
+        RxBuffer_[RxParserState_] = RxByte_;
+        RxParserState_++;
       }
-    } else if (ParserState_ == 3) {
-      LengthBuffer_[0] = RxByte_;
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ == 4) {
-      LengthBuffer_[1] = RxByte_;
-      Length_ = ((uint16_t)LengthBuffer_[1] << 8) | LengthBuffer_[0];
-      if (Length_ > (kBufferMaxSize-headerLength_-checksumLength_)) {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
+    } else if (RxParserState_ == 3) {
+      LengthRxBuffer_[0] = RxByte_;
+      RxBuffer_[RxParserState_] = RxByte_;
+      RxParserState_++;
+    } else if (RxParserState_ == 4) {
+      LengthRxBuffer_[1] = RxByte_;
+      RxLength_ = ((uint16_t)LengthRxBuffer_[1] << 8) | LengthRxBuffer_[0];
+      if (RxLength_ > (kBufferMaxSize-headerLength_-checksumLength_)) {
+        RxParserState_ = 0;
+        LengthRxBuffer_[0] = 0;
+        LengthRxBuffer_[1] = 0;
+        RxLength_ = 0;
+        RxChecksum_[0] = 0;
+        RxChecksum_[1] = 0;
         return false;
       }
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ < (Length_ + headerLength_)) {
-      Buffer_[ParserState_] = RxByte_;
-      ParserState_++;
-    } else if (ParserState_ == (Length_ + headerLength_)) {
-      CalcChecksum(Length_ + headerLength_,Buffer_,Checksum_);
-      if (RxByte_ == Checksum_[0]) {
-        ParserState_++;
+      RxBuffer_[RxParserState_] = RxByte_;
+      RxParserState_++;
+    } else if (RxParserState_ < (RxLength_ + headerLength_)) {
+      RxBuffer_[RxParserState_] = RxByte_;
+      RxParserState_++;
+    } else if (RxParserState_ == (RxLength_ + headerLength_)) {
+      CalcChecksum(RxLength_ + headerLength_,RxBuffer_,RxChecksum_);
+      if (RxByte_ == RxChecksum_[0]) {
+        RxParserState_++;
       } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
+        RxParserState_ = 0;
+        LengthRxBuffer_[0] = 0;
+        LengthRxBuffer_[1] = 0;
+        RxLength_ = 0;
+        RxChecksum_[0] = 0;
+        RxChecksum_[1] = 0;
         return false;
       }
     // checksum 1
-    } else if (ParserState_ == (Length_ + headerLength_ + 1)) {
-      if (RxByte_ == Checksum_[1]) {
+    } else if (RxParserState_ == (RxLength_ + headerLength_ + 1)) {
+      if (RxByte_ == RxChecksum_[1]) {
         // message ID
-        *message = (Message) Buffer_[2];
+        *message = (Message) RxBuffer_[2];
         // payload size
-        Payload->resize(Length_);
+        Payload->resize(RxLength_);
         // payload
-        memcpy(Payload->data(),Buffer_+headerLength_,Length_);
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
+        memcpy(Payload->data(),RxBuffer_+headerLength_,RxLength_);
+        RxParserState_ = 0;
+        LengthRxBuffer_[0] = 0;
+        LengthRxBuffer_[1] = 0;
+        RxLength_ = 0;
+        RxChecksum_[0] = 0;
+        RxChecksum_[1] = 0;
         return true;
       } else {
-        ParserState_ = 0;
-        LengthBuffer_[0] = 0;
-        LengthBuffer_[1] = 0;
-        Length_ = 0;
-        Checksum_[0] = 0;
-        Checksum_[1] = 0;
+        RxParserState_ = 0;
+        LengthRxBuffer_[0] = 0;
+        LengthRxBuffer_[1] = 0;
+        RxLength_ = 0;
+        RxChecksum_[0] = 0;
+        RxChecksum_[1] = 0;
         return false;
       }
     }

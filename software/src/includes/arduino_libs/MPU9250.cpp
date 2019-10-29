@@ -32,10 +32,11 @@ MPU9250::MPU9250(i2c_t3 &bus,uint8_t address){
 }
 
 /* MPU9250 object, input the SPI bus and chip select pin */
-MPU9250::MPU9250(SPIClass &bus,uint8_t csPin){
+MPU9250::MPU9250(SPIClass &bus,uint8_t csPin, bool useMag){
   _spi = &bus; // SPI bus
   _csPin = csPin; // chip select pin
   _useSPI = true; // set to use SPI
+  _useMag = useMag; // set to use Magnetometer
 }
 
 /* starts communication with the MPU-9250 */
@@ -59,22 +60,25 @@ int MPU9250::begin(){
   if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
     return -1;
   }
-  // enable I2C master mode
-  if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
-    return -2;
+
+  if (_useMag == true) {
+    // enable I2C master mode
+    if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
+      return -2;
+    }
+    // set the I2C bus speed to 400 kHz
+    if(writeRegister(I2C_MST_CTRL,I2C_MST_CLK) < 0){
+      return -3;
+    }
+    // set AK8963 to Power Down
+    writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN);
+    // reset the MPU9250
+    writeRegister(PWR_MGMNT_1,PWR_RESET);
+    // wait for MPU-9250 to come back up
+    delay(1);
+    // reset the AK8963
+    writeAK8963Register(AK8963_CNTL2,AK8963_RESET);
   }
-  // set the I2C bus speed to 400 kHz
-  if(writeRegister(I2C_MST_CTRL,I2C_MST_CLK) < 0){
-    return -3;
-  }
-  // set AK8963 to Power Down
-  writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN);
-  // reset the MPU9250
-  writeRegister(PWR_MGMNT_1,PWR_RESET);
-  // wait for MPU-9250 to come back up
-  delay(1);
-  // reset the AK8963
-  writeAK8963Register(AK8963_CNTL2,AK8963_RESET);
   // select clock source to gyro
   if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
     return -4;
@@ -111,51 +115,56 @@ int MPU9250::begin(){
   if(writeRegister(SMPDIV,0x00) < 0){
     return -11;
   }
-  _srd = 0;
-  // enable I2C master mode
-  if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
-  	return -12;
+  if (_useMag == true) {
+    _srd = 0;
+    // enable I2C master mode
+    if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
+    	return -12;
+    }
+  	// set the I2C bus speed to 400 kHz
+  	if( writeRegister(I2C_MST_CTRL,I2C_MST_CLK) < 0){
+  		return -13;
+  	}
+  	// check AK8963 WHO AM I register, expected value is 0x48 (decimal 72)
+  	if( whoAmIAK8963() != 72 ){
+      return -14;
+  	}
+    /* get the magnetometer calibration */
+    // set AK8963 to Power Down
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
+      return -15;
+    }
+    delay(100); // long wait between AK8963 mode changes
+    // // set AK8963 to FUSE ROM access
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_FUSE_ROM) < 0){
+      return -16;
+    }
+    delay(100); // long wait between AK8963 mode changes
+    // read the AK8963 ASA registers and compute magnetometer scale factors
+    readAK8963Registers(AK8963_ASA,3,_buffer);
+    _magScaleX = ((((float)_buffer[0]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
+    _magScaleY = ((((float)_buffer[1]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
+    _magScaleZ = ((((float)_buffer[2]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
+    // set AK8963 to Power Down
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
+      return -17;
+    }
+    delay(100); // long wait between AK8963 mode changes
+    // set AK8963 to 16 bit resolution, 100 Hz update rate
+    if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
+      return -18;
+    }
+    delay(100); // long wait between AK8963 mode changes
   }
-	// set the I2C bus speed to 400 kHz
-	if( writeRegister(I2C_MST_CTRL,I2C_MST_CLK) < 0){
-		return -13;
-	}
-	// check AK8963 WHO AM I register, expected value is 0x48 (decimal 72)
-	if( whoAmIAK8963() != 72 ){
-    return -14;
-	}
-  /* get the magnetometer calibration */
-  // set AK8963 to Power Down
-  if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
-    return -15;
-  }
-  delay(100); // long wait between AK8963 mode changes
-  // set AK8963 to FUSE ROM access
-  if(writeAK8963Register(AK8963_CNTL1,AK8963_FUSE_ROM) < 0){
-    return -16;
-  }
-  delay(100); // long wait between AK8963 mode changes
-  // read the AK8963 ASA registers and compute magnetometer scale factors
-  readAK8963Registers(AK8963_ASA,3,_buffer);
-  _magScaleX = ((((float)_buffer[0]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
-  _magScaleY = ((((float)_buffer[1]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
-  _magScaleZ = ((((float)_buffer[2]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
-  // set AK8963 to Power Down
-  if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
-    return -17;
-  }
-  delay(100); // long wait between AK8963 mode changes
-  // set AK8963 to 16 bit resolution, 100 Hz update rate
-  if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
-    return -18;
-  }
-  delay(100); // long wait between AK8963 mode changes
   // select clock source to gyro
   if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
     return -19;
   }
-  // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
-  readAK8963Registers(AK8963_HXL,7,_buffer);
+
+  if (_useMag == true) {
+    // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+    readAK8963Registers(AK8963_HXL,7,_buffer);
+  }
   // successful init, return 1
   return 1;
 }
@@ -316,32 +325,34 @@ int MPU9250::setSrd(uint8_t srd) {
   if(writeRegister(SMPDIV,19) < 0){ // setting the sample rate divider
     return -1;
   }
-  if(srd > 9){
-    // set AK8963 to Power Down
-    if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
-      return -2;
+  if (_useMag == true) {
+    if(srd > 9){
+      // set AK8963 to Power Down
+      if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
+        return -2;
+      }
+      delay(100); // long wait between AK8963 mode changes
+      // set AK8963 to 16 bit resolution, 8 Hz update rate
+      if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS1) < 0){
+        return -3;
+      }
+      delay(100); // long wait between AK8963 mode changes
+      // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+      readAK8963Registers(AK8963_HXL,7,_buffer);
+    } else {
+      // set AK8963 to Power Down
+      if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
+        return -2;
+      }
+      delay(100); // long wait between AK8963 mode changes
+      // set AK8963 to 16 bit resolution, 100 Hz update rate
+      if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
+        return -3;
+      }
+      delay(100); // long wait between AK8963 mode changes
+      // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+      readAK8963Registers(AK8963_HXL,7,_buffer);
     }
-    delay(100); // long wait between AK8963 mode changes
-    // set AK8963 to 16 bit resolution, 8 Hz update rate
-    if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS1) < 0){
-      return -3;
-    }
-    delay(100); // long wait between AK8963 mode changes
-    // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
-    readAK8963Registers(AK8963_HXL,7,_buffer);
-  } else {
-    // set AK8963 to Power Down
-    if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
-      return -2;
-    }
-    delay(100); // long wait between AK8963 mode changes
-    // set AK8963 to 16 bit resolution, 100 Hz update rate
-    if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
-      return -3;
-    }
-    delay(100); // long wait between AK8963 mode changes
-    // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
-    readAK8963Registers(AK8963_HXL,7,_buffer);
   }
   /* setting the sample rate divider */
   if(writeRegister(SMPDIV,srd) < 0){ // setting the sample rate divider
@@ -379,7 +390,13 @@ int MPU9250::disableDataReadyInterrupt() {
 int MPU9250::readSensor() {
   _useSPIHS = true; // use the high speed SPI for data readout
   // grab the data from the MPU9250
-  if (readRegisters(ACCEL_OUT, 21, _buffer) < 0) {
+
+  uint8_t numReadBytes = 21;
+  if (_useMag == true) {
+    numReadBytes = 15;
+  }
+
+  if (readRegisters(ACCEL_OUT, numReadBytes, _buffer) < 0) {
     _ax = 0.0f;
     _ay = 0.0f;
     _az = 0.0f;
