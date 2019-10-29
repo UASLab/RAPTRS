@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef SENSORS_H_
-#define SENSORS_H_
+#pragma once
 
 #include "AMS5915.h"
 #include "BME280.h"
@@ -215,5 +214,3 @@ class AircraftSensors {
     bool AcquirePwmVoltageData_ = false;
     bool AcquireSbusVoltageData_ = false;
 };
-
-#endif
