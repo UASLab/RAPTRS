@@ -9,11 +9,12 @@ Author: Brian Taylor
 
 #include "Arduino.h"
 #include "SBUS.h"
-#include "Node.h"
 #include "definition-tree.h"
 #include "hardware-defs.h"
 #include "utils.h"
 #include <memory>
+
+#include "Node.h"
 
 #include "fmu_messages.h"
 
