@@ -46,7 +46,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
   for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
     std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/") + 1); // Get just the Key signal name
 
-    NodeVecSys.push_back(deftree.getElement(BaselinePath_ + "/" + Key));
+    NodeVecSys.push_back(deftree.initElement(BaselinePath_ + "/" + Key, "", LOG_FLOAT, LOG_NONE));
     NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
 
     // Copy
@@ -93,7 +93,7 @@ void SensorProcessing::Configure(const rapidjson::Value& Config) {
     for (size_t iKey = 0; iKey < KeyVec.size(); ++iKey) {
       std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/") + 1); // Get just the Key signal name
 
-      NodeVecSys.push_back(deftree.getElement(TestPath_ + "/" + Key));
+      NodeVecSys.push_back(deftree.initElement(TestPath_ + "/" + Key, "", LOG_FLOAT, LOG_NONE));
       NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
 
       // Copy
