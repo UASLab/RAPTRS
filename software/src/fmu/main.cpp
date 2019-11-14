@@ -14,6 +14,7 @@ Author: Brian Taylor
 #include "effector.h"
 #include "utils.h"
 #include "definition-tree.h"
+#include "FrSky.h"
 
 // global aircraft data tree
 DefinitionTree GlobalData;
@@ -52,6 +53,7 @@ uint64_t t;
 int main()
 {
   // serial port for debug messages
+  BifrostSetup();
   Serial.begin(kDebugBaud);
   delay(5000);
   Serial.println("Bolder Flight Systems");
@@ -68,8 +70,9 @@ int main()
   // set BFS pins to output
   pinMode(kBfsInt1Pin,OUTPUT);
   pinMode(kBfsInt2Pin,OUTPUT);
-
   while (1) {
+    message::data_bifrost_t msg_b;
+    BifrostSend(msg_b.airspeed, msg_b.test_id, msg_b.voltage, msg_b.soc_eng, msg_b.cont_sel, msg_b.ext_eng);
     // update the mission mode
     Mission.UpdateMode(&Sensors,&Control,&Effectors,&GlobalData);
     Mission.GetMode(&MissionMode);
@@ -133,12 +136,14 @@ int main()
         Mission.SetRequestedMode((AircraftMission::Mode)msg.mode);
       } else if ( MissionMode == AircraftMission::Run ) {
         if (id == message::command_effectors_id ) {
-          // receive the effector commands
-          if (Mission.UseSocEffectorComands()) {
-            message::command_effectors_t msg;
-            msg.unpack(Payload.data(), Payload.size());
-            Effectors.SetCommands(&msg, Mission.ThrottleSafed());
-          }
+           // receive the effector commands
+           if (Mission.UseSocEffectorComands()) {
+             message::command_effectors_t msg;
+             msg.unpack(Payload.data(), Payload.size());
+             Effectors.SetCommands(&msg, Mission.ThrottleSafed());
+            }
+        } else if (id == message::data_bifrost_id ) {
+             msg_b.unpack(Payload.data(), Payload.size());
         }
       } else if (MissionMode == AircraftMission::Configuration) {
         if ( Config.Update(id, address, &Payload, &Mission, &Sensors, &Control, &Effectors, &GlobalData) ) {

@@ -228,6 +228,8 @@ int main(int argc, char* argv[]) {
         // Send effector commands to FMU
         Fmu.SendEffectorCommands(Effectors.Run());
 
+
+
         // Print some status
         float tCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());
         float dt_ms = tCurr_ms - timePrev_ms;
@@ -245,6 +247,9 @@ int main(int argc, char* argv[]) {
 
       // Run Datalog
       Datalog.LogBinaryData();
+
+      // Send (dummy) Bifrost data
+      Fmu.SendBifrostData();
 
       // Process Telnet
       telnet.process();

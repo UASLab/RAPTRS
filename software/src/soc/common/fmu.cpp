@@ -190,7 +190,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
             size_t i = analog_counter;
             SensorData_.Analog[i].CalibratedValue = msg.calibrated_value;
             analog_counter++;
-          } else {
+	        } else {
             printf("SensorNode received an unhandled message id: %d\n", id);
           }
         }
@@ -217,6 +217,19 @@ void FlightManagementUnit::SendEffectorCommands(std::vector<float> Commands) {
   for ( size_t i = 0; i < Commands.size(); i++ ) {
     msg.command[i] = Commands[i];
   }
+  msg.pack();
+  SendMessage(msg.id, 0, msg.payload, msg.len);
+}
+
+/* Send telemetry commands to FMU */
+void FlightManagementUnit::SendBifrostData() {
+  message::data_bifrost_t msg;
+  msg.airspeed = 11.1;
+  msg.test_id = 27;
+  msg.voltage = 8.6;
+  msg.soc_eng = true;
+  msg.cont_sel = 0;
+  msg.ext_eng = true;
   msg.pack();
   SendMessage(msg.id, 0, msg.payload, msg.len);
 }
@@ -684,6 +697,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( WaitForAck(msg.id, 0, 1000) ) {
       return true;
     }
+
   } else {
     printf("ERROR: unknown sensor\n");
   }
