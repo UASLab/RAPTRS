@@ -140,10 +140,14 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
     NumTestPts_ = TestPoints.Size();
     for (auto &TestPoint : TestPoints.GetArray()) {
       if (TestPoint.HasMember("Test-ID")&&TestPoint.HasMember("Sensor-Processing")&&TestPoint.HasMember("Control")&&TestPoint.HasMember("Excitation")) {
-        TestPoints_[TestPoint["Test-ID"].GetString()].ID = TestPoint["Test-ID"].GetString();
-        TestPoints_[TestPoint["Test-ID"].GetString()].SensorProcessing = TestPoint["Sensor-Processing"].GetString();
-        TestPoints_[TestPoint["Test-ID"].GetString()].Control = TestPoint["Control"].GetString();
-        TestPoints_[TestPoint["Test-ID"].GetString()].Excitation = TestPoint["Excitation"].GetString();
+        TestPointDefinition TestPoint;
+
+        TestPoint.ID = TestPoint["Test-ID"].GetString();
+        TestPoint.SensorProcessing = TestPoint["Sensor-Processing"].GetString();
+        TestPoint.Control = TestPoint["Control"].GetString();
+        TestPoint.Excitation = TestPoint["Excitation"].GetString();
+        
+        TestPointsVec_.push_back(TestPoint);
       } else {
         throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-ID, Sensor-Processing, Control, or Excitation not included in test point definition."));
       }
@@ -200,7 +204,7 @@ void MissionManager::Run() {
   if (TestSelectName == "Excite") { // Excitation selected
     if (TriggerAct_ == true) {
       if (ExciteSel_ == "None") { // Engage the Excitation
-        ExciteSel_ = TestPoints_[std::to_string(TestPtID_)].Excitation;
+        ExciteSel_ = TestPointsVec_[TestPtID_].Excitation;
       } else { // Dis-Engage the Excitation
         ExciteSel_ = "None";
       }
@@ -225,8 +229,8 @@ void MissionManager::Run() {
   // SOC Controller and SensorProcessing Mode Switching
   if (SocEngageName == "Soc") {
     SocEngageMode_= true;
-    TestSenProcSel_ = TestPoints_[std::to_string(TestPtID_)].SensorProcessing;
-    TestCtrlSel_ = TestPoints_[std::to_string(TestPtID_)].Control;
+    TestSenProcSel_ = TestPointsVec_[TestPtID_].SensorProcessing;
+    TestCtrlSel_ = TestPointsVec_[TestPtID_].Control;
 
     if (TestModeName == "Arm") { // SOC Baseline Engaged, Test Armed
       BaseCtrlMode_ = Mode::kEngage; // Engaged

@@ -86,7 +86,7 @@ class MissionManager {
     // Test Point
     size_t TestPtID_ = 0;
     size_t NumTestPts_ = 0;
-    std::map<std::string, TestPointDefinition> TestPoints_;
+    std::vector<TestPointDefinition> TestPointsVec_;
 
     bool SocEngageMode_ = false;
 
