@@ -140,14 +140,14 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
     NumTestPts_ = TestPoints.Size();
     for (auto &TestPoint : TestPoints.GetArray()) {
       if (TestPoint.HasMember("Test-ID")&&TestPoint.HasMember("Sensor-Processing")&&TestPoint.HasMember("Control")&&TestPoint.HasMember("Excitation")) {
-        TestPointDefinition TestPoint;
+        TestPointDefinition TestPointCurr;
 
-        TestPoint.ID = TestPoint["Test-ID"].GetString();
-        TestPoint.SensorProcessing = TestPoint["Sensor-Processing"].GetString();
-        TestPoint.Control = TestPoint["Control"].GetString();
-        TestPoint.Excitation = TestPoint["Excitation"].GetString();
-        
-        TestPointsVec_.push_back(TestPoint);
+        TestPointCurr.ID = TestPoint["Test-ID"].GetString();
+        TestPointCurr.SensorProcessing = TestPoint["Sensor-Processing"].GetString();
+        TestPointCurr.Control = TestPoint["Control"].GetString();
+        TestPointCurr.Excitation = TestPoint["Excitation"].GetString();
+
+        TestPointsVec_.push_back(TestPointCurr);
       } else {
         throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-ID, Sensor-Processing, Control, or Excitation not included in test point definition."));
       }
