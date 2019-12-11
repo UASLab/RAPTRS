@@ -243,14 +243,14 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
     if ( ReceiveMessage(&msg_id, &Payload) ) {
       if ( msg_id == message::config_ack_id ) {
         message::config_ack_t msg;
-	msg.unpack(Payload.data(), Payload.size());
-	printf("  received ack: %d ", msg.ack_id);
-	if ( id == msg.ack_id and subid == msg.ack_subid ) {
-	  printf("ok\n");
-	  return true;
-	} else {
-	  printf("wrong ack\n");
-	}
+      	msg.unpack(Payload.data(), Payload.size());
+      	printf("  received ack: %d ", msg.ack_id);
+      	if ( id == msg.ack_id and subid == msg.ack_subid ) {
+      	  printf("ok\n");
+      	  return true;
+      	} else {
+      	  printf("wrong ack\n");
+      	}
       }
     }
   }
@@ -272,7 +272,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 1000) ) {
+      if ( WaitForAck(msg.id, 0, 2000) ) {
         return true;
       }
     } else {
@@ -292,7 +292,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 1000) ) {
+      if ( WaitForAck(msg.id, 0, 2000) ) {
         return true;
       }
     } else {
@@ -312,7 +312,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 1000) ) {
+      if ( WaitForAck(msg.id, 0, 2000) ) {
         return true;
       }
     } else {
@@ -331,7 +331,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "SbusVoltage" ) {
@@ -347,7 +347,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "InternalBme280" ) {
@@ -364,7 +364,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       msg.output = Sensor["Output"].GetString();
       msg.pack();
       SendMessage(msg.id, 0, msg.payload, msg.len);
-      if ( WaitForAck(msg.id, 0, 1000) ) {
+      if ( WaitForAck(msg.id, 0, 2000) ) {
         return true;
       }
     } else {
@@ -388,7 +388,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     msg.output = Sensor["Output"].GetString();
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "InternalMpu9250" or Sensor["Type"] == "Mpu9250" ) {
@@ -453,8 +453,9 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       }
     } else {
       {
-        SensorNodes_.Sbus.push_back(SbusSensorNodes());
-        size_t i = SensorNodes_.Sbus.size() - 1;
+        printf("Configuring Mpu9250\n");
+        SensorNodes_.Mpu9250.push_back(Mpu9250SensorNodes());
+        size_t i = SensorNodes_.Mpu9250.size() - 1;
         string Path = RootPath_ + "/" + Sensor["Output"].GetString();
         SensorNodes_.Mpu9250[i].status = deftree.initElement(Path+"/Status", "MPU-9250_" + to_string(i) + " read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
         SensorNodes_.Mpu9250[i].ax = deftree.initElement(Path+"/AccelX_mss", "MPU-9250_" + to_string(i) + " X accelerometer, corrected for installation rotation, m/s/s", LOG_FLOAT, LOG_NONE);
@@ -500,8 +501,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       }
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "uBlox" ) {
@@ -546,7 +547,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     printf("uBlox: %d %d\n", msg.uart, msg.baud);
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "Swift" ) {
@@ -597,7 +598,7 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     }
     msg.pack();
     SendMessage(msg.id, node_address, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "Bme280" ) {
@@ -628,8 +629,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       printf("ERROR: no i2c address specified\n");
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "Ams5915" ) {
@@ -659,8 +660,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       printf("ERROR: no transducer type specified\n");
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
   } else if ( Sensor["Type"] == "Analog" ) {
@@ -693,8 +694,8 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
       }
     }
     msg.pack();
-    SendMessage(msg.id, 0, msg.payload, msg.len);
-    if ( WaitForAck(msg.id, 0, 1000) ) {
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
 
@@ -743,7 +744,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
       printf("ERROR: no Soc-Engage-Switch gain field specified\n");
     }
     if ( sw.HasMember("ModeSel") ) {
-      if ( sw.HasMember("Threshold") ) {
+      if ( sw["ModeSel"].HasMember("Soc") ) {
         msg.threshold = sw["ModeSel"]["Soc"].GetFloat();
       } else {
         printf("ERROR: no Soc-Engage-Switch Soc field specified\n");
@@ -754,7 +755,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
 
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
-    if ( ! WaitForAck(msg.id, 0, 1000) ) {
+    if ( ! WaitForAck(msg.id, 0, 2000) ) {
       return false;
     }
   }
@@ -772,7 +773,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
       printf("ERROR: no Throttle-Safety-Switch Gain field specified\n");
     }
     if ( sw.HasMember("ModeSel") ) {
-      if ( sw.HasMember("Threshold") ) {
+      if ( sw["ModeSel"].HasMember("Engage") ) {
         msg.threshold = sw["ModeSel"]["Engage"].GetFloat();
       } else {
         printf("ERROR: no Throttle-Safety-Switch Engage field specified\n");
@@ -783,7 +784,7 @@ bool FlightManagementUnit::ConfigureMissionManager(const rapidjson::Value& Confi
 
     msg.pack();
     SendMessage(msg.id, 0, msg.payload, msg.len);
-    if ( ! WaitForAck(msg.id, 0, 1000) ) {
+    if ( ! WaitForAck(msg.id, 0, 2000) ) {
       return false;
     }
   }
@@ -874,7 +875,7 @@ bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
         }
         msg.pack();
         SendMessage(msg.id, 0, msg.payload, msg.len);
-        if ( !WaitForAck(msg.id, 0, 1000) ) {
+        if ( !WaitForAck(msg.id, 0, 2000) ) {
           return false;
         }
       } else {
@@ -945,7 +946,7 @@ void FlightManagementUnit::ConfigureEffectors(const rapidjson::Value& Config, ui
         }
         msg.pack();
         SendMessage(msg.id, node_address, msg.payload, msg.len);
-        if ( ! WaitForAck(msg.id, 0, 1000) ) {
+        if ( ! WaitForAck(msg.id, 0, 2000) ) {
           printf("ERROR: effector command message failed ack!\n");
         }
       }

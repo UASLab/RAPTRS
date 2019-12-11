@@ -34,11 +34,13 @@ bool AircraftEffectors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) 
     config_.Resolution = powf(2,kPwmResolution) - 1.0f;
     config_.Period = 1.0f/kPwmFrequency * 1000000.0f;
     Effectors_.push_back(eff); // keep!
+    Serial.println("done!");
+    configured_ = true;
     return true;
+  } else {
+    return false;
   }
 
-  configured_ = true;
-  Serial.println("done!");
 }
 
 /* sets the effector angle commands to the given values */

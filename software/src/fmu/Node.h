@@ -53,18 +53,25 @@ class Node {
     static const size_t kBufferMaxSize = 4096;
     const uint32_t I2cHeaderTimeout_us = 200;
     const uint32_t I2cDataTimeout_us = 2000;
+
     i2c_t3 *bus_;
     uint8_t addr_;
     uint32_t rate_;
-    uint8_t Buffer_[kBufferMaxSize];
+
     const uint8_t header_[2] = {0x42,0x46};
     const size_t headerLength_ = 5;
     const size_t checksumLength_ = 2;
+
+    uint8_t TxBuffer_[kBufferMaxSize];
+    uint8_t TxChecksum_[2];
+
+    uint8_t RxBuffer_[kBufferMaxSize];
     uint8_t RxByte_;
-    uint16_t ParserState_ = 0;
-    uint8_t LengthBuffer_[2];
-    uint16_t Length_ = 0;
-    uint8_t Checksum_[2];
+    uint16_t RxParserState_ = 0;
+    uint8_t LengthRxBuffer_[2];
+    uint16_t RxLength_ = 0;
+    uint8_t RxChecksum_[2];
+
     // struct SensorData SensorData_;
     std::vector<uint8_t> DataBuffer_;
     void SendMessage(uint8_t message, std::vector<uint8_t> &Payload);

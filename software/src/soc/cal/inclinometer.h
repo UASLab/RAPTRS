@@ -15,7 +15,7 @@ Author: Chris Regan
 #include <exception>
 #include <stdexcept>
 
-const char InclinePort[] = "/dev/ttyO1";
+const char InclinePort[] = "/dev/ttyUSB0";
 const speed_t InclineBaud = B115200;
 
 struct InclineData {

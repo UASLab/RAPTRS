@@ -4,14 +4,13 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef HARDWARE_DEFS_H_
-#define HARDWARE_DEFS_H_
+#pragma once
 
 #include "i2c_t3.h"
 #include "Arduino.h"
 
 // Node Software Version
-const String SoftwareVersion = "0.8.3";
+const String SoftwareVersion = "0.10.1";
 
 // Debug port
 const uint32_t kDebugBaud = 115200;                           // Baudrate for status and debug messages
@@ -39,5 +38,3 @@ const float kEffectorVoltageScale = 3.0f;                     // Scale factor fo
 const uint8_t kPwmPins[8] = {23,2,5,6,7,8,35,36};             // Array of pins for PWM output
 const float kPwmFrequency = 50;                               // PWM frequency, Hz
 const float kPwmResolution = 16;                              // PWM resolution, bits
-
-#endif

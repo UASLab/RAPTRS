@@ -97,14 +97,14 @@ private:
 Linear Chirp Class - Adds a linear chirp to the signal for the specified duration
 Example JSON configuration:
 {
-  "Type": "LinearChirp",
-  "Amplitude": [start,end],
-  "Frequency": [start,end]
+  "Type": "LinearChirp", "Duration": X,
+  "AmpStart": X, "AmpEnd": X,
+  "FreqStart": X, "FreqEnd": X
 }
 Where:
    * Duration is the duration time of the chirp
-   * Amplitude is an array specifying the starting and ending chirp Amplitude
-   * Frequency is an array specifying the starting and ending Frequency in rad/sec
+   * Amplitude is starting and ending chirp Amplitude
+   * Frequency is starting and ending Frequency in rad/sec
 */
 
 class LinearChirp: public Waveform {
@@ -127,10 +127,9 @@ class LinearChirp: public Waveform {
 Log Chirp Class - Adds a log chirp to the signal for the specified duration
 Example JSON configuration:
 {
-  "Type": "LogChirp"
-  "Duration": X,
-  "Amplitude": [start,end],
-  "Frequency": [start,end]
+  "Type": "LogChirp", "Duration": X,
+  "AmpStart": X, "AmpEnd": X,
+  "FreqStart": X, "FreqEnd": X
   }
 }
 Where:
@@ -207,4 +206,30 @@ class MultiSine: public Waveform {
     Eigen::ArrayXf Amp_;
     Eigen::ArrayXf Freq_rps_;
     Eigen::ArrayXf Phase_rad_;
+};
+
+/*
+Sampled Class - Adds a Pre-defined time history to the signal
+Example JSON configuration:
+{
+  "Type": "Sampled"
+  "Duration": X,
+  "dt": X,
+  "Sample": [X]
+  }
+}
+Where:
+   * Duration is the duration time of the chirp
+   * Sample is a vector of each element of the time history
+*/
+
+class Sampled: public Waveform {
+  public:
+    void Configure(const rapidjson::Value& Config);
+    void Run(float tExc_s, float *Excite);
+    void Clear();
+  private:
+    float tDur_s_ = 0.0f;
+    float dt_s_ = 0.0f;
+    Eigen::ArrayXf Sample_;
 };

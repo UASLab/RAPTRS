@@ -688,6 +688,11 @@ static ElementPtr cmdLER_node;
 static ElementPtr cmdMotor_node;
 static ElementPtr cmdGear_node;
 
+static ElementPtr cmdMotorFR_node;
+static ElementPtr cmdMotorAL_node;
+static ElementPtr cmdMotorFL_node;
+static ElementPtr cmdMotorAR_node;
+
 bool sim_cmd_init() {
   printf("sim_cmd_init()\n");
 
@@ -707,7 +712,7 @@ bool sim_cmd_init() {
     cmdLER_node = deftree.initElement("/Control/cmdLER_rad", "Cmd LER (rad)", LOG_FLOAT, LOG_NONE);
     cmdMotor_node = deftree.initElement("/Control/cmdMotor_nd", "Cmd Motor (nd)", LOG_FLOAT, LOG_NONE);
     cmdGear_node = deftree.initElement("/Control/cmdGear_nd", "Cmd Gear (nd)", LOG_FLOAT, LOG_NONE);
-  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick60") || (modelName == "UltraStick120")) {
     cmdTime_node = deftree.initElement("/Sensors/Fmu/Time_us", "Cmd Time (us)", LOG_DOUBLE, LOG_NONE);
     cmdAilL_node = deftree.initElement("/Control/cmdAilL_rad", "Cmd AilL (rad)", LOG_FLOAT, LOG_NONE);
     cmdAilR_node = deftree.initElement("/Control/cmdAilR_rad", "Cmd AilR (rad)", LOG_FLOAT, LOG_NONE);
@@ -716,6 +721,12 @@ bool sim_cmd_init() {
     cmdFlapL_node = deftree.initElement("/Control/cmdFlapL_rad", "Cmd FlapL (rad)", LOG_FLOAT, LOG_NONE);
     cmdFlapR_node = deftree.initElement("/Control/cmdFlapR_rad", "Cmd FlapR (rad)", LOG_FLOAT, LOG_NONE);
     cmdMotor_node = deftree.initElement("/Control/cmdMotor_nd", "Cmd Motor (nd)", LOG_FLOAT, LOG_NONE);
+  } else if (modelName == "F450") {
+    cmdTime_node = deftree.initElement("/Sensors/Fmu/Time_us", "Cmd Time (us)", LOG_DOUBLE, LOG_NONE);
+    cmdMotorFR_node = deftree.initElement("/Control/cmdMotorFR_nd", "Cmd Motor FR (nd)", LOG_FLOAT, LOG_NONE);
+    cmdMotorAL_node = deftree.initElement("/Control/cmdMotorAL_nd", "Cmd Motor AL (nd)", LOG_FLOAT, LOG_NONE);
+    cmdMotorFL_node = deftree.initElement("/Control/cmdMotorFL_nd", "Cmd Motor FL (nd)", LOG_FLOAT, LOG_NONE);
+    cmdMotorAR_node = deftree.initElement("/Control/cmdMotorAR_nd", "Cmd Motor AR (nd)", LOG_FLOAT, LOG_NONE);
   } else {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
   }
@@ -776,7 +787,7 @@ bool sim_cmd_update() {
     response += std::to_string(cmdMotor_nd) + ",";
     response += std::to_string(cmdGear_nd) + "\r\n";
 
-  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick60") || (modelName == "UltraStick120")) {
 
     float cmdTime_s = 1e-6 * cmdTime_node->getFloat();
     double cmdTime_us = cmdTime_node->getDouble();
@@ -798,10 +809,20 @@ bool sim_cmd_update() {
     response += std::to_string(cmdFlapR_rad) + ",";
     response += std::to_string(cmdMotor_nd) + "\r\n";
 
-    // std::cout << cmdTime_s << "\t"
-    //           << cmdTime_us << "\t"
-    //           << cmdMotor_nd << "\t"
-    //           << std::endl;
+  } else if (modelName == "F450") {
+    float cmdTime_s = 1e-6 * cmdTime_node->getFloat();
+    double cmdTime_us = cmdTime_node->getDouble();
+    float cmdMotorFR_nd = cmdMotorFR_node->getFloat();
+    float cmdMotorAL_nd = cmdMotorAL_node->getFloat();
+    float cmdMotorFL_nd = cmdMotorFL_node->getFloat();
+    float cmdMotorAR_nd = cmdMotorAR_node->getFloat();
+
+    response += std::to_string(cmdTime_s) + ",";
+    response += std::to_string(cmdTime_us) + ",";
+    response += std::to_string(cmdMotorFR_nd) + ",";
+    response += std::to_string(cmdMotorAL_nd) + ",";
+    response += std::to_string(cmdMotorFL_nd) + ",";
+    response += std::to_string(cmdMotorAR_nd) + "\r\n";
 
   } else {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
