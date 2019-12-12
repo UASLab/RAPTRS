@@ -1,7 +1,8 @@
-//
-// FILE: sim-interface.cpp
-// DESCRIPTION: aquire live sensor data from an running copy of JSBSim
-//
+/*
+Copyright (c) 2018 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan, Curt Olson
+*/
 
 #include <stdlib.h>
 #include <iostream>
@@ -242,6 +243,7 @@ static float ve_mps = 0.0;
 static float vd_mps = 0.0;
 static uint8_t sats = 0;
 static uint8_t fix = 0;
+static unsigned long tow = 0;
 
 static ElementPtr gpsTime_node;
 static ElementPtr lat_node;
@@ -252,19 +254,23 @@ static ElementPtr ve_node;
 static ElementPtr vd_node;
 static ElementPtr sats_node;
 static ElementPtr fix_node;
+static ElementPtr tow_node;
 
 bool sim_gps_init() {
   printf("sim_gps_init()\n");
   // bind def tree pointers
-  // gpsTime_node = deftree.initElement("/Sensors/uBlox/Time_us", "GPS Time (us)", LOG_DOUBLE, LOG_NONE);
-  lon_node = deftree.initElement("/Sensors/uBlox/Longitude_rad", "GPS Longitude (rad)", LOG_DOUBLE, LOG_NONE);
-  lat_node = deftree.initElement("/Sensors/uBlox/Latitude_rad", "GPS Latitude (rad)", LOG_DOUBLE, LOG_NONE);
-  alt_node = deftree.initElement("/Sensors/uBlox/Altitude_m", "GPS Altitude (m)", LOG_FLOAT, LOG_NONE);
-  vn_node = deftree.initElement("/Sensors/uBlox/NorthVelocity_ms", "GPS vNorth (m/s)", LOG_FLOAT, LOG_NONE);
-  ve_node = deftree.initElement("/Sensors/uBlox/EastVelocity_ms", "GPS vEast (m/s)", LOG_FLOAT, LOG_NONE);
-  vd_node = deftree.initElement("/Sensors/uBlox/DownVelocity_ms", "GPS vDorth (m/s)", LOG_FLOAT, LOG_NONE);
-  sats_node = deftree.initElement("/Sensors/uBlox/NumberSatellites", "GPS Number of Satellites", LOG_INT8, LOG_NONE);
-  fix_node = deftree.initElement("/Sensors/uBlox/Fix", "GPS Fix Flag (bool)", LOG_BOOL, LOG_NONE);
+  std::string Path = "/Sensors/uBlox";
+  // gpsTime_node = deftree.initElement(Path+"/Time_us", "GPS Time (us)", LOG_DOUBLE, LOG_NONE);
+  lon_node = deftree.initElement(Path+"/Longitude_rad", "GPS Longitude (rad)", LOG_DOUBLE, LOG_NONE);
+  lat_node = deftree.initElement(Path+"/Latitude_rad", "GPS Latitude (rad)", LOG_DOUBLE, LOG_NONE);
+  alt_node = deftree.initElement(Path+"/Altitude_m", "GPS Altitude (m)", LOG_FLOAT, LOG_NONE);
+  vn_node = deftree.initElement(Path+"/NorthVelocity_ms", "GPS vNorth (m/s)", LOG_FLOAT, LOG_NONE);
+  ve_node = deftree.initElement(Path+"/EastVelocity_ms", "GPS vEast (m/s)", LOG_FLOAT, LOG_NONE);
+  vd_node = deftree.initElement(Path+"/DownVelocity_ms", "GPS vDorth (m/s)", LOG_FLOAT, LOG_NONE);
+  sats_node = deftree.initElement(Path+"/NumberSatellites", "GPS Number of Satellites", LOG_INT8, LOG_NONE);
+  fix_node = deftree.initElement(Path+"/Fix", "GPS Fix Flag (bool)", LOG_BOOL, LOG_NONE);
+
+  tow_node = deftree.initElement(Path+"/TOW", "GPS time of the navigation epoch", LOG_BOOL, LOG_NONE);
 
   // open a UDP socket
   if ( ! sock_gps.open( false ) ) {
@@ -305,6 +311,7 @@ bool sim_gps_update() {
     pt = strtok(NULL, ","); vd_mps = atof(pt);
     sats = 8;
     fix = 1;
+    tow++; // just increment TOW
 
     // std::cout << gpsTime_s << "\t"
     //           << gpsTime_us << "\t"
@@ -327,6 +334,7 @@ bool sim_gps_update() {
   vd_node->setFloat(vd_mps);
   sats_node->setInt(8);
   fix_node->setInt(fix);
+  tow_node->setInt(tow);
 
   return fresh_data;
 }
@@ -687,6 +695,11 @@ static ElementPtr cmdLER_node;
 static ElementPtr cmdMotor_node;
 static ElementPtr cmdGear_node;
 
+static ElementPtr cmdMotorFR_node;
+static ElementPtr cmdMotorAL_node;
+static ElementPtr cmdMotorFL_node;
+static ElementPtr cmdMotorAR_node;
+
 bool sim_cmd_init() {
   printf("sim_cmd_init()\n");
 
@@ -706,7 +719,7 @@ bool sim_cmd_init() {
     cmdLER_node = deftree.initElement("/Control/cmdLER_rad", "Cmd LER (rad)", LOG_FLOAT, LOG_NONE);
     cmdMotor_node = deftree.initElement("/Control/cmdMotor_nd", "Cmd Motor (nd)", LOG_FLOAT, LOG_NONE);
     cmdGear_node = deftree.initElement("/Control/cmdGear_nd", "Cmd Gear (nd)", LOG_FLOAT, LOG_NONE);
-  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick60") || (modelName == "UltraStick120")) {
     cmdTime_node = deftree.initElement("/Sensors/Fmu/Time_us", "Cmd Time (us)", LOG_DOUBLE, LOG_NONE);
     cmdAilL_node = deftree.initElement("/Control/cmdAilL_rad", "Cmd AilL (rad)", LOG_FLOAT, LOG_NONE);
     cmdAilR_node = deftree.initElement("/Control/cmdAilR_rad", "Cmd AilR (rad)", LOG_FLOAT, LOG_NONE);
@@ -715,6 +728,12 @@ bool sim_cmd_init() {
     cmdFlapL_node = deftree.initElement("/Control/cmdFlapL_rad", "Cmd FlapL (rad)", LOG_FLOAT, LOG_NONE);
     cmdFlapR_node = deftree.initElement("/Control/cmdFlapR_rad", "Cmd FlapR (rad)", LOG_FLOAT, LOG_NONE);
     cmdMotor_node = deftree.initElement("/Control/cmdMotor_nd", "Cmd Motor (nd)", LOG_FLOAT, LOG_NONE);
+  } else if (modelName == "F450") {
+    cmdTime_node = deftree.initElement("/Sensors/Fmu/Time_us", "Cmd Time (us)", LOG_DOUBLE, LOG_NONE);
+    cmdMotorFR_node = deftree.initElement("/Control/cmdMotorFR_nd", "Cmd Motor FR (nd)", LOG_FLOAT, LOG_NONE);
+    cmdMotorAL_node = deftree.initElement("/Control/cmdMotorAL_nd", "Cmd Motor AL (nd)", LOG_FLOAT, LOG_NONE);
+    cmdMotorFL_node = deftree.initElement("/Control/cmdMotorFL_nd", "Cmd Motor FL (nd)", LOG_FLOAT, LOG_NONE);
+    cmdMotorAR_node = deftree.initElement("/Control/cmdMotorAR_nd", "Cmd Motor AR (nd)", LOG_FLOAT, LOG_NONE);
   } else {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
   }
@@ -775,7 +794,7 @@ bool sim_cmd_update() {
     response += std::to_string(cmdMotor_nd) + ",";
     response += std::to_string(cmdGear_nd) + "\r\n";
 
-  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick120")) {
+  } else if ((modelName == "UltraStick25e") || (modelName == "UltraStick60") || (modelName == "UltraStick120")) {
 
     float cmdTime_s = 1e-6 * cmdTime_node->getFloat();
     double cmdTime_us = cmdTime_node->getDouble();
@@ -797,16 +816,26 @@ bool sim_cmd_update() {
     response += std::to_string(cmdFlapR_rad) + ",";
     response += std::to_string(cmdMotor_nd) + "\r\n";
 
-    // std::cout << cmdTime_s << "\t"
-    //           << cmdTime_us << "\t"
-    //           << cmdMotor_nd << "\t"
-    //           << std::endl;
+  } else if (modelName == "F450") {
+    float cmdTime_s = 1e-6 * cmdTime_node->getFloat();
+    double cmdTime_us = cmdTime_node->getDouble();
+    float cmdMotorFR_nd = cmdMotorFR_node->getFloat();
+    float cmdMotorAL_nd = cmdMotorAL_node->getFloat();
+    float cmdMotorFL_nd = cmdMotorFL_node->getFloat();
+    float cmdMotorAR_nd = cmdMotorAR_node->getFloat();
+
+    response += std::to_string(cmdTime_s) + ",";
+    response += std::to_string(cmdTime_us) + ",";
+    response += std::to_string(cmdMotorFR_nd) + ",";
+    response += std::to_string(cmdMotorAL_nd) + ",";
+    response += std::to_string(cmdMotorFL_nd) + ",";
+    response += std::to_string(cmdMotorAR_nd) + "\r\n";
 
   } else {
     std::cout << "JSBSim 'Model' not understood" << std::endl;
   }
 
-  int result = sock_cmd.send( response.c_str(), response.length(), 0 );
+  unsigned int result = sock_cmd.send( response.c_str(), response.length(), 0 );
   if ( result != response.length() ) {
     return false;
   }
