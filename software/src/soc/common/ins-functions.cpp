@@ -1,21 +1,7 @@
 /*
-ins-functions.cc
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
 #include <iostream>
@@ -24,14 +10,7 @@ using std::endl;
 
 #include "ins-functions.h"
 
-void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPath) {
-  // get output name
-  std::string OutputName;
-  if (Config.HasMember("Output")) {
-    OutputName = RootPath + "/" + Config["Output"].GetString();
-  } else {
-    throw std::runtime_error(std::string("ERROR")+RootPath+std::string(": Output not specified in configuration."));
-  }
+void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemPath) {
   // get gps source
   if (Config.HasMember("GPS")) {
     std::string GpsKey = Config["GPS"].GetString();
@@ -45,38 +24,38 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPat
     std::string AltKey = GpsKey+"/Altitude_m";
     config_.GpsFix = deftree.getElement(FixKey);
     if ( !config_.GpsFix ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS fix source ")+FixKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS fix source ")+FixKey+std::string(" not found in global data."));
     }
     config_.GpsTow = deftree.getElement(TowKey);
     if ( !config_.GpsTow ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS TOW source ")+TowKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS TOW source ")+TowKey+std::string(" not found in global data."));
     }
     config_.GpsVn = deftree.getElement(VnKey);
     if ( !config_.GpsVn ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS north velocity source ")+VnKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS north velocity source ")+VnKey+std::string(" not found in global data."));
     }
     config_.GpsVe = deftree.getElement(VeKey);
     if ( !config_.GpsVe ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS east velocity source ")+VeKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS east velocity source ")+VeKey+std::string(" not found in global data."));
     }
     config_.GpsVd = deftree.getElement(VdKey);
     if ( !config_.GpsVd ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS down velocity source ")+VdKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS down velocity source ")+VdKey+std::string(" not found in global data."));
     }
     config_.GpsLat = deftree.getElement(LatKey);
     if ( ! config_.GpsLat ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS latitude source ")+LatKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS latitude source ")+LatKey+std::string(" not found in global data."));
     }
     config_.GpsLon = deftree.getElement(LonKey);
     if ( !config_.GpsLon ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS longitude source ")+LonKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS longitude source ")+LonKey+std::string(" not found in global data."));
     }
     config_.GpsAlt = deftree.getElement(AltKey);
     if ( !config_.GpsAlt ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS altitude source ")+AltKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS altitude source ")+AltKey+std::string(" not found in global data."));
     }
   } else {
-    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": GPS source not specified in configuration."));
+    throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS source not specified in configuration."));
   }
   // get imu source
   if (Config.HasMember("IMU")) {
@@ -92,52 +71,52 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPat
     std::string HzKey = ImuKey+"/MagZ_uT";
     config_.ImuGx = deftree.getElement(GxKey);
     if ( !config_.ImuGx ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": X gyro source ")+GxKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": X gyro source ")+GxKey+std::string(" not found in global data."));
     }
     config_.ImuGy = deftree.getElement(GyKey);
     if ( !config_.ImuGy ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Y gyro source ")+GyKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Y gyro source ")+GyKey+std::string(" not found in global data."));
     }
     config_.ImuGz = deftree.getElement(GzKey);
     if ( !config_.ImuGz ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Z gyro source ")+GzKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Z gyro source ")+GzKey+std::string(" not found in global data."));
     }
     config_.ImuAx = deftree.getElement(AxKey);
     if ( !config_.ImuAx ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": X accelerometer source ")+AxKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": X accelerometer source ")+AxKey+std::string(" not found in global data."));
     }
     config_.ImuAy = deftree.getElement(AyKey);
     if ( !config_.ImuAy ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Y accelerometer source ")+AyKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Y accelerometer source ")+AyKey+std::string(" not found in global data."));
     }
     config_.ImuAz = deftree.getElement(AzKey);
     if ( !config_.ImuAz ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Z accelerometer source ")+AzKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Z accelerometer source ")+AzKey+std::string(" not found in global data."));
     }
     config_.ImuHx = deftree.getElement(HxKey);
     if ( !config_.ImuHx ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": X magnetometer source ")+HxKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": X magnetometer source ")+HxKey+std::string(" not found in global data."));
     }
     config_.ImuHy = deftree.getElement(HyKey);
     if ( !config_.ImuHy ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Y magnetometer source ")+HyKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Y magnetometer source ")+HyKey+std::string(" not found in global data."));
     }
     config_.ImuHz = deftree.getElement(HzKey);
     if ( !config_.ImuHz ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Z magnetometer source ")+HzKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Z magnetometer source ")+HzKey+std::string(" not found in global data."));
     }
   } else {
-    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": IMU source not specified in configuration."));
+    throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": IMU source not specified in configuration."));
   }
   // get time source
   if (Config.HasMember("Time")) {
     std::string TimeKey = Config["Time"].GetString();
     config_.t = deftree.getElement(TimeKey);
     if ( !config_.t ) {
-      throw std::runtime_error(std::string("ERROR")+OutputName+std::string(":Time source ")+TimeKey+std::string(" not found in global data."));
+      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(":Time source ")+TimeKey+std::string(" not found in global data."));
     }
   } else {
-    throw std::runtime_error(std::string("ERROR")+OutputName+std::string(": Time source not specified in configuration."));
+    throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Time source not specified in configuration."));
   }
   // get error characteristic config
   if (Config.HasMember("Config")) {
@@ -173,56 +152,56 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string RootPat
     }
   }
   // pointer to log run mode data
-  ModeKey_ = OutputName+"/Mode";
+  ModeKey_ = SystemPath+"/Mode";
   data_.Mode = deftree.initElement(ModeKey_,"Run mode", LOG_UINT8, LOG_NONE);
   data_.Mode->setInt(kStandby);
-  
+
   // pointers to log data
-  AxKey_ = OutputName+"/AccelX_mss";
+  AxKey_ = SystemPath+"/AccelX_mss";
   data_.Ax = deftree.initElement(AxKey_, "X accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
-  AxbKey_ = OutputName+"/AccelXBias_mss";
+  AxbKey_ = SystemPath+"/AccelXBias_mss";
   data_.Axb = deftree.initElement(AxbKey_, "X accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  AyKey_ = OutputName+"/AccelY_mss";
+  AyKey_ = SystemPath+"/AccelY_mss";
   data_.Ay = deftree.initElement(AyKey_, "Y accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
-  AybKey_ = OutputName+"/AccelYBias_mss";
+  AybKey_ = SystemPath+"/AccelYBias_mss";
   data_.Ayb = deftree.initElement(AybKey_, "Y accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  AzKey_ = OutputName+"/AccelZ_mss";
+  AzKey_ = SystemPath+"/AccelZ_mss";
   data_.Az = deftree.initElement(AzKey_, "Z accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
-  AzbKey_ = OutputName+"/AccelZBias_mss";
+  AzbKey_ = SystemPath+"/AccelZBias_mss";
   data_.Azb = deftree.initElement(AzbKey_, "Z accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  GxKey_ = OutputName+"/GyroX_rads";
+  GxKey_ = SystemPath+"/GyroX_rads";
   data_.Gx = deftree.initElement(GxKey_, "X gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  GxbKey_ = OutputName+"/GyroXBias_rads";
+  GxbKey_ = SystemPath+"/GyroXBias_rads";
   data_.Gxb = deftree.initElement(GxbKey_, "X gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  GyKey_ = OutputName+"/GyroY_rads";
+  GyKey_ = SystemPath+"/GyroY_rads";
   data_.Gy = deftree.initElement(GyKey_, "Y gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  GybKey_ = OutputName+"/GyroYBias_rads";
+  GybKey_ = SystemPath+"/GyroYBias_rads";
   data_.Gyb = deftree.initElement(GybKey_, "Y gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  GzKey_ = OutputName+"/GyroZ_rads";
+  GzKey_ = SystemPath+"/GyroZ_rads";
   data_.Gz = deftree.initElement(GzKey_, "Z gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  GzbKey_ = OutputName+"/GyroZBias_rads";
+  GzbKey_ = SystemPath+"/GyroZBias_rads";
   data_.Gzb = deftree.initElement(GzbKey_, "Z gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  PitchKey_ = OutputName+"/Pitch_rad";
+  PitchKey_ = SystemPath+"/Pitch_rad";
   data_.Pitch = deftree.initElement(PitchKey_, "Pitch, rad", LOG_FLOAT, LOG_NONE);
-  RollKey_ = OutputName+"/Roll_rad";
+  RollKey_ = SystemPath+"/Roll_rad";
   data_.Roll = deftree.initElement(RollKey_, "Roll, rad", LOG_FLOAT, LOG_NONE);
-  YawKey_ = OutputName+"/Yaw_rad";
+  YawKey_ = SystemPath+"/Yaw_rad";
   data_.Yaw = deftree.initElement(YawKey_, "Yaw, rad", LOG_FLOAT, LOG_NONE);
-  HeadingKey_ = OutputName+"/Heading_rad";
+  HeadingKey_ = SystemPath+"/Heading_rad";
   data_.Heading = deftree.initElement(HeadingKey_, "Heading, rad", LOG_FLOAT, LOG_NONE);
-  TrackKey_ = OutputName+"/Track_rad";
+  TrackKey_ = SystemPath+"/Track_rad";
   data_.Track = deftree.initElement(TrackKey_, "Track, rad", LOG_FLOAT, LOG_NONE);
-  LatKey_ = OutputName+"/Latitude_rad";
+  LatKey_ = SystemPath+"/Latitude_rad";
   data_.Lat = deftree.initElement(LatKey_, "Latitude, rad", LOG_DOUBLE, LOG_NONE);
-  LonKey_ = OutputName+"/Longitude_rad";
+  LonKey_ = SystemPath+"/Longitude_rad";
   data_.Lon = deftree.initElement(LonKey_, "Longitude, rad", LOG_DOUBLE, LOG_NONE);
-  AltKey_ = OutputName+"/Altitude_m";
+  AltKey_ = SystemPath+"/Altitude_m";
   data_.Alt = deftree.initElement(AltKey_, "Altitude, m", LOG_FLOAT, LOG_NONE);
-  VnKey_ = OutputName+"/NorthVelocity_ms";
+  VnKey_ = SystemPath+"/NorthVelocity_ms";
   data_.Vn = deftree.initElement(VnKey_, "North velocity, m/s", LOG_FLOAT, LOG_NONE);
-  VeKey_ = OutputName+"/EastVelocity_ms";
+  VeKey_ = SystemPath+"/EastVelocity_ms";
   data_.Ve = deftree.initElement(VeKey_, "East velocity, m/s", LOG_FLOAT, LOG_NONE);
-  VdKey_ = OutputName+"/DownVelocity_ms";
+  VdKey_ = SystemPath+"/DownVelocity_ms";
   data_.Vd = deftree.initElement(VdKey_, "Down velocity, m/s", LOG_FLOAT, LOG_NONE);
 }
 

@@ -1,31 +1,17 @@
 /*
-mission.hxx
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
-#ifndef MISSION_HXX_
-#define MISSION_HXX_
+#pragma once
 
-#include "hardware-defs.h"
+#include "configuration.h"
 #include "definition-tree2.h"
 #include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
+
+#include "generic-function.h"
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -36,6 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <stdexcept>
 #include <vector>
 #include <cstring>
+#include <memory>
+
+// Mode change requests are handled with a set of persistance counters.
+// Requesting Armed or Engaged states require persistance to switch
+class ModeSelect {
+  public:
+    void Configure(const rapidjson::Value& Config, int PersistThreshold);
+    void Run(float val, uint8_t *cmdSel, std::string *cmdSelName);
+    void Reset(){
+      PersistCounter_ = 0;
+    };
+
+    struct ModeEnt {
+      std::string Name;
+      float Threshold;
+    };
+
+  private:
+    std::vector<ModeEnt> ModeSel_;
+    uint8_t cmdSelPrev_, cmdReqPrev_;
+    int PersistCounter_ = 0;
+    int PersistThreshold_ = 0;
+};
+
+typedef GenericFunction::Mode Mode;
 
 class MissionManager {
   public:
@@ -47,58 +58,48 @@ class MissionManager {
     };
     void Configure(const rapidjson::Value& Config);
     void Run();
-    std::string GetEngagedSensorProcessing();
-    std::string GetEngagedController();
-    std::string GetArmedController();
-    std::string GetEngagedExcitation();
+    std::string GetBaselineSensorProcessing();
+    std::string GetBaselineController();
+    Mode GetBaselineRunMode();
+    std::string GetTestSensorProcessing();
+    std::string GetTestController();
+    Mode GetTestRunMode();
+    std::string GetExcitation();
   private:
-    struct Configuration {
-      struct Switch {
-        ElementPtr source_node;
-        float Threshold = 0.5;
-        float Gain = 1.0;
-      };
-      Switch SocEngageSwitch, CtrlSelectSwitch, TestSelectIncrementSwitch, TestSelectDecrementSwitch, TriggerSwitch, LaunchSelectSwitch, LandSelectSwitch;
-      std::string BaselineController, LaunchController, LandController;
+    std::string RootPath_ = "/Mission-Manager";
+
+    // Switches
+    struct Switch {
+      ElementPtr source_node;
+      std::string sourceKey;
+      float Gain = 1.0;
+      std::shared_ptr<ModeSelect> modeSelectPtr;
     };
 
-    Configuration config_;
-    std::string RootPath_ = "/Mission-Manager";
-    const size_t PersistenceThreshold_ = 5;
+    Switch ThrottleSafetySw_, SocEngageSw_, BaseCtrlSelectSw_, TestModeSw_, TestSelectSw_, TriggerSw_;
 
-    size_t SocEngagePersistenceCounter_ = 0;
+    // defTree Elements
     ElementPtr SocEngage_node;
+    ElementPtr BaseCtrlSelect_node, BaseCtrlMode_node, TestCtrlMode_node, TestSenProcMode_node;
+    ElementPtr TestPtID_node, ExciteEngage_node;
 
-    size_t CtrlSelectPersistenceCounter_ = 0;
-    ElementPtr CtrlSelect_node;
+    // Test Point
+    size_t TestPtID_ = 0;
+    size_t NumTestPts_ = 0;
+    std::map<std::string, TestPointDefinition> TestPoints_;
 
-    size_t LaunchSelectPersistenceCounter_ = 0;
-    size_t LandSelectPersistenceCounter_ = 0;
-    size_t BaselineSelectPersistenceCounter_ = 0;
-    bool LaunchSelect_ = false;
-    bool LandSelect_ = false;
-    bool BaselineSelect_ = true;
+    bool SocEngageMode_ = false;
 
-    size_t TestSelectIncrementPersistenceCounter_ = 0;
-    size_t TestSelectDecrementPersistenceCounter_ = 0;
-    size_t TestSelectExcitePersistenceCounter_ = 0;
-    ElementPtr TestSelect_node;
+    std::string BaseSenProcSel_ = "None";
+    std::string BaseCtrlSel_ = "None";
+    Mode BaseCtrlMode_ = Mode::kArm; // Armed
 
-    size_t TriggerPersistenceCounter_ = 0;
+    std::string TestSenProcSel_ = "None";
+    std::string TestCtrlSel_ = "None";
+    Mode TestCtrlMode_ = Mode::kStandby; // Standby
+
+    std::string ExciteSel_ = "None";
     bool TriggerLatch_ = false;
-    bool Trigger_ = false;
+    bool TriggerAct_ = false;
 
-    size_t NumberOfTestPoints_ = 0;
-    ElementPtr CurrentTestPointIndex_node;
-    size_t NextTestPointIndex_ = 0;
-
-    std::string EngagedSensorProcessing_ = "Baseline";
-    std::string EngagedController_ = "Fmu";
-    std::string ArmedController_ = "Fmu";
-    std::string EngagedExcitation_ = "None";
-    ElementPtr EngagedExcitationFlag_node;
-
-    std::map<std::string,TestPointDefinition> TestPoints_;
 };
-
-#endif

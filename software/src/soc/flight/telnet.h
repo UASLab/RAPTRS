@@ -1,22 +1,12 @@
-// \file telnet.hxx
-// telnet oroperty server class.
-//
-// Written by Curtis Olson, started September 2000.
-// Modified by Bernie Bright, May 2002.
-// Adapted from FlightGear props.hxx/cxx code November 2009.
-//
-// Copyright (C) 2000  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU LGPL
-//
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor, Chris Regan, Curt Olson (original author)
+*/
 
-#ifndef _AURA_TELNET_HXX
-#define _AURA_TELNET_HXX
-
+#pragma once
 
 #include "netChannel.h"
-
 
 /**
  * Telent server class.
@@ -38,7 +28,7 @@ public:
 
   /**
    * Create a new TCP server.
-   * 
+   *
    * @param tokens Tokenized configuration parameters
    */
   UGTelnet( const int port_num );
@@ -59,7 +49,7 @@ public:
   bool process();
 
   /**
-   * 
+   *
    */
   bool close();
 
@@ -69,6 +59,3 @@ public:
   void handleAccept();
 
 };
-
-#endif // _AURA_TELNET_HXX
-

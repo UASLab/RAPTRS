@@ -90,28 +90,42 @@ Data from the analog to digital converters. Configurable items include the chann
 ```
 
 ## Sensor-Processing
-Sensor processing outputs are collected in the "/Sensor-Processing/" directory. The _Sensor-Processing_ JSON object is an object that contains named JSON arrays of sensor-processing algorithms. For example, this defines two arrays of algorithms, one named "Baseline" and the other "Research". The mission manager can select a different array depending on the test point; with this approach you can test research sensor-processing algorithms with baseline algorithms available as a reversionary mode.
+Sensor processing outputs are collected in the "/Sensor-Processing/" directory. The _Sensor-Processing_ JSON object is an object that contains named JSON arrays of sensor-processing algorithms. Different sets of components are used; namely "Baseline" and "Test". The set defined in "Baseline" will always execute. Sets defined in the "Test" set will execute and engage via Mission Manager and Test Point definition. For example, the "Standard" definition is referenced in the "Baseline" set. "Test1" and "Test2" are referenced in the "Test" set. In this example "Standard" will always be running; if a test point is active and invokes "Test1" then "Test1" will run and be active. "Standard" will execute and copy its outputs in "/Sensor-Processing/", "Test" will execute and also place its outputs to "/Sensor-Processing/" overwriting elements if needed.
 ``` json
+
 "Sensor-Processing": {
-    "Baseline": [
-      { "Type": "AGL", "Output": "hBaro_m",
-        "Static-Pressure": ["/Sensors/Pitot/Static/Pressure_Pa"], "Initialization-Time": 10}
+  "Fmu": "Standard",
+  "Baseline": "Standard",
+  "Test": ["Test1", "Test2"],
+
+  "Def": {
+    "Standard": [
+      {"Type": "AGL", "Output": "hBaro_m",
+        "Static-Pressure": ["/Sensors/Pitot/Static/Pressure_Pa"], "Initialization-Time": 10},
+      {"Type": "IAS", "Output": "vIAS_ms",
+        "Differential-Pressure": ["/Sensors/Pitot/Differential/Pressure_Pa"], "Initialization-Time": 10},
+      {"Type": "EKF15StateINS", "Output": "INS",
+        "Time": "/Sensors/Fmu/Time_us", "GPS": "/Sensors/uBlox", "IMU": "/Sensors/Fmu/Mpu9250"},
+      {"Type": "MinCellVolt", "Output": "MinCellVolt_V",
+        "Inputs": ["/Sensors/Fmu/Voltage/Input_V"],
+        "NumCells": [3]}
     ],
-    "Research": [
-      { "Type": "AGL", "Output": "hBaro_m",
-        "Static-Pressure": ["/Sensors/Fmu/Bme280"], "Initialization-Time": 10}
-    ]
+
+    "Test1": [...],
+    "Test2": [...]
   }
+}
 ```
+
 ### Gain
 Multiplies an input by a gain. Configurable items include the input, output, gain value, and optional limits, which saturate the output if defined.
 ```json
-{ "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1.0, "Limits": {"Upper": 1.0, "Lower": 0.0}},
+{ "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1.0, "Max": 1.0, "Min": 0.0}
 ```
 ### Sum
 Sums a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
 ```json
-{ "Type": "Sum", "Inputs": ["/Control/cmdTE1L_alloc_rad", "/Control/cmdTE1L_flap_rad"], "Output": "cmdTE1L_rad", "Limits": {"Upper": 0.436332, "Lower": -0.436332}
+{ "Type": "Sum", "Inputs": ["/Control/cmdTE1L_alloc_rad", "/Control/cmdTE1L_flap_rad"], "Output": "cmdTE1L_rad", "Max": 0.436332, "Min": -0.436332}
 ```
 ### Product
 Multiplies a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
@@ -138,76 +152,91 @@ Uses a 15 state EKF with IMU and GNSS input to estimate inertial position, veloc
 ```json
 { "Type": "EKF15StateINS", "Output": "INS", "Time": "/Sensors/Fmu/Time_us", "GPS": "/Sensors/uBlox", "IMU": "/Sensors/Fmu/Mpu9250"}
 ```
+
 ### Filter
-Implements a general discrete time filter using the general filter difference equation. Configurable items include the input, output, a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given. Denominator coefficients are optional and, if none are provided, a FIR filter is implemented. b is a vector of numerator coefficients. At least one feedforward coefficient must be given. The order of the filter is given by the length of the b and a vectors. 
+Implements a general discrete time filter using the general filter difference equation. Configurable items include the input, output, a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given. Denominator coefficients are optional and, if none are provided, a FIR filter is implemented. b is a vector of numerator coefficients. At least one feedforward coefficient must be given. The order of the filter is given by the length of the b and a vectors.
 
 a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
 
 ```json
 { "Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYawDamp_rps", "b": [-0.065, 0.065], "a": [1.0, -0.9418]}
 ```
-### If
-Outputs a 0 or 1 depending on input and threshold values - if the input is greater than the threshold, the output is 1 otherwise, it's 0. Configurable items include the input, output, and threshold value.
-```json
-{ "Type": "If", "Input": "/Sensors/Sbus/Channels/7", "Output": "gear", "Threshold": 0.5}
-```
+
 ### Minimum Cell Voltage
 Computes the minimum cell voltage amongst a number of batteries. Configurable items include the inputs, output, and number of lipo cells.
 ```json
 { "Type": "MinCellVolt", "Output": "MinCellVolt_V", "Inputs": ["/Sensors/Fmu/Voltage/Input_V"], "NumCells": [3]}
 ```
-## Control
-Control outputs are collected in the "/Control/" directory. The _Control_ JSON object is an object that contains named JSON arrays of sensor-processing algorithms. The "Fmu" named control law is run on the FMU as a reversionary mode using a limited set of configurable blocks. The "Soc" control laws contain a vector naming several control laws that can be run. These can be selected by the mission manager enabling launch, landing, and test points to use individual control laws to facilitate research and provide reversionary modes. The following defines a control law named "PilotDirect" to run on the FMU and a "PilotRate" and "PilotAttitude" control laws to run on the SOC.
-```json
-"Control": {
-    "Fmu": "PilotDirect",
-    "Soc": ["PilotRate", "PilotAttitude"],
-```
-Following this initial declaration, each control law is defined. First, each control law can have one or more named levels. And each level constsists of a name and a vector of components. For example, "PilotDirect" is only one level deep and consists of a series of gain components mapping SBUS input commands (i.e. pilot stick inputs) to effector outputs.
-```json
-"PilotDirect": [
-      { "Level": "SCAS-Rate",
-        "Components": [
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1, "Limits": {"Upper": 1, "Lower": 0}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdAilL_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdAilR_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdElev_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdRud_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapL_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapR_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}}
-        ]
-      }
-    ]
-```
-Control laws can have multiple levels. Each level is run in order and the outputs from one level can be the inputs to the next. This allows defining cascaded control laws. For example, "PilotRate" uses two levels - the first to map pilot stick inputs to aircraft rate commands and the second to perform pseudo inverse control allocation to determine effector positions to meet those commands.
-```json
-"PilotRate": [
-      { "Level": "SCAS-Rate",
-        "Components": [
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1, "Limits": {"Upper": 1, "Lower": 0}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdRoll_rps", "Gain": 1.0472, "Limits": {"Upper": 1.0472, "Lower": -1.0472}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdPitch_rps", "Gain": 1.0472, "Limits": {"Upper": 1.0472, "Lower": -1.0472}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdYaw_rps", "Gain": 0.523599, "Limits": {"Upper": 0.523599, "Lower": -0.523599}},
-          { "Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_rad", "Gain": 0.436332, "Limits": {"Upper": 0.436332, "Lower": -0.436332}}
-        ]
-      },
 
-      { "Level": "Allocator",
-        "Components": [
-          { "Type": "PseudoInverse",
-            "Inputs": ["/Control/cmdRoll_rps", "/Control/cmdPitch_rps", "/Control/cmdYaw_rps"],
-            "Outputs": ["cmdElev_rad", "cmdRud_rad", "cmdAilR_rad", "cmdFlapR_alloc_rad", "cmdFlapL_alloc_rad", "cmdAilL_rad"],
-            "Effectiveness": [
-              [0.00000, -0.1418,-1.33413, -0.5634, 0.5634, 1.33413],
-              [-2.2716, 0.00000, 0.06000, 0.05800, 0.05800, 0.06000],
-              [0.00000,-1.59190, 0.00000, 0.00000, 0.00000, 0.00000]],
-            "Limits": {
-              "Lower": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
-              "Upper": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
-            }
-          }
-        ]
-      }
+## Control
+Control outputs are collected in the "/Control/" directory. The _Control_ JSON object is an object that contains named JSON arrays of control sets, groups, and controllers, and components. The groups defined in the sets: "Fmu", "Baseline", and "Test" are managed uniquely. The "Fmu" set is parsed and sent to the FMU as a reversionary mode using a limited set of configurable blocks. The "Baseline" set defines controller groups; one "Baseline" group is always active in either and "armed" or "engaged" mode. The "Test" set defines an idependent set of controller groups. The Mission Manager controls execution of groups with in "Set". Only one "Test" group can be in any active state (either armed or engaged).
+
+In this example the "Fmu" set references the "PilotDirect" group; the set "Baseline" references "PilotRate" and "PilotAttitudeMan" groups.
+
+Controller Groups are defined in "GroupDef" and are split into Level:Controller pairs. Level names are used by the excitation system and should generally be consistently named across Groups.
+
+In this example "PilotAttitudeMan" has Levels named; "Pilot", "SCAS", "Alloc", and "Eff".
+
+Controller Definitions are defined in "ControlDef".
+
+In this example "PilotAttitudeMan" references "Pilot-Att", whose Components are defined in "ControlDef".
+
+Note that the "Baseline" set and the "Test" set will create independent instances of the groups and controllers used in their definition. So, in this example 2 completely independent instances of "PilotAttitudeMan" will be created; one in the "Baseline" set and one in the "Test". However, Controller instances are shared within a set; so, there is only one instance of "SCAS-Att" within the "Test" set.
+
+```json
+
+"Control": {
+  "Fmu": ["PilotDirect"],
+  "Baseline": ["PilotRate", "PilotAttitudeMan"],
+  "Test": ["PilotAttitudeMan", "PilotAttitude17"],
+
+  "GroupDef": {
+    "PilotDirect": {"Pilot": "Direct"},
+    "PilotRate": {"Pilot": "Pilot-Rate", "Alloc": "Allocator", "Eff": "Effector"},
+    "PilotAttitudeMan": {
+      "Pilot": "Pilot-Att", "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"},
+    "PilotAttitude17": {
+      "Route": "Guid-Ref17", "Pilot": "Pilot-Att", "Guid": "Guidance", "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"}
+  },
+
+  "ControlDef": {
+    "Direct": [...],
+    "Guid-Ref17": [...],
+    "Guidance": [...],
+    "Pilot-Rate": [...],
+    "Pilot-Att": [...],
+    "SCAS-Att": [...],
+    "Allocator": [...],
+    "Effector": [...]
+  }
+}
+
+```
+Controllers are defined in "ControlDef" as arrays of components. Components will be executed in the order defined.
+
+Signal references are taken to be in the current contoller definition unless otherwise specified. In the example below: "Input": "cmdRoll_pid_rps" will pull values from "/Control/Test/SCAS-Att/cmdRoll_pid_rps", which was defined as an output within the same Controller.
+
+Signal references that start with "../" will reference outputs of the next higher system. So, if "SCAS-Att" is referenced in the "Test" set, and defines an input as "../refPhi_rad", that signal value will get pulled from "/Control/Test/refPhi_rad". In this case, "/Control/Test/refPhi_rad" will be populated by a Controller that executed earlier in the Group.
+```json
+
+"SCAS-Att": [
+  {"Type": "PID2", "Reference": "../refPhi_rad", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "cmdRoll_pid_rps",
+    "Kp": 0.64, "Ki": 0.20, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+  {"Type": "Gain", "Input": "/Sensor-Processing/GyroX_rads", "Output": "cmdRoll_damp_rps", "Gain": -0.070},
+  {"Type": "Sum", "Inputs": ["cmdRoll_pid_rps", "cmdRoll_damp_rps"], "Output": "cmdRoll_rps",
+    "Max": 1.0472, "Min": -1.0472},
+
+  {"Type": "PID2", "Reference": "../refTheta_rad", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "cmdPitch_pid_rps",
+    "Kp": 0.90, "Ki": 0.30, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+  {"Type": "Gain", "Input": "/Sensor-Processing/GyroY_rads", "Output": "cmdPitch_damp_rps", "Gain": -0.080},
+  {"Type": "Sum", "Inputs": ["cmdPitch_pid_rps", "cmdPitch_damp_rps"], "Output": "cmdPitch_rps",
+    "Max": 1.0472, "Min": -1.0472},
+
+  {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps",
+    "num": [-0.030, 0.030], "den": [1.0, -0.8919]},
+  {"Type": "Sum", "Inputs": ["../refYaw_rps", "cmdYaw_damp_rps"], "Output": "cmdYaw_rps"}
+]
+
 ```
 ### Constant
 Outputs a constant value. Configurable items include the output location and the value.
@@ -217,12 +246,12 @@ Outputs a constant value. Configurable items include the output location and the
 ### Gain
 Multiplies an input by a gain. Configurable items include the input, output, gain value, and optional limits, which saturate the output if defined.
 ```json
-{ "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1.0, "Limits": {"Upper": 1.0, "Lower": 0.0}},
+{ "Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1.0, "Max": 1.0, "Min": 0.0},
 ```
 ### Sum
 Sums a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
 ```json
-{ "Type": "Sum", "Inputs": ["/Control/cmdTE1L_alloc_rad", "/Control/cmdTE1L_flap_rad"], "Output": "cmdTE1L_rad", "Limits": {"Upper": 0.436332, "Lower": -0.436332}
+{ "Type": "Sum", "Inputs": ["/Control/cmdTE1L_alloc_rad", "/Control/cmdTE1L_flap_rad"], "Output": "cmdTE1L_rad", "Max": 0.436332, "Min": -0.436332}
 ```
 ### Product
 Multiplies a vector of inputs. Configurable items include a vector of inputs, the output, and optional limits, which saturate the output if defined.
@@ -236,106 +265,85 @@ Delays a signal by _N_ frames. Configurable items include the input, output, and
 ```
 ### PID2
 Implements a PID2 control law. Configurable items include:
-   * Output gives a convenient name for the block (i.e. PitchControl).
-   * Reference is the full path name of the reference signal.
-   * Feedback is the full path name of the feedback signal.
-   * Sample-Time is either: the full path name of the sample time signal in seconds,
-     or a fixed value sample time in seconds.
-   * Time-Constant is the time constant for the derivative filter.
-     If a time constant is not specified, then no filtering is used.
-   * Gains specifies the proportional, derivative, and integral gains.
-   * Setpoint weights optionally specify the proportional and derivative setpoint
-     weights used in the filter.
-   * Limits are optional and saturate the output if defined.
-Data types for all input and output values are float.
+  * Reference is the full path name of the reference signal.
+  * Feedback is the full path name of the feedback signal.
+  * Output gives a convenient name for the block (i.e. cmdPitch).
+  * dt is either: the full path name of the sample time signal in seconds,
+    or a fixed value sample time in seconds.
+  * Tf is the time constant for the derivative filter.
+    If a time constant is not specified, then no filtering is used.
+  * Gains specifies the proportional, derivative, and integral gains.
+  * Setpoint weights (b and c) optionally specifies the setpoint
+    weights (proportional and derivative) used in the controller.
+  * Limits (Max and Min) are optional.
+  Data types for all input and output values are float.
 ```
 {
   "Type": "PID2",
-  "Output": "OutputName",
   "Reference": "ReferenceName",
   "Feedback": "FeedbackName",
-  "Sample-Time": "SampleTime" or X,
-  "Time-Constant": X,
-  "Gains": {
-    "Proportional": Kp,
-    "Integral": Ki,
-    "Derivative": Kd,
-  },
-  "Setpoint-Weights": {
-    "Proportional": b,
-    "Derivative": c
-  },
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Output": "OutputName",
+  "dt": "dt" or X,
+  "Kp": Kp, "Ki": Ki, "Kd": Kd, "Tf": Tf,
+  "b": b, "c": c
+  "Min": X, "Max": X
 }
 ```
 ### PID
-Implements a PID control law. 
+Implements a PID control law.
 ```
 {
   "Type": "PID",
-  "Output": "OutputName",
   "Reference": "ReferenceName",
-  "Sample-Time": "SampleTime" or X,
-  "Time-Constant": X,
-  "Gains": {
-    "Proportional": Kp,
-    "Integral": Ki,
-    "Derivative": Kd,
-  },
-  "Limits": {
-    "Upper": X,
-    "Lower": X
-  }
+  "Output": "OutputName",
+  "dt": "dt" or X,
+  "Kp": Kp, "Ki": Ki, "Kd": Kd, "Tf": Tf,
+  "Min": X, "Max": X
 }
 ```
 Where:
-   * Output gives a convenient name for the block (i.e. PitchControl).
-   * Reference is the full path name of the reference signal.
-   * Sample-Time is either: the full path name of the sample time signal in seconds,
-     or a fixed value sample time in seconds.
-   * Time-Constant is the time constant for the derivative filter.
-     If a time constant is not specified, then no filtering is used.
-   * Gains specifies the proportional derivative and integral gains.
-   * Limits are optional and saturate the output if defined.
-Data types for all input and output values are float.
+  * Reference is the full path name of the reference signal.
+  * Output gives a convenient name for the block (i.e. cmdPitch).
+  * dt is either: the full path name of the sample time signal in seconds,
+    or a fixed value sample time in seconds.
+  * Tf is the time constant for the derivative filter.
+    If a time constant is not specified, then no filtering is used.
+  * Gains specifies the proportional, derivative, and integral gains.
+  * Limits (Max and Min) are optional.
+  Data types for all input and output values are float.
+
 ### State Space
 Implements a state space control law.
 ```
 {
   "Type": "SS",
-  "Name": "Name",
   "Inputs": ["InputNames"],
   "Outputs": ["OutputNames"],
-  "Sample-Time": "SampleTime" or X,
+  "dt": "dt" or X,
   "A": [[X]],
   "B": [[X]],
   "C": [[X]],
   "D": [[X]],
-  "Limits": {
-    "Upper": [X],
-    "Lower": [X]
-  }
+  "Min": [X], "Max": [X]
 }
 ```
-The implemented algorithm uses a discrete state space model, with variable sample time.
-The A and B matrices supplied are the continuous form, a simple zero-order hold is used to compute the discrete form.
+  The implemented algorithm uses a discrete state space model, with variable sample time.
+  The A and B matrices supplied are the continuous form, a simple zero-order hold is used to compute the discrete form.
 
-xDot = A*x + B*u;
+  xDot = A*x + B*u;
 
-y = C*x + D*u;
+  y = C*x + D*u;
 
-where:  
+  where:  
 
-Ad = (Ac*dt + I);
+  Ad = (Ac*dt + I);
 
-Bd = B*dt;
+  Bd = B*dt;
 
-Thus, x[k+1] = Ad*x + Bd*u;
+  Thus, x[k+1] = Ad*x + Bd*u;
+
 ### Filter
-Implements a general discrete time filter using the general filter difference equation. Configurable items include the input, output, a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given. Denominator coefficients are optional and, if none are provided, a FIR filter is implemented. b is a vector of numerator coefficients. At least one feedforward coefficient must be given. The order of the filter is given by the length of the b and a vectors. 
+Implements a general discrete time filter using the general filter difference equation. Configurable items include the input, output, a is a vector of denominator coefficients. a[0] scales all a and b coefficients if given. Denominator coefficients are optional and, if none are provided, a FIR filter is implemented. b is a vector of numerator coefficients. At least one feedforward coefficient must be given. The order of the filter is given by the length of the b and a vectors.
 
 a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
 
@@ -345,60 +353,27 @@ a[0]y[n] = b[0]x[n]+b[1]x[n-1]+b[2]x[n-2]+...-a[1]y[n-1]-a[2]y[n-2]-...
 ### Pseudo Inverse
 Implements a pseudo inverse control allocation.
 ```json
-{ "Type": "PseudoInverse",
-            "Inputs": ["/Control/cmdVert_nd", "/Control/cmdRoll_rps", "/Control/cmdPitch_rps", "/Control/cmdYaw_rps"],
-            "Outputs": ["cmdMotorFR_nd", "cmdMotorAL_nd", "cmdMotorFL_nd", "cmdMotorAR_nd"],
-            "Effectiveness": [
-              [ 0.25000, 0.25000, 0.25000, 0.25000],
-              [-0.25000, 0.25000, 0.25000,-0.25000],
-              [ 0.25000,-0.25000, 0.25000,-0.25000],
-              [ 0.25000, 0.25000,-0.25000,-0.25000]],
-            "Limits": {
-              "Lower": [0.0, 0.0, 0.0, 0.0],
-              "Upper": [1.0, 1.0, 1.0, 1.0]
-            }
-```
-Where:
-   * Input gives the full path of the allocator inputs / objectives (i.e. /Control/PitchMomentCmd)
-   * Output gives the relative path of the allocator outputs / effector commands (i.e Elevator)
-   * Effectiveness gives the control effectiveness (i.e. change in moment for a unit change in effector output)
-     The order is MxN where M is number of inputs / objectives and N isthe number of outputs / effectors. So,
-     for a situation with 3 objectives (i.e. pitch, roll, yaw moments) and 7 control surfaces, Effectiveness would
-     be given as:
-     ```
-     "Effectiveness":[[PitchEff_Surf0,...,PitchEff_Surf6],
-                      [RollEff_Surf0,...,RollEff_Surf6],
-                      [YawEff_Surf0,...,YawEff_Surf6]]
-   * Limits gives the upper and lower limits for each output / effector command.
-### TECS
-Implements a Total Energy Control System control law.
-```
-{
-  "Type": "Tecs",
-  "mass_kg": x,
-  "weight_bal": x,
-  "max_mps": x,
-  "min_mps": x,
-  "RefSpeed": "RefSpeed",
-  "RefAltitude": "RefAltitude",
-  "FeedbackSpeed": "FeedbackSpeed",
-  "FeedbackAltitude": "FeedbackAltitude",
-  "OutputTotal": "OutputTotal",
-  "OutputDiff": "OutputDiff"
+{"Type": "PseudoInverse",
+  "Inputs": ["../cmdRoll_rps", "../cmdPitch_rps", "../cmdYaw_rps"],
+  "Outputs": ["cmdElev_rad", "cmdRud_rad", "cmdAilR_rad", "cmdFlapR_rad", "cmdFlapL_rad", "cmdAilL_rad"],
+  "Effectiveness": [
+    [0.00000, -0.1418,-1.33413, -0.5634, 0.5634, 1.33413],
+    [-2.2716, 0.00000, 0.06000, 0.05800, 0.05800, 0.06000],
+    [0.00000,-1.59190, 0.00000, 0.00000, 0.00000, 0.00000]],
+  "Min": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
+  "Max": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
 }
 ```
 Where:
-   * mass_kg is the total aircraft weight in kg
-   * weight_bal is a value = [0.0 - 2.0] with 1.0 being a good starting point.
-     0.0 = elevator controls speed only, 2.0 = elevator controls altitude only
-   * min_mps: the system will not command a pitch angle that causes the
-     airspeed to drop below min_mps, even with zero throttle.
-   * max_mps: the system will not command a combination of pitch and throttle
-     that will cause the airspeed to exceed this value
-   * In either case it is possible to momentarily bust these limits, but the
-     system will always be driving the airspeed back within the specified limits
+  * Input gives the path of the allocator inputs / objectives (i.e. ../PitchMomentCmd)
+  * Output gives the path of the allocator outputs / effector commands (i.e Elevator)
+  * Effectiveness gives the control effectiveness (i.e. change in moment for a unit change in effector output)
+    The order is NxM where M is the number of outputs / effectors and N is the number of inputs / objectives. So, for a situation with 3 objectives (i.e. pitch, roll, yaw moments) and 4 control surfaces, Effectiveness would be given as:
+    "Effectiveness":[[RollEff_Surf0, RollEff_Surf1, RollEff_Surf2, RollEff_Surf3],
+                     [PitchEff_Surf0, PitchEff_Surf1, PitchEff_Surf2, PitchEff_Surf3],
+                     [YawEff_Surf0, YawEff_Surf1, YawEff_Surf2, YawEff_Surf3],]
+  * Min and Max gives the upper and lower limits for each output / effector command.
 
-Data types for all input and output values are float.
 ### Latch
 Latches the output to the initial input.
 ```
@@ -413,25 +388,36 @@ Where:
    * Output gives a convenient name for the block (i.e. SpeedControl).
    * Input is the full path name of the input signal.
 Data types for the input and output are both float.
+
 ## Excitation
-Excitation outputs are collected in the "/Excitation/" directory. Similar to control laws, excitation groups can be defined consisting of multiple excitation inputs. Each group can define multiple excitation levels, specifying the control law level where the excitation should be inserted, enabling excitations for reference commands and effector signals. Each group can be referenced in the mission manager test point structure, allowing different excitations for each pre-defined test point. For example, the following defines an excitation group consisting of multisine inputs on several reference commands.
-```
-{ "Name": "Aero_Med", "Components": [
-        { "Level": "Allocator", "Components": [
-          { "Waveform": "OMS_1", "Signal": "/Control/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
-          { "Waveform": "OMS_2", "Signal": "/Control/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
-          { "Waveform": "OMS_3", "Signal": "/Control/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
-        ]}
-      ]}
+Excitation outputs are collected in the "/Excitation/" directory. Similar to control laws, excitation groups can be defined consisting of multiple wave inputs, as defined in "ExciteDef". A group is applied PRIOR to execution of the defined controller level. Groups can be referenced in the mission manager test point structure, allowing different excitations for each pre-defined test point. For example, the following defines an excitation group consisting of multisine inputs.
+```json
+"Excitation": {
+  "Time": "/Sensors/Fmu/Time_us",
+  "ExciteDef": {
+    "RTSM": {"Level": "Alloc", "Waveforms": [
+      {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+      {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+      {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
+    ]}
+  },
+
+  "WaveDef": {
+    "OMS_1": {...},
+    "OMS_2": {...},
+    "OMS_3": {...}
+  }
+}
+
 ```
 
-The basic waveforms are defined separately, enabling them to be re-used on different surfaces with different start times and scale factors.
-```
+The basic waveforms are defined within "WaveDef", enabling them to be re-used on different signals, with different start times, and with different scale factors.
+```json
 "OMS_1": { "Type": "MultiSine", "Duration": 10,
-      "Frequency": [0.62831853071795862,4.39822971502571,8.1681408993334639,11.938052083641214,15.707963267948969,19.477874452256717,23.247785636564469,27.017696820872224,30.787608005179976,34.557519189487721,38.32743037379548,42.097341558103231,45.867252742410983,49.637163926718735],
-      "Phase": [6.1333837562683,3.7697783413786747,4.3326309124460112,5.7825002989603558,3.6123449608782874,3.8799569048390872,6.3167977328030709,4.6577199432535883,5.2790228241172983,8.05687689770693,7.08109780771917,2.4467121117324315,5.00303679294031,4.0729726069734049],
-      "Amplitude": [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    }
+  "Frequency": [0.62831853071795862,4.39822971502571,8.1681408993334639,11.938052083641214,15.707963267948969,19.477874452256717,23.247785636564469,27.017696820872224,30.787608005179976,34.557519189487721,38.32743037379548,42.097341558103231,45.867252742410983,49.637163926718735],
+  "Phase": [6.1333837562683,3.7697783413786747,4.3326309124460112,5.7825002989603558,3.6123449608782874,3.8799569048390872,6.3167977328030709,4.6577199432535883,5.2790228241172983,8.05687689770693,7.08109780771917,2.4467121117324315,5.00303679294031,4.0729726069734049],
+  "Amplitude": [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+}
 ```
 
 ### Pulse
@@ -595,54 +581,61 @@ Where:
 Similar to Sensors, Effectors simply lists an array of all effectors on the vehicle. Effectors on nodes are added by specifying the node address and listing the effectors. For example, this specifies 3 effectors connected to the FMU (a motor and two servos) and 4 effectors connected to the node.
 ```json
 "Effectors": [
-    { "Type": "Motor", "Input": "/Control/cmdMotor_nd", "Channel": 0, "Calibration": [800, 1200], "Safed-Command": 0},
-    { "Type": "Pwm", "Input": "/Control/cmdElev_rad", "Channel": 1, "Calibration": [ 0.0, 0.0, 945.56893619, 1532.92371906]},
-    { "Type": "Pwm", "Input": "/Control/cmdRud_rad", "Channel": 2, "Calibration": [ -406.23428499, -72.84894531, -822.84212170, 1495.85430736]},
-    { "Type": "Node", "Address": 3,
-      "Effectors": [
-        { "Type": "Pwm", "Input": "/Control/cmdAilR_rad", "Channel": 0, "Calibration": [ 0.0, 24.74931945, -877.03584524, 1501.05819261]},
-        { "Type": "Pwm", "Input": "/Control/cmdFlapR_rad", "Channel": 2, "Calibration": [ 0.0, -167.40715677, 830.81057931, 1499.57954854]},
-        { "Type": "Pwm", "Input": "/Control/cmdFlapL_rad", "Channel": 5, "Calibration": [ -280.29921208, 75.65078940, -855.43748599, 1442.51416948]},
-        { "Type": "Pwm", "Input": "/Control/cmdAilL_rad", "Channel": 7, "Calibration": [ 0.0, -64.70244278, 828.18022105, 1519.68482092]}
-      ]
-    }
-  ]
+  { "Type": "Motor", "Input": "/Control/cmdMotor_nd", "Channel": 0, "Calibration": [800, 1200], "Safed-Command": 0},
+  { "Type": "Pwm", "Input": "/Control/cmdElev_rad", "Channel": 1, "Calibration": [ 0.0, 0.0, 945.56893619, 1532.92371906]},
+  { "Type": "Pwm", "Input": "/Control/cmdRud_rad", "Channel": 2, "Calibration": [ -406.23428499, -72.84894531, -822.84212170, 1495.85430736]},
+  { "Type": "Node", "Address": 3,
+    "Effectors": [
+      { "Type": "Pwm", "Input": "/Control/cmdAilR_rad", "Channel": 0, "Calibration": [ 0.0, 24.74931945, -877.03584524, 1501.05819261]},
+      { "Type": "Pwm", "Input": "/Control/cmdFlapR_rad", "Channel": 2, "Calibration": [ 0.0, -167.40715677, 830.81057931, 1499.57954854]},
+      { "Type": "Pwm", "Input": "/Control/cmdFlapL_rad", "Channel": 5, "Calibration": [ -280.29921208, 75.65078940, -855.43748599, 1442.51416948]},
+      { "Type": "Pwm", "Input": "/Control/cmdAilL_rad", "Channel": 7, "Calibration": [ 0.0, -64.70244278, 828.18022105, 1519.68482092]}
+    ]
+  }
+]
 ```
 
 Three types of effectors are available: motor, PWM, and SBUS. All three have the input signal, channel number, and calibration as configurable items. The input signal is the source of the effector command and is typically an output from a control law. The channel number refers to the PWM or SBUS channel number the effector is connected to. Calibration is a vector of polynomial coefficients given in descending order, which converts the input signal from engineering units (i.e. trailing edge down angle value) to PWM or SBUS command. The motor effector type is the same as PWM, except it also includes a "Safed-Command", which specifies the value to be commanded when the throttle is safed.
 
 ## Mission Manager
 The mission manager configures the switches used to define the vehicle's state along with a vector of test points. The switch definitions are:
+  "Soc-Engage-Switch" - Modes: "Fmu" and "Soc" - used in FMU and SOC to dictate whether the FMU   or SOC is in active control.
+
+  "Throttle-Safety-Switch" - Modes: "Safe" and "Engage" used in FMU to Disable Motor type effectors
+
+  "Baseline-Select-Switch" - Modes: Groups within "Baseline" Control Set. Selects which Baseline controller is selected to be active.
+
+  "Test-Mode-Switch" - Modes: "Standby", "Arm", "Engage" - Controls the run mode of the active Test Controller, as defined by the current Test Point.
+
+  "Test-Select-Switch" - Modes: "Decrement", "Excite", "Increment" - Dictates the effect "Trigger-Switch" will have. Excitations will only execute with the switch in "Excite". Placing the switch in either the increment or decrement will stop the excitation. Changing the selected Test-Point imediately places the defined Sensor-Processing and Control groups active. The run mode depends on the current Test Run Mode as determined from "Test-Mode-Switch". So, if Test Mode is engaged and the test id is incremented the newly selected controller will imediately be engaged.
+
+  "Trigger-Switch" - Modes: "Standby", "Trigger" - Either increment/decrement the test point index, or execute the selected test point excitation depending on the position of "Test-Select-Switch". Triggering with a excitation executing will stop the excitation, triggering again will restart it.
+
+
 ```json
-  "Mission-Manager": {
-    "Fmu-Soc-Switch": {"Source": "/Sensors/Sbus/Channels/0", "Threshold": 0.0, "Gain": 1},
-    "Throttle-Safety-Switch": {"Source": "/Sensors/Sbus/Channels/1", "Threshold": 0.33, "Gain": 1},
-    "Control-Select-Switch": {"Source": "/Sensors/Sbus/Channels/8", "Threshold": 0.33, "Gain": 1},
-    "Test-Increment-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Threshold": 0.33, "Gain": 1},
-    "Test-Decrement-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Threshold": 0.33, "Gain": -1},
-    "Trigger-Switch": {"Source": "/Sensors/Sbus/Channels/10", "Threshold": 0.0, "Gain": 1},
-    "Launch-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Threshold": 0.33, "Gain": -1},
-    "Land-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Threshold": 0.33, "Gain": 1},
-    "Launch-Controller":"PilotRate",
-    "Baseline-Controller":"PilotAttitudeMan",
-    "Land-Controller":"PilotAttitudeMan"
+"Mission-Manager": {
+  "Soc-Engage-Switch": {"Source": "/Sensors/Sbus/Channels/0", "Gain": 1,
+    "ModeSel": {"Fmu": -2, "Soc": 0}},
+  "Throttle-Safety-Switch": {"Source": "/Sensors/Sbus/Channels/1", "Gain": 1,
+    "ModeSel": {"Safe": -2, "Engage": 0.5}},
+  "Test-Mode-Switch": {"Source": "/Sensors/Sbus/Channels/8", "Gain": 1,
+    "ModeSel": {"Standby": -2, "Arm": -0.5, "Engage": 0.5}},
+  "Test-Select-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Gain": 1,
+    "ModeSel": {"Decrement": -2, "Excite": -0.5, "Increment": 0.5}},
+  "Trigger-Switch": {"Source": "/Sensors/Sbus/Channels/10", "Gain": 1,
+    "ModeSel": {"Standby": -2, "Trigger": 0.0}},
+
+  "Baseline-Select-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Gain": 1,
+    "ControlSel": {"PilotRate": -2, "PilotAttitudeMan": -0.5, "PilotAttitudeMan": 0.5}},
+
+  "Test-Points": []
+}
 ```
-In general, the switch definitions consist of a source, typically and SBUS receiver channel, a threshold and a gain. If the input multiplied by the gain is greater than the threshold, then the switch evaluates to true. 
-   * FMU-SOC Switch: manages whether the FMU or SOC is in control of the aircraft. Typically the FMU hosts a reversionary control law and this switch enables the pilot to transition between the FMU reversionary control law or the SOC control laws flying the vehicle. 
-   * Throttle Safety Switch: puts motors into a safed state, enabling safe ground handling and testing of the vehicle.
-   * Control Select Switch: engages the chosen test point, otherwise the baseline control laws will be flown.
-   * Test Increment / Decrement Switch: increments or decrements the queued test point number to be selected.
-   * Trigger Switch: triggers the test point's excitation, if defined.
-   * Launch / Land Switch: switches the aircraft into launch or landing mode. This is useful for configuring and using specialized launch and landing control laws.
-
-Launch, landing, and baseline control laws can be specified. The launch and landing control laws are engaged with the Launch/Land Switch. Baseline control is flown when the SOC is in control, but a test point is not currently engaged. Otherwise, the test point defined control law is used.
-
 Test points can be defined for the sensor-processing, control law, and excitation to use. This is useful to predefine all research test points in a flight.
 ```json
 "Test-Points": [
-      { "Test-ID": "0", "Sensor-Processing": "Baseline", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Med"},
-      { "Test-ID": "1", "Sensor-Processing": "Baseline", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Long"},
-      { "Test-ID": "2", "Sensor-Processing": "Baseline", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Large"}
+  { "Test-ID": "0", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM"},
+  { "Test-ID": "1", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Long"},
+  { "Test-ID": "2", "Sensor-Processing": "Standard", "Control": "PilotAttitudeMan", "Excitation": "RTSM_Large"}
 ]
 ```
-The increment and decrement switch are used to queue up the next test point and the control select switch is used to engage it. The trigger switch is used to trigger the excitation if one is defined. The aircraft always returns to baseline control between test points (i.e. you need to unengage the control select switch, queue up the next test point and then re-engage the control select). 

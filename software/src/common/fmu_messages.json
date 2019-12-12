@@ -1,0 +1,271 @@
+{
+    "constants": [
+        { "type": "uint8_t", "name": "num_effectors", "value": 16, "desc": "number of effector channels" },
+        { "type": "uint8_t", "name": "max_calibration", "value": 4, "desc": "maximum nubmer of calibration coefficients" },
+        { "type": "float", "name": "accel_scale", "value": 208.82724, "desc": "1 / (9.807(g) * 16 / 32767.5) (+/-16g)" },
+        { "type": "float", "name": "gyro_scale", "value": 938.71973, "desc": "1 / (2000.0f/32767.5f * d2r (+/-2000deg/sec)" },
+        { "type": "float", "name": "mag_scale", "value": 300, "desc": "fits range" }
+    ],
+
+    "enums": [
+        {
+            "name": "sensor_type",
+            "identifiers": [
+                { "name": "time" },
+                { "name": "input_voltage" },
+                { "name": "regulated_voltage" },
+                { "name": "pwm_voltage" },
+                { "name": "sbus_voltage" },
+                { "name": "internal_bme280" },
+                { "name": "sbus" }
+            ]
+        },
+        {
+            "name": "effector_type",
+            "identifiers": [
+                { "name": "motor" },
+                { "name": "pwm" },
+                { "name": "sbus" }
+            ]
+        }
+    ],
+    
+    "messages": [
+        {
+            "id": 10,
+            "name": "command_mode",
+            "fields": [
+                { "type": "int8_t", "name": "mode" }
+            ]
+        },
+        {
+            "name": "command_effectors",
+            "fields": [
+                { "type": "uint8_t", "name": "num_active" },
+                { "type": "float", "name": "command[num_effectors]", "pack_type": "int16_t", "pack_scale": 32767 }
+            ]
+        },
+        {
+            "id": 20,
+            "name": "config_ack",
+            "fields": [
+                { "type": "uint8_t", "name": "ack_id" },
+                { "type": "uint8_t", "name": "ack_subid" }
+            ]
+        },
+        {
+            "name": "config_basic",
+            "fields": [
+                { "type": "sensor_type", "name": "sensor" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "name": "config_mpu9250",
+            "fields": [
+                { "type": "bool", "name": "internal" },
+                { "type": "uint8_t", "name": "SRD" },
+                { "type": "float", "name": "orientation[9]" },
+                { "type": "int8_t", "name": "DLPF_bandwidth_hz" },
+                { "type": "string", "name": "output" },
+                { "type": "bool", "name": "use_spi" },     // external
+                { "type": "uint8_t", "name": "spi_bus" },     // external
+                { "type": "uint8_t", "name": "cs_pin" },   // external
+                { "type": "uint8_t", "name": "mosi_pin" }, // node
+                { "type": "uint8_t", "name": "miso_pin" }, // node
+                { "type": "uint8_t", "name": "sck_pin" },  // node
+                { "type": "uint8_t", "name": "i2c_bus" },     // external
+                { "type": "uint8_t", "name": "i2c_addr" } // external
+            ]
+        },
+        {
+            "name": "config_bme280",
+            "fields": [
+                { "type": "bool", "name": "use_spi" },
+                { "type": "uint8_t", "name": "spi_bus" },
+                { "type": "uint8_t", "name": "cs_pin" },
+                { "type": "uint8_t", "name": "mosi_pin" },
+                { "type": "uint8_t", "name": "miso_pin" },
+                { "type": "uint8_t", "name": "sck_pin" },
+                { "type": "uint8_t", "name": "i2c_bus" },
+                { "type": "uint8_t", "name": "i2c_addr" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "name": "config_ublox",
+            "fields": [
+                { "type": "uint8_t", "name": "uart" },
+                { "type": "uint32_t", "name": "baud" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "name": "config_ams5915",
+            "fields": [
+                { "type": "uint8_t", "name": "i2c_bus" },
+                { "type": "uint8_t", "name": "i2c_addr" },
+                { "type": "string", "name": "transducer" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "name": "config_swift",
+            "fields": [
+                { "type": "uint8_t", "name": "i2c_bus" },
+                { "type": "uint8_t", "name": "static_i2c_addr" },
+                { "type": "uint8_t", "name": "diff_i2c_addr" },
+                { "type": "string", "name": "diff_transducer" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "name": "config_analog",
+            "fields": [
+                { "type": "uint8_t", "name": "channel" },
+                { "type": "float", "name": "calibration[max_calibration]" },
+                { "type": "string", "name": "output" }
+            ]
+        },
+        {
+            "name": "config_effector",
+            "fields": [
+                { "type": "effector_type", "name": "effector" },
+                { "type": "string", "name": "input" },
+                { "type": "uint8_t", "name": "channel" }, 
+                { "type": "float", "name": "calibration[max_calibration]" },
+                { "type": "float", "name": "safed_command" }
+           ]
+        },
+        {
+            "name": "config_mission",
+            "fields": [
+                { "type": "string", "name": "switch_name" },
+                { "type": "string", "name": "source" },
+                { "type": "float", "name": "gain", "default": 1.0 },
+                { "type": "float", "name": "threshold", "default": 0.5 }
+            ]
+        },
+        {
+            "name": "config_control_gain",
+            "fields": [
+                { "type": "string", "name": "level_name" },
+                { "type": "string", "name": "input" },
+                { "type": "string", "name": "output" },
+                { "type": "float", "name": "gain", "default": 1.0 },
+                { "type": "bool", "name": "has_limits" },
+                { "type": "float", "name": "upper_limit" },
+                { "type": "float", "name": "lower_limit" }
+            ]
+        },
+        {
+            "id": 40,
+            "name": "data_time",
+            "fields": [
+                { "type": "uint64_t", "name": "time_us" }
+            ]
+        },
+        {
+            "name": "data_mpu9250_short",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                { "type": "float", "name": "AccelX_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "AccelY_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "AccelZ_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "GyroX_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "GyroY_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "GyroZ_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" }
+            ]
+        },
+        {
+            "name": "data_mpu9250",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                { "type": "float", "name": "AccelX_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "AccelY_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "AccelZ_mss", "pack_type": "int16_t", "pack_scale": "accel_scale" },
+                { "type": "float", "name": "GyroX_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "GyroY_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "GyroZ_rads", "pack_type": "int16_t", "pack_scale": "gyro_scale" },
+                { "type": "float", "name": "MagX_uT", "pack_type": "int16_t", "pack_scale": "mag_scale" },
+                { "type": "float", "name": "MagY_uT", "pack_type": "int16_t", "pack_scale": "mag_scale" },
+                { "type": "float", "name": "MagZ_uT", "pack_type": "int16_t", "pack_scale": "mag_scale" },
+                { "type": "float", "name": "Temperature_C", "pack_type": "int16_t", "pack_scale": 100 }
+            ]
+        },
+        {
+            "name": "data_bme280",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                { "type": "float", "name": "Pressure_Pa" },
+                { "type": "float", "name": "Temperature_C", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "Humidity_RH"}
+            ]
+        },
+        {
+            "name": "data_ublox",
+            "fields": [
+                { "type": "bool", "name": "Fix" }, // True for 3D fix only
+                { "type": "uint8_t", "name": "NumberSatellites" }, // Number of satellites used in solution
+                { "type": "uint32_t", "name": "TOW" }, // GPS time of the navigation epoch
+                { "type": "uint16_t", "name": "Year" }, // UTC year
+                { "type": "uint8_t", "name": "Month" }, // UTC month
+                { "type": "uint8_t", "name": "Day" },   // UTC day
+                { "type": "uint8_t", "name": "Hour" },  // UTC hour
+                { "type": "uint8_t", "name": "Min" },   // UTC minute
+                { "type": "uint8_t", "name": "Sec" },   // UTC second
+                // Latitude (rad), Longitude (rad), Altitude (m)
+                { "type": "double", "name": "Latitude_rad" },
+                { "type": "double", "name": "Longitude_rad" },
+                { "type": "float", "name": "Altitude_m" },
+                // NED Velocity, m/s
+                { "type": "float", "name": "NorthVelocity_ms", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "EastVelocity_ms", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "DownVelocity_ms", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "float", "name": "HorizontalAccuracy_m" }, // Accuracy Horizontal (m)
+                { "type": "float", "name": "VerticalAccuracy_m", "pack_type": "int16_t", "pack_scale": 100 }, // Accuracy Vertical (m)
+                { "type": "float", "name": "VelocityAccuracy_ms", "pack_type": "int16_t", "pack_scale": 100 }, // Accuracy Speed (m/s)
+                { "type": "float", "name": "pDOP", "pack_type": "int16_t", "pack_scale": 100 } // Position DOP
+            ]
+        },
+        {
+            "name": "data_ams5915",
+            "fields": [
+                { "type": "int8_t", "name": "ReadStatus" },
+                { "type": "float", "name": "Pressure_Pa" },
+                { "type": "float", "name": "Temperature_C", "pack_type": "int16_t", "pack_scale": 100 }
+            ]
+        },
+        {
+            "name": "data_swift",
+            "fields": [
+                { "type": "int8_t", "name": "static_ReadStatus" },
+                { "type": "float", "name": "static_Pressure_Pa" },
+                { "type": "float", "name": "static_Temperature_C", "pack_type": "int16_t", "pack_scale": 100 },
+                { "type": "int8_t", "name": "diff_ReadStatus" },
+                { "type": "float", "name": "diff_Pressure_Pa" },
+                { "type": "float", "name": "diff_Temperature_C", "pack_type": "int16_t", "pack_scale": 100 }
+            ]
+        },
+        {
+            "name": "data_sbus",
+            "fields": [
+                { "type": "float", "name": "channels[16]", "pack_type": "int16_t", "pack_scale": 20000 },
+                { "type": "bool", "name": "FailSafe" },
+                { "type": "uint32_t", "name": "LostFrames" }
+            ]
+        },
+        {
+            "name": "data_analog",
+            "fields": [
+                { "type": "float", "name": "calibrated_value" }
+            ]
+        },
+        {
+            "name": "data_compound",
+            "desc": "reserve a message id for compound messages, but external code will handle the message contents, packing, and unpacking",
+            "fields": [
+            ]
+        }
+    ]
+}

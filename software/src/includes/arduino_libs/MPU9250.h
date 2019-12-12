@@ -54,7 +54,7 @@ class MPU9250{
       DLPF_BANDWIDTH_5HZ
     };
     MPU9250(i2c_t3 &bus,uint8_t address);
-    MPU9250(SPIClass &bus,uint8_t csPin);
+    MPU9250(SPIClass &bus,uint8_t csPin,bool useMag=true);
     int begin();
     int setAccelRange(AccelRange range);
     int setGyroRange(GyroRange range);
@@ -85,6 +85,7 @@ class MPU9250{
     uint8_t _csPin;
     bool _useSPI;
     bool _useSPIHS;
+    bool _useMag;
     const uint8_t SPI_READ = 0x80;
     const uint32_t SPI_LS_CLOCK = 1000000;  // 1 MHz
     const uint32_t SPI_HS_CLOCK = 15000000; // 15 MHz

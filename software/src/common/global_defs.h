@@ -1,23 +1,7 @@
 /*
-* Brian R Taylor
-* brian.taylor@bolderflight.com
-* 
-* Copyright (c) 2018 Bolder Flight Systems
-* 
-* Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
-* and associated documentation files (the "Software"), to deal in the Software without restriction, 
-* including without limitation the rights to use, copy, modify, merge, publish, distribute, 
-* sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is 
-* furnished to do so, subject to the following conditions:
-* 
-* The above copyright notice and this permission notice shall be included in all copies or 
-* substantial portions of the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
-* BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-* DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
 #ifndef GLOBAL_DEFS_H
@@ -43,7 +27,7 @@ extern "C" {
 /* double precision PI */
 #define D_PI 3.141592653589793
 
-/* 
+/*
 * FMU configuration. Configures the sample rate divider to set
 * the flight computer frame rate, where the frequency is 1000 / (1 + srd).
 * Also configures the FMU orientation relative to the aircraft as a yaw,
@@ -103,9 +87,9 @@ struct mpu9250_config {
   float rot_yaw;                          // yaw rotation,
   float rot_roll;                         // roll rotation,
   float rot_pitch;                        // pitch rotation,
-  float ax_bias_mss;                      // ax bias 
-  float ay_bias_mss;                      // ay bias 
-  float az_bias_mss;                      // az bias 
+  float ax_bias_mss;                      // ax bias
+  float ay_bias_mss;                      // ay bias
+  float az_bias_mss;                      // az bias
   float hx_bias_ut;                       // hx bias
   float hy_bias_ut;                       // hy bias
   float hz_bias_ut;                       // hz bias
@@ -117,7 +101,7 @@ struct mpu9250_config {
 * External BME-280 configuration. Specify the address of the FMU or Node the
 * sensor is connected to, whether it's communicating over SPI (only available
 * on the FMU with a fixed CS pin) or I2C, the I2C bus (only one bus available
-* on the FMU with two available on the Node), and the I2C address 
+* on the FMU with two available on the Node), and the I2C address
 * (two available).
 */
 struct bme280_config {
@@ -128,7 +112,7 @@ struct bme280_config {
 };
 /*
 * uBlox GNSS configuration. Specify the address of the FMU or Node the
-* sensor is connected to, the UART port (ports 1 and 2 available on Node, 
+* sensor is connected to, the UART port (ports 1 and 2 available on Node,
 * ports 3 and 4 available on FMU), and the baud rate.
 */
 struct ublox_config {
@@ -145,9 +129,9 @@ struct sbus_config {
   unsigned int bfs_addr;                  // bfs addr of component
 };
 /*
-* Swift air data configuration. The Swift consists of a static and 
+* Swift air data configuration. The Swift consists of a static and
 * differential AMS-5915 pressure transducer. Three differential
-* transducers are available by request for the Swift depending on 
+* transducers are available by request for the Swift depending on
 * the speed range needed. Specify the address of the FMU or Node
 * the Swift is connected to, the I2C bus (only one bus available
 * on the FMU with two available on the Node), the static and
@@ -163,7 +147,7 @@ struct swift_config {
 };
 /*
 * AMS-5915 pressure transduce configuration. Specify the address
-* of the FMU or Node the sensor is connected to, the I2C bus 
+* of the FMU or Node the sensor is connected to, the I2C bus
 * (only one bus available on the FMU with two available on the Node),
 * the I2C address, and the transducer type.
 */
@@ -176,8 +160,8 @@ struct ams5915_config {
 /*
 * Analog sensor configuration. Data output is given as both a voltage value
 * and a calibrated output (i.e. using a POT to measure control surface
-* position). Specify the address of the FMU or Node for the analog input 
-* (2 available on the FMU, 8 available on the Node), the channel number for 
+* position). Specify the address of the FMU or Node for the analog input
+* (2 available on the FMU, 8 available on the Node), the channel number for
 * the analog input, the number of polynomial coefficients used in calibiration
 * and an array of those coefficients given in descending order.
 */
@@ -190,7 +174,7 @@ struct analog_config {
 /*
 * Digital sensor configuration. Data output is given as a boolean value.
 * Specify the address of the FMU or Node for the digital input (2 available
-* on the FMU, 4 available on the Node), the channel number, and whether a 
+* on the FMU, 4 available on the Node), the channel number, and whether a
 * high digital reading should result in a true or false data output.
 */
 struct digital_config {
@@ -198,7 +182,7 @@ struct digital_config {
   unsigned int ch;                        // digital channel number (2 GPIO on FMU, 4 digital pins on Node)
   unsigned int active_high;               // 0 = read high, output 0, 1 = read high, output 1
 };
-/* 
+/*
 * Voltage sensor configuration. On the FMU available data includes: input
 * voltage (6.5 - 36V), regulated voltage (nominally ~5V), PWM servo voltage
 * (0 - 9.9V), and SBUS servo voltage (0 - 9.9V). On the Node, PWM and SBUS
@@ -209,7 +193,7 @@ struct voltage_config {
   unsigned int bfs_addr;                  // bfs addr of component
   unsigned int type;                      // voltage measurement (0 = input, 1 = regulated, 2 = pwm, 3 = sbus)
 };
-/* 
+/*
 * Time data, includes a rolling frame counter to sync data and a counter
 * of the total number of frames. Coupled with the SRD, this can be used
 * to generate a time value.
@@ -218,7 +202,7 @@ struct time_data {
   unsigned int frame_counter;             // a rolling frame counter to sync data packets
   unsigned long frames;                   // counts the total number of frames
 };
-/* 
+/*
 * Accelerometer data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes three axis accelerometer values.
@@ -230,7 +214,7 @@ struct accel_data {
   float accel_y_mss;
   float accel_z_mss;
 };
-/* 
+/*
 * Gyro data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes three axis gyro values.
@@ -242,7 +226,7 @@ struct gyro_data {
   float gyro_y_rads;
   float gyro_z_rads;
 };
-/* 
+/*
 * Magnetometer data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes three axis mag values.
@@ -254,21 +238,21 @@ struct mag_data {
   float mag_y_ut;
   float mag_z_ut;
 };
-/* 
+/*
 * Inceptor data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Also includes boolean values for whether a frame was lost,
 * whether the receiver is in failsafe mode, and 16 channels of normalized
-* pilot input data. 
+* pilot input data.
 */
 struct inceptor_data {
   unsigned int frame_counter;             // a rolling frame counter to sync data packets
   unsigned int time_offset_us;            // time offset from the frame start time, us
   _Bool lost_frame;                       // 0 = frame received, 1 = frame lost
   _Bool failsafe_activated;               // 0 = failsafe inactive, 1 = failsafe active
-  float ch[16];                           // SBUS channel data                  
+  float ch[16];                           // SBUS channel data
 };
-/* 
+/*
 * Temperature data, includes a rolling frame counter to sync data,
 * a time offset from the start of the frame in us for when the data was
 * collected, and temperature data.
@@ -278,12 +262,12 @@ struct temperature_data {
   unsigned int time_offset_us;            // time offset from the frame start time, us
   float temp_c;                           // temperature, C
 };
-/* 
+/*
 * GNSS data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. GNSS data includes a boolean value of whether a good fix has
 * been acheived, the number of satellites being tracked, the GPS time of week,
-* the latitude, longitude, altitude, NED velocity, estimates of horizontal, 
+* the latitude, longitude, altitude, NED velocity, estimates of horizontal,
 * vertical and speed accuracy, and the position dilution of precision.
 */
 struct gnss_data {
@@ -303,7 +287,7 @@ struct gnss_data {
   float speed_acc_ms;                     // speed accuracy estimate, m/s
   float pdop;                             // position dilution of precision
 };
-/* 
+/*
 * Static pressure data, includes a rolling frame counter to sync data,
 * a time offset from the start of the frame in us for when the data was
 * collected, and pressure data.
@@ -313,7 +297,7 @@ struct static_press_data {
   unsigned int time_offset_us;            // time offset from the frame start time, us
   float press_pa;                         // pressure, pa
 };
-/* 
+/*
 * Differential pressure data, includes a rolling frame counter to sync data,
 * a time offset from the start of the frame in us for when the data was
 * collected, and pressure data.
@@ -323,7 +307,7 @@ struct diff_press_data {
   unsigned int time_offset_us;            // time offset from the frame start time, us
   float press_pa;
 };
-/* 
+/*
 * Analog data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Voltage given in the range of 0 - 3.3V as well as a
@@ -335,7 +319,7 @@ struct analog_data {
   float voltage;                          // measured voltage
   float cal_value;                        // calibrated value
 };
-/* 
+/*
 * Digital data, includes a rolling frame counter to sync data and
 * a time offset from the start of the frame in us for when the data was
 * collected. Digital output is given as a boolean.
@@ -345,7 +329,7 @@ struct digital_data {
   unsigned int time_offset_us;            // time offset from the frame start time, us
   _Bool digout;                           // high or low
 };
-/* 
+/*
 * Voltage data, includes a rolling frame counter to sync data,
 * a time offset from the start of the frame in us for when the data was
 * collected, and voltage data.

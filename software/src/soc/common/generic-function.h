@@ -1,35 +1,17 @@
 /*
-generic-function.hxx
-Brian R Taylor
-brian.taylor@bolderflight.com
-
-Copyright (c) 2018 Bolder Flight Systems
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-and associated documentation files (the "Software"), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish, distribute,
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or
-substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Brian Taylor
 */
 
-#ifndef GENERIC_FUNCTION_HXX_
-#define GENERIC_FUNCTION_HXX_
+#pragma once
 
-#include "rapidjson/document.h"
-#include "rapidjson/stringbuffer.h"
-#include "rapidjson/writer.h"
-#include "definition-tree2.h"
+#include "configuration.h"
 
 /*
 Generic Function Class
 This is the base function for the Bolder Flight Systems
-Flight Control System components. Airdata, filters, 
+Flight Control System components. Airdata, filters,
 allocators, and control laws are derived from this class.
 
 The following methods are defined:
@@ -63,11 +45,9 @@ class GenericFunction {
       kHold,
       kEngage
     };
-    virtual void Configure(const rapidjson::Value& Config,std::string RootPath);
-    virtual void Initialize();
-    virtual bool Initialized();
-    virtual void Run(Mode mode);
-    virtual void Clear();
+    virtual void Configure(const rapidjson::Value& Config,std::string RootPath) {};
+    virtual void Initialize() {};
+    virtual bool Initialized() { return true; };
+    virtual void Run(Mode mode) {};
+    virtual void Clear() {};
 };
-
-#endif

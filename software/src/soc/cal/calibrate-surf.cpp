@@ -1,11 +1,14 @@
 /*
-
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan
 */
 
 #include "hardware-defs.h"
 #include "definition-tree2.h"
 #include "configuration.h"
 #include "fmu.h"
+#include "sensor-processing.h"
 #include "mission.h"
 #include "control.h"
 #include "effector.h"
@@ -43,8 +46,9 @@ int main(int argc, char* argv[]) {
   /* declare classes */
   Configuration Config;
   FlightManagementUnit Fmu;
+  SensorProcessing SenProc;
   MissionManager Mission;
-  ControlLaws Control;
+  ControlSystem Control;
   AircraftEffectors Effectors;
 
   /* Setup Inclinometer */
@@ -64,28 +68,40 @@ int main(int argc, char* argv[]) {
   std::cout << "\tInitializing FMU..." << std::flush;
   Fmu.Begin();
   std::cout << "done!" << std::endl;
+
   /* configure classes and register with global defs */
   std::cout << "Configuring aircraft." << std::endl;
   rapidjson::Document AircraftConfiguration;
   std::cout << "\tLoading configuration..." << std::flush;
   Config.LoadConfiguration(argv[1], &AircraftConfiguration);
   std::cout << "done!" << std::endl;
+
   std::cout << "\tConfiguring flight management unit..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
+
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
+    std::cout << "\tConfiguring sensor processing..." << std::flush;
+    SenProc.Configure(AircraftConfiguration["Sensor-Processing"]);
+    std::cout << "done!" << std::endl;
+
     if (AircraftConfiguration.HasMember("Control")&&AircraftConfiguration.HasMember("Mission-Manager")&&AircraftConfiguration.HasMember("Effectors")) {
       std::cout << "\tConfiguring mission manager..." << std::flush;
       Mission.Configure(AircraftConfiguration["Mission-Manager"]);
       std::cout << "done!" << std::endl;
+
       std::cout << "\tConfiguring control laws..." << std::flush;
       Control.Configure(AircraftConfiguration["Control"]);
       std::cout << "done!" << std::endl;
+
       std::cout << "\tConfiguring effectors..." << std::flush;
       Effectors.Configure(AircraftConfiguration["Effectors"]);
       std::cout << "done!" << std::endl;
     }
   }
+
+  deftree.PrettyPrint("/");
+  std::cout << std::endl;
 
   // Define Delays
   int DelayMove = 2000000; // delay for 2 second after servo move
@@ -113,10 +129,10 @@ int main(int argc, char* argv[]) {
       Commands[i] = 0.0;
     }
 
-    std::cout << "The control surface calibration routine requires the Inclinometer connected to the BBB_UART1 " << std::endl;
+    std::cout << "The control surface calibration routine requires the Inclinometer connected to the BBB_USB " << std::endl;
     std::cout << "The commands sent to the control surface are based on the type of servo." << std::endl;
     std::cout << "Servos are referenced by the order in which they appear in the JSON Config file." << std::endl;
-    std::cout << "Potentiometers are referenced by the full path in the defTree (ie. 'Surf/posLTE1' for '/Sensors/Surf/posLTE1/Voltage_V')." << std::endl;
+    std::cout << "Potentiometers are referenced by the full path in the defTree (ie. 'Surf/posTE1L' for '/Sensors/Surf/posTE1L/CalibratedValue')." << std::endl;
     std::cout << "Effector Pwm calibration should be set to [500, 1500]." << std::endl;
     std::cout << "Effector Sbus calibration should be set to [682, 1024]." << std::endl;
     std::cout << "PWM range is typically 1000 to 2000, SBUS range is 342 to 1706." << std::endl;
@@ -136,7 +152,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Enter the Analog String for Surface Pot (Enter to skip): ";
     std::getline(std::cin, AnalogString);
     std::cin.ignore(50, '\n');
-    std::string AnalogPath = "/Sensors/" + AnalogString + "/Voltage_V";
+
+    std::string AnalogPath = "/Sensors/" + AnalogString + "/CalibratedValue";
     std::cout << "Reading Analog from: " << AnalogPath << std::endl;
 
     //Get Starting Command
@@ -178,7 +195,7 @@ int main(int argc, char* argv[]) {
     // Average values, define as zero angle
     float incAngleZero_deg = IncAngleSum_deg / (float) NumRead;
 
-    std::cout << "Zero Angle: " << incAngleZero_deg << std::endl;
+    std::cout << "Zero Angle: " << incAngleZero_deg << std::endl << std::endl;
 
     std::cout << "Beginning Automated Test..." << std::endl;
     std::cout << "Turn on Servo Power, Press Enter to continue . . . " << std::endl;
@@ -211,12 +228,12 @@ int main(int argc, char* argv[]) {
       IncAngleSum_deg = 0.0;
       float potValSum_V;
 
-      Fmu.ReceiveSensorData(); // Attempt to flush the old pot data
+      while (Fmu.ReceiveSensorData()){} // Attempt to flush the old pot data
 
       // Read the Inclinometer and pot data
       potValSum_V = 0.0;
 
-      ElementPtr pot_node = deftree.getElement(AnalogPath); // /Sensors/Surf/posLTE1/Voltage_V
+      ElementPtr pot_node = deftree.getElement(AnalogPath); // /Sensors/Surf/posTE1L/CalibratedValue
       for (int iRead = 0; iRead < NumRead; ++iRead) {
         while (!Fmu.ReceiveSensorData()) // Wait for new FMU data
 
@@ -225,6 +242,7 @@ int main(int argc, char* argv[]) {
 
         // Delay
         usleep (DelayRead);
+        while (Fmu.ReceiveSensorData()){} // Flush data, wait for new FMU data
 
         // Read inclinometer
         incline.GetAngle(&incData);
@@ -234,6 +252,7 @@ int main(int argc, char* argv[]) {
 
         // Read Pot fmu
         // if(AnalogString != ""){
+        std::cout << pot_node->getFloat() << std::endl;
         potValSum_V += pot_node->getFloat();
         // }
       }
@@ -243,6 +262,10 @@ int main(int argc, char* argv[]) {
       // if(AnalogString != ""){
         potValMeas_V[iCmd] = potValSum_V / (float) NumRead;
       // }
+      std::cout << std::endl;
+      std::cout << "Incline (deg): " << incAngleMeas_deg[iCmd] << std::endl;
+      std::cout << "Pot (V): " << potValMeas_V[iCmd] << std::endl;
+      std::cout << std::endl;
 
     }
 

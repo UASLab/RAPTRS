@@ -1,7 +1,10 @@
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan
+*/
 
-
-#ifndef INCLINE_HXX_
-#define INCLINE_HXX_
+#pragma once
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -12,7 +15,7 @@
 #include <exception>
 #include <stdexcept>
 
-const char InclinePort[] = "/dev/ttyO1";
+const char InclinePort[] = "/dev/ttyUSB0";
 const speed_t InclineBaud = B115200;
 
 struct InclineData {
@@ -22,11 +25,9 @@ struct InclineData {
 class Incline {
   public:
     Incline();
-    bool GetAngle(InclineData *InclineDataPtr);
-    bool SetDamping();
+    void GetAngle(InclineData *InclineDataPtr);
+    void SetDamping();
   private:
     int InclineFileDesc_;
     void OpenPort();
 };
-
-#endif
