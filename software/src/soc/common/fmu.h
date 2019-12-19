@@ -43,6 +43,7 @@ class FlightManagementUnit {
     void SendModeCommand(Mode mode);
     bool ReceiveSensorData(bool publish=true);
     void SendEffectorCommands(std::vector<float> Commands);
+    void SendBifrostData();
   private:
     struct InternalMpu9250SensorData {
       float AccelX_mss;        // x,y,z accelerometers, m/s/s

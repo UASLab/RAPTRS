@@ -1,9 +1,3 @@
-'''
-Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
-MIT License; See LICENSE.md for complete details
-Author: Curt Olson
-'''
-
 import struct
 
 # Message id constants
@@ -30,6 +24,7 @@ data_swift_id = 46
 data_sbus_id = 47
 data_analog_id = 48
 data_compound_id = 49
+data_bifrost_id = 50
 
 # Constants
 num_effectors = 16  # number of effector channels
@@ -1009,3 +1004,39 @@ class data_compound():
         return msg
 
     def unpack(self, msg):
+
+# Message: data_bifrost
+# Id: 50
+class data_bifrost():
+    id = 50
+    _pack_string = "<fBfBBB"
+
+    def __init__(self, msg=None):
+        # public fields
+        self.airspeed = 0.0
+        self.test_id = 0
+        self.voltage = 0.0
+        self.soc_eng = False
+        self.cont_sel = 0
+        self.ext_eng = False
+        # unpack if requested
+        if msg: self.unpack(msg)
+
+    def pack(self):
+        msg = struct.pack(self._pack_string,
+                          self.airspeed,
+                          self.test_id,
+                          self.voltage,
+                          self.soc_eng,
+                          self.cont_sel,
+                          self.ext_eng)
+        return msg
+
+    def unpack(self, msg):
+        (self.airspeed,
+         self.test_id,
+         self.voltage,
+         self.soc_eng,
+         self.cont_sel,
+         self.ext_eng) = struct.unpack(self._pack_string, msg)
+

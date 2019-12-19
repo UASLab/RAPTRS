@@ -1,9 +1,3 @@
-/*
-Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
-MIT License; See LICENSE.md for complete details
-Author: Brian Taylor
-*/
-
 #pragma once
 
 #include <stdint.h>  // uint8_t, et. al.
@@ -46,6 +40,7 @@ const uint8_t data_swift_id = 46;
 const uint8_t data_sbus_id = 47;
 const uint8_t data_analog_id = 48;
 const uint8_t data_compound_id = 49;
+const uint8_t data_bifrost_id = 50;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -1460,6 +1455,68 @@ struct data_compound_t {
         }
         memcpy(payload, external_message, message_size);
         len = sizeof(_compact_t);
+        return true;
+    }
+};
+
+// Message: data_bifrost (id: 50)
+struct data_bifrost_t {
+    // public fields
+    float airspeed;
+    uint8_t test_id;
+    float voltage;
+    bool soc_eng;
+    uint8_t cont_sel;
+    bool ext_eng;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        float airspeed;
+        uint8_t test_id;
+        float voltage;
+        bool soc_eng;
+        uint8_t cont_sel;
+        bool ext_eng;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 50;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->airspeed = airspeed;
+        _buf->test_id = test_id;
+        _buf->voltage = voltage;
+        _buf->soc_eng = soc_eng;
+        _buf->cont_sel = cont_sel;
+        _buf->ext_eng = ext_eng;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        airspeed = _buf->airspeed;
+        test_id = _buf->test_id;
+        voltage = _buf->voltage;
+        soc_eng = _buf->soc_eng;
+        cont_sel = _buf->cont_sel;
+        ext_eng = _buf->ext_eng;
         return true;
     }
 };

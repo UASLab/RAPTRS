@@ -29,7 +29,7 @@
             ]
         }
     ],
-    
+
     "messages": [
         {
             "id": 10,
@@ -132,7 +132,7 @@
             "fields": [
                 { "type": "effector_type", "name": "effector" },
                 { "type": "string", "name": "input" },
-                { "type": "uint8_t", "name": "channel" }, 
+                { "type": "uint8_t", "name": "channel" },
                 { "type": "float", "name": "calibration[max_calibration]" },
                 { "type": "float", "name": "safed_command" }
            ]
@@ -266,6 +266,17 @@
             "desc": "reserve a message id for compound messages, but external code will handle the message contents, packing, and unpacking",
             "fields": [
             ]
-        }
+        },
+	      {
+	          "name": "data_bifrost",
+            "fields": [
+	         	   { "type": "float", "name": "airspeed"},
+		           { "type": "uint8_t", "name": "test_id"},
+		           { "type": "float", "name": "voltage"},
+		           { "type": "bool", "name": "soc_eng"},
+		           { "type": "uint8_t", "name": "cont_sel"},
+		           { "type": "bool", "name": "ext_eng"}
+		        ]
+	      }
     ]
 }
