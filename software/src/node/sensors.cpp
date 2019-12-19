@@ -417,14 +417,19 @@ void Ams5915Sensor::Begin() {
 /* get data from the AMS5915 */
 int Ams5915Sensor::ReadSensor() {
   status_ = ams_->readSensor();
+  if ((status_ > 0) && (ams_->getTemperature_C() < 149.0f)) {
+    Pressure_Pa = ams_->getPressure_Pa();
+    Temperature_C = ams_->getTemperature_C();
+  }
+  ReadStatus = status_;
   return status_;
 }
 
 /* get data from the AMS5915 */
 void Ams5915Sensor::UpdateMessage(message::data_ams5915_t *msg) {
-  msg->ReadStatus = status_;
-  msg->Pressure_Pa = ams_->getPressure_Pa();
-  msg->Temperature_C = ams_->getTemperature_C();
+  msg->ReadStatus = ReadStatus;
+  msg->Pressure_Pa = Pressure_Pa;
+  msg->Temperature_C = Temperature_C;
 }
 
 /* free resources used by the AMS5915 */
@@ -596,7 +601,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
     if ( msg.sensor == message::sensor_type::pwm_voltage ) {
       Serial.println("Configuring PwmVoltage");
       if (AcquirePwmVoltageData_) {
-	       HardFail("ERROR: Pwm voltage already initialized.");
+	HardFail("ERROR: Pwm voltage already initialized.");
       }
       AcquirePwmVoltageData_ = true;
       AnalogSensor::Config config;
@@ -611,7 +616,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload) {
     } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("Configuring SbusVoltage");
       if (AcquireSbusVoltageData_) {
-	       HardFail("ERROR: Sbus voltage already initialized.");
+	HardFail("ERROR: Sbus voltage already initialized.");
       }
       AcquireSbusVoltageData_ = true;
       AnalogSensor::Config config;

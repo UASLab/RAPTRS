@@ -203,6 +203,8 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemP
   data_.Ve = deftree.initElement(VeKey_, "East velocity, m/s", LOG_FLOAT, LOG_NONE);
   VdKey_ = SystemPath+"/DownVelocity_ms";
   data_.Vd = deftree.initElement(VdKey_, "Down velocity, m/s", LOG_FLOAT, LOG_NONE);
+  FixKey_ = SystemPath+"/Fix";
+  data_.Fix = deftree.initElement(FixKey_, "GPS fix", LOG_UINT8, LOG_NONE);
 }
 
 void Ekf15StateIns::Initialize() {
@@ -221,6 +223,7 @@ bool Ekf15StateIns::Initialized() {
 
 void Ekf15StateIns::Run(Mode mode) {
   data_.Mode->setInt(mode);
+  data_.Fix->setInt(config_.GpsFix->getInt());
   if (mode!=kStandby) {
     uNavINS_.update(config_.t->getLong(),config_.GpsTow->getInt(),config_.GpsVn->getFloat(),config_.GpsVe->getFloat(),config_.GpsVd->getFloat(),config_.GpsLat->getDouble(),config_.GpsLon->getDouble(),config_.GpsAlt->getFloat(),config_.ImuGx->getFloat(),config_.ImuGy->getFloat(),config_.ImuGz->getFloat(),config_.ImuAx->getFloat(),config_.ImuAy->getFloat(),config_.ImuAz->getFloat(),config_.ImuHx->getFloat(),config_.ImuHy->getFloat(),config_.ImuHz->getFloat());
     data_.Axb->setFloat(uNavINS_.getAccelBiasX_mss());
@@ -298,6 +301,7 @@ void Ekf15StateIns::Clear() {
   deftree.Erase(VnKey_);
   deftree.Erase(VeKey_);
   deftree.Erase(VdKey_);
+  deftree.Erase(FixKey_);
   ModeKey_.clear();
   AxKey_.clear();
   AyKey_.clear();
@@ -322,4 +326,5 @@ void Ekf15StateIns::Clear() {
   VnKey_.clear();
   VeKey_.clear();
   VdKey_.clear();
+  FixKey_.clear();
 }

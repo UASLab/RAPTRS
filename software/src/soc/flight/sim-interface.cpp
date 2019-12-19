@@ -243,6 +243,7 @@ static float ve_mps = 0.0;
 static float vd_mps = 0.0;
 static uint8_t sats = 0;
 static uint8_t fix = 0;
+static unsigned long tow = 0;
 
 static ElementPtr gpsTime_node;
 static ElementPtr lat_node;
@@ -253,19 +254,23 @@ static ElementPtr ve_node;
 static ElementPtr vd_node;
 static ElementPtr sats_node;
 static ElementPtr fix_node;
+static ElementPtr tow_node;
 
 bool sim_gps_init() {
   printf("sim_gps_init()\n");
   // bind def tree pointers
-  // gpsTime_node = deftree.initElement("/Sensors/uBlox/Time_us", "GPS Time (us)", LOG_DOUBLE, LOG_NONE);
-  lon_node = deftree.initElement("/Sensors/uBlox/Longitude_rad", "GPS Longitude (rad)", LOG_DOUBLE, LOG_NONE);
-  lat_node = deftree.initElement("/Sensors/uBlox/Latitude_rad", "GPS Latitude (rad)", LOG_DOUBLE, LOG_NONE);
-  alt_node = deftree.initElement("/Sensors/uBlox/Altitude_m", "GPS Altitude (m)", LOG_FLOAT, LOG_NONE);
-  vn_node = deftree.initElement("/Sensors/uBlox/NorthVelocity_ms", "GPS vNorth (m/s)", LOG_FLOAT, LOG_NONE);
-  ve_node = deftree.initElement("/Sensors/uBlox/EastVelocity_ms", "GPS vEast (m/s)", LOG_FLOAT, LOG_NONE);
-  vd_node = deftree.initElement("/Sensors/uBlox/DownVelocity_ms", "GPS vDorth (m/s)", LOG_FLOAT, LOG_NONE);
-  sats_node = deftree.initElement("/Sensors/uBlox/NumberSatellites", "GPS Number of Satellites", LOG_INT8, LOG_NONE);
-  fix_node = deftree.initElement("/Sensors/uBlox/Fix", "GPS Fix Flag (bool)", LOG_BOOL, LOG_NONE);
+  std::string Path = "/Sensors/uBlox";
+  // gpsTime_node = deftree.initElement(Path+"/Time_us", "GPS Time (us)", LOG_DOUBLE, LOG_NONE);
+  lon_node = deftree.initElement(Path+"/Longitude_rad", "GPS Longitude (rad)", LOG_DOUBLE, LOG_NONE);
+  lat_node = deftree.initElement(Path+"/Latitude_rad", "GPS Latitude (rad)", LOG_DOUBLE, LOG_NONE);
+  alt_node = deftree.initElement(Path+"/Altitude_m", "GPS Altitude (m)", LOG_FLOAT, LOG_NONE);
+  vn_node = deftree.initElement(Path+"/NorthVelocity_ms", "GPS vNorth (m/s)", LOG_FLOAT, LOG_NONE);
+  ve_node = deftree.initElement(Path+"/EastVelocity_ms", "GPS vEast (m/s)", LOG_FLOAT, LOG_NONE);
+  vd_node = deftree.initElement(Path+"/DownVelocity_ms", "GPS vDorth (m/s)", LOG_FLOAT, LOG_NONE);
+  sats_node = deftree.initElement(Path+"/NumberSatellites", "GPS Number of Satellites", LOG_INT8, LOG_NONE);
+  fix_node = deftree.initElement(Path+"/Fix", "GPS Fix Flag (bool)", LOG_BOOL, LOG_NONE);
+
+  tow_node = deftree.initElement(Path+"/TOW", "GPS time of the navigation epoch", LOG_BOOL, LOG_NONE);
 
   // open a UDP socket
   if ( ! sock_gps.open( false ) ) {
@@ -306,6 +311,7 @@ bool sim_gps_update() {
     pt = strtok(NULL, ","); vd_mps = atof(pt);
     sats = 8;
     fix = 1;
+    tow++; // just increment TOW
 
     // std::cout << gpsTime_s << "\t"
     //           << gpsTime_us << "\t"
@@ -328,6 +334,7 @@ bool sim_gps_update() {
   vd_node->setFloat(vd_mps);
   sats_node->setInt(8);
   fix_node->setInt(fix);
+  tow_node->setInt(tow);
 
   return fresh_data;
 }

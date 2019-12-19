@@ -53,6 +53,7 @@ class Ekf15StateIns: public GenericFunction {
     };
     struct Data {
       ElementPtr Mode;
+      ElementPtr Fix;
       ElementPtr Ax, Ay, Az;
       ElementPtr Gx, Gy, Gz;
       ElementPtr Axb, Ayb, Azb;
@@ -65,6 +66,7 @@ class Ekf15StateIns: public GenericFunction {
     Data data_;
     bool Initialized_ = false;
     std::string ModeKey_;
+    std::string FixKey_;
     std::string AxKey_,AyKey_,AzKey_;
     std::string GxKey_,GyKey_,GzKey_;
     std::string AxbKey_,AybKey_,AzbKey_;
