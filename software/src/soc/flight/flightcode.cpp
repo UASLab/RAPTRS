@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
       // Run Datalog
       Datalog.LogBinaryData();
 
-      // Send (dummy) Bifrost data
+      // Send Bifrost data
       Fmu.SendBifrostData();
 
       // Process Telnet

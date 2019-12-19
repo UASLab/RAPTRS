@@ -70,8 +70,9 @@ int main()
   // set BFS pins to output
   pinMode(kBfsInt1Pin,OUTPUT);
   pinMode(kBfsInt2Pin,OUTPUT);
+
+  message::data_bifrost_t msg_b;
   while (1) {
-    message::data_bifrost_t msg_b;
     BifrostSend(msg_b.airspeed, msg_b.test_id, msg_b.voltage, msg_b.soc_eng, msg_b.cont_sel, msg_b.ext_eng);
     // update the mission mode
     Mission.UpdateMode(&Sensors,&Control,&Effectors,&GlobalData);

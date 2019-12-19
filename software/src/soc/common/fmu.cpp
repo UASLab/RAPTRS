@@ -224,9 +224,11 @@ void FlightManagementUnit::SendEffectorCommands(std::vector<float> Commands) {
 /* Send telemetry commands to FMU */
 void FlightManagementUnit::SendBifrostData() {
   message::data_bifrost_t msg;
-  msg.airspeed = 11.1;
-  msg.test_id = 27;
-  msg.voltage = 8.6;
+  ElementPtr asi = deftree.getElement("/Sensor-Processing/vIAS_ms",true);
+  ElementPtr iv = deftree.getElement("/Sensor-Processing/MinCellVolt_V",true);
+  msg.airspeed = asi->getFloat();
+  msg.test_id = 30;
+  msg.voltage = iv->getFloat();
   msg.soc_eng = true;
   msg.cont_sel = 0;
   msg.ext_eng = true;
