@@ -113,6 +113,9 @@ class Ams5915Sensor {
       uint8_t Addr;                                                              // I2C address
       AMS5915::Transducer Transducer;                                               // Transducer type
     };
+    int8_t ReadStatus = -1;                                                          // positive if a good read or negative if not
+    float Pressure_Pa = 0.0f;                                                     // Pressure, Pa
+    float Temperature_C = 0.0f;                                                   // Temperature, C
     void UpdateConfig(message::config_ams5915_t *msg);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);

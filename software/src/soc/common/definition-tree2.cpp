@@ -47,6 +47,7 @@ ElementPtr DefinitionTree2::getElement(string name, bool create) {
     data[name] = ele;
     return ele;
   } else {
+    cout << "NOTICE: subscriber FAILED TO GET def-tree element: " << name << endl;
     return NULL;
   }
 }

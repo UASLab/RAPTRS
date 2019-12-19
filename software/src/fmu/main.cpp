@@ -46,8 +46,8 @@ void ImuInterrupt() {
   Mission.SetImuDataReady();
 }
 
-uint64_t ts;
-uint64_t t;
+// uint64_t ts;
+// uint64_t t;
 
 int main()
 {
@@ -74,7 +74,7 @@ int main()
     Mission.UpdateMode(&Sensors,&Control,&Effectors,&GlobalData);
     Mission.GetMode(&MissionMode);
     if (MissionMode == AircraftMission::Run) {
-      ts = micros_64();
+      // ts = micros_64();
 
       // update the mission state
       Mission.UpdateState();

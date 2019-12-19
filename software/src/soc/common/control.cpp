@@ -127,9 +127,9 @@ void ControlSystem::ConfigureSet(
 
         std::string Key = KeyVec[iKey].substr (KeyVec[iKey].rfind("/") + 1); // Get just the Key signal name
 
-        NodeVecCtrl.push_back(deftree.getElement(ControlPath + "/" + Key));
-        NodeVecSet.push_back(deftree.getElement(SetPath + "/" + Key));
-        // NodeVecRoot.push_back(deftree.getElement(RootPath_ + "/" + Key));
+        NodeVecCtrl.push_back(deftree.initElement(ControlPath + "/" + Key, "", LOG_FLOAT, LOG_NONE));
+        NodeVecSet.push_back(deftree.initElement(SetPath + "/" + Key, "", LOG_FLOAT, LOG_NONE));
+        // NodeVecRoot.push_back(deftree.initElement(RootPath_ + "/" + Key, "", LOG_FLOAT, LOG_NONE));
 
         // Copy Node defintions
         NodeVecSet.back()->copyFrom(NodeVecCtrl.back());
@@ -155,9 +155,9 @@ void ControlSystem::ConfigureSet(
 void ControlSystem::ConfigureEffectors( std::vector<std::string> EffKeyVec ) {
   for (size_t iKey = 0; iKey < EffKeyVec.size(); ++iKey) {
     std::string EffKey = EffKeyVec[iKey].substr (EffKeyVec[iKey].rfind("/") + 1);
-    EffNodeVec_.push_back(deftree.getElement(RootPath_ + "/" + EffKey, true));
-    BaselineEffNodeVec_.push_back(deftree.getElement(BaselinePath_ + "/" + EffKey, true));
-    TestEffNodeVec_.push_back(deftree.getElement(TestPath_ + "/" + EffKey, true));
+    EffNodeVec_.push_back(deftree.initElement(RootPath_ + "/" + EffKey, "", LOG_FLOAT, LOG_NONE));
+    BaselineEffNodeVec_.push_back(deftree.initElement(BaselinePath_ + "/" + EffKey, "", LOG_FLOAT, LOG_NONE));
+    TestEffNodeVec_.push_back(deftree.initElement(TestPath_ + "/" + EffKey, "", LOG_FLOAT, LOG_NONE));
   }
 }
 
