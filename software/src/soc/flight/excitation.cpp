@@ -14,7 +14,7 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
   LoadInput(Config, RootPath_, "Time", &time_node_, &TimeKey);
 
   // Setup Excitation Active Signal
-  active_node_ = deftree.initElement(RootPath_ + "/Active", "Excitation active flag", LOG_UINT8, LOG_NONE);
+  active_node_ = deftree.initElement(RootPath_ + "/active", "Excitation active flag", LOG_UINT8, LOG_NONE);
 
   // Load Waveform Definitions
   if (!Config.HasMember("WaveDef")) { // WaveDef not defined

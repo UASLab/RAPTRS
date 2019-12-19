@@ -230,7 +230,7 @@ void FlightManagementUnit::SendBifrostData() {
   ElementPtr id = deftree.getElement("/Mission/testPtID",true);
   ElementPtr soc = deftree.getElement("/Mission/socEngage",true);
   ElementPtr ctrl = deftree.getElement("/Mission/testCtrlMode",true);
-  msg.airspeed = asi->getFloat();
+  msg.airspeed = 2 * asi->getFloat();
   msg.test_id = id->getInt();
   msg.voltage = iv->getFloat();
   msg.soc_eng = (bool) soc->getInt();
