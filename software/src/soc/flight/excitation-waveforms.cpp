@@ -10,12 +10,16 @@ void Pulse::Configure(const rapidjson::Value& Config) {
    LoadVal(Config, "Duration", &tDur_s_, true);
 }
 
-void Pulse::Run(float tExc_s, float *Excite) {
+bool Pulse::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
     *Excite = 1.0;
+    active = true;
   }
+
+  return active;
 }
 
 void Pulse::Clear() {
@@ -26,14 +30,19 @@ void Doublet::Configure(const rapidjson::Value& Config) {
   LoadVal(Config, "Duration", &tDur_s_, true);
 }
 
-void Doublet::Run(float tExc_s, float *Excite) {
+bool Doublet::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
     *Excite = 1.0f;
+    active = true;
   } else if (tExc_s < 2.0f * tDur_s_) {
     *Excite = -1.0f;
+    active = true;
   }
+
+  return active;
 }
 
 void Doublet::Clear() {
@@ -44,16 +53,22 @@ void Doublet121::Configure(const rapidjson::Value& Config) {
   LoadVal(Config, "Duration", &tDur_s_, true);
 }
 
-void Doublet121::Run(float tExc_s, float *Excite) {
+bool Doublet121::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
     *Excite = 1.0f;
+    active = true;
   } else if (tExc_s < 3.0f*tDur_s_) {
     *Excite = -1.0f;
+    active = true;
   } else if (tExc_s < 4.0f*tDur_s_) {
     *Excite = 1.0f;
+    active = true;
   }
+
+  return active;
 }
 
 void Doublet121::Clear() {
@@ -64,18 +79,25 @@ void Doublet3211::Configure(const rapidjson::Value& Config) {
   LoadVal(Config, "Duration", &tDur_s_, true);
 }
 
-void Doublet3211::Run(float tExc_s, float *Excite) {
+bool Doublet3211::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < (3.0f*tDur_s_)) {
     *Excite = 1.0f;
+    active = true;
   } else if (tExc_s < (5.0f*tDur_s_)) {
     *Excite = -1.0f;
+    active = true;
   } else if (tExc_s < (6.0f*tDur_s_)) {
     *Excite = 1.0f;
+    active = true;
   } else if (tExc_s < (7.0f*tDur_s_)) {
     *Excite = -1.0f;
+    active = true;
   }
+
+  return active;
 }
 
 void Doublet3211::Clear() {
@@ -101,8 +123,9 @@ void LinearChirp::Configure(const rapidjson::Value& Config) {
   AmpK_ = (Amp1_ - Amp0_) / tDur_s_;
 }
 
-void LinearChirp::Run(float tExc_s, float *Excite) {
+bool LinearChirp::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
       // linear varying instantanious Frequency
@@ -113,7 +136,10 @@ void LinearChirp::Run(float tExc_s, float *Excite) {
 
       // chirp Equation, note the factor of 2.0 is correct!
       *Excite = Amp_nd * sinf((Freq_rps / 2.0f) * tExc_s);
+      active = true;
     }
+
+    return active;
 }
 
 void LinearChirp::Clear() {
@@ -146,8 +172,9 @@ void LogChirp::Configure(const rapidjson::Value& Config) {
   AmpK_ = (Amp1_ - Amp0_) / tDur_s_;
 }
 
-void LogChirp::Run(float tExc_s, float *Excite) {
+bool LogChirp::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
     // log varying instantaneous Frequency
@@ -158,7 +185,9 @@ void LogChirp::Run(float tExc_s, float *Excite) {
 
     // chirp Equation
     *Excite = Amp_nd * sinf(Freq_rps * tExc_s);
+    active = true;
   }
+  return active;
 }
 
 void LogChirp::Clear() {
@@ -180,8 +209,9 @@ void Pulse_1_Cos::Configure(const rapidjson::Value& Config) {
   Freq_rps_ = (2 * M_PI) / tDur_s_;
 }
 
-void Pulse_1_Cos::Run(float tExc_s, float *Excite) {
+bool Pulse_1_Cos::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < (tDur_s_ + tPause_s_)) {
     if (tExc_s < (0.5 * tDur_s_)) {
@@ -191,7 +221,9 @@ void Pulse_1_Cos::Run(float tExc_s, float *Excite) {
     } else {
       *Excite = 0.5 * (1.0 - cosf(Freq_rps_ * (tExc_s - tPause_s_)));
     }
+    active = true;
   }
+  return active;
 }
 
 void Pulse_1_Cos::Clear() {
@@ -200,6 +232,7 @@ void Pulse_1_Cos::Clear() {
   Freq_rps_ = 0.0f;
 }
 
+
 void MultiSine::Configure(const rapidjson::Value& Config) {
   LoadVal(Config, "Duration", &tDur_s_, true);
   LoadVal(Config, "Amplitude", &Amp_, true);
@@ -207,13 +240,16 @@ void MultiSine::Configure(const rapidjson::Value& Config) {
   LoadVal(Config, "Phase", &Phase_rad_, true);
 }
 
-void MultiSine::Run(float tExc_s, float *Excite) {
+bool MultiSine::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
     // Compute the Waveform: sum(Amp .* sin(Freq * t + phase))
     *Excite = (Amp_ * (Freq_rps_ * tExc_s + Phase_rad_).sin()).sum();
+    active = true;
   }
+  return active;
 }
 
 void MultiSine::Clear() {
@@ -224,20 +260,22 @@ void MultiSine::Clear() {
 }
 
 
-
 void Sampled::Configure(const rapidjson::Value& Config) {
   LoadVal(Config, "Duration", &tDur_s_, true);
   LoadVal(Config, "dt", &dt_s_, true);
   LoadVal(Config, "Sample", &Sample_, true);
 }
 
-void Sampled::Run(float tExc_s, float *Excite) {
+bool Sampled::Run(float tExc_s, float *Excite) {
   *Excite = 0.0f;
+  bool active = false;
 
   if (tExc_s < tDur_s_) {
     size_t iSamp = (size_t) (tExc_s / dt_s_);
     *Excite = Sample_[iSamp];
+    active = true;
   }
+  return active;
 }
 
 void Sampled::Clear() {

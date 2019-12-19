@@ -13,6 +13,9 @@ void ExcitationSystem::Configure(const rapidjson::Value& Config) {
   std::string TimeKey;
   LoadInput(Config, RootPath_, "Time", &time_node_, &TimeKey);
 
+  // Setup Excitation Active Signal
+  active_node_ = deftree.initElement(RootPath_ + "/Active", "Excitation active flag", LOG_UINT8, LOG_NONE);
+
   // Load Waveform Definitions
   if (!Config.HasMember("WaveDef")) { // WaveDef not defined
     throw std::runtime_error(std::string("ERROR - WaveDef not found in Excitation."));
@@ -65,6 +68,8 @@ void ExcitationSystem::SetExcitation(std::string ExcitEngaged) {
 void ExcitationSystem::Run(std::string ControlLevel) {
   // Get the current time
   float tCur_s = time_node_->getFloat() / 1e6;
+  bool active = false;
+  Active_ = false;
 
   // If "None" clear the latch and the states
   if (ExcitEngaged_ == "None") {
@@ -83,15 +88,22 @@ void ExcitationSystem::Run(std::string ControlLevel) {
     tEngaged_s = tCur_s - tStart_s;
 
     // Run the Excitation, using the Wrapper Class
-    ExciteWrapMap_[ExcitEngaged_]->Run(tEngaged_s);
+    active = ExciteWrapMap_[ExcitEngaged_]->Run(tEngaged_s);
+    if (active) {
+      Active_ = active;
+    }
   }
+
+  // Set the Excitation Active Flag
+  active_node_->setInt(Active_);
 }
 
 
-void ExcitationWrapper::Run(float tEngaged_s) {
+bool ExcitationWrapper::Run(float tEngaged_s) {
 
   float Excite = 0.0f;
   float ExciteScaled = 0.0f;
+  bool active = false;
 
   // Loop through the Waves
   for (size_t iWave = 0; iWave < WaveVec_.size(); ++iWave) {
@@ -100,7 +112,7 @@ void ExcitationWrapper::Run(float tEngaged_s) {
 
     // Excecute the Wave
     if (tExcite_s >= 0.0f) {
-      WaveVec_[iWave].WaveFunc->Run(tExcite_s, &Excite);
+      active = WaveVec_[iWave].WaveFunc->Run(tExcite_s, &Excite);
       ExciteScaled = WaveVec_[iWave].Scale * Excite;
     }
 
@@ -112,6 +124,8 @@ void ExcitationWrapper::Run(float tEngaged_s) {
     ElementPtr NodeSignal = WaveVec_[iWave].NodeSignal;
     NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
   }
+
+  return active;
 }
 
 

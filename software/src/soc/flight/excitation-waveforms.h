@@ -13,7 +13,7 @@ Author: Chris Regan, Brian Taylor
 class Waveform {
   public:
     virtual void Configure(const rapidjson::Value& Config) {};
-    virtual void Run(float tExc_s, float *Excite) {};
+    virtual bool Run(float tExc_s, float *Excite) {return false;};
     virtual void Clear() {};
 };
 
@@ -30,7 +30,7 @@ Where:
 class Pulse: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -49,7 +49,7 @@ Where:
 class Doublet: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -68,7 +68,7 @@ Where:
 class Doublet121: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -87,7 +87,7 @@ Where:
 class Doublet3211: public Waveform {
 public:
   void Configure(const rapidjson::Value& Config);
-  void Run(float tExc_s, float *Excite);
+  bool Run(float tExc_s, float *Excite);
   void Clear();
 private:
   float tDur_s_ = 0.0f;
@@ -110,7 +110,7 @@ Where:
 class LinearChirp: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -141,7 +141,7 @@ Where:
 class LogChirp: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -171,7 +171,7 @@ Where:
 class Pulse_1_Cos: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -199,7 +199,7 @@ Where:
 class MultiSine: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
@@ -226,7 +226,7 @@ Where:
 class Sampled: public Waveform {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(float tExc_s, float *Excite);
+    bool Run(float tExc_s, float *Excite);
     void Clear();
   private:
     float tDur_s_ = 0.0f;
