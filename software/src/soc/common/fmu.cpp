@@ -226,12 +226,16 @@ void FlightManagementUnit::SendBifrostData() {
   message::data_bifrost_t msg;
   ElementPtr asi = deftree.getElement("/Sensor-Processing/vIAS_ms",true);
   ElementPtr iv = deftree.getElement("/Sensor-Processing/MinCellVolt_V",true);
+  ElementPtr ext = deftree.getElement("/Mission/excitEngage",true);
+  ElementPtr id = deftree.getElement("/Mission/testPtID",true);
+  ElementPtr soc = deftree.getElement("/Mission/socEngage",true);
+  ElementPtr ctrl = deftree.getElement("/Mission/testCtrlMode",true);
   msg.airspeed = asi->getFloat();
-  msg.test_id = 30;
+  msg.test_id = id->getInt();
   msg.voltage = iv->getFloat();
-  msg.soc_eng = true;
-  msg.cont_sel = 0;
-  msg.ext_eng = true;
+  msg.soc_eng = (bool) soc->getInt();
+  msg.cont_sel = ctrl->getInt();
+  msg.ext_eng = (bool) ext->getInt();
   msg.pack();
   SendMessage(msg.id, 0, msg.payload, msg.len);
 }
