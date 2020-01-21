@@ -94,7 +94,7 @@ class TelemetryClient {
       ElementPtr Gx, Gy, Gz;
       ElementPtr Axb, Ayb, Azb;
       ElementPtr Gxb, Gyb, Gzb;
-      ElementPtr Pitch, Roll, Yaw, Heading, Track;
+      ElementPtr Pitch, Roll, Heading, Track;
       ElementPtr Lat, Lon, Alt;
       ElementPtr Vn, Ve, Vd;
     } AttitudeNodes;

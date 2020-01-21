@@ -74,7 +74,6 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
     AttitudeNodes.Gzb = deftree.getElement(Sensor+"/GyroZBias_rads");
     AttitudeNodes.Pitch = deftree.getElement(Sensor+"/Pitch_rad");
     AttitudeNodes.Roll = deftree.getElement(Sensor+"/Roll_rad");
-    AttitudeNodes.Yaw = deftree.getElement(Sensor+"/Yaw_rad");
     AttitudeNodes.Heading = deftree.getElement(Sensor+"/Heading_rad");
     AttitudeNodes.Track = deftree.getElement(Sensor+"/Track_rad");
     AttitudeNodes.Lon = deftree.getElement(Sensor+"/Longitude_rad");

@@ -1,8 +1,7 @@
 /*
 Updated to be a class, use Eigen, and compile as an Arduino library.
 Added methods to get gyro and accel bias. Added initialization to
-estimated angles rather than assuming IMU is level. Added method to get psi,
-rather than just heading, and ground track.
+estimated angles rather than assuming IMU is level.
 
 Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
 MIT License; See LICENSE.md for complete details
@@ -10,400 +9,224 @@ Author: Brian Taylor
 */
 
 /*
-Addapted from earlier version
+Adapted from earlier version
 Copyright 2011 Regents of the University of Minnesota. All rights reserved.
 Original Author: Adhika Lie
 */
+
+#include "uNavINS.h"
 
 #include <iostream>
 using std::cout;
 using std::endl;
 
-#include "uNavINS.h"
+void uNavINS::Configure() {
+  // Observation matrix (H)
+  H_.setZero();
+  H_.block(0,0,5,5) = I5;
 
-void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double vd,double lat,double lon,double alt,float p,float q,float r,float ax,float ay,float az,float hx,float hy, float hz) {
-  // cout << "ins: " << time << " " << TOW << " vel: " << vn << " " << ve << " " << vd << " pos: " << lat << " " << lon << " " << alt << " imu: " << p << " " << q << " " << r << " " << ax << " " << ay << " " << az << " " << hx << " " << hy << " " << hz << endl;
-  if (!initialized_) {
-    // initial attitude and heading
-    theta = asinf(ax/G);
-    phi = asinf(-ay/(G*cosf(theta)));
-    // magnetic heading correction due to roll and pitch angle
-    Bxc = hx*cosf(theta) + (hy*sinf(phi) + hz*cosf(phi))*sinf(theta);
-    Byc = hy*cosf(phi) - hz*sinf(phi);
-    // finding initial heading
-    if (-Byc > 0) {
-      psi = M_PI/2.0f - atanf(Bxc/-Byc);
-    } else {
-      psi= 3.0f*M_PI/2.0f - atanf(Bxc/-Byc);
-    }
-    psi = constrainAngle180(psi);
-    psi_initial = psi;
-    // euler to quaternion
-    quat(0) = cosf(psi/2.0f)*cosf(theta/2.0f)*cosf(phi/2.0f) + sinf(psi/2.0f)*sinf(theta/2.0f)*sinf(phi/2.0f);
-    quat(1) = cosf(psi/2.0f)*cosf(theta/2.0f)*sinf(phi/2.0f) - sinf(psi/2.0f)*sinf(theta/2.0f)*cosf(phi/2.0f);
-    quat(2) = cosf(psi/2.0f)*sinf(theta/2.0f)*cosf(phi/2.0f) + sinf(psi/2.0f)*cosf(theta/2.0f)*sinf(phi/2.0f);
-    quat(3) = sinf(psi/2.0f)*cosf(theta/2.0f)*cosf(phi/2.0f) - cosf(psi/2.0f)*sinf(theta/2.0f)*sinf(phi/2.0f);
-    // Assemble the matrices
-    // ... gravity
-    grav(2,0) = G;
-    // ... H
-    H.block(0,0,5,5) = Eigen::Matrix<float,5,5>::Identity();
-    // ... Rw
-    Rw.block(0,0,3,3) = powf(SIG_W_A,2.0f)*Eigen::Matrix<float,3,3>::Identity();
-    Rw.block(3,3,3,3) = powf(SIG_W_G,2.0f)*Eigen::Matrix<float,3,3>::Identity();
-    Rw.block(6,6,3,3) = 2.0f*powf(SIG_A_D,2.0f)/TAU_A*Eigen::Matrix<float,3,3>::Identity();
-    Rw.block(9,9,3,3) = 2.0f*powf(SIG_G_D,2.0f)/TAU_G*Eigen::Matrix<float,3,3>::Identity();
-    // ... P
-    P.block(0,0,3,3) = powf(P_P_INIT,2.0f)*Eigen::Matrix<float,3,3>::Identity();
-    P.block(3,3,3,3) = powf(P_V_INIT,2.0f)*Eigen::Matrix<float,3,3>::Identity();
-    P.block(6,6,2,2) = powf(P_A_INIT,2.0f)*Eigen::Matrix<float,2,2>::Identity();
-    P(8,8) = powf(P_HDG_INIT,2.0f);
-    P.block(9,9,3,3) = powf(P_AB_INIT,2.0f)*Eigen::Matrix<float,3,3>::Identity();
-    P.block(12,12,3,3) = powf(P_GB_INIT,2.0f)*Eigen::Matrix<float,3,3>::Identity();
-    // ... R
-    R.block(0,0,2,2) = powf(SIG_GPS_P_NE,2.0f)*Eigen::Matrix<float,2,2>::Identity();
-    R(2,2) = powf(SIG_GPS_P_D,2.0f);
-    R.block(3,3,2,2) = powf(SIG_GPS_V_NE,2.0f)*Eigen::Matrix<float,2,2>::Identity();
-    R(5,5) = powf(SIG_GPS_V_D,2.0f);
-    // .. then initialize states with GPS Data
-    lat_ins = lat;
-    lon_ins = lon;
-    alt_ins = alt;
-    vn_ins = vn;
-    ve_ins = ve;
-    vd_ins = vd;
-    // specific force
-    f_b(0,0) = ax;
-    f_b(1,0) = ay;
-    f_b(2,0) = az;
-    /* initialize the time */
-    _tprev = time;
-    // initialized flag
-    initialized_ = true;
+  // Covariance of the Sensor Noise (associated with TimeUpdate())
+  Rw_.setZero();
+  Rw_.block(0,0,3,3) = powf(aNoiseSigma_mps2, 2.0f) * I3;
+  Rw_.block(3,3,3,3) = powf(wNoiseSigma_rps, 2.0f) * I3;
+  Rw_.block(6,6,3,3) = 2.0f * powf(aMarkovSigma_mps2, 2.0f) / aMarkovTau_s * I3;
+  Rw_.block(9,9,3,3) = 2.0f * powf(wMarkovSigma_rps, 2.0f) / wMarkovTau_s * I3;
+
+  // Covariance of the Observation Noise (associated with MeasUpdate())
+  R_.setZero();
+  R_.block(0,0,2,2) = powf(pNoiseSigma_NE_m, 2.0f) * I2;
+  R_(2,2) = powf(pNoiseSigma_D_m, 2.0f);
+  R_.block(3,3,2,2) = powf(vNoiseSigma_NE_mps, 2.0f) * I2;
+  R_(5,5) = powf(vNoiseSigma_D_mps, 2.0f);
+
+  // Initial Covariance Estimate (P)
+  P_.setZero();
+  P_.block(0,0,3,3) = powf(pErrSigma_Init_m, 2.0f) * I3;
+  P_.block(3,3,3,3) = powf(vErrSigma_Init_mps, 2.0f) * I3;
+  P_.block(6,6,2,2) = powf(attErrSigma_Init_rad, 2.0f) * I2;
+  P_(8,8) = powf(hdgErrSigma_Init_rad, 2.0f);
+  P_.block(9,9,3,3) = powf(aBiasSigma_Init_mps2, 2.0f) * I3;
+  P_.block(12,12,3,3) = powf(wBiasSigma_Init_rps, 2.0f) * I3;
+}
+
+void uNavINS::Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
+  // Initialize sensor biases
+  wBias_rps_ = wMeas_rps;
+  aBias_mps2_.setZero();
+
+  // initial attitude, roll and pitch
+  euler_BL_rad_(1) = asinf(aMeas_mps2(0) / G);
+  euler_BL_rad_(0) = asinf(-aMeas_mps2(1) / (G * cosf(euler_BL_rad_(1))));
+
+  // magnetic heading correction due to roll and pitch angle
+  float Bxc = magMeas(0) * cosf(euler_BL_rad_(1)) + (magMeas(1) * sinf(euler_BL_rad_(0)) + magMeas(2) * cosf(euler_BL_rad_(0))) * sinf(euler_BL_rad_(1));
+  float Byc = magMeas(1) * cosf(euler_BL_rad_(0)) - magMeas(2) * sinf(euler_BL_rad_(0));
+
+  // find initial heading
+  if (-Byc > 0) {
+    euler_BL_rad_(2) = M_PI / 2.0f - atanf(Bxc / -Byc);
   } else {
-    // get the change in time
-    _dt = ((float)(time - _tprev))/1e6;
-    _tprev = time;
-    lla_ins(0,0) = lat_ins;
-    lla_ins(1,0) = lon_ins;
-    lla_ins(2,0) = alt_ins;
-    V_ins(0,0) = vn_ins;
-    V_ins(1,0) = ve_ins;
-    V_ins(2,0) = vd_ins;
-    // AHRS Transformations
-    C_N2B = quat2dcm(quat);
-    C_B2N = C_N2B.transpose();
-    // Attitude Update
-    dq(0) = 1.0f;
-    dq(1) = 0.5f*om_ib(0,0)*_dt;
-    dq(2) = 0.5f*om_ib(1,0)*_dt;
-    dq(3) = 0.5f*om_ib(2,0)*_dt;
-    quat = qmult(quat,dq);
-    quat.normalize();
-    // Avoid quaternion flips sign
-    if (quat(0) < 0) {
-      quat = -1.0f*quat;
-    }
-    // obtain euler angles from quaternion
-    theta = asinf(-2.0f*(quat(1,0)*quat(3,0)-quat(0,0)*quat(2,0)));
-    phi = atan2f(2.0f*(quat(0,0)*quat(1,0)+quat(2,0)*quat(3,0)),1.0f-2.0f*(quat(1,0)*quat(1,0)+quat(2,0)*quat(2,0)));
-    psi = atan2f(2.0f*(quat(1,0)*quat(2,0)+quat(0,0)*quat(3,0)),1.0f-2.0f*(quat(2,0)*quat(2,0)+quat(3,0)*quat(3,0)));
-    // Velocity Update
-    dx = C_B2N*f_b + grav;
-    vn_ins += _dt*dx(0,0);
-    ve_ins += _dt*dx(1,0);
-    vd_ins += _dt*dx(2,0);
-    // Position Update
-    dxd = llarate(V_ins,lla_ins);
-    lat_ins += _dt*dxd(0,0);
-    lon_ins += _dt*dxd(1,0);
-    alt_ins += _dt*dxd(2,0);
-    // Jacobian
-    Fs.setZero();
-    // ... pos2gs
-    Fs.block(0,3,3,3) = Eigen::Matrix<float,3,3>::Identity();
-    // ... gs2pos
-    Fs(5,2) = -2.0f*G/EARTH_RADIUS;
-    // ... gs2att
-    Fs.block(3,6,3,3) = -2.0f*C_B2N*sk(f_b);
-    // ... gs2acc
-    Fs.block(3,9,3,3) = -C_B2N;
-    // ... att2att
-    Fs.block(6,6,3,3) = -sk(om_ib);
-    // ... att2gyr
-    Fs.block(6,12,3,3) = -0.5f*Eigen::Matrix<float,3,3>::Identity();
-    // ... Accel Markov Bias
-    Fs.block(9,9,3,3) = -1.0f/TAU_A*Eigen::Matrix<float,3,3>::Identity();
-    Fs.block(12,12,3,3) = -1.0f/TAU_G*Eigen::Matrix<float,3,3>::Identity();
-    // State Transition Matrix
-    PHI = Eigen::Matrix<float,15,15>::Identity()+Fs*_dt;
-    // Process Noise
-    Gs.setZero();
-    Gs.block(3,0,3,3) = -C_B2N;
-    Gs.block(6,3,3,3) = -0.5f*Eigen::Matrix<float,3,3>::Identity();
-    Gs.block(9,6,6,6) = Eigen::Matrix<float,6,6>::Identity();
-    // Discrete Process Noise
-    Q = PHI*_dt*Gs*Rw*Gs.transpose();
-    Q = 0.5f*(Q+Q.transpose());
-    // Covariance Time Update
-    P = PHI*P*PHI.transpose()+Q;
-    P = 0.5f*(P+P.transpose());
-
-    // Gps measurement update
-    if ((TOW - previousTOW) > 0) {
-      previousTOW = TOW;
-      lla_gps(0,0) = lat;
-      lla_gps(1,0) = lon;
-      lla_gps(2,0) = alt;
-      V_gps(0,0) = vn;
-      V_gps(1,0) = ve;
-      V_gps(2,0) = vd;
-      lla_ins(0,0) = lat_ins;
-      lla_ins(1,0) = lon_ins;
-      lla_ins(2,0) = alt_ins;
-      V_ins(0,0) = vn_ins;
-      V_ins(1,0) = ve_ins;
-      V_ins(2,0) = vd_ins;
-      // Position, converted to NED
-      pos_ecef_ins = lla2ecef(lla_ins);
-      pos_ned_ins = ecef2ned(pos_ecef_ins,lla_ins);
-      pos_ecef_gps = lla2ecef(lla_gps);
-      pos_ned_gps = ecef2ned(pos_ecef_gps,lla_ins);
-      // Create measurement Y
-      y(0,0) = (float)(pos_ned_gps(0,0) - pos_ned_ins(0,0));
-      y(1,0) = (float)(pos_ned_gps(1,0) - pos_ned_ins(1,0));
-      y(2,0) = (float)(pos_ned_gps(2,0) - pos_ned_ins(2,0));
-      y(3,0) = (float)(V_gps(0,0) - V_ins(0,0));
-      y(4,0) = (float)(V_gps(1,0) - V_ins(1,0));
-      y(5,0) = (float)(V_gps(2,0) - V_ins(2,0));
-      // Kalman gain
-      K = P*H.transpose()*(H*P*H.transpose() + R).inverse();
-      // Covariance update
-      P = (Eigen::Matrix<float,15,15>::Identity()-K*H)*P*(Eigen::Matrix<float,15,15>::Identity()-K*H).transpose() + K*R*K.transpose();
-      // State update
-      x = K*y;
-      denom = (1.0 - (ECC2 * pow(sin(lla_ins(0,0)),2.0)));
-      denom = sqrt(denom*denom);
-      Re = EARTH_RADIUS / sqrt(denom);
-      Rn = EARTH_RADIUS*(1.0-ECC2) / denom*sqrt(denom);
-      alt_ins = alt_ins - x(2,0);
-      lat_ins = lat_ins + x(0,0) / (Re + alt_ins);
-      lon_ins = lon_ins + x(1,0) / (Rn + alt_ins) / cos(lat_ins);
-      vn_ins = vn_ins + x(3,0);
-      ve_ins = ve_ins + x(4,0);
-      vd_ins = vd_ins + x(5,0);
-      // Attitude correction
-      dq(0,0) = 1.0f;
-      dq(1,0) = x(6,0);
-      dq(2,0) = x(7,0);
-      dq(3,0) = x(8,0);
-      quat = qmult(quat,dq);
-      quat.normalize();
-      // obtain euler angles from quaternion
-      theta = asinf(-2.0f*(quat(1,0)*quat(3,0)-quat(0,0)*quat(2,0)));
-      phi = atan2f(2.0f*(quat(0,0)*quat(1,0)+quat(2,0)*quat(3,0)),1.0f-2.0f*(quat(1,0)*quat(1,0)+quat(2,0)*quat(2,0)));
-      psi = atan2f(2.0f*(quat(1,0)*quat(2,0)+quat(0,0)*quat(3,0)),1.0f-2.0f*(quat(2,0)*quat(2,0)+quat(3,0)*quat(3,0)));
-      abx = abx + x(9,0);
-      aby = aby + x(10,0);
-      abz = abz + x(11,0);
-      gbx = gbx + x(12,0);
-      gby = gby + x(13,0);
-      gbz = gbz + x(14,0);
-    }
-    // Get the new Specific forces and Rotation Rate,
-    // use in the next time update
-    f_b(0,0) = ax - abx;
-    f_b(1,0) = ay - aby;
-    f_b(2,0) = az - abz;
-
-    om_ib(0,0) = p - gbx;
-    om_ib(1,0) = q - gby;
-    om_ib(2,0) = r - gbz;
+    euler_BL_rad_(2) = 3.0f * M_PI / 2.0f - atanf(Bxc / -Byc);
   }
+  euler_BL_rad_(2) = ConstrainAngle180(euler_BL_rad_(2));
+
+  // Euler to quaternion
+  quat_BL_ = Euler2Quat(euler_BL_rad_);
+
+  // Initialize states with GPS Data
+  pEst_D_rrm_ = pMeas_D_rrm;
+  vEst_L_mps_ = vMeas_L_mps;
+
+  // New Specific forces and Rotation Rate
+  aEst_mps2_ = aMeas_mps2 - aBias_mps2_;
+  wEst_rps_ = wMeas_rps - wBias_rps_;
+
+  // set initialized flag
+  initialized_ = true;
 }
 
-// returns whether the INS has been initialized
-bool uNavINS::initialized() {
-  return initialized_;
+void uNavINS::Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
+  // change in time
+  dt_s_ = ((float)(t_us - tPrev_us_)) / 1e6;
+  if (dt_s_ > 0.1) {dt_s_ = 0.1;} // Catch large dt
+  tPrev_us_ = t_us;
+
+  // Kalman Time Update (Prediction)
+  TimeUpdate(wMeas_rps, aMeas_mps2);
+
+  // Gps measurement update, if TOW increased
+  if ((timeWeek - timeWeekPrev_) > 0) {
+    timeWeekPrev_ = timeWeek;
+
+    // Kalman Measurement Update
+    MeasUpdate(pMeas_D_rrm, vMeas_L_mps);
+  }
+
+  // Euler angles from quaternion
+  euler_BL_rad_ = Quat2Euler(quat_BL_);
+
+  // Post-priori accel and rotation rate estimate
+  aEst_mps2_ = aMeas_mps2 - aBias_mps2_;
+  wEst_rps_ = wMeas_rps - wBias_rps_;
 }
 
-// returns the pitch angle, rad
-float uNavINS::getPitch_rad() {
-  return theta;
+void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
+  // A-priori accel and rotation rate estimate
+  aEst_mps2_ = aMeas_mps2 - aBias_mps2_;
+  wEst_rps_ = wMeas_rps - wBias_rps_;
+
+  // Compute DCM (Body to/from NED) Transformations from Quaternion
+  Matrix3f T_L2B = Quat2DCM(quat_BL_);
+  Matrix3f T_B2L = T_L2B.transpose();
+
+  // Attitude Update
+  Vector4f dQuat_BL = Vector4f::Zero();
+  dQuat_BL(0) = 1.0f;
+  dQuat_BL.segment(1,3) = 0.5f * wEst_rps_ * dt_s_;
+  quat_BL_ = QuatMult(quat_BL_, dQuat_BL);
+  quat_BL_.normalize();
+
+  // Avoid quaternion flips sign
+  if (quat_BL_(0) < 0) { quat_BL_ = -1.0f * quat_BL_; }
+
+  // Velocity Update
+  Vector3f aGrav_mps2 = Vector3f::Zero();
+  aGrav_mps2(2) = G;
+  vEst_L_mps_ += dt_s_ * (T_B2L * aEst_mps2_ + aGrav_mps2);
+
+  // Position Update
+  Vector3f pDot_D = L2D_Rate(vEst_L_mps_, pEst_D_rrm_);
+  pEst_D_rrm_ += (dt_s_ * pDot_D).cast <double> ();
+
+  // Assemble the Jacobian (state update matrix)
+  Matrix<float, 15, 15> Fs;
+  Fs.setZero();
+  Fs.block(0,3,3,3) = I3; // ... pos2gs
+  Fs(5,2) = -2.0f * G / EARTH_RADIUS; // ... gs2pos
+  Fs.block(3,6,3,3) = -2.0f * T_B2L * Skew(aEst_mps2_); // ... gs2att
+  Fs.block(3,9,3,3) = -T_B2L; // ... gs2acc
+  Fs.block(6,6,3,3) = -Skew(wEst_rps_); // ... att2att
+  Fs.block(6,12,3,3) = -0.5f * I3; // ... att2gyr
+  Fs.block(9,9,3,3) = -1.0f / aMarkovTau_s * I3; // ... Accel Markov Bias
+  Fs.block(12,12,3,3) = -1.0f / wMarkovTau_s * I3; // ... Rotation Rate (gyro) Markov Bias
+
+  Matrix<float, 15, 15> PHI = I15 + Fs * dt_s_; // State Transition Matrix
+
+  // Process Noise
+  Matrix<float,15,12> Gs;
+  Gs.setZero();
+  Gs.block(3,0,3,3) = -T_B2L;
+  Gs.block(6,3,3,3) = -0.5f * I3;
+  Gs.block(9,6,6,6) = I6;
+
+  // Process Noise Covariance
+  Matrix<float, 15, 15> Q;
+  Q.setZero();
+  Q = PHI * dt_s_ * Gs * Rw_ * Gs.transpose();
+  Q = 0.5f * (Q + Q.transpose());
+
+  // Covariance Time Update
+  P_ = PHI * P_ * PHI.transpose() + Q;
+  P_ = 0.5f * (P_ + P_.transpose());
 }
 
-// returns the roll angle, rad
-float uNavINS::getRoll_rad() {
-  return phi;
-}
+// Measurement Update
+void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
+  // Position Error, converted to NED
+  Matrix3d T_E2L = E2L(pEst_D_rrm_);
+  Vector3d pErr_L_m = T_E2L * (D2E(pMeas_D_rrm) - D2E(pEst_D_rrm_));
 
-// returns the yaw angle, rad
-float uNavINS::getYaw_rad() {
-  return constrainAngle180(psi-psi_initial);
-}
+  // Velocity Error
+  Vector3f vErr_L_mps = vMeas_L_mps - vEst_L_mps_;
 
-// returns the heading angle, rad
-float uNavINS::getHeading_rad() {
-  return constrainAngle360(psi);
-}
+  // Create measurement Y, as difference between Measures and Outputs
+  Matrix<float, 6, 1> y;
+  y.setZero();
+  y.segment(0, 3) = pErr_L_m.cast <float> ();
+  y.segment(3, 3) = vErr_L_mps;
 
-// returns the INS latitude, rad
-double uNavINS::getLatitude_rad() {
-  return lat_ins;
-}
+  // Innovation covariance
+  Matrix<float,6,6> S;
+  S.setZero();
+  S = H_ * P_ * H_.transpose() + R_;
 
-// returns the INS longitude, rad
-double uNavINS::getLongitude_rad() {
-  return lon_ins;
-}
+  // Kalman gain
+  Matrix<float,15,6> K;
+  K.setZero();
+  K = P_ * H_.transpose() * S.inverse();
 
-// returns the INS altitude, m
-double uNavINS::getAltitude_m() {
-  return alt_ins;
-}
+  // Covariance update, P = (I + K * H) * P * (I + K * H)' + K * R * K'
+  P_ = (I15 - K * H_) * P_ * (I15 - K * H_).transpose() + K * R_ * K.transpose();
 
-// returns the INS north velocity, m/s
-double uNavINS::getVelNorth_ms() {
-  return vn_ins;
-}
+  // State update, x = K * y
+  Matrix<float, 15, 1> x = K * y;
 
-// returns the INS east velocity, m/s
-double uNavINS::getVelEast_ms() {
-  return ve_ins;
-}
+  // Pull apart x terms to update the Position, velocity, orientation, and sensor biases
+  Vector3f pDeltaEst_D = x.segment(0, 3); // Position Deltas in LLA
+  Vector3f vDeltaEst_L = x.segment(3, 3); // Velocity Deltas in NED
+  Vector3f quatDelta = x.segment(6, 3); // Quaternion Delta
+  Vector3f aBiasDelta = x.segment(9, 3); // Accel Bias Deltas
+  Vector3f wBiasDelta = x.segment(12, 3); // w Bias Deltas
 
-// returns the INS down velocity, m/s
-double uNavINS::getVelDown_ms() {
-  return vd_ins;
-}
+  // Position update
+  double Rew, Rns;
+  EarthRadiusUpdate(pEst_D_rrm_(0), &Rew, &Rns);
 
-// returns the INS ground track, rad
-float uNavINS::getGroundTrack_rad() {
-  return atan2f((float)ve_ins,(float)vn_ins);
-}
+  pEst_D_rrm_(2) += -pDeltaEst_D(2);
+  pEst_D_rrm_(0) += pDeltaEst_D(0) / (Rew + pEst_D_rrm_(2));
+  pEst_D_rrm_(1) += pDeltaEst_D(1) / (Rns + pEst_D_rrm_(2)) / cos(pEst_D_rrm_(0));
 
-// returns the gyro bias estimate in the x direction, rad/s
-float uNavINS::getGyroBiasX_rads() {
-  return gbx;
-}
+  // Velocity update
+  vEst_L_mps_ += vDeltaEst_L;
 
-// returns the gyro bias estimate in the y direction, rad/s
-float uNavINS::getGyroBiasY_rads() {
-  return gby;
-}
+  // Attitude correction
+  Vector4f dQuat_BL = Vector4f::Zero();
+  dQuat_BL(0) = 1.0f;
+  dQuat_BL.segment(1, 3) = quatDelta;
+  quat_BL_ = QuatMult(quat_BL_, dQuat_BL);
+  quat_BL_.normalize();
 
-// returns the gyro bias estimate in the z direction, rad/s
-float uNavINS::getGyroBiasZ_rads() {
-  return gbz;
-}
-
-// returns the accel bias estimate in the x direction, m/s/s
-float uNavINS::getAccelBiasX_mss() {
-  return abx;
-}
-
-// returns the accel bias estimate in the y direction, m/s/s
-float uNavINS::getAccelBiasY_mss() {
-  return aby;
-}
-
-// returns the accel bias estimate in the z direction, m/s/s
-float uNavINS::getAccelBiasZ_mss() {
-  return abz;
-}
-
-// This function gives a skew symmetric matrix from a given vector w
-Eigen::Matrix<float,3,3> uNavINS::sk(Eigen::Matrix<float,3,1> w) {
-  Eigen::Matrix<float,3,3> C;
-  C(0,0) = 0.0f;    C(0,1) = -w(2,0); C(0,2) = w(1,0);
-  C(1,0) = w(2,0);  C(1,1) = 0.0f;    C(1,2) = -w(0,0);
-  C(2,0) = -w(1,0); C(2,1) = w(0,0);  C(2,2) = 0.0f;
-  return C;
-}
-
-// This function calculates the rate of change of latitude, longitude, and altitude.
-Eigen::Matrix<double,3,1> uNavINS::llarate(Eigen::Matrix<double,3,1> V,Eigen::Matrix<double,3,1> lla) {
-  double Rew, Rns, denom;
-  Eigen::Matrix<double,3,1> lla_dot;
-
-  denom = (1.0 - (ECC2 * pow(sin(lla(0,0)),2.0)));
-  denom = sqrt(denom*denom);
-
-  Rew = EARTH_RADIUS / sqrt(denom);
-  Rns = EARTH_RADIUS*(1.0-ECC2) / denom*sqrt(denom);
-
-  lla_dot(0,0) = V(0,0)/(Rns + lla(2,0));
-  lla_dot(1,0) = V(1,0)/((Rew + lla(2,0))*cos(lla(0,0)));
-  lla_dot(2,0) = -V(2,0);
-
-  return lla_dot;
-}
-
-// This function calculates the ECEF Coordinate given the Latitude, Longitude and Altitude.
-Eigen::Matrix<double,3,1> uNavINS::lla2ecef(Eigen::Matrix<double,3,1> lla) {
-  double Rew, denom;
-  Eigen::Matrix<double,3,1> ecef;
-
-  denom = (1.0 - (ECC2 * pow(sin(lla(0,0)),2.0)));
-  denom = sqrt(denom*denom);
-
-  Rew = EARTH_RADIUS / sqrt(denom);
-
-  ecef(0,0) = (Rew + lla(2,0)) * cos(lla(0,0)) * cos(lla(1,0));
-  ecef(1,0) = (Rew + lla(2,0)) * cos(lla(0,0)) * sin(lla(1,0));
-  ecef(2,0) = (Rew * (1.0 - ECC2) + lla(2,0)) * sin(lla(0,0));
-
-  return ecef;
-}
-
-// This function converts a vector in ecef to ned coordinate centered at pos_ref.
-Eigen::Matrix<double,3,1> uNavINS::ecef2ned(Eigen::Matrix<double,3,1> ecef,Eigen::Matrix<double,3,1> pos_ref) {
-  Eigen::Matrix<double,3,1> ned;
-  ned(2,0)=-cos(pos_ref(0,0))*cos(pos_ref(1,0))*ecef(0,0)-cos(pos_ref(0,0))*sin(pos_ref(1,0))*ecef(1,0)-sin(pos_ref(0,0))*ecef(2,0);
-  ned(1,0)=-sin(pos_ref(1,0))*ecef(0,0) + cos(pos_ref(1,0))*ecef(1,0);
-  ned(0,0)=-sin(pos_ref(0,0))*cos(pos_ref(1,0))*ecef(0,0)-sin(pos_ref(0,0))*sin(pos_ref(1,0))*ecef(1,0)+cos(pos_ref(0,0))*ecef(2,0);
-  return ned;
-}
-
-// quaternion to dcm
-Eigen::Matrix<float,3,3> uNavINS::quat2dcm(Eigen::Matrix<float,4,1> q) {
-  Eigen::Matrix<float,3,3> C_N2B;
-  C_N2B(0,0) = 2.0f*powf(q(0,0),2.0f)-1.0f + 2.0f*powf(q(1,0),2.0f);
-  C_N2B(1,1) = 2.0f*powf(q(0,0),2.0f)-1.0f + 2.0f*powf(q(2,0),2.0f);
-  C_N2B(2,2) = 2.0f*powf(q(0,0),2.0f)-1.0f + 2.0f*powf(q(3,0),2.0f);
-
-  C_N2B(0,1) = 2.0f*q(1,0)*q(2,0) + 2.0f*q(0,0)*q(3,0);
-  C_N2B(0,2) = 2.0f*q(1,0)*q(3,0) - 2.0f*q(0,0)*q(2,0);
-
-  C_N2B(1,0) = 2.0f*q(1,0)*q(2,0) - 2.0f*q(0,0)*q(3,0);
-  C_N2B(1,2) = 2.0f*q(2,0)*q(3,0) + 2.0f*q(0,0)*q(1,0);
-
-  C_N2B(2,0) = 2.0f*q(1,0)*q(3,0) + 2.0f*q(0,0)*q(2,0);
-  C_N2B(2,1) = 2.0f*q(2,0)*q(3,0) - 2.0f*q(0,0)*q(1,0);
-  return C_N2B;
-}
-
-// quaternion multiplication
-Eigen::Matrix<float,4,1> uNavINS::qmult(Eigen::Matrix<float,4,1> p, Eigen::Matrix<float,4,1> q) {
-  Eigen::Matrix<float,4,1> r;
-  r(0,0) = p(0,0)*q(0,0) - (p(1,0)*q(1,0) + p(2,0)*q(2,0) + p(3,0)*q(3,0));
-  r(1,0) = p(0,0)*q(1,0) + q(0,0)*p(1,0) + p(2,0)*q(3,0) - p(3,0)*q(2,0);
-  r(2,0) = p(0,0)*q(2,0) + q(0,0)*p(2,0) + p(3,0)*q(1,0) - p(1,0)*q(3,0);
-  r(3,0) = p(0,0)*q(3,0) + q(0,0)*p(3,0) + p(1,0)*q(2,0) - p(2,0)*q(1,0);
-  return r;
-}
-
-// bound yaw angle between -180 and 180
-float uNavINS::constrainAngle180(float dta) {
-  if(dta >  M_PI) dta -= (M_PI*2.0f);
-  if(dta < -M_PI) dta += (M_PI*2.0f);
-  return dta;
-}
-
-// bound heading angle between 0 and 360
-float uNavINS::constrainAngle360(float dta){
-  dta = fmod(dta,2.0f*M_PI);
-  if (dta < 0)
-    dta += 2.0f*M_PI;
-  return dta;
+  // Update biases from states
+  aBias_mps2_ += aBiasDelta;
+  wBias_rps_ += wBiasDelta;
 }

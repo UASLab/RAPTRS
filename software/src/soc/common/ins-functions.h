@@ -41,38 +41,26 @@ class Ekf15StateIns: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-    struct Config {
-      ElementPtr t;
-      ElementPtr GpsTow;
-      ElementPtr GpsFix;
-      ElementPtr GpsVn, GpsVe, GpsVd;
-      ElementPtr GpsLat, GpsLon, GpsAlt;
-      ElementPtr ImuGx, ImuGy, ImuGz;
-      ElementPtr ImuAx, ImuAy, ImuAz;
-      ElementPtr ImuHx, ImuHy, ImuHz;
-    };
-    struct Data {
-      ElementPtr Mode;
-      ElementPtr Fix;
-      ElementPtr Ax, Ay, Az;
-      ElementPtr Gx, Gy, Gz;
-      ElementPtr Axb, Ayb, Azb;
-      ElementPtr Gxb, Gyb, Gzb;
-      ElementPtr Pitch, Roll, Yaw, Heading, Track;
-      ElementPtr Lat, Lon, Alt;
-      ElementPtr Vn, Ve, Vd;
-    };
-    Config config_;
-    Data data_;
-    bool Initialized_ = false;
-    std::string ModeKey_;
-    std::string FixKey_;
-    std::string AxKey_,AyKey_,AzKey_;
-    std::string GxKey_,GyKey_,GzKey_;
-    std::string AxbKey_,AybKey_,AzbKey_;
-    std::string GxbKey_,GybKey_,GzbKey_;
-    std::string PitchKey_,RollKey_,YawKey_,HeadingKey_,TrackKey_;
-    std::string LatKey_,LonKey_,AltKey_;
-    std::string VnKey_,VeKey_,VdKey_;
+    ElementPtr time_node;
+    ElementPtr GpsTow, GpsFix;
+    ElementPtr GpsVn, GpsVe, GpsVd;
+    ElementPtr GpsLat, GpsLon, GpsAlt;
+    ElementPtr ImuGx, ImuGy, ImuGz;
+    ElementPtr ImuAx, ImuAy, ImuAz;
+    ElementPtr ImuHx, ImuHy, ImuHz;
+
+    ElementPtr Mode_node, Fix;
+    ElementPtr Ax, Ay, Az;
+    ElementPtr Gx, Gy, Gz;
+    ElementPtr Axb, Ayb, Azb;
+    ElementPtr Gxb, Gyb, Gzb;
+    ElementPtr Pitch, Roll, Heading, Track;
+    ElementPtr Lat, Lon, Alt;
+    ElementPtr Vn, Ve, Vd;
+
     uNavINS uNavINS_;
+    bool Initialized_ = false;
+    Vector3d pGpsMeas_D_rrm;
+    Vector3f vGpsMeas_L_mps;
+    Vector3f gyroMeas_rps, accelMeas_mps2, magMeas;
 };

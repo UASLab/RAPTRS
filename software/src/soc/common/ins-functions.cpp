@@ -22,36 +22,37 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemP
     std::string LatKey = GpsKey+"/Latitude_rad";
     std::string LonKey = GpsKey+"/Longitude_rad";
     std::string AltKey = GpsKey+"/Altitude_m";
-    config_.GpsFix = deftree.getElement(FixKey);
-    if ( !config_.GpsFix ) {
+
+    GpsFix = deftree.getElement(FixKey);
+    if ( !GpsFix ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS fix source ")+FixKey+std::string(" not found in global data."));
     }
-    config_.GpsTow = deftree.getElement(TowKey);
-    if ( !config_.GpsTow ) {
+    GpsTow = deftree.getElement(TowKey);
+    if ( !GpsTow ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS TOW source ")+TowKey+std::string(" not found in global data."));
     }
-    config_.GpsVn = deftree.getElement(VnKey);
-    if ( !config_.GpsVn ) {
+    GpsVn = deftree.getElement(VnKey);
+    if ( !GpsVn ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS north velocity source ")+VnKey+std::string(" not found in global data."));
     }
-    config_.GpsVe = deftree.getElement(VeKey);
-    if ( !config_.GpsVe ) {
+    GpsVe = deftree.getElement(VeKey);
+    if ( !GpsVe ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS east velocity source ")+VeKey+std::string(" not found in global data."));
     }
-    config_.GpsVd = deftree.getElement(VdKey);
-    if ( !config_.GpsVd ) {
+    GpsVd = deftree.getElement(VdKey);
+    if ( !GpsVd ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS down velocity source ")+VdKey+std::string(" not found in global data."));
     }
-    config_.GpsLat = deftree.getElement(LatKey);
-    if ( ! config_.GpsLat ) {
+    GpsLat = deftree.getElement(LatKey);
+    if ( ! GpsLat ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS latitude source ")+LatKey+std::string(" not found in global data."));
     }
-    config_.GpsLon = deftree.getElement(LonKey);
-    if ( !config_.GpsLon ) {
+    GpsLon = deftree.getElement(LonKey);
+    if ( !GpsLon ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS longitude source ")+LonKey+std::string(" not found in global data."));
     }
-    config_.GpsAlt = deftree.getElement(AltKey);
-    if ( !config_.GpsAlt ) {
+    GpsAlt = deftree.getElement(AltKey);
+    if ( !GpsAlt ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": GPS altitude source ")+AltKey+std::string(" not found in global data."));
     }
   } else {
@@ -69,148 +70,149 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemP
     std::string HxKey = ImuKey+"/MagX_uT";
     std::string HyKey = ImuKey+"/MagY_uT";
     std::string HzKey = ImuKey+"/MagZ_uT";
-    config_.ImuGx = deftree.getElement(GxKey);
-    if ( !config_.ImuGx ) {
+    ImuGx = deftree.getElement(GxKey);
+    if ( !ImuGx ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": X gyro source ")+GxKey+std::string(" not found in global data."));
     }
-    config_.ImuGy = deftree.getElement(GyKey);
-    if ( !config_.ImuGy ) {
+    ImuGy = deftree.getElement(GyKey);
+    if ( !ImuGy ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Y gyro source ")+GyKey+std::string(" not found in global data."));
     }
-    config_.ImuGz = deftree.getElement(GzKey);
-    if ( !config_.ImuGz ) {
+    ImuGz = deftree.getElement(GzKey);
+    if ( !ImuGz ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Z gyro source ")+GzKey+std::string(" not found in global data."));
     }
-    config_.ImuAx = deftree.getElement(AxKey);
-    if ( !config_.ImuAx ) {
+    ImuAx = deftree.getElement(AxKey);
+    if ( !ImuAx ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": X accelerometer source ")+AxKey+std::string(" not found in global data."));
     }
-    config_.ImuAy = deftree.getElement(AyKey);
-    if ( !config_.ImuAy ) {
+    ImuAy = deftree.getElement(AyKey);
+    if ( !ImuAy ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Y accelerometer source ")+AyKey+std::string(" not found in global data."));
     }
-    config_.ImuAz = deftree.getElement(AzKey);
-    if ( !config_.ImuAz ) {
+    ImuAz = deftree.getElement(AzKey);
+    if ( !ImuAz ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Z accelerometer source ")+AzKey+std::string(" not found in global data."));
     }
-    config_.ImuHx = deftree.getElement(HxKey);
-    if ( !config_.ImuHx ) {
+    ImuHx = deftree.getElement(HxKey);
+    if ( !ImuHx ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": X magnetometer source ")+HxKey+std::string(" not found in global data."));
     }
-    config_.ImuHy = deftree.getElement(HyKey);
-    if ( !config_.ImuHy ) {
+    ImuHy = deftree.getElement(HyKey);
+    if ( !ImuHy ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Y magnetometer source ")+HyKey+std::string(" not found in global data."));
     }
-    config_.ImuHz = deftree.getElement(HzKey);
-    if ( !config_.ImuHz ) {
+    ImuHz = deftree.getElement(HzKey);
+    if ( !ImuHz ) {
       throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Z magnetometer source ")+HzKey+std::string(" not found in global data."));
     }
   } else {
     throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": IMU source not specified in configuration."));
   }
+
   // get time source
-  if (Config.HasMember("Time")) {
-    std::string TimeKey = Config["Time"].GetString();
-    config_.t = deftree.getElement(TimeKey);
-    if ( !config_.t ) {
-      throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(":Time source ")+TimeKey+std::string(" not found in global data."));
-    }
-  } else {
-    throw std::runtime_error(std::string("ERROR")+SystemPath+std::string(": Time source not specified in configuration."));
-  }
-  // get error characteristic config
-  if (Config.HasMember("Config")) {
-    if (Config["Config"].HasMember("sig-w-a")){
-      uNavINS_.setSig_W_A(Config["Config"]["sig-w-a"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-w-g")){
-      uNavINS_.setSig_W_G(Config["Config"]["sig-w-g"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-a-d")){
-      uNavINS_.setSig_A_D(Config["Config"]["sig-a-d"].GetFloat());
-    }
-    if (Config["Config"].HasMember("tau-a")){
-      uNavINS_.setTau_A(Config["Config"]["tau-a"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-g-d")){
-      uNavINS_.setSig_G_D(Config["Config"]["sig-g-d"].GetFloat());
-    }
-    if (Config["Config"].HasMember("tau-g")){
-      uNavINS_.setTau_G(Config["Config"]["tau-g"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-gps-p-ne")){
-      uNavINS_.setSig_GPS_P_NE(Config["Config"]["sig-gps-p-ne"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-gps-p-d")){
-      uNavINS_.setSig_GPS_P_D(Config["Config"]["sig-gps-p-d"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-gps-v-ne")){
-      uNavINS_.setSig_GPS_V_NE(Config["Config"]["sig-gps-v-ne"].GetFloat());
-    }
-    if (Config["Config"].HasMember("sig-gps-v-d")){
-      uNavINS_.setSig_GPS_V_D(Config["Config"]["sig-gps-v-d"].GetFloat());
-    }
-  }
+  std::string TimeKey;
+  LoadInput(Config, SystemPath, "Time", &time_node, &TimeKey);
+
+  float InitTime = 0;
+  LoadVal(Config, "Initialization-Time", &InitTime);
+
+  // Get EKF Configurable parameters
+  // none of the values should be negative - FIXIT
+  float val;
+  // Accel
+  val = 0; LoadVal(Config, "AccelNoise", &val);
+  if (val > 0) uNavINS_.Set_AccelNoise(val);
+
+  val = 0; LoadVal(Config, "AccelMarkov", &val);
+  if (val > 0) uNavINS_.Set_AccelMarkov(val);
+
+  val = 0; LoadVal(Config, "AccelTau", &val);
+  if (val > 0) uNavINS_.Set_AccelTau(val);
+
+  // Gyro
+  val = 0; LoadVal(Config, "GyroNoise", &val);
+  if (val > 0) uNavINS_.Set_GyroNoise(val);
+
+  val = 0; LoadVal(Config, "GyroMarkov", &val);
+  if (val > 0) uNavINS_.Set_GyroMarkov(val);
+
+  val = 0; LoadVal(Config, "GyroTau", &val);
+  if (val > 0) uNavINS_.Set_GyroTau(val);
+
+  // GPS Position
+  val = 0; LoadVal(Config, "GpsPosNoiseNE", &val);
+  if (val > 0) uNavINS_.Set_GpsPosNoiseNE(val);
+
+  val = 0; LoadVal(Config, "GpsPosNoiseD", &val);
+  if (val > 0) uNavINS_.Set_GpsPosNoiseD(val);
+
+  // GPS Velocity
+  val = 0; LoadVal(Config, "GpsVelNoiseNE", &val);
+  if (val > 0) uNavINS_.Set_GpsVelNoiseNE(val);
+
+  val = 0; LoadVal(Config, "GpsVelNoiseD", &val);
+  if (val > 0) uNavINS_.Set_GpsVelNoiseD(val);
+
   // pointer to log run mode data
-  ModeKey_ = SystemPath+"/Mode";
-  data_.Mode = deftree.initElement(ModeKey_,"Run mode", LOG_UINT8, LOG_NONE);
-  data_.Mode->setInt(kStandby);
+  Mode_node = deftree.initElement(SystemPath+"/Mode","Run mode", LOG_UINT8, LOG_NONE);
+  Mode_node->setInt(kStandby);
 
   // pointers to log data
-  AxKey_ = SystemPath+"/AccelX_mss";
-  data_.Ax = deftree.initElement(AxKey_, "X accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
-  AxbKey_ = SystemPath+"/AccelXBias_mss";
-  data_.Axb = deftree.initElement(AxbKey_, "X accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  AyKey_ = SystemPath+"/AccelY_mss";
-  data_.Ay = deftree.initElement(AyKey_, "Y accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
-  AybKey_ = SystemPath+"/AccelYBias_mss";
-  data_.Ayb = deftree.initElement(AybKey_, "Y accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  AzKey_ = SystemPath+"/AccelZ_mss";
-  data_.Az = deftree.initElement(AzKey_, "Z accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
-  AzbKey_ = SystemPath+"/AccelZBias_mss";
-  data_.Azb = deftree.initElement(AzbKey_, "Z accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  GxKey_ = SystemPath+"/GyroX_rads";
-  data_.Gx = deftree.initElement(GxKey_, "X gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  GxbKey_ = SystemPath+"/GyroXBias_rads";
-  data_.Gxb = deftree.initElement(GxbKey_, "X gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  GyKey_ = SystemPath+"/GyroY_rads";
-  data_.Gy = deftree.initElement(GyKey_, "Y gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  GybKey_ = SystemPath+"/GyroYBias_rads";
-  data_.Gyb = deftree.initElement(GybKey_, "Y gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  GzKey_ = SystemPath+"/GyroZ_rads";
-  data_.Gz = deftree.initElement(GzKey_, "Z gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  GzbKey_ = SystemPath+"/GyroZBias_rads";
-  data_.Gzb = deftree.initElement(GzbKey_, "Z gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  PitchKey_ = SystemPath+"/Pitch_rad";
-  data_.Pitch = deftree.initElement(PitchKey_, "Pitch, rad", LOG_FLOAT, LOG_NONE);
-  RollKey_ = SystemPath+"/Roll_rad";
-  data_.Roll = deftree.initElement(RollKey_, "Roll, rad", LOG_FLOAT, LOG_NONE);
-  YawKey_ = SystemPath+"/Yaw_rad";
-  data_.Yaw = deftree.initElement(YawKey_, "Yaw, rad", LOG_FLOAT, LOG_NONE);
-  HeadingKey_ = SystemPath+"/Heading_rad";
-  data_.Heading = deftree.initElement(HeadingKey_, "Heading, rad", LOG_FLOAT, LOG_NONE);
-  TrackKey_ = SystemPath+"/Track_rad";
-  data_.Track = deftree.initElement(TrackKey_, "Track, rad", LOG_FLOAT, LOG_NONE);
-  LatKey_ = SystemPath+"/Latitude_rad";
-  data_.Lat = deftree.initElement(LatKey_, "Latitude, rad", LOG_DOUBLE, LOG_NONE);
-  LonKey_ = SystemPath+"/Longitude_rad";
-  data_.Lon = deftree.initElement(LonKey_, "Longitude, rad", LOG_DOUBLE, LOG_NONE);
-  AltKey_ = SystemPath+"/Altitude_m";
-  data_.Alt = deftree.initElement(AltKey_, "Altitude, m", LOG_FLOAT, LOG_NONE);
-  VnKey_ = SystemPath+"/NorthVelocity_ms";
-  data_.Vn = deftree.initElement(VnKey_, "North velocity, m/s", LOG_FLOAT, LOG_NONE);
-  VeKey_ = SystemPath+"/EastVelocity_ms";
-  data_.Ve = deftree.initElement(VeKey_, "East velocity, m/s", LOG_FLOAT, LOG_NONE);
-  VdKey_ = SystemPath+"/DownVelocity_ms";
-  data_.Vd = deftree.initElement(VdKey_, "Down velocity, m/s", LOG_FLOAT, LOG_NONE);
-  FixKey_ = SystemPath+"/Fix";
-  data_.Fix = deftree.initElement(FixKey_, "GPS fix", LOG_UINT8, LOG_NONE);
+  Ax = deftree.initElement(SystemPath+"/AccelX_mss", "X accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
+  Axb = deftree.initElement(SystemPath+"/AccelXBias_mss", "X accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
+  Ay = deftree.initElement(SystemPath+"/AccelY_mss", "Y accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
+  Ayb = deftree.initElement(SystemPath+"/AccelYBias_mss", "Y accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
+  Az = deftree.initElement(SystemPath+"/AccelZ_mss", "Z accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
+  Azb = deftree.initElement(SystemPath+"/AccelZBias_mss", "Z accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
+  Gx = deftree.initElement(SystemPath+"/GyroX_rads", "X gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
+  Gxb = deftree.initElement(SystemPath+"/GyroXBias_rads", "X gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
+  Gy = deftree.initElement(SystemPath+"/GyroY_rads", "Y gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
+  Gyb = deftree.initElement(SystemPath+"/GyroYBias_rads", "Y gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
+  Gz = deftree.initElement(SystemPath+"/GyroZ_rads", "Z gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
+  Gzb = deftree.initElement(SystemPath+"/GyroZBias_rads", "Z gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
+  Pitch = deftree.initElement(SystemPath+"/Pitch_rad", "Pitch, rad", LOG_FLOAT, LOG_NONE);
+  Roll = deftree.initElement(SystemPath+"/Roll_rad", "Roll, rad", LOG_FLOAT, LOG_NONE);
+  Heading = deftree.initElement(SystemPath+"/Heading_rad", "Heading, rad", LOG_FLOAT, LOG_NONE);
+  Lat = deftree.initElement(SystemPath+"/Latitude_rad", "Latitude, rad", LOG_DOUBLE, LOG_NONE);
+  Lon = deftree.initElement(SystemPath+"/Longitude_rad", "Longitude, rad", LOG_DOUBLE, LOG_NONE);
+  Alt = deftree.initElement(SystemPath+"/Altitude_m", "Altitude, m", LOG_FLOAT, LOG_NONE);
+  Vn = deftree.initElement(SystemPath+"/NorthVelocity_ms", "North velocity, m/s", LOG_FLOAT, LOG_NONE);
+  Ve = deftree.initElement(SystemPath+"/EastVelocity_ms", "East velocity, m/s", LOG_FLOAT, LOG_NONE);
+  Vd = deftree.initElement(SystemPath+"/DownVelocity_ms", "Down velocity, m/s", LOG_FLOAT, LOG_NONE);
+  Track = deftree.initElement(SystemPath+"/Track_rad", "Track, rad", LOG_FLOAT, LOG_NONE);
+  Fix = deftree.initElement(SystemPath+"/Fix", "GPS fix", LOG_UINT8, LOG_NONE);
+
+  uNavINS_.Configure();
 }
 
 void Ekf15StateIns::Initialize() {
-  if ( config_.GpsFix->getInt() && !Initialized_ ) {
-    uNavINS_.update(config_.t->getLong(),config_.GpsTow->getInt(),config_.GpsVn->getFloat(),config_.GpsVe->getFloat(),config_.GpsVd->getFloat(),config_.GpsLat->getDouble(),config_.GpsLon->getDouble(),config_.GpsAlt->getFloat(),config_.ImuGx->getFloat(),config_.ImuGy->getFloat(),config_.ImuGz->getFloat(),config_.ImuAx->getFloat(),config_.ImuAy->getFloat(),config_.ImuAz->getFloat(),config_.ImuHx->getFloat(),config_.ImuHy->getFloat(),config_.ImuHz->getFloat());
-    if (uNavINS_.initialized()) {
+  if ( GpsFix->getInt() && !Initialized_ ) {
+
+    pGpsMeas_D_rrm(0) = GpsLat->getDouble();
+    pGpsMeas_D_rrm(1) = GpsLon->getDouble();
+    pGpsMeas_D_rrm(2) = GpsAlt->getDouble();
+
+    vGpsMeas_L_mps(0) = GpsVn->getFloat();
+    vGpsMeas_L_mps(1) = GpsVe->getFloat();
+    vGpsMeas_L_mps(2) = GpsVd->getFloat();
+
+    gyroMeas_rps(0) = ImuGx->getFloat();
+    gyroMeas_rps(1) = ImuGy->getFloat();
+    gyroMeas_rps(2) = ImuGz->getFloat();
+
+    accelMeas_mps2(0) = ImuAx->getFloat();
+    accelMeas_mps2(1) = ImuAy->getFloat();
+    accelMeas_mps2(2) = ImuAz->getFloat();
+
+    magMeas(0) = ImuHx->getFloat();
+    magMeas(1) = ImuHy->getFloat();
+    magMeas(2) = ImuHz->getFloat();
+
+    // Call uNav Initialize
+    uNavINS_.Initialize(gyroMeas_rps, accelMeas_mps2, magMeas, pGpsMeas_D_rrm, vGpsMeas_L_mps);
+
+    if (uNavINS_.Initialized()) {
       Initialized_ = true;
       cout << "EKF INITIALIZED" << endl;
     }
@@ -222,109 +224,101 @@ bool Ekf15StateIns::Initialized() {
 }
 
 void Ekf15StateIns::Run(Mode mode) {
-  data_.Mode->setInt(mode);
-  data_.Fix->setInt(config_.GpsFix->getInt());
+  Mode_node->setInt(mode);
+  Fix->setInt(GpsFix->getInt());
+
   if (mode!=kStandby) {
-    uNavINS_.update(config_.t->getLong(),config_.GpsTow->getInt(),config_.GpsVn->getFloat(),config_.GpsVe->getFloat(),config_.GpsVd->getFloat(),config_.GpsLat->getDouble(),config_.GpsLon->getDouble(),config_.GpsAlt->getFloat(),config_.ImuGx->getFloat(),config_.ImuGy->getFloat(),config_.ImuGz->getFloat(),config_.ImuAx->getFloat(),config_.ImuAy->getFloat(),config_.ImuAz->getFloat(),config_.ImuHx->getFloat(),config_.ImuHy->getFloat(),config_.ImuHz->getFloat());
-    data_.Axb->setFloat(uNavINS_.getAccelBiasX_mss());
-    data_.Ayb->setFloat(uNavINS_.getAccelBiasY_mss());
-    data_.Azb->setFloat(uNavINS_.getAccelBiasZ_mss());
-    data_.Gxb->setFloat(uNavINS_.getGyroBiasX_rads());
-    data_.Gyb->setFloat(uNavINS_.getGyroBiasY_rads());
-    data_.Gzb->setFloat(uNavINS_.getGyroBiasZ_rads());
-    data_.Pitch->setFloat(uNavINS_.getPitch_rad());
-    data_.Roll->setFloat(uNavINS_.getRoll_rad());
-    data_.Yaw->setFloat(uNavINS_.getYaw_rad());
-    data_.Heading->setFloat(uNavINS_.getHeading_rad());
-    data_.Track->setFloat(uNavINS_.getGroundTrack_rad());
-    data_.Lat->setDouble(uNavINS_.getLatitude_rad());
-    data_.Lon->setDouble(uNavINS_.getLongitude_rad());
-    data_.Alt->setFloat(uNavINS_.getAltitude_m());
-    data_.Vn->setFloat(uNavINS_.getVelNorth_ms());
-    data_.Ve->setFloat(uNavINS_.getVelEast_ms());
-    data_.Vd->setFloat(uNavINS_.getVelDown_ms());
-    data_.Ax->setFloat(config_.ImuAx->getFloat() - data_.Axb->getFloat());
-    data_.Ay->setFloat(config_.ImuAy->getFloat() - data_.Ayb->getFloat());
-    data_.Az->setFloat(config_.ImuAz->getFloat() - data_.Azb->getFloat());
-    data_.Gx->setFloat(config_.ImuGx->getFloat() - data_.Gxb->getFloat());
-    data_.Gy->setFloat(config_.ImuGy->getFloat() - data_.Gyb->getFloat());
-    data_.Gz->setFloat(config_.ImuGz->getFloat() - data_.Gzb->getFloat());
+
+    gyroMeas_rps(0) = ImuGx->getFloat();
+    gyroMeas_rps(1) = ImuGy->getFloat();
+    gyroMeas_rps(2) = ImuGz->getFloat();
+
+    accelMeas_mps2(0) = ImuAx->getFloat();
+    accelMeas_mps2(1) = ImuAy->getFloat();
+    accelMeas_mps2(2) = ImuAz->getFloat();
+
+    magMeas(0) = ImuHx->getFloat();
+    magMeas(1) = ImuHy->getFloat();
+    magMeas(2) = ImuHz->getFloat();
+
+    pGpsMeas_D_rrm(0) = GpsLat->getDouble();
+    pGpsMeas_D_rrm(1) = GpsLon->getDouble();
+    pGpsMeas_D_rrm(2) = GpsAlt->getDouble();
+
+    vGpsMeas_L_mps(0) = GpsVn->getFloat();
+    vGpsMeas_L_mps(1) = GpsVe->getFloat();
+    vGpsMeas_L_mps(2) = GpsVd->getFloat();
+
+    // Call uNav Update
+    uNavINS_.Update(time_node->getLong(), GpsTow->getInt(), gyroMeas_rps, accelMeas_mps2, magMeas, pGpsMeas_D_rrm, vGpsMeas_L_mps);
+
+    // Accels
+    Vector3f aEst_mps2 = uNavINS_.Get_AccelEst();
+    Ax->setFloat(aEst_mps2(0));
+    Ay->setFloat(aEst_mps2(1));
+    Az->setFloat(aEst_mps2(2));
+
+    Vector3f aBias_mps2 = uNavINS_.Get_AccelBias();
+    Axb->setFloat(aBias_mps2(0));
+    Ayb->setFloat(aBias_mps2(1));
+    Azb->setFloat(aBias_mps2(2));
+
+    // Gyros (Rotation Rate)
+    Vector3f wEst_rps = uNavINS_.Get_RotRateEst();
+    Gx->setFloat(wEst_rps(0));
+    Gy->setFloat(wEst_rps(1));
+    Gz->setFloat(wEst_rps(2));
+
+    Vector3f wBias_rps = uNavINS_.Get_RotRateBias();
+    Gxb->setFloat(wBias_rps(0));
+    Gyb->setFloat(wBias_rps(1));
+    Gzb->setFloat(wBias_rps(2));
+
+    // Orientation
+    Vector3f orientEst_rad = uNavINS_.Get_OrientEst();
+    Roll->setFloat(orientEst_rad(0));
+    Pitch->setFloat(orientEst_rad(1));
+    Heading->setFloat(orientEst_rad(2));
+
+    // Position
+    Vector3d pEst_rrm = uNavINS_.Get_PosEst();
+    Lat->setDouble(pEst_rrm(0));
+    Lon->setDouble(pEst_rrm(1));
+    Alt->setFloat(pEst_rrm(2));
+
+    // Velocity
+    Vector3f vEst_mps = uNavINS_.Get_VelEst();
+    Vn->setFloat(vEst_mps(0));
+    Ve->setFloat(vEst_mps(1));
+    Vd->setFloat(vEst_mps(2));
+
+    // Ground Track
+    Track->setFloat(uNavINS_.Get_Track());
   }
 }
 
 void Ekf15StateIns::Clear() {
-  data_.Mode->setInt(kStandby);
-  data_.Ax->setFloat(0.0f);
-  data_.Ay->setFloat(0.0f);
-  data_.Az->setFloat(0.0f);
-  data_.Gx->setFloat(0.0f);
-  data_.Gy->setFloat(0.0f);
-  data_.Gz->setFloat(0.0f);
-  data_.Axb->setFloat(0.0f);
-  data_.Ayb->setFloat(0.0f);
-  data_.Azb->setFloat(0.0f);
-  data_.Gxb->setFloat(0.0f);
-  data_.Gyb->setFloat(0.0f);
-  data_.Gzb->setFloat(0.0f);
-  data_.Pitch->setFloat(0.0f);
-  data_.Roll->setFloat(0.0f);
-  data_.Yaw->setFloat(0.0f);
-  data_.Heading->setFloat(0.0f);
-  data_.Track->setFloat(0.0f);
-  data_.Lat->setDouble(0);
-  data_.Lon->setDouble(0);
-  data_.Alt->setFloat(0);
-  data_.Vn->setFloat(0);
-  data_.Ve->setFloat(0);
-  data_.Vd->setFloat(0);
-  deftree.Erase(ModeKey_);
-  deftree.Erase(AxKey_);
-  deftree.Erase(AyKey_);
-  deftree.Erase(AzKey_);
-  deftree.Erase(AxbKey_);
-  deftree.Erase(AybKey_);
-  deftree.Erase(AzbKey_);
-  deftree.Erase(GxKey_);
-  deftree.Erase(GyKey_);
-  deftree.Erase(GzKey_);
-  deftree.Erase(GxbKey_);
-  deftree.Erase(GybKey_);
-  deftree.Erase(GzbKey_);
-  deftree.Erase(PitchKey_);
-  deftree.Erase(RollKey_);
-  deftree.Erase(YawKey_);
-  deftree.Erase(HeadingKey_);
-  deftree.Erase(TrackKey_);
-  deftree.Erase(LatKey_);
-  deftree.Erase(LonKey_);
-  deftree.Erase(AltKey_);
-  deftree.Erase(VnKey_);
-  deftree.Erase(VeKey_);
-  deftree.Erase(VdKey_);
-  deftree.Erase(FixKey_);
-  ModeKey_.clear();
-  AxKey_.clear();
-  AyKey_.clear();
-  AzKey_.clear();
-  AxbKey_.clear();
-  AybKey_.clear();
-  AzbKey_.clear();
-  GxKey_.clear();
-  GyKey_.clear();
-  GzKey_.clear();
-  GxbKey_.clear();
-  GybKey_.clear();
-  GzbKey_.clear();
-  PitchKey_.clear();
-  RollKey_.clear();
-  YawKey_.clear();
-  HeadingKey_.clear();
-  TrackKey_.clear();
-  LatKey_.clear();
-  LonKey_.clear();
-  AltKey_.clear();
-  VnKey_.clear();
-  VeKey_.clear();
-  VdKey_.clear();
-  FixKey_.clear();
+  Mode_node->setInt(kStandby);
+  Ax->setFloat(0.0f);
+  Ay->setFloat(0.0f);
+  Az->setFloat(0.0f);
+  Gx->setFloat(0.0f);
+  Gy->setFloat(0.0f);
+  Gz->setFloat(0.0f);
+  Axb->setFloat(0.0f);
+  Ayb->setFloat(0.0f);
+  Azb->setFloat(0.0f);
+  Gxb->setFloat(0.0f);
+  Gyb->setFloat(0.0f);
+  Gzb->setFloat(0.0f);
+  Pitch->setFloat(0.0f);
+  Roll->setFloat(0.0f);
+  Heading->setFloat(0.0f);
+  Lat->setDouble(0);
+  Lon->setDouble(0);
+  Alt->setFloat(0);
+  Vn->setFloat(0);
+  Ve->setFloat(0);
+  Vd->setFloat(0);
+  Track->setFloat(0.0f);
 }
