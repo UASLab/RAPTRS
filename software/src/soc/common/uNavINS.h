@@ -53,7 +53,7 @@ class uNavINS {
     Vector3f Get_OrientEst() { return euler_BL_rad_; }
     Vector3d Get_PosEst() { return pEst_D_rrm_; }
     Vector3f Get_VelEst() { return vEst_L_mps_; }
-    float Get_Track() { return atan2f(vEst_L_mps_(1), vEst_L_mps_(0)); }
+    float Get_Track() { return track_rad; }
 
   private:
     // initialized
@@ -111,6 +111,8 @@ class uNavINS {
     Vector3f wEst_rps_ = Vector3f::Zero(); // Estimated Rotation Rate in Body
     Vector3f vEst_L_mps_ = Vector3f::Zero(); // Estimated Velocity in NED
     Vector3d pEst_D_rrm_ = Vector3d::Zero(); // Estimated Position in LLA (rad, rad, m)
+
+    float track_rad = 0;
 
     // Methods
     void TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2);

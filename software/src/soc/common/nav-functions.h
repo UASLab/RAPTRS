@@ -52,7 +52,7 @@ Vector3d E2D(Vector3d p_E);
 
 // This function converts a vector in ecef to ned coordinate centered at pRef.
 Vector3d E2L(Vector3d p_E, Vector3d pRef_D);
-Matrix3d E2L(Vector3d pRef_D); // Return the T_E2L DCM from the Reference position in Geodetic
+Matrix3d TransE2L(Vector3d pRef_D); // Return the T_E2L DCM from the Reference position in Geodetic
 Vector4d E2L_Quat(Vector3d pRef_D); // Returns the E2L transformation as a quaternion.
 
 // This function gives a skew symmetric matrix from a given vector w
@@ -76,10 +76,10 @@ Vector4d QuatMult(Vector4d quatA, Vector4d quatB);
 Vector4f QuatMult(Vector4f quatA, Vector4f quatB);
 
 // Update the Earth Dimensions
-void EarthRadiusUpdate(double lat, double *Rew, double *Rns);
+void EarthRad(double lat, double *Rew, double *Rns);
 
 // Angle Limits
-double ConstrainAngle180(double dta); // maps angle to +/- 180
-float ConstrainAngle180(float dta); // maps angle to +/- 180
-double ConstrainAngle360(double dta); // maps angle to 0-360
-float ConstrainAngle360(float dta); // maps angle to 0-360
+double WrapToPi(double dta); // maps angle to +/- 180
+float WrapToPi(float dta); // maps angle to +/- 180
+double WrapTo2Pi(double dta); // maps angle to 0-360
+float WrapTo2Pi(float dta); // maps angle to 0-360

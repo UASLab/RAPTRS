@@ -68,7 +68,7 @@ void uNavINS::Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMe
   } else {
     euler_BL_rad_(2) = 3.0f * M_PI / 2.0f - atanf(Bxc / -Byc);
   }
-  euler_BL_rad_(2) = ConstrainAngle180(euler_BL_rad_(2));
+  euler_BL_rad_(2) = WrapToPi(euler_BL_rad_(2));
 
   // Euler to quaternion
   quat_BL_ = Euler2Quat(euler_BL_rad_);
@@ -104,6 +104,7 @@ void uNavINS::Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_rps, 
 
   // Euler angles from quaternion
   euler_BL_rad_ = Quat2Euler(quat_BL_);
+  track_rad = atan2f(vEst_L_mps_(1), vEst_L_mps_(0));
 
   // Post-priori accel and rotation rate estimate
   aEst_mps2_ = aMeas_mps2 - aBias_mps2_;
@@ -173,7 +174,8 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
 // Measurement Update
 void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
   // Position Error, converted to NED
-  Matrix3d T_E2L = E2L(pEst_D_rrm_);
+  // Vector3d pErr_L_m = E2L(D2E(pMeas_D_rrm) - D2E(pEst_D_rrm_), pEst_D_rrm_);
+  Matrix3d T_E2L = TransE2L(pEst_D_rrm_);
   Vector3d pErr_L_m = T_E2L * (D2E(pMeas_D_rrm) - D2E(pEst_D_rrm_));
 
   // Velocity Error
@@ -210,7 +212,7 @@ void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
 
   // Position update
   double Rew, Rns;
-  EarthRadiusUpdate(pEst_D_rrm_(0), &Rew, &Rns);
+  EarthRad(pEst_D_rrm_(0), &Rew, &Rns);
 
   pEst_D_rrm_(2) += -pDeltaEst_D(2);
   pEst_D_rrm_(0) += pDeltaEst_D(0) / (Rew + pEst_D_rrm_(2));

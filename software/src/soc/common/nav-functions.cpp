@@ -11,32 +11,32 @@ Author: Adhika Lie, Gokhan Inalhan, Demoz Gebre, Jung Soon Jang
 // and altitude using WGS-84.
 Vector3d L2D_Rate(Vector3d v_L, Vector3d pRef_D) {
     double Rew, Rns;
-    EarthRadiusUpdate(pRef_D(0), &Rew, &Rns);
+    EarthRad(pRef_D(0), &Rew, &Rns);
 
-    Vector3d v_D;
-    v_D(0) = v_L(0) / (Rns + pRef_D(2));
-    v_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
-    v_D(2) = -v_L(2);
+    Vector3d pDot_D;
+    pDot_D(0) = v_L(0) / (Rns + pRef_D(2));
+    pDot_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
+    pDot_D(2) = -v_L(2);
 
-    return v_D;
+    return pDot_D;
 }
 Vector3f L2D_Rate(Vector3f v_L, Vector3d pRef_D) {
     double Rew, Rns;
-    EarthRadiusUpdate(pRef_D(0), &Rew, &Rns);
+    EarthRad(pRef_D(0), &Rew, &Rns);
 
-    Vector3f v_D;
-    v_D(0) = v_L(0) / (Rns + pRef_D(2));
-    v_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
-    v_D(2) = -v_L(2);
+    Vector3f pDot_D;
+    pDot_D(0) = v_L(0) / (Rns + pRef_D(2));
+    pDot_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
+    pDot_D(2) = -v_L(2);
 
-    return v_D;
+    return pDot_D;
 }
 
 // This function calculates the angular velocity of the NED frame,
 // also known as the navigation rate using WGS-84.
 Vector3d NavRate(Vector3d v_L, Vector3d pRef_D) {
     double Rew, Rns;
-    EarthRadiusUpdate(pRef_D(0), &Rew, &Rns);
+    EarthRad(pRef_D(0), &Rew, &Rns);
 
     Vector3d nr;
     nr(0) = v_L(1) / (Rew + pRef_D(2));
@@ -47,7 +47,7 @@ Vector3d NavRate(Vector3d v_L, Vector3d pRef_D) {
 }
 Vector3f NavRate(Vector3f v_L, Vector3d pRef_D) {
     double Rew, Rns;
-    EarthRadiusUpdate(pRef_D(0), &Rew, &Rns);
+    EarthRad(pRef_D(0), &Rew, &Rns);
 
     Vector3f nr;
     nr(0) = v_L(1) / (Rew + pRef_D(2));
@@ -140,33 +140,18 @@ Vector3d E2D( Vector3d p_E ) {
     return p_D;
 }
 
-// This function converts a vector in ECEF to NED coordinate centered at pRef.
-// FIXIT - CDR - This doesn't appear to work as intended.
-// Vector3d E2L(Vector3d p_E, Vector3d pRef_D) {
-//   Vector3d p_NED;
-//   p_NED(2) = -cos(pRef_D(0)) * (cos(pRef_D(1)) * p_E(0) + sin(pRef_D(1)) * p_E(1)) - sin(pRef_D(0)) * p_E(2);
-//   p_NED(1) = -sin(pRef_D(1)) * p_E(0) + cos(pRef_D(1)) * p_E(1);
-//   p_NED(0) = -sin(pRef_D(0)) * (cos(pRef_D(1)) * p_E(0) + sin(pRef_D(1)) * p_E(1)) + cos(pRef_D(0)) * p_E(2);
-//   return p_NED;
-// }
-
+// Transform a vector in ECEF coord to NED coord centered at pRef.
 Vector3d E2L(Vector3d p_E, Vector3d pRef_D) {
-    Matrix3d T_E2L = E2L(pRef_D);
-    Vector3d p_NED = T_E2L * (p_E - D2E(pRef_D));
-    return p_NED;
+  Vector3d p_NED = TransE2L(pRef_D) * p_E;
+  return p_NED;
 }
 
-Matrix3d E2L(Vector3d pRef_D) {
-    double sin_lat = sin(pRef_D(0));
-    double sin_lon = sin(pRef_D(1));
-    double cos_lat = cos(pRef_D(0));
-    double cos_lon = cos(pRef_D(1));
-
+// Compute the ECEF to NED coordinate transform
+Matrix3d TransE2L(Vector3d pRef_D) {
     Matrix3d T_E2L;
-    T_E2L(0,0) = -sin_lat*cos_lon; T_E2L(1,0) = -sin_lat*sin_lon; T_E2L(2,0) = cos_lat;
-    T_E2L(0,1) = -sin_lon;         T_E2L(1,1) = cos_lon;          T_E2L(2,1) = 0.0f;
-    T_E2L(0,2) = -cos_lat*cos_lat; T_E2L(1,2) = -cos_lat*sin_lon; T_E2L(2,2) = -sin_lat;
-
+    T_E2L(0,0) = -sin(pRef_D(0))*cos(pRef_D(1)); T_E2L(1,0) = -sin(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,0) = cos(pRef_D(0));
+    T_E2L(0,1) = -sin(pRef_D(1));                T_E2L(1,1) = cos(pRef_D(1));                 T_E2L(2,1) = 0.0f;
+    T_E2L(0,2) = -cos(pRef_D(0))*cos(pRef_D(0)); T_E2L(1,2) = -cos(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,2) = -sin(pRef_D(0));
     return T_E2L;
 }
 
@@ -340,7 +325,7 @@ Vector4f QuatMult(Vector4f quatA, Vector4f quatB) {
 }
 
 // Earth Radius Updates
-void EarthRadiusUpdate(double lat, double *Rew, double *Rns) {
+void EarthRad(double lat, double *Rew, double *Rns) {
   double denom = fabs(1.0 - (ECC2 * sin(lat) * sin(lat)));
   double sqrt_denom = sqrt(denom);
 
@@ -349,26 +334,26 @@ void EarthRadiusUpdate(double lat, double *Rew, double *Rns) {
 }
 
 
-// bound yaw angle between -180 and 180
-double ConstrainAngle180(double dta) {
+// bound yaw angle between -pi and pi
+double WrapToPi(double dta) {
   if(dta >  M_PI) dta -= (M_PI * 2.0f);
   if(dta < -M_PI) dta += (M_PI * 2.0f);
   return dta;
 }
-float ConstrainAngle180(float dta) {
+float WrapToPi(float dta) {
   if(dta >  M_PI) dta -= (M_PI * 2.0f);
   if(dta < -M_PI) dta += (M_PI * 2.0f);
   return dta;
 }
 
-// bound heading angle between 0 and 360
-double ConstrainAngle360(double dta){
+// bound heading angle between 0 and 2*pi
+double WrapTo2Pi(double dta){
   dta = fmod(dta, 2.0f * M_PI);
   if (dta < 0)
     dta += 2.0f * M_PI;
   return dta;
 }
-float ConstrainAngle360(float dta){
+float WrapTo2Pi(float dta){
   dta = fmod(dta, 2.0f * M_PI);
   if (dta < 0)
     dta += 2.0f * M_PI;
