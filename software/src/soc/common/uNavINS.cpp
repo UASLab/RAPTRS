@@ -166,13 +166,12 @@ void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double 
       V_ins(2,0) = vd_ins;
       // Position, converted to NED
       pos_ecef_ins = lla2ecef(lla_ins);
-      pos_ned_ins = ecef2ned(pos_ecef_ins,lla_ins);
       pos_ecef_gps = lla2ecef(lla_gps);
-      pos_ned_gps = ecef2ned(pos_ecef_gps,lla_ins);
+      pos_ned_gps = ecef2ned(pos_ecef_gps - pos_ecef_gps, lla_ins);
       // Create measurement Y
-      y(0,0) = (float)(pos_ned_gps(0,0) - pos_ned_ins(0,0));
-      y(1,0) = (float)(pos_ned_gps(1,0) - pos_ned_ins(1,0));
-      y(2,0) = (float)(pos_ned_gps(2,0) - pos_ned_ins(2,0));
+      y(0,0) = (float)(pos_ned_ins(0,0));
+      y(1,0) = (float)(pos_ned_ins(1,0));
+      y(2,0) = (float)(pos_ned_ins(2,0));
       y(3,0) = (float)(V_gps(0,0) - V_ins(0,0));
       y(4,0) = (float)(V_gps(1,0) - V_ins(1,0));
       y(5,0) = (float)(V_gps(2,0) - V_ins(2,0));
