@@ -7,8 +7,18 @@ Author: Adhika Lie, Gokhan Inalhan, Demoz Gebre, Jung Soon Jang
 
 #include "nav-functions.h"
 
-// This function calculates the rate of change of latitude, longitude,
-// and altitude using WGS-84.
+// Reference Frames and Coordinates
+// I - ECI (Earch Center Inertial): origin at Earth center
+// E - ECEF (Earch Center Earth Fixed): origin at Earth center
+// D - Geodetic: origin at Earth center, Uses earth ellisoid definition (example WGS84)
+// G - Geocentric: origin at Earth center, Uses spheroid definition
+// L - Local Level: origin at specified reference, [x- North, y- East, z- Down]
+// B - Body: origin at Body CG, [x- Fwd, y- Starboard, z- Down]
+//
+// All units meters and radians
+
+// Calculate the rate of change of latitude, longitude,
+// and altitude using the velocity in NED coordinates and WGS-84.
 Vector3d L2D_Rate(Vector3d v_L, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
@@ -32,7 +42,7 @@ Vector3f L2D_Rate(Vector3f v_L, Vector3d pRef_D) {
     return pDot_D;
 }
 
-// This function calculates the angular velocity of the NED frame,
+// Calculate the angular velocity of the NED frame,
 // also known as the navigation rate using WGS-84.
 // Rotation rate of the NED frame wrt Geodetic, in NED coordinates.
 Vector3d NavRate(Vector3d v_L, Vector3d pRef_D) {
@@ -58,7 +68,7 @@ Vector3f NavRate(Vector3f v_L, Vector3d pRef_D) {
     return w_LD_L;
 }
 
-// This function calculates the ECEF Coordinate given the
+// Calculates the ECEF Coordinates given the
 // Latitude, Longitude and Altitude.
 Vector3d D2E(Vector3d p_D) {
     double sinlat = sin(p_D(0));
@@ -79,7 +89,7 @@ Vector3d D2E(Vector3d p_D) {
     return p_E;
 }
 
-// This function calculates the Latitude, Longitude and Altitude given
+// Calculate the Latitude, Longitude and Altitude given
 // the ECEF Coordinates.
 Vector3d E2D( Vector3d p_E ) {
     const double Squash = 0.9966471893352525192801545;
@@ -147,7 +157,7 @@ Vector3d E2L(Vector3d p_E, Vector3d pRef_D) {
   return p_NED;
 }
 
-// Compute the ECEF to NED coordinate transform
+// Calculate the ECEF to NED coordinate transform DCM
 Matrix3d TransE2L(Vector3d pRef_D) {
 
   Matrix3d T_E2L;
@@ -161,6 +171,7 @@ Matrix3d TransE2L(Vector3d pRef_D) {
   return T_E2L;
 }
 
+// Calculate the ECEF to NED coordinate transform quaternion
 Quaterniond E2L_Quat(Vector3d pRef_D) {
   double zd2 = 0.5 * pRef_D(1);
   double yd2 = -0.25 * M_PI - 0.5 * pRef_D(0);
@@ -174,7 +185,7 @@ Quaterniond E2L_Quat(Vector3d pRef_D) {
   return quat;
 }
 
-// This function gives a skew symmetric matrix from a given vector w
+// Skew symmetric matrix from a given vector w
 Matrix3d Skew(Vector3d w) {
   Matrix3d C;
 
@@ -224,41 +235,7 @@ Vector3f Quat2Euler(Quaternionf quat) {
   return euler;
 }
 
-// Computes a quaternion from the given euler angles
-Quaterniond Euler2Quat(Vector3d euler) {
-  double sin_psi = sin(0.5f * euler(2));
-  double cos_psi = cos(0.5f * euler(2));
-  double sin_the = sin(0.5f * euler(1));
-  double cos_the = cos(0.5f * euler(1));
-  double sin_phi = sin(0.5f * euler(0));
-  double cos_phi = cos(0.5f * euler(0));
-
-  Quaterniond quat;
-  quat.w() = cos_psi*cos_the*cos_phi + sin_psi*sin_the*sin_phi;
-  quat.x() = cos_psi*cos_the*sin_phi - sin_psi*sin_the*cos_phi;
-  quat.y() = cos_psi*sin_the*cos_phi + sin_psi*cos_the*sin_phi;
-  quat.z() = sin_psi*cos_the*cos_phi - cos_psi*sin_the*sin_phi;
-
-  return quat;
-}
-Quaternionf Euler2Quat(Vector3f euler) {
-  float sin_psi = sin(0.5f * euler(2));
-  float cos_psi = cos(0.5f * euler(2));
-  float sin_the = sin(0.5f * euler(1));
-  float cos_the = cos(0.5f * euler(1));
-  float sin_phi = sin(0.5f * euler(0));
-  float cos_phi = cos(0.5f * euler(0));
-
-  Quaternionf quat;
-  quat.w() = cos_psi*cos_the*cos_phi + sin_psi*sin_the*sin_phi;
-  quat.x() = cos_psi*cos_the*sin_phi - sin_psi*sin_the*cos_phi;
-  quat.y() = cos_psi*sin_the*cos_phi + sin_psi*cos_the*sin_phi;
-  quat.z() = sin_psi*cos_the*cos_phi - cos_psi*sin_the*sin_phi;
-
-  return quat;
-}
-
-// Quaterniond to DCM
+// Quaternion to DCM
 Matrix3d Quat2DCM(Quaterniond quat) {
   Matrix3d T;
 
@@ -297,7 +274,17 @@ Matrix3f Quat2DCM(Quaternionf quat) {
 }
 
 // euler angles (3-2-1) to quaternion
-Quaternionf euler2quat(Vector3f euler) {
+Quaterniond Euler2Quat(Vector3d euler) {
+  Quaterniond quat;
+
+  quat.w() = cos(euler(2) / 2.0f) * cos(euler(1) / 2.0f) * cos(euler(0) / 2.0f) + sin(euler(2) / 2.0f) * sin(euler(1) / 2.0f) * sin(euler(0) / 2.0f);
+  quat.x() = cos(euler(2) / 2.0f) * cos(euler(1) / 2.0f) * sin(euler(0) / 2.0f) - sin(euler(2) / 2.0f) * sin(euler(1) / 2.0f) * cos(euler(0) / 2.0f);
+  quat.y() = cos(euler(2) / 2.0f) * sin(euler(1) / 2.0f) * cos(euler(0) / 2.0f) + sin(euler(2) / 2.0f) * cos(euler(1) / 2.0f) * sin(euler(0) / 2.0f);
+  quat.z() = sin(euler(2) / 2.0f) * cos(euler(1) / 2.0f) * cos(euler(0) / 2.0f) - cos(euler(2) / 2.0f) * sin(euler(1) / 2.0f) * sin(euler(0) / 2.0f);
+
+  return quat;
+}
+Quaternionf Euler2Quat(Vector3f euler) {
   Quaternionf quat;
 
   quat.w() = cosf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) + sinf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);

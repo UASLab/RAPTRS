@@ -1,19 +1,22 @@
 /*
-Updated to be a class, use Eigen, and compile as an Arduino library.
-Added methods to get gyro and accel bias. Added initialization to
-estimated angles rather than assuming IMU is level. Added method to get psi,
-rather than just heading, and ground track.
-
-Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+Copyright (c) 2016 - 2020 Regents of the University of Minnesota and Bolder Flight Systems Inc.
 MIT License; See LICENSE.md for complete details
-Author: Brian Taylor
-*/
+Author: Brian Taylor and Chris Regan
 
-/*
 Addapted from earlier version
 Copyright 2011 Regents of the University of Minnesota. All rights reserved.
 Original Author: Adhika Lie
 */
+
+// Reference Frames and Coordinates from nav-functions()
+// I - ECI (Earch Center Inertial): origin at Earth center
+// E - ECEF (Earch Center Earth Fixed): origin at Earth center
+// D - Geodetic: origin at Earth center, Uses earth ellisoid definition (example WGS84)
+// G - Geocentric: origin at Earth center, Uses spheroid definition
+// L - Local Level: origin at specified reference, [x- North, y- East, z- Down]
+// B - Body: origin at Body CG, [x- Fwd, y- Starboard, z- Down]
+//
+// All units meters and radians
 
 #pragma once
 
