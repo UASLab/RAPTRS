@@ -121,7 +121,7 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
   Matrix3f T_B2L = T_L2B.transpose();
 
   // Attitude Update
-  Quaternionf dQuat_BL = Quaternionf(1.0, 0.5f*wEst_rps_(0)*dt_s_, 0.5f*wEst_rps_(3)*dt_s_, 0.5f*wEst_rps_(2)*dt_s_);
+  Quaternionf dQuat_BL = Quaternionf(1.0, 0.5f*wEst_rps_(0)*dt_s_, 0.5f*wEst_rps_(1)*dt_s_, 0.5f*wEst_rps_(2)*dt_s_);
   quat_BL_ = (quat_BL_ * dQuat_BL).normalized();
 
   // Avoid quaternion flips sign
