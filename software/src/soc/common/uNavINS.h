@@ -21,6 +21,7 @@ Original Author: Adhika Lie
 #include <math.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
 using namespace Eigen;
 
 #include "nav-functions.h"
@@ -106,7 +107,7 @@ class uNavINS {
     Vector3f aBias_mps2_ = Vector3f::Zero(); // accelerometer bias
     Vector3f wBias_rps_ = Vector3f::Zero(); // rotation rate bias
     Vector3f euler_BL_rad_ = Vector3f::Zero(); // Euler Angles (3-2-1) [phi, theta, psi]
-    Vector4f quat_BL_ = Vector4f::Zero(); // Quaternion of B wrt L
+    Quaternionf quat_BL_ = Quaternionf(0.0,0.0, 0.0, 0.0); // Quaternion of B wrt L
     Vector3f aEst_mps2_ = Vector3f::Zero(); // Estimated Acceleration in Body
     Vector3f wEst_rps_ = Vector3f::Zero(); // Estimated Rotation Rate in Body
     Vector3f vEst_L_mps_ = Vector3f::Zero(); // Estimated Velocity in NED

@@ -27,26 +27,26 @@ void uNavINS::Configure() {
 
   // Covariance of the Sensor Noise (associated with TimeUpdate())
   Rw_.setZero();
-  Rw_.block(0,0,3,3) = powf(aNoiseSigma_mps2, 2.0f) * I3;
-  Rw_.block(3,3,3,3) = powf(wNoiseSigma_rps, 2.0f) * I3;
-  Rw_.block(6,6,3,3) = 2.0f * powf(aMarkovSigma_mps2, 2.0f) / aMarkovTau_s * I3;
-  Rw_.block(9,9,3,3) = 2.0f * powf(wMarkovSigma_rps, 2.0f) / wMarkovTau_s * I3;
+  Rw_.block(0,0,3,3) = (aNoiseSigma_mps2 * aNoiseSigma_mps2) * I3;
+  Rw_.block(3,3,3,3) = (wNoiseSigma_rps * wNoiseSigma_rps) * I3;
+  Rw_.block(6,6,3,3) = 2.0f * (aMarkovSigma_mps2 * aMarkovSigma_mps2) / aMarkovTau_s * I3;
+  Rw_.block(9,9,3,3) = 2.0f * (wMarkovSigma_rps * wMarkovSigma_rps) / wMarkovTau_s * I3;
 
   // Covariance of the Observation Noise (associated with MeasUpdate())
   R_.setZero();
-  R_.block(0,0,2,2) = powf(pNoiseSigma_NE_m, 2.0f) * I2;
-  R_(2,2) = powf(pNoiseSigma_D_m, 2.0f);
-  R_.block(3,3,2,2) = powf(vNoiseSigma_NE_mps, 2.0f) * I2;
-  R_(5,5) = powf(vNoiseSigma_D_mps, 2.0f);
+  R_.block(0,0,2,2) = (pNoiseSigma_NE_m * pNoiseSigma_NE_m) * I2;
+  R_(2,2) = (pNoiseSigma_D_m * pNoiseSigma_D_m);
+  R_.block(3,3,2,2) = (vNoiseSigma_NE_mps * vNoiseSigma_NE_mps) * I2;
+  R_(5,5) = (vNoiseSigma_D_mps * vNoiseSigma_D_mps);
 
   // Initial Covariance Estimate (P)
   P_.setZero();
-  P_.block(0,0,3,3) = powf(pErrSigma_Init_m, 2.0f) * I3;
-  P_.block(3,3,3,3) = powf(vErrSigma_Init_mps, 2.0f) * I3;
-  P_.block(6,6,2,2) = powf(attErrSigma_Init_rad, 2.0f) * I2;
-  P_(8,8) = powf(hdgErrSigma_Init_rad, 2.0f);
-  P_.block(9,9,3,3) = powf(aBiasSigma_Init_mps2, 2.0f) * I3;
-  P_.block(12,12,3,3) = powf(wBiasSigma_Init_rps, 2.0f) * I3;
+  P_.block(0,0,3,3) = (pErrSigma_Init_m * pErrSigma_Init_m) * I3;
+  P_.block(3,3,3,3) = (vErrSigma_Init_mps * vErrSigma_Init_mps) * I3;
+  P_.block(6,6,2,2) = (attErrSigma_Init_rad * attErrSigma_Init_rad) * I2;
+  P_(8,8) = (hdgErrSigma_Init_rad * hdgErrSigma_Init_rad);
+  P_.block(9,9,3,3) = (aBiasSigma_Init_mps2 * aBiasSigma_Init_mps2) * I3;
+  P_.block(12,12,3,3) = (wBiasSigma_Init_rps * wBiasSigma_Init_rps) * I3;
 }
 
 void uNavINS::Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
@@ -121,18 +121,16 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
   Matrix3f T_B2L = T_L2B.transpose();
 
   // Attitude Update
-  Vector4f dQuat_BL = Vector4f::Zero();
-  dQuat_BL(0) = 1.0f;
-  dQuat_BL.segment(1,3) = 0.5f * wEst_rps_ * dt_s_;
-  quat_BL_ = QuatMult(quat_BL_, dQuat_BL);
-  quat_BL_.normalize();
+  Quaternionf dQuat_BL = Quaternionf(1.0, 0.5f*wEst_rps_(0)*dt_s_, 0.5f*wEst_rps_(3)*dt_s_, 0.5f*wEst_rps_(2)*dt_s_);
+  quat_BL_ = (quat_BL_ * dQuat_BL).normalized();
 
   // Avoid quaternion flips sign
-  if (quat_BL_(0) < 0) { quat_BL_ = -1.0f * quat_BL_; }
+  if (quat_BL_.w() < 0) {
+    quat_BL_ = Quaternionf(-quat_BL_.w(), -quat_BL_.x(), -quat_BL_.y(), -quat_BL_.z());
+  }
 
   // Velocity Update
-  Vector3f aGrav_mps2 = Vector3f::Zero();
-  aGrav_mps2(2) = G;
+  Vector3f aGrav_mps2 = Vector3f(0.0, 0.0, G);
   vEst_L_mps_ += dt_s_ * (T_B2L * aEst_mps2_ + aGrav_mps2);
 
   // Position Update
@@ -222,11 +220,8 @@ void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
   vEst_L_mps_ += vDeltaEst_L;
 
   // Attitude correction
-  Vector4f dQuat_BL = Vector4f::Zero();
-  dQuat_BL(0) = 1.0f;
-  dQuat_BL.segment(1, 3) = quatDelta;
-  quat_BL_ = QuatMult(quat_BL_, dQuat_BL);
-  quat_BL_.normalize();
+  Quaternionf dQuat_BL = Quaternionf(1.0, quatDelta(0), quatDelta(1), quatDelta(2));
+  quat_BL_ = (quat_BL_ * dQuat_BL).normalized();
 
   // Update biases from states
   aBias_mps2_ += aBiasDelta;

@@ -17,9 +17,9 @@ Author: Adhika Lie, Gokhan Inalhan, Demoz Gebre, Jung Soon Jang
 #pragma once
 
 #include <math.h>
-#include <math.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
 using namespace Eigen;
 
 // Constants
@@ -53,27 +53,23 @@ Vector3d E2D(Vector3d p_E);
 // This function converts a vector in ecef to ned coordinate centered at pRef.
 Vector3d E2L(Vector3d p_E, Vector3d pRef_D);
 Matrix3d TransE2L(Vector3d pRef_D); // Return the T_E2L DCM from the Reference position in Geodetic
-Vector4d E2L_Quat(Vector3d pRef_D); // Returns the E2L transformation as a quaternion.
+Quaterniond E2L_Quat(Vector3d pRef_D); // Returns the E2L transformation as a quaternion.
 
 // This function gives a skew symmetric matrix from a given vector w
 Matrix3d Skew(Vector3d w);
 Matrix3f Skew(Vector3f w);
 
 // Quaternion to Euler angles (3-2-1)
-Vector3d Quat2Euler(Vector4d quat);
-Vector3f Quat2Euler(Vector4f quat);
+Vector3d Quat2Euler(Quaterniond quat);
+Vector3f Quat2Euler(Quaternionf quat);
 
 // Quaternion to Euler
-Vector4d Euler2Quat(Vector3d euler);
-Vector4f Euler2Quat(Vector3f euler);
+Quaterniond Euler2Quat(Vector3d euler);
+Quaternionf Euler2Quat(Vector3f euler);
 
 // Quaternion to T_N2B
-Matrix3d Quat2DCM(Vector4d quat);
-Matrix3f Quat2DCM(Vector4f quat);
-
-// Quaternion Multiplication
-Vector4d QuatMult(Vector4d quatA, Vector4d quatB);
-Vector4f QuatMult(Vector4f quatA, Vector4f quatB);
+Matrix3d Quat2DCM(Quaterniond quat);
+Matrix3f Quat2DCM(Quaternionf quat);
 
 // Update the Earth Dimensions
 void EarthRad(double lat, double *Rew, double *Rns);

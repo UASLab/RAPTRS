@@ -14,8 +14,8 @@ Vector3d L2D_Rate(Vector3d v_L, Vector3d pRef_D) {
     EarthRad(pRef_D(0), &Rew, &Rns);
 
     Vector3d pDot_D;
-    pDot_D(0) = v_L(0) / (Rns + pRef_D(2));
-    pDot_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
+    pDot_D(0) = v_L(0) / (Rns + pRef_D(2)); // latDot = vNorth / (Rns + alt)
+    pDot_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0))); // lonDot = vEast / ((Rns + alt)*cos(lat))
     pDot_D(2) = -v_L(2);
 
     return pDot_D;
@@ -34,27 +34,28 @@ Vector3f L2D_Rate(Vector3f v_L, Vector3d pRef_D) {
 
 // This function calculates the angular velocity of the NED frame,
 // also known as the navigation rate using WGS-84.
+// Rotation rate of the NED frame wrt Geodetic, in NED coordinates.
 Vector3d NavRate(Vector3d v_L, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
 
-    Vector3d nr;
-    nr(0) = v_L(1) / (Rew + pRef_D(2));
-    nr(1) = -v_L(0) / (Rns + pRef_D(2));
-    nr(2) = -v_L(1) * tan(pRef_D(0)) / (Rew + pRef_D(2));
+    Vector3d w_L;
+    w_L(0) = v_L(1) / (Rew + pRef_D(2)); // rotation rate about North = vEast / (Rew + alt)
+    w_L(1) = -v_L(0) / (Rns + pRef_D(2)); // rotation rate about East = -vNorth / (Rns + alt)
+    w_L(2) = -v_L(1) * tan(pRef_D(0)) / (Rew + pRef_D(2)); // rotation rate about Down
 
-    return nr;
+    return w_L;
 }
 Vector3f NavRate(Vector3f v_L, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
 
-    Vector3f nr;
-    nr(0) = v_L(1) / (Rew + pRef_D(2));
-    nr(1) = -v_L(0) / (Rns + pRef_D(2));
-    nr(2) = -v_L(1) * tan(pRef_D(0)) / (Rew + pRef_D(2));
+    Vector3f w_LD_L;
+    w_LD_L(0) = v_L(1) / (Rew + pRef_D(2));
+    w_LD_L(1) = -v_L(0) / (Rns + pRef_D(2));
+    w_LD_L(2) = -v_L(1) * tan(pRef_D(0)) / (Rew + pRef_D(2));
 
-    return nr;
+    return w_LD_L;
 }
 
 // This function calculates the ECEF Coordinate given the
@@ -148,22 +149,27 @@ Vector3d E2L(Vector3d p_E, Vector3d pRef_D) {
 
 // Compute the ECEF to NED coordinate transform
 Matrix3d TransE2L(Vector3d pRef_D) {
-    Matrix3d T_E2L;
-    T_E2L(0,0) = -sin(pRef_D(0))*cos(pRef_D(1)); T_E2L(1,0) = -sin(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,0) = cos(pRef_D(0));
-    T_E2L(0,1) = -sin(pRef_D(1));                T_E2L(1,1) = cos(pRef_D(1));                 T_E2L(2,1) = 0.0f;
-    T_E2L(0,2) = -cos(pRef_D(0))*cos(pRef_D(0)); T_E2L(1,2) = -cos(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,2) = -sin(pRef_D(0));
-    return T_E2L;
+
+  Matrix3d T_E2L;
+  T_E2L = AngleAxisd(pRef_D(1), Vector3d::UnitZ())
+    * AngleAxisd((3*M_PI/2 - pRef_D(0)), Vector3d::UnitY());
+
+  // Matrix3d T_E2L;
+  // T_E2L(0,0) = -sin(pRef_D(0))*cos(pRef_D(1)); T_E2L(1,0) = -sin(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,0) = cos(pRef_D(0));
+  // T_E2L(0,1) = -sin(pRef_D(1));                T_E2L(1,1) = cos(pRef_D(1));                 T_E2L(2,1) = 0.0f;
+  // T_E2L(0,2) = -cos(pRef_D(0))*cos(pRef_D(1)); T_E2L(1,2) = -cos(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,2) = -sin(pRef_D(0));
+  return T_E2L;
 }
 
-Vector4d E2L_Quat(Vector3d pRef_D) {
+Quaterniond E2L_Quat(Vector3d pRef_D) {
   double zd2 = 0.5 * pRef_D(1);
   double yd2 = -0.25 * M_PI - 0.5 * pRef_D(0);
 
-  Vector4d quat;
-  quat(0) = cos(zd2) * cos(yd2);
-  quat(1) = -sin(zd2) * sin(yd2);
-  quat(2) = cos(zd2) * sin(yd2);
-  quat(3) = sin(zd2) * cos(yd2);
+  Quaterniond quat;
+  quat.w() = cos(zd2) * cos(yd2);
+  quat.x() = -sin(zd2) * sin(yd2);
+  quat.y() = cos(zd2) * sin(yd2);
+  quat.z() = sin(zd2) * cos(yd2);
 
   return quat;
 }
@@ -189,12 +195,12 @@ Matrix3f Skew(Vector3f w) {
 }
 
 // Quaternion to Euler angles (3-2-1)
-Vector3d Quat2Euler(Vector4d quat) {
-  double m11 = 2*(quat(0)*quat(0) + quat(1)*quat(1)) - 1;
-  double m12 = 2*(quat(1)*quat(2) + quat(0)*quat(3));
-  double m13 = 2*(quat(1)*quat(3) - quat(0)*quat(2));
-  double m23 = 2*(quat(2)*quat(3) + quat(0)*quat(1));
-  double m33 = 2*(quat(0)*quat(0) + quat(3)*quat(3)) - 1;
+Vector3d Quat2Euler(Quaterniond quat) {
+  double m11 = 2*(quat.w()*quat.w() + quat.x()*quat.x()) - 1;
+  double m12 = 2*(quat.x()*quat.y() + quat.w()*quat.z());
+  double m13 = 2*(quat.x()*quat.z() - quat.w()*quat.y());
+  double m23 = 2*(quat.y()*quat.z() + quat.w()*quat.x());
+  double m33 = 2*(quat.w()*quat.w() + quat.z()*quat.z()) - 1;
 
   Vector3d euler;
   euler(2) = atan2(m12, m11);
@@ -203,12 +209,12 @@ Vector3d Quat2Euler(Vector4d quat) {
 
   return euler;
 }
-Vector3f Quat2Euler(Vector4f quat) {
-  float m11 = 2*(quat(0)*quat(0) + quat(1)*quat(1)) - 1;
-  float m12 = 2*(quat(1)*quat(2) + quat(0)*quat(3));
-  float m13 = 2*(quat(1)*quat(3) - quat(0)*quat(2));
-  float m23 = 2*(quat(2)*quat(3) + quat(0)*quat(1));
-  float m33 = 2*(quat(0)*quat(0) + quat(3)*quat(3)) - 1;
+Vector3f Quat2Euler(Quaternionf quat) {
+  float m11 = 2*(quat.w()*quat.w() + quat.x()*quat.x()) - 1;
+  float m12 = 2*(quat.x()*quat.y() + quat.w()*quat.z());
+  float m13 = 2*(quat.x()*quat.z() - quat.w()*quat.y());
+  float m23 = 2*(quat.y()*quat.z() + quat.w()*quat.x());
+  float m33 = 2*(quat.w()*quat.w() + quat.z()*quat.z()) - 1;
 
   Vector3f euler;
   euler(2) = atan2(m12, m11);
@@ -219,7 +225,7 @@ Vector3f Quat2Euler(Vector4f quat) {
 }
 
 // Computes a quaternion from the given euler angles
-Vector4d Euler2Quat(Vector3d euler) {
+Quaterniond Euler2Quat(Vector3d euler) {
   double sin_psi = sin(0.5f * euler(2));
   double cos_psi = cos(0.5f * euler(2));
   double sin_the = sin(0.5f * euler(1));
@@ -227,15 +233,15 @@ Vector4d Euler2Quat(Vector3d euler) {
   double sin_phi = sin(0.5f * euler(0));
   double cos_phi = cos(0.5f * euler(0));
 
-  Vector4d quat;
-  quat(0) = cos_psi*cos_the*cos_phi + sin_psi*sin_the*sin_phi;
-  quat(1) = cos_psi*cos_the*sin_phi - sin_psi*sin_the*cos_phi;
-  quat(2) = cos_psi*sin_the*cos_phi + sin_psi*cos_the*sin_phi;
-  quat(3) = sin_psi*cos_the*cos_phi - cos_psi*sin_the*sin_phi;
+  Quaterniond quat;
+  quat.w() = cos_psi*cos_the*cos_phi + sin_psi*sin_the*sin_phi;
+  quat.x() = cos_psi*cos_the*sin_phi - sin_psi*sin_the*cos_phi;
+  quat.y() = cos_psi*sin_the*cos_phi + sin_psi*cos_the*sin_phi;
+  quat.z() = sin_psi*cos_the*cos_phi - cos_psi*sin_the*sin_phi;
 
   return quat;
 }
-Vector4f Euler2Quat(Vector3f euler) {
+Quaternionf Euler2Quat(Vector3f euler) {
   float sin_psi = sin(0.5f * euler(2));
   float cos_psi = cos(0.5f * euler(2));
   float sin_the = sin(0.5f * euler(1));
@@ -243,83 +249,61 @@ Vector4f Euler2Quat(Vector3f euler) {
   float sin_phi = sin(0.5f * euler(0));
   float cos_phi = cos(0.5f * euler(0));
 
-  Vector4f quat;
-  quat(0) = cos_psi*cos_the*cos_phi + sin_psi*sin_the*sin_phi;
-  quat(1) = cos_psi*cos_the*sin_phi - sin_psi*sin_the*cos_phi;
-  quat(2) = cos_psi*sin_the*cos_phi + sin_psi*cos_the*sin_phi;
-  quat(3) = sin_psi*cos_the*cos_phi - cos_psi*sin_the*sin_phi;
+  Quaternionf quat;
+  quat.w() = cos_psi*cos_the*cos_phi + sin_psi*sin_the*sin_phi;
+  quat.x() = cos_psi*cos_the*sin_phi - sin_psi*sin_the*cos_phi;
+  quat.y() = cos_psi*sin_the*cos_phi + sin_psi*cos_the*sin_phi;
+  quat.z() = sin_psi*cos_the*cos_phi - cos_psi*sin_the*sin_phi;
 
   return quat;
 }
 
-// Quaternion to DCM
-Matrix3d Quat2DCM(Vector4d quat) {
+// Quaterniond to DCM
+Matrix3d Quat2DCM(Quaterniond quat) {
   Matrix3d T;
 
-  T(0,0) = 2*(quat(0)*quat(0) + quat(1)*quat(1)) - 1;
-  T(1,1) = 2*(quat(0)*quat(0) + quat(2)*quat(2)) - 1;
-  T(2,2) = 2*(quat(0)*quat(0) + quat(3)*quat(3)) - 1;
+  T(0,0) = 2*(quat.w()*quat.w() + quat.x()*quat.x()) - 1;
+  T(1,1) = 2*(quat.w()*quat.w() + quat.y()*quat.y()) - 1;
+  T(2,2) = 2*(quat.w()*quat.w() + quat.z()*quat.z()) - 1;
 
-  T(0,1) = 2*(quat(1)*quat(2) + quat(0)*quat(3));
-  T(0,2) = 2*(quat(1)*quat(3) - quat(0)*quat(2));
+  T(0,1) = 2*(quat.x()*quat.y() + quat.w()*quat.z());
+  T(0,2) = 2*(quat.x()*quat.z() - quat.w()*quat.y());
 
-  T(1,0) = 2*(quat(1)*quat(2) - quat(0)*quat(3));
-  T(1,2) = 2*(quat(2)*quat(3) + quat(0)*quat(1));
+  T(1,0) = 2*(quat.x()*quat.y() - quat.w()*quat.z());
+  T(1,2) = 2*(quat.y()*quat.z() + quat.w()*quat.x());
 
-  T(2,0) = 2*(quat(1)*quat(3) + quat(0)*quat(2));
-  T(2,1) = 2*(quat(2)*quat(3) - quat(0)*quat(1));
+  T(2,0) = 2*(quat.x()*quat.z() + quat.w()*quat.y());
+  T(2,1) = 2*(quat.y()*quat.z() - quat.w()*quat.x());
 
   return T;
 }
-Matrix3f Quat2DCM(Vector4f quat) {
+Matrix3f Quat2DCM(Quaternionf quat) {
   Matrix3f T;
 
-  T(0,0) = 2*(quat(0)*quat(0) + quat(1)*quat(1)) - 1;
-  T(1,1) = 2*(quat(0)*quat(0) + quat(2)*quat(2)) - 1;
-  T(2,2) = 2*(quat(0)*quat(0) + quat(3)*quat(3)) - 1;
+  T(0,0) = 2*(quat.w()*quat.w() + quat.x()*quat.x()) - 1;
+  T(1,1) = 2*(quat.w()*quat.w() + quat.y()*quat.y()) - 1;
+  T(2,2) = 2*(quat.w()*quat.w() + quat.z()*quat.z()) - 1;
 
-  T(0,1) = 2*(quat(1)*quat(2) + quat(0)*quat(3));
-  T(0,2) = 2*(quat(1)*quat(3) - quat(0)*quat(2));
+  T(0,1) = 2*(quat.x()*quat.y() + quat.w()*quat.z());
+  T(0,2) = 2*(quat.x()*quat.z() - quat.w()*quat.y());
 
-  T(1,0) = 2*(quat(1)*quat(2) - quat(0)*quat(3));
-  T(1,2) = 2*(quat(2)*quat(3) + quat(0)*quat(1));
+  T(1,0) = 2*(quat.x()*quat.y() - quat.w()*quat.z());
+  T(1,2) = 2*(quat.y()*quat.z() + quat.w()*quat.x());
 
-  T(2,0) = 2*(quat(1)*quat(3) + quat(0)*quat(2));
-  T(2,1) = 2*(quat(2)*quat(3) - quat(0)*quat(1));
+  T(2,0) = 2*(quat.x()*quat.z() + quat.w()*quat.y());
+  T(2,1) = 2*(quat.y()*quat.z() - quat.w()*quat.x());
 
   return T;
 }
 
 // euler angles (3-2-1) to quaternion
-Vector4f euler2quat(Vector3f euler) {
-  Vector4f quat;
+Quaternionf euler2quat(Vector3f euler) {
+  Quaternionf quat;
 
-  quat(0) = cosf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) + sinf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);
-  quat(1) = cosf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f) - sinf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f);
-  quat(2) = cosf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) + sinf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);
-  quat(3) = sinf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) - cosf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);
-
-  return quat;
-}
-
-// Quaternion mulitplicaton
-Vector4d QuatMult(Vector4d quatA, Vector4d quatB) {
-  Vector4d quat;
-
-  quat(0) = quatA(0)*quatB(0) - (quatA(1)*quatB(1) + quatA(2)*quatB(2) + quatA(3)*quatB(3));
-  quat(1) = quatA(0)*quatB(1) + quatB(0)*quatA(1) + quatA(2)*quatB(3) - quatA(3)*quatB(2);
-  quat(2) = quatA(0)*quatB(2) + quatB(0)*quatA(2) + quatA(3)*quatB(1) - quatA(1)*quatB(3);
-  quat(3) = quatA(0)*quatB(3) + quatB(0)*quatA(3) + quatA(1)*quatB(2) - quatA(2)*quatB(1);
-
-  return quat;
-}
-Vector4f QuatMult(Vector4f quatA, Vector4f quatB) {
-  Vector4f quat;
-
-  quat(0) = quatA(0)*quatB(0) - (quatA(1)*quatB(1) + quatA(2)*quatB(2) + quatA(3)*quatB(3));
-  quat(1) = quatA(0)*quatB(1) + quatB(0)*quatA(1) + quatA(2)*quatB(3) - quatA(3)*quatB(2);
-  quat(2) = quatA(0)*quatB(2) + quatB(0)*quatA(2) + quatA(3)*quatB(1) - quatA(1)*quatB(3);
-  quat(3) = quatA(0)*quatB(3) + quatB(0)*quatA(3) + quatA(1)*quatB(2) - quatA(2)*quatB(1);
+  quat.w() = cosf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) + sinf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);
+  quat.x() = cosf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f) - sinf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f);
+  quat.y() = cosf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) + sinf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);
+  quat.z() = sinf(euler(2) / 2.0f) * cosf(euler(1) / 2.0f) * cosf(euler(0) / 2.0f) - cosf(euler(2) / 2.0f) * sinf(euler(1) / 2.0f) * sinf(euler(0) / 2.0f);
 
   return quat;
 }
