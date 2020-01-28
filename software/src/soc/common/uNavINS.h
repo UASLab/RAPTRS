@@ -33,9 +33,9 @@ class uNavINS {
   public:
     uNavINS() {};
     void Configure();
-    void Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps);
+    void Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3d vMeas_L_mps);
     bool Initialized() { return initialized_; } // returns whether the INS has been initialized
-    void Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps);
+    void Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3d vMeas_L_mps);
 
     // Set
     inline void Set_AccelNoise(float val) { aNoiseSigma_mps2 = val; }
@@ -54,9 +54,9 @@ class uNavINS {
     Vector3f Get_AccelBias() { return aBias_mps2_; }
     Vector3f Get_RotRateEst() { return wEst_rps_; }
     Vector3f Get_RotRateBias() { return wBias_rps_; }
-    Vector3f Get_OrientEst() { return euler_BL_rad_; }
+    Vector3d Get_OrientEst() { return euler_BL_rad_; }
     Vector3d Get_PosEst() { return pEst_D_rrm_; }
-    Vector3f Get_VelEst() { return vEst_L_mps_; }
+    Vector3d Get_VelEst() { return vEst_L_mps_; }
     float Get_Track() { return track_rad; }
 
   private:
@@ -109,17 +109,17 @@ class uNavINS {
 
     Vector3f aBias_mps2_ = Vector3f::Zero(); // accelerometer bias
     Vector3f wBias_rps_ = Vector3f::Zero(); // rotation rate bias
-    Vector3f euler_BL_rad_ = Vector3f::Zero(); // Euler Angles (3-2-1) [phi, theta, psi]
-    Quaternionf quat_BL_ = Quaternionf(0.0,0.0, 0.0, 0.0); // Quaternion of B wrt L
+    Vector3d euler_BL_rad_ = Vector3d::Zero(); // Euler Angles (3-2-1) [phi, theta, psi]
+    Quaterniond quat_BL_ = Quaterniond(0.0, 0.0, 0.0, 0.0); // Quaternion of B wrt L
     Vector3f aEst_mps2_ = Vector3f::Zero(); // Estimated Acceleration in Body
     Vector3f wEst_rps_ = Vector3f::Zero(); // Estimated Rotation Rate in Body
-    Vector3f vEst_L_mps_ = Vector3f::Zero(); // Estimated Velocity in NED
+    Vector3d vEst_L_mps_ = Vector3d::Zero(); // Estimated Velocity in NED
     Vector3d pEst_D_rrm_ = Vector3d::Zero(); // Estimated Position in LLA (rad, rad, m)
 
     float track_rad = 0;
 
     // Methods
     void TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2);
-    void MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps);
+    void MeasUpdate(Vector3d pMeas_D_rrm, Vector3d vMeas_L_mps);
 
 };

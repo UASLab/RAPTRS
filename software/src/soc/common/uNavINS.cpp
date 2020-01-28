@@ -49,7 +49,7 @@ void uNavINS::Configure() {
   P_.block(12,12,3,3) = (wBiasSigma_Init_rps * wBiasSigma_Init_rps) * I3;
 }
 
-void uNavINS::Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
+void uNavINS::Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3d vMeas_L_mps) {
   // Initialize sensor biases
   wBias_rps_ = wMeas_rps;
   aBias_mps2_.setZero();
@@ -85,7 +85,7 @@ void uNavINS::Initialize(Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMe
   initialized_ = true;
 }
 
-void uNavINS::Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
+void uNavINS::Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_rps, Vector3f aMeas_mps2, Vector3f magMeas, Vector3d pMeas_D_rrm, Vector3d vMeas_L_mps) {
   // change in time
   dt_s_ = ((float)(t_us - tPrev_us_)) / 1e6;
   if (dt_s_ > 0.1) {dt_s_ = 0.1;} // Catch large dt
@@ -117,33 +117,33 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
   wEst_rps_ = wMeas_rps - wBias_rps_;
 
   // Compute DCM (Body to/from NED) Transformations from Quaternion
-  Matrix3f T_L2B = Quat2DCM(quat_BL_);
-  Matrix3f T_B2L = T_L2B.transpose();
+  Matrix3d T_L2B = Quat2DCM(quat_BL_);
+  Matrix3d T_B2L = T_L2B.transpose();
 
   // Attitude Update
-  Quaternionf dQuat_BL = Quaternionf(1.0, 0.5f*wEst_rps_(0)*dt_s_, 0.5f*wEst_rps_(1)*dt_s_, 0.5f*wEst_rps_(2)*dt_s_);
+  Quaterniond dQuat_BL = Quaterniond(1.0, 0.5 * wEst_rps_(0) * dt_s_, 0.5 * wEst_rps_(1) * dt_s_, 0.5 * wEst_rps_(2) * dt_s_);
   quat_BL_ = (quat_BL_ * dQuat_BL).normalized();
 
   // Avoid quaternion flips sign
   if (quat_BL_.w() < 0) {
-    quat_BL_ = Quaternionf(-quat_BL_.w(), -quat_BL_.x(), -quat_BL_.y(), -quat_BL_.z());
+    quat_BL_ = Quaterniond(-quat_BL_.w(), -quat_BL_.x(), -quat_BL_.y(), -quat_BL_.z());
   }
 
   // Velocity Update
-  Vector3f aGrav_mps2 = Vector3f(0.0, 0.0, G);
-  vEst_L_mps_ += dt_s_ * (T_B2L * aEst_mps2_ + aGrav_mps2);
+  Vector3d aGrav_mps2 = Vector3d(0.0, 0.0, G);
+  vEst_L_mps_ += dt_s_ * (T_B2L * aEst_mps2_.cast <double> () + aGrav_mps2);
 
   // Position Update
-  Vector3f pDot_D = L2D_Rate(vEst_L_mps_, pEst_D_rrm_);
-  pEst_D_rrm_ += (dt_s_ * pDot_D).cast <double> ();
+  Vector3d pDot_D = L2D_Rate(vEst_L_mps_, pEst_D_rrm_);
+  pEst_D_rrm_ += dt_s_ * (pDot_D).cast <double> ();
 
   // Assemble the Jacobian (state update matrix)
   Matrix<float, 15, 15> Fs;
   Fs.setZero();
   Fs.block(0,3,3,3) = I3; // ... pos2gs
   Fs(5,2) = -2.0f * G / EARTH_RADIUS; // ... gs2pos
-  Fs.block(3,6,3,3) = -2.0f * T_B2L * Skew(aEst_mps2_); // ... gs2att
-  Fs.block(3,9,3,3) = -T_B2L; // ... gs2acc
+  Fs.block(3,6,3,3) = -2.0f * T_B2L.cast <float> () * Skew(aEst_mps2_); // ... gs2att
+  Fs.block(3,9,3,3) = -T_B2L.cast <float> (); // ... gs2acc
   Fs.block(6,6,3,3) = -Skew(wEst_rps_); // ... att2att
   Fs.block(6,12,3,3) = -0.5f * I3; // ... att2gyr
   Fs.block(9,9,3,3) = -1.0f / aMarkovTau_s * I3; // ... Accel Markov Bias
@@ -154,8 +154,8 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
   // Process Noise
   Matrix<float,15,12> Gs;
   Gs.setZero();
-  Gs.block(3,0,3,3) = -T_B2L;
-  Gs.block(6,3,3,3) = -0.5f * I3;
+  Gs.block(3,0,3,3) = -T_B2L.cast <float> ();
+  Gs.block(6,3,3,3) = -0.5 * I3;
   Gs.block(9,6,6,6) = I6;
 
   // Process Noise Covariance
@@ -170,20 +170,20 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
 }
 
 // Measurement Update
-void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
+void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3d vMeas_L_mps) {
   // Position Error, converted to NED
   // Vector3d pErr_L_m = E2L(D2E(pMeas_D_rrm) - D2E(pEst_D_rrm_), pEst_D_rrm_);
   Matrix3d T_E2L = TransE2L(pEst_D_rrm_);
   Vector3d pErr_L_m = T_E2L * (D2E(pMeas_D_rrm) - D2E(pEst_D_rrm_));
 
   // Velocity Error
-  Vector3f vErr_L_mps = vMeas_L_mps - vEst_L_mps_;
+  Vector3d vErr_L_mps = vMeas_L_mps - vEst_L_mps_;
 
   // Create measurement Y, as difference between Measures and Outputs
   Matrix<float, 6, 1> y;
   y.setZero();
   y.segment(0, 3) = pErr_L_m.cast <float> ();
-  y.segment(3, 3) = vErr_L_mps;
+  y.segment(3, 3) = vErr_L_mps.cast <float> ();
 
   // Innovation covariance
   Matrix<float,6,6> S;
@@ -202,8 +202,8 @@ void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
   Matrix<float, 15, 1> x = K * y;
 
   // Pull apart x terms to update the Position, velocity, orientation, and sensor biases
-  Vector3f pDeltaEst_D = x.segment(0, 3); // Position Deltas in LLA
-  Vector3f vDeltaEst_L = x.segment(3, 3); // Velocity Deltas in NED
+  Vector3d pDeltaEst_D = x.segment(0, 3).cast <double> (); // Position Deltas in LLA
+  Vector3d vDeltaEst_L = x.segment(3, 3).cast <double> (); // Velocity Deltas in NED
   Vector3f quatDelta = x.segment(6, 3); // Quaternion Delta
   Vector3f aBiasDelta = x.segment(9, 3); // Accel Bias Deltas
   Vector3f wBiasDelta = x.segment(12, 3); // w Bias Deltas
@@ -220,7 +220,7 @@ void uNavINS::MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps) {
   vEst_L_mps_ += vDeltaEst_L;
 
   // Attitude correction
-  Quaternionf dQuat_BL = Quaternionf(1.0, quatDelta(0), quatDelta(1), quatDelta(2));
+  Quaterniond dQuat_BL = Quaterniond(1.0, quatDelta(0), quatDelta(1), quatDelta(2));
   quat_BL_ = (quat_BL_ * dQuat_BL).normalized();
 
   // Update biases from states

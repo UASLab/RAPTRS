@@ -193,9 +193,9 @@ void Ekf15StateIns::Initialize() {
     pGpsMeas_D_rrm(1) = GpsLon->getDouble();
     pGpsMeas_D_rrm(2) = GpsAlt->getDouble();
 
-    vGpsMeas_L_mps(0) = GpsVn->getFloat();
-    vGpsMeas_L_mps(1) = GpsVe->getFloat();
-    vGpsMeas_L_mps(2) = GpsVd->getFloat();
+    vGpsMeas_L_mps(0) = GpsVn->getDouble();
+    vGpsMeas_L_mps(1) = GpsVe->getDouble();
+    vGpsMeas_L_mps(2) = GpsVd->getDouble();
 
     gyroMeas_rps(0) = ImuGx->getFloat();
     gyroMeas_rps(1) = ImuGy->getFloat();
@@ -245,9 +245,9 @@ void Ekf15StateIns::Run(Mode mode) {
     pGpsMeas_D_rrm(1) = GpsLon->getDouble();
     pGpsMeas_D_rrm(2) = GpsAlt->getDouble();
 
-    vGpsMeas_L_mps(0) = GpsVn->getFloat();
-    vGpsMeas_L_mps(1) = GpsVe->getFloat();
-    vGpsMeas_L_mps(2) = GpsVd->getFloat();
+    vGpsMeas_L_mps(0) = GpsVn->getDouble();
+    vGpsMeas_L_mps(1) = GpsVe->getDouble();
+    vGpsMeas_L_mps(2) = GpsVd->getDouble();
 
     // Call uNav Update
     uNavINS_.Update(time_node->getLong(), GpsTow->getInt(), gyroMeas_rps, accelMeas_mps2, magMeas, pGpsMeas_D_rrm, vGpsMeas_L_mps);
@@ -275,10 +275,10 @@ void Ekf15StateIns::Run(Mode mode) {
     Gzb->setFloat(wBias_rps(2));
 
     // Orientation
-    Vector3f orientEst_rad = uNavINS_.Get_OrientEst();
-    Roll->setFloat(orientEst_rad(0));
-    Pitch->setFloat(orientEst_rad(1));
-    Heading->setFloat(orientEst_rad(2));
+    Vector3d orientEst_rad = uNavINS_.Get_OrientEst();
+    Roll->setDouble(orientEst_rad(0));
+    Pitch->setDouble(orientEst_rad(1));
+    Heading->setDouble(orientEst_rad(2));
 
     // Position
     Vector3d pEst_rrm = uNavINS_.Get_PosEst();
@@ -287,10 +287,10 @@ void Ekf15StateIns::Run(Mode mode) {
     Alt->setFloat(pEst_rrm(2));
 
     // Velocity
-    Vector3f vEst_mps = uNavINS_.Get_VelEst();
-    Vn->setFloat(vEst_mps(0));
-    Ve->setFloat(vEst_mps(1));
-    Vd->setFloat(vEst_mps(2));
+    Vector3d vEst_mps = uNavINS_.Get_VelEst();
+    Vn->setDouble(vEst_mps(0));
+    Ve->setDouble(vEst_mps(1));
+    Vd->setDouble(vEst_mps(2));
 
     // Ground Track
     Track->setFloat(uNavINS_.Get_Track());
