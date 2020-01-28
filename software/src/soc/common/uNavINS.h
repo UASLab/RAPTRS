@@ -111,9 +111,9 @@ class uNavINS {
     // magnetic heading corrected for roll and pitch angle
     float Bxc, Byc;
     // accelerometer bias
-    float abx, aby, abz;
+    float abx = 0.0, aby = 0.0, abz = 0.0;
     // gyro bias
-    float gbx, gby, gbz;
+    float gbx = 0.0, gby = 0.0, gbz = 0.0;
     // earth radius at location
     double Re, Rn, denom;
     // State matrix
