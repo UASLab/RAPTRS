@@ -25,7 +25,7 @@ void uNavINS::Configure() {
   H_.setZero();
   H_.block(0,0,5,5) = I5;
 
-  // Covariance of the Sensor Noise (associated with TimeUpdate())
+  // Covariance of the Process Noise (associated with TimeUpdate())
   Rw_.setZero();
   Rw_.block(0,0,3,3) = (aNoiseSigma_mps2 * aNoiseSigma_mps2) * I3;
   Rw_.block(3,3,3,3) = (wNoiseSigma_rps * wNoiseSigma_rps) * I3;
@@ -158,7 +158,7 @@ void uNavINS::TimeUpdate(Vector3f wMeas_rps, Vector3f aMeas_mps2) {
   Gs.block(6,3,3,3) = -0.5 * I3;
   Gs.block(9,6,6,6) = I6;
 
-  // Process Noise Covariance
+  // Process Noise Covariance (Discrete approximation)
   Matrix<float, 15, 15> Q;
   Q.setZero();
   Q = PHI * dt_s_ * Gs * Rw_ * Gs.transpose();
