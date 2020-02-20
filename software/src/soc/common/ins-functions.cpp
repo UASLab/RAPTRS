@@ -121,8 +121,8 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemP
   // none of the values should be negative - FIXIT
   float val;
   // Accel
-  val = 0; LoadVal(Config, "AccelNoise", &val);
-  if (val > 0) uNavINS_.Set_AccelNoise(val);
+  val = 0; LoadVal(Config, "AccelSigma", &val);
+  if (val > 0) uNavINS_.Set_AccelSigma(val);
 
   val = 0; LoadVal(Config, "AccelMarkov", &val);
   if (val > 0) uNavINS_.Set_AccelMarkov(val);
@@ -131,28 +131,28 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemP
   if (val > 0) uNavINS_.Set_AccelTau(val);
 
   // Gyro
-  val = 0; LoadVal(Config, "GyroNoise", &val);
-  if (val > 0) uNavINS_.Set_GyroNoise(val);
+  val = 0; LoadVal(Config, "GyroSigma", &val);
+  if (val > 0) uNavINS_.Set_RotRateSigma(val);
 
   val = 0; LoadVal(Config, "GyroMarkov", &val);
-  if (val > 0) uNavINS_.Set_GyroMarkov(val);
+  if (val > 0) uNavINS_.Set_RotRateMarkov(val);
 
   val = 0; LoadVal(Config, "GyroTau", &val);
-  if (val > 0) uNavINS_.Set_GyroTau(val);
+  if (val > 0) uNavINS_.Set_RotRateTau(val);
 
   // GPS Position
-  val = 0; LoadVal(Config, "GpsPosNoiseNE", &val);
-  if (val > 0) uNavINS_.Set_GpsPosNoiseNE(val);
+  val = 0; LoadVal(Config, "PosSigmaNE", &val);
+  if (val > 0) uNavINS_.Set_PosSigmaNE(val);
 
-  val = 0; LoadVal(Config, "GpsPosNoiseD", &val);
-  if (val > 0) uNavINS_.Set_GpsPosNoiseD(val);
+  val = 0; LoadVal(Config, "PosSigmaD", &val);
+  if (val > 0) uNavINS_.Set_PosSigmaD(val);
 
   // GPS Velocity
-  val = 0; LoadVal(Config, "GpsVelNoiseNE", &val);
-  if (val > 0) uNavINS_.Set_GpsVelNoiseNE(val);
+  val = 0; LoadVal(Config, "VelSigmaNE", &val);
+  if (val > 0) uNavINS_.Set_VelSigmaNE(val);
 
-  val = 0; LoadVal(Config, "GpsVelNoiseD", &val);
-  if (val > 0) uNavINS_.Set_GpsVelNoiseD(val);
+  val = 0; LoadVal(Config, "VelSigmaD", &val);
+  if (val > 0) uNavINS_.Set_VelSigmaD(val);
 
   // pointer to log run mode data
   Mode_node = deftree.initElement(SystemPath+"/Mode","Run mode", LOG_UINT8, LOG_NONE);
@@ -165,12 +165,12 @@ void Ekf15StateIns::Configure(const rapidjson::Value& Config,std::string SystemP
   Ayb = deftree.initElement(SystemPath+"/AccelYBias_mss", "Y accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
   Az = deftree.initElement(SystemPath+"/AccelZ_mss", "Z accelerometer with bias removed, m/s/s", LOG_FLOAT, LOG_NONE);
   Azb = deftree.initElement(SystemPath+"/AccelZBias_mss", "Z accelerometer estimated bias, m/s/s", LOG_FLOAT, LOG_NONE);
-  Gx = deftree.initElement(SystemPath+"/GyroX_rads", "X gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  Gxb = deftree.initElement(SystemPath+"/GyroXBias_rads", "X gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  Gy = deftree.initElement(SystemPath+"/GyroY_rads", "Y gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  Gyb = deftree.initElement(SystemPath+"/GyroYBias_rads", "Y gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
-  Gz = deftree.initElement(SystemPath+"/GyroZ_rads", "Z gyro with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
-  Gzb = deftree.initElement(SystemPath+"/GyroZBias_rads", "Z gyro estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
+  Gx = deftree.initElement(SystemPath+"/GyroX_rads", "X rotation rate with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
+  Gxb = deftree.initElement(SystemPath+"/GyroXBias_rads", "X rotation rate estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
+  Gy = deftree.initElement(SystemPath+"/GyroY_rads", "Y rotation rate with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
+  Gyb = deftree.initElement(SystemPath+"/GyroYBias_rads", "Y rotation rate estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
+  Gz = deftree.initElement(SystemPath+"/GyroZ_rads", "Z rotation rate with bias removed, rad/s", LOG_FLOAT, LOG_NONE);
+  Gzb = deftree.initElement(SystemPath+"/GyroZBias_rads", "Z rotation rate estimated bias, rad/s", LOG_FLOAT, LOG_NONE);
   Pitch = deftree.initElement(SystemPath+"/Pitch_rad", "Pitch, rad", LOG_FLOAT, LOG_NONE);
   Roll = deftree.initElement(SystemPath+"/Roll_rad", "Roll, rad", LOG_FLOAT, LOG_NONE);
   Heading = deftree.initElement(SystemPath+"/Heading_rad", "Heading, rad", LOG_FLOAT, LOG_NONE);
@@ -193,24 +193,24 @@ void Ekf15StateIns::Initialize() {
     pGpsMeas_D_rrm(1) = GpsLon->getDouble();
     pGpsMeas_D_rrm(2) = GpsAlt->getDouble();
 
-    vGpsMeas_L_mps(0) = GpsVn->getDouble();
-    vGpsMeas_L_mps(1) = GpsVe->getDouble();
-    vGpsMeas_L_mps(2) = GpsVd->getDouble();
+    vGpsMeas_L_mps(0) = GpsVn->getFloat();
+    vGpsMeas_L_mps(1) = GpsVe->getFloat();
+    vGpsMeas_L_mps(2) = GpsVd->getFloat();
 
-    gyroMeas_rps(0) = ImuGx->getFloat();
-    gyroMeas_rps(1) = ImuGy->getFloat();
-    gyroMeas_rps(2) = ImuGz->getFloat();
+    gyroMeas_B_rps(0) = ImuGx->getFloat();
+    gyroMeas_B_rps(1) = ImuGy->getFloat();
+    gyroMeas_B_rps(2) = ImuGz->getFloat();
 
-    accelMeas_mps2(0) = ImuAx->getFloat();
-    accelMeas_mps2(1) = ImuAy->getFloat();
-    accelMeas_mps2(2) = ImuAz->getFloat();
+    accelMeas_B_mps2(0) = ImuAx->getFloat();
+    accelMeas_B_mps2(1) = ImuAy->getFloat();
+    accelMeas_B_mps2(2) = ImuAz->getFloat();
 
-    magMeas(0) = ImuHx->getFloat();
-    magMeas(1) = ImuHy->getFloat();
-    magMeas(2) = ImuHz->getFloat();
+    magMeas_B_uT(0) = ImuHx->getFloat();
+    magMeas_B_uT(1) = ImuHy->getFloat();
+    magMeas_B_uT(2) = ImuHz->getFloat();
 
     // Call uNav Initialize
-    uNavINS_.Initialize(gyroMeas_rps, accelMeas_mps2, magMeas, pGpsMeas_D_rrm, vGpsMeas_L_mps);
+    uNavINS_.Initialize(gyroMeas_B_rps, accelMeas_B_mps2, magMeas_B_uT, pGpsMeas_D_rrm, vGpsMeas_L_mps);
 
     if (uNavINS_.Initialized()) {
       Initialized_ = true;
@@ -229,28 +229,28 @@ void Ekf15StateIns::Run(Mode mode) {
 
   if (mode!=kStandby) {
 
-    gyroMeas_rps(0) = ImuGx->getFloat();
-    gyroMeas_rps(1) = ImuGy->getFloat();
-    gyroMeas_rps(2) = ImuGz->getFloat();
+    gyroMeas_B_rps(0) = ImuGx->getFloat();
+    gyroMeas_B_rps(1) = ImuGy->getFloat();
+    gyroMeas_B_rps(2) = ImuGz->getFloat();
 
-    accelMeas_mps2(0) = ImuAx->getFloat();
-    accelMeas_mps2(1) = ImuAy->getFloat();
-    accelMeas_mps2(2) = ImuAz->getFloat();
+    accelMeas_B_mps2(0) = ImuAx->getFloat();
+    accelMeas_B_mps2(1) = ImuAy->getFloat();
+    accelMeas_B_mps2(2) = ImuAz->getFloat();
 
-    magMeas(0) = ImuHx->getFloat();
-    magMeas(1) = ImuHy->getFloat();
-    magMeas(2) = ImuHz->getFloat();
+    magMeas_B_uT(0) = ImuHx->getFloat();
+    magMeas_B_uT(1) = ImuHy->getFloat();
+    magMeas_B_uT(2) = ImuHz->getFloat();
 
     pGpsMeas_D_rrm(0) = GpsLat->getDouble();
     pGpsMeas_D_rrm(1) = GpsLon->getDouble();
     pGpsMeas_D_rrm(2) = GpsAlt->getDouble();
 
-    vGpsMeas_L_mps(0) = GpsVn->getDouble();
-    vGpsMeas_L_mps(1) = GpsVe->getDouble();
-    vGpsMeas_L_mps(2) = GpsVd->getDouble();
+    vGpsMeas_L_mps(0) = GpsVn->getFloat();
+    vGpsMeas_L_mps(1) = GpsVe->getFloat();
+    vGpsMeas_L_mps(2) = GpsVd->getFloat();
 
     // Call uNav Update
-    uNavINS_.Update(time_node->getLong(), GpsTow->getInt(), gyroMeas_rps, accelMeas_mps2, magMeas, pGpsMeas_D_rrm, vGpsMeas_L_mps);
+    uNavINS_.Update(time_node->getLong(), GpsTow->getInt(), gyroMeas_B_rps, accelMeas_B_mps2, magMeas_B_uT, pGpsMeas_D_rrm, vGpsMeas_L_mps);
 
     // Accels
     Vector3f aEst_mps2 = uNavINS_.Get_AccelEst();
@@ -275,10 +275,10 @@ void Ekf15StateIns::Run(Mode mode) {
     Gzb->setFloat(wBias_rps(2));
 
     // Orientation
-    Vector3d orientEst_rad = uNavINS_.Get_OrientEst();
-    Roll->setDouble(orientEst_rad(0));
-    Pitch->setDouble(orientEst_rad(1));
-    Heading->setDouble(orientEst_rad(2));
+    Vector3f orientEst_rad = uNavINS_.Get_OrientEst();
+    Roll->setFloat(orientEst_rad(0));
+    Pitch->setFloat(orientEst_rad(1));
+    Heading->setFloat(orientEst_rad(2));
 
     // Position
     Vector3d pEst_rrm = uNavINS_.Get_PosEst();
@@ -287,10 +287,10 @@ void Ekf15StateIns::Run(Mode mode) {
     Alt->setFloat(pEst_rrm(2));
 
     // Velocity
-    Vector3d vEst_mps = uNavINS_.Get_VelEst();
-    Vn->setDouble(vEst_mps(0));
-    Ve->setDouble(vEst_mps(1));
-    Vd->setDouble(vEst_mps(2));
+    Vector3f vEst_mps = uNavINS_.Get_VelEst();
+    Vn->setFloat(vEst_mps(0));
+    Ve->setFloat(vEst_mps(1));
+    Vd->setFloat(vEst_mps(2));
 
     // Ground Track
     Track->setFloat(uNavINS_.Get_Track());

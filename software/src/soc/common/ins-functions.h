@@ -60,6 +60,6 @@ class Ekf15StateIns: public GenericFunction {
 
     uNavINS uNavINS_;
     bool Initialized_ = false;
-    Vector3d pGpsMeas_D_rrm, vGpsMeas_L_mps;
-    Vector3f gyroMeas_rps, accelMeas_mps2, magMeas;
+    Vector3d pGpsMeas_D_rrm;
+    Vector3f gyroMeas_B_rps, accelMeas_B_mps2, magMeas_B_uT, vGpsMeas_L_mps;
 };
