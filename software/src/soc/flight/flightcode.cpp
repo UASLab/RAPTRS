@@ -18,7 +18,6 @@ Author: Brian Taylor, Chris Regan, Curt Olson
 #include "netSocket.h"
 #include "telnet.h"
 #include "sim-interface.h"
-#include "circle_mgr.h"
 #include "route_mgr.h"
 #include "rapidjson/document.h"
 
@@ -53,8 +52,7 @@ int main(int argc, char* argv[]) {
   AircraftEffectors Effectors;
   DatalogClient Datalog;
   TelemetryClient Telemetry;
-  CircleMgr circle_mgr;
-  RouteMgr route_mgr;
+  RouteMgr Route;
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
@@ -85,10 +83,7 @@ int main(int argc, char* argv[]) {
 
   if (AircraftConfiguration.HasMember("Route")) {
     std::cout << "\tConfiguring route following..." << std::endl;
-    route_mgr.init(AircraftConfiguration["Route"]);
-  } else if (AircraftConfiguration.HasMember("Circle")) {
-    std::cout << "\tConfiguring circle hold..." << std::endl;
-    circle_mgr.init(AircraftConfiguration["Circle"]);
+    Route.Configure(AircraftConfiguration["Route"]);
   }
 
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
@@ -194,8 +189,7 @@ int main(int argc, char* argv[]) {
 
         // Run Route Manager
         profRouteStart_us = micros(); // Start Test timer
-        route_mgr.update();
-        circle_mgr.update();
+        // Route.Run();
         profRoute->setInt(micros() - profRouteStart_us);
 
         // Run Test Control and Excitation
