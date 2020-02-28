@@ -195,7 +195,7 @@ void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<st
 }
 void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::MatrixXf *Val, bool required) {
   if (Config.HasMember(ValName.c_str())) {
-    (*Val).resize(Config[ValName.c_str()].Size(),Config[ValName.c_str()][0].Size());
+    (*Val).resize(Config[ValName.c_str()].Size(), Config[ValName.c_str()][0].Size());
 
     for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
       for (size_t n=0; n < Config[ValName.c_str()][m].Size(); n++) {
@@ -210,10 +210,8 @@ void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<Ei
   Eigen::Vector3f ValVec;
   if (Config.HasMember(ValName.c_str())) {
     for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
-      ValVec.resize(Config[ValName.c_str()][m].Size());
-
-      for (size_t n=0; n < Config[ValName.c_str()][m].Size(); m++) {
-        ValVec(m) = Config[ValName.c_str()][m].GetFloat();
+      for (size_t n=0; n < Config[ValName.c_str()][m].Size(); n++) {
+        ValVec(n) = Config[ValName.c_str()][m][n].GetFloat();
       }
 
       (*Val).push_back(ValVec);

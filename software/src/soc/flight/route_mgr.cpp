@@ -31,13 +31,16 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
   LoadOutput(OutputDef, RootPath_, "RefHeading", &NodeOut_.RefHeading);
 
   // Configure Reference Waypoints
+  if (!RouteConfig.HasMember("WaypointDef")) { // WaypointDef not defined
+    throw std::runtime_error(std::string("ERROR - WaypointDef not found in Route."));
+  }
   const rapidjson::Value& WaypointDef = RouteConfig["WaypointDef"];
 
-  for (rapidjson::Value::ConstValueIterator WaypointInst = WaypointDef.Begin(); WaypointInst != WaypointDef.End(); ++WaypointInst) {
-    const rapidjson::Value& WaypointConfig = (*WaypointInst);
-
-    // Get the Waypoint Reference Name
-    std::string WaypointName = WaypointConfig.GetString();
+  // Loop through each of the defined Waypoints
+  for (rapidjson::Value::ConstMemberIterator WaypointDefInst = WaypointDef.MemberBegin(); WaypointDefInst != WaypointDef.MemberEnd(); ++WaypointDefInst) {
+    // Get the (Name, Object)
+    std::string WaypointName = WaypointDefInst->name.GetString();
+    const rapidjson::Value& WaypointConfig = WaypointDefInst->value;
 
     // Read the Waypoint values
     Vector3d WaypointVal;
@@ -50,7 +53,7 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
       pHome_D_rrm_ = WaypointVal;
 
       // Read the Waypoint Reference type
-      LoadVal(WaypointConfig[WaypointName.c_str()], "WaypointRef", &WaypointRef, true);
+      LoadVal(WaypointConfig, "WaypointRef", &WaypointRef, true);
 
       if (WaypointRef == "WGS84_deg") { // GPS coordinates [deg, deg, m]
         pHome_D_rrm_.segment(0, 2) *= M_PI/180.0; // convert to [rad, rad, m]
@@ -70,21 +73,23 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
   } // for WaypointDef
 
   // Route Definitions
+  if (!RouteConfig.HasMember("RouteDef")) { // RouteDef not defined
+    throw std::runtime_error(std::string("ERROR - RouteDef not found in Route."));
+  }
   const rapidjson::Value& RouteDef = RouteConfig["RouteDef"];
 
-  // Load Route Definitions
-  for (rapidjson::Value::ConstValueIterator RouteInst = RouteDef.Begin(); RouteInst != RouteDef.End(); ++RouteInst) {
-    const rapidjson::Value& RouteComp = (*RouteInst);
-
-    // Get the Route Name
-    std::string RouteName = RouteComp.GetString();
+  // Loop through each of the defined Routes
+  for (rapidjson::Value::ConstMemberIterator RouteDefInst = RouteDef.MemberBegin(); RouteDefInst != RouteDef.MemberEnd(); ++RouteDefInst) {
+    // Get the (Name, Object)
+    std::string RouteName = RouteDefInst->name.GetString();
+    const rapidjson::Value& RouteDefConfig = RouteDefInst->value;
 
     // Add the Name to the Name Vector
     RouteNames_.push_back(RouteName);
 
     // Route type
     std::string RouteType;
-    LoadVal(RouteComp, "Type", &RouteType, true);
+    LoadVal(RouteDefConfig, "Type", &RouteType, true);
 
     // Create the Component Object, add to Map
     if (RouteType == "CircleHold") {
@@ -98,10 +103,11 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
     } // if Type
 
     // Call Configuration for Component
-    RouteMap_[RouteName]->Configure(RouteComp);
+    RouteMap_[RouteName]->Configure(RouteDefConfig);
 
   } // for RouteDef
 }
+
 void RouteMgr::Run() {
 
   // Get the Current Position, Geodetic [rad, rad, m]
@@ -138,7 +144,7 @@ void RouteCircleHold::Configure(const rapidjson::Value& RouteConfig) {
   LoadVal(RouteConfig, "Radius", &distRadius_m_, true);
   LoadVal(RouteConfig, "Direction", &Direction_, true);
   LoadVal(RouteConfig, "Waypoint", &pCenter_L_m_, true);
-  LoadVal(RouteConfig, "LeadDist_m", &distLead_m_, true);
+  LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
 }
 
 void RouteCircleHold::Run(Vector3f pCurr_L_m) {
@@ -171,7 +177,7 @@ void RouteCircleHold::Run(Vector3f pCurr_L_m) {
 
 /* Route Type - Waypoints */
 void RouteWaypoints::Configure(const rapidjson::Value& RouteConfig) {
-  LoadVal(RouteConfig, "Waypoints", &WaypointList_L_, true);
+  LoadVal(RouteConfig, "WaypointList", &WaypointList_L_, true);
 
   numWaypoints_ = WaypointList_L_.size();
 }
