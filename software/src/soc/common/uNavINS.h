@@ -1,8 +1,7 @@
 /*
 Updated to be a class, use Eigen, and compile as an Arduino library.
 Added methods to get gyro and accel bias. Added initialization to
-estimated angles rather than assuming IMU is level. Added method to get psi,
-rather than just heading, and ground track.
+estimated angles rather than assuming IMU is level.
 
 Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
 MIT License; See LICENSE.md for complete details
@@ -15,11 +14,6 @@ Copyright 2011 Regents of the University of Minnesota. All rights reserved.
 Original Author: Adhika Lie
 */
 
-// XXX - accel and gyro bias not being updated.
-// XXX - add set methods for sensor characteristics.
-// XXX - is psi heading or track? I think heading.
-// XXX - add outputs for filter covariance to measure convergence.
-// XXX - incorporate magnetometers.
 
 #pragma once
 
@@ -44,7 +38,6 @@ class uNavINS {
     bool initialized();
     float getPitch_rad();
     float getRoll_rad();
-    float getYaw_rad();
     float getHeading_rad();
     double getLatitude_rad();
     double getLongitude_rad();
@@ -101,9 +94,7 @@ class uNavINS {
     float _dt;
     unsigned long previousTOW;
     // estimated attitude
-    float phi, theta, psi, heading;
-    // initial heading angle
-    float psi_initial;
+    float phi, theta, psi;
     // estimated NED velocity
     double vn_ins, ve_ins, vd_ins;
     // estimated location

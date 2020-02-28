@@ -1,8 +1,7 @@
 /*
 Updated to be a class, use Eigen, and compile as an Arduino library.
 Added methods to get gyro and accel bias. Added initialization to
-estimated angles rather than assuming IMU is level. Added method to get psi,
-rather than just heading, and ground track.
+estimated angles rather than assuming IMU is level.
 
 Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
 MIT License; See LICENSE.md for complete details
@@ -15,29 +14,22 @@ Copyright 2011 Regents of the University of Minnesota. All rights reserved.
 Original Author: Adhika Lie
 */
 
-#include <iostream>
-using std::cout;
-using std::endl;
-
 #include "uNavINS.h"
 
 void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double vd,double lat,double lon,double alt,float p,float q,float r,float ax,float ay,float az,float hx,float hy, float hz) {
-  // cout << "ins: " << time << " " << TOW << " vel: " << vn << " " << ve << " " << vd << " pos: " << lat << " " << lon << " " << alt << " imu: " << p << " " << q << " " << r << " " << ax << " " << ay << " " << az << " " << hx << " " << hy << " " << hz << endl;
-  if (!initialized_) {
+    if (!initialized_) {
+    // grab initial gyro values for biases
+    gbx = p;
+    gby = q;
+    gbz = r;
     // initial attitude and heading
     theta = asinf(ax/G);
-    phi = asinf(-ay/(G*cosf(theta)));
+    phi = -asinf(ay/(G*cosf(theta)));
     // magnetic heading correction due to roll and pitch angle
     Bxc = hx*cosf(theta) + (hy*sinf(phi) + hz*cosf(phi))*sinf(theta);
     Byc = hy*cosf(phi) - hz*sinf(phi);
     // finding initial heading
-    if (-Byc > 0) {
-      psi = M_PI/2.0f - atanf(Bxc/-Byc);
-    } else {
-      psi= 3.0f*M_PI/2.0f - atanf(Bxc/-Byc);
-    }
-    psi = constrainAngle180(psi);
-    psi_initial = psi;
+    psi = -atan2f(Byc,Bxc);
     // euler to quaternion
     quat(0) = cosf(psi/2.0f)*cosf(theta/2.0f)*cosf(phi/2.0f) + sinf(psi/2.0f)*sinf(theta/2.0f)*sinf(phi/2.0f);
     quat(1) = cosf(psi/2.0f)*cosf(theta/2.0f)*sinf(phi/2.0f) - sinf(psi/2.0f)*sinf(theta/2.0f)*cosf(phi/2.0f);
@@ -84,15 +76,18 @@ void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double 
     // get the change in time
     _dt = ((float)(time - _tprev))/1e6;
     _tprev = time;
+    f_b(0,0) = ax - abx;
+    f_b(1,0) = ay - aby;
+    f_b(2,0) = az - abz;
+    om_ib(0,0) = p - gbx;
+    om_ib(1,0) = q - gby;
+    om_ib(2,0) = r - gbz;
     lla_ins(0,0) = lat_ins;
     lla_ins(1,0) = lon_ins;
     lla_ins(2,0) = alt_ins;
     V_ins(0,0) = vn_ins;
     V_ins(1,0) = ve_ins;
     V_ins(2,0) = vd_ins;
-    // AHRS Transformations
-    C_N2B = quat2dcm(quat);
-    C_B2N = C_N2B.transpose();
     // Attitude Update
     dq(0) = 1.0f;
     dq(1) = 0.5f*om_ib(0,0)*_dt;
@@ -104,6 +99,9 @@ void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double 
     if (quat(0) < 0) {
       quat = -1.0f*quat;
     }
+    // AHRS Transformations
+    C_N2B = quat2dcm(quat);
+    C_B2N = C_N2B.transpose();
     // obtain euler angles from quaternion
     theta = asinf(-2.0f*(quat(1,0)*quat(3,0)-quat(0,0)*quat(2,0)));
     phi = atan2f(2.0f*(quat(0,0)*quat(1,0)+quat(2,0)*quat(3,0)),1.0f-2.0f*(quat(1,0)*quat(1,0)+quat(2,0)*quat(2,0)));
@@ -181,10 +179,9 @@ void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double 
       P = (Eigen::Matrix<float,15,15>::Identity()-K*H)*P*(Eigen::Matrix<float,15,15>::Identity()-K*H).transpose() + K*R*K.transpose();
       // State update
       x = K*y;
-      denom = (1.0 - (ECC2 * pow(sin(lla_ins(0,0)),2.0)));
-      denom = sqrt(denom*denom);
+      denom = fabs(1.0 - (ECC2 * pow(sin(lla_ins(0,0)),2.0)));
       Re = EARTH_RADIUS / sqrt(denom);
-      Rn = EARTH_RADIUS*(1.0-ECC2) / denom*sqrt(denom);
+      Rn = EARTH_RADIUS*(1.0-ECC2) / (denom*sqrt(denom));
       alt_ins = alt_ins - x(2,0);
       lat_ins = lat_ins + x(0,0) / (Re + alt_ins);
       lon_ins = lon_ins + x(1,0) / (Rn + alt_ins) / cos(lat_ins);
@@ -209,8 +206,7 @@ void uNavINS::update(uint64_t time,unsigned long TOW,double vn,double ve,double 
       gby = gby + x(13,0);
       gbz = gbz + x(14,0);
     }
-    // Get the new Specific forces and Rotation Rate,
-    // use in the next time update
+    // Get the new Specific forces and Rotation Rate
     f_b(0,0) = ax - abx;
     f_b(1,0) = ay - aby;
     f_b(2,0) = az - abz;
@@ -236,14 +232,9 @@ float uNavINS::getRoll_rad() {
   return phi;
 }
 
-// returns the yaw angle, rad
-float uNavINS::getYaw_rad() {
-  return constrainAngle180(psi-psi_initial);
-}
-
 // returns the heading angle, rad
 float uNavINS::getHeading_rad() {
-  return constrainAngle360(psi);
+  return constrainAngle180(psi);
 }
 
 // returns the INS latitude, rad
@@ -325,11 +316,10 @@ Eigen::Matrix<double,3,1> uNavINS::llarate(Eigen::Matrix<double,3,1> V,Eigen::Ma
   double Rew, Rns, denom;
   Eigen::Matrix<double,3,1> lla_dot;
 
-  denom = (1.0 - (ECC2 * pow(sin(lla(0,0)),2.0)));
-  denom = sqrt(denom*denom);
+  denom = fabs(1.0 - (ECC2 * pow(sin(lla(0,0)),2.0)));
 
   Rew = EARTH_RADIUS / sqrt(denom);
-  Rns = EARTH_RADIUS*(1.0-ECC2) / denom*sqrt(denom);
+  Rns = EARTH_RADIUS*(1.0-ECC2) / (denom*sqrt(denom));
 
   lla_dot(0,0) = V(0,0)/(Rns + lla(2,0));
   lla_dot(1,0) = V(1,0)/((Rew + lla(2,0))*cos(lla(0,0)));
@@ -343,8 +333,7 @@ Eigen::Matrix<double,3,1> uNavINS::lla2ecef(Eigen::Matrix<double,3,1> lla) {
   double Rew, denom;
   Eigen::Matrix<double,3,1> ecef;
 
-  denom = (1.0 - (ECC2 * pow(sin(lla(0,0)),2.0)));
-  denom = sqrt(denom*denom);
+  denom = fabs(1.0 - (ECC2 * pow(sin(lla(0,0)),2.0)));
 
   Rew = EARTH_RADIUS / sqrt(denom);
 
@@ -392,14 +381,14 @@ Eigen::Matrix<float,4,1> uNavINS::qmult(Eigen::Matrix<float,4,1> p, Eigen::Matri
   return r;
 }
 
-// bound yaw angle between -180 and 180
+// bound angle between -180 and 180
 float uNavINS::constrainAngle180(float dta) {
   if(dta >  M_PI) dta -= (M_PI*2.0f);
   if(dta < -M_PI) dta += (M_PI*2.0f);
   return dta;
 }
 
-// bound heading angle between 0 and 360
+// bound angle between 0 and 360
 float uNavINS::constrainAngle360(float dta){
   dta = fmod(dta,2.0f*M_PI);
   if (dta < 0)
