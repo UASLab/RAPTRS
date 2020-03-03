@@ -84,6 +84,9 @@ int main(int argc, char* argv[]) {
   if (AircraftConfiguration.HasMember("Route")) {
     std::cout << "\tConfiguring route following..." << std::endl;
     Route.Configure(AircraftConfiguration["Route"]);
+    std::cout << "done!" << std::endl;
+    // deftree.PrettyPrint("/Route/");
+    std::cout << std::endl;
   }
 
   if (AircraftConfiguration.HasMember("Sensor-Processing")) {
@@ -189,7 +192,9 @@ int main(int argc, char* argv[]) {
 
         // Run Route Manager
         profRouteStart_us = micros(); // Start Test timer
-        // Route.Run();
+Route.Set_RouteSel("Loiter");
+// Route.Set_RouteSel("Path_1");
+        Route.Run();
         profRoute->setInt(micros() - profRouteStart_us);
 
         // Run Test Control and Excitation

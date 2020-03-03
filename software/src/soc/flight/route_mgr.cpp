@@ -15,10 +15,10 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
   }
   const rapidjson::Value& InputDef = RouteConfig["InputDef"];
 
-  LoadInput(InputDef, RootPath_, "CurrLat", &NodeIn_.Lat, &NodeIn_.LatKey);
-  LoadInput(InputDef, RootPath_, "CurrLon", &NodeIn_.Lon, &NodeIn_.LonKey);
-  LoadInput(InputDef, RootPath_, "CurrAlt", &NodeIn_.Alt, &NodeIn_.AltKey);
-  LoadInput(InputDef, RootPath_, "CurrCourse", &NodeIn_.Course, &NodeIn_.CourseKey);
+  LoadInput(InputDef, RootPath_, "Lat", &NodeIn_.Lat, &NodeIn_.LatKey);
+  LoadInput(InputDef, RootPath_, "Lon", &NodeIn_.Lon, &NodeIn_.LonKey);
+  LoadInput(InputDef, RootPath_, "Alt", &NodeIn_.Alt, &NodeIn_.AltKey);
+  LoadInput(InputDef, RootPath_, "Heading", &NodeIn_.Heading, &NodeIn_.HeadingKey);
 
   // Configure Output Definitions
   if (!RouteConfig.HasMember("OutputDef")) { // ControlDef not defined
@@ -28,7 +28,7 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
 
   LoadOutput(OutputDef, RootPath_, "RefAlt", &NodeOut_.RefAlt);
   LoadOutput(OutputDef, RootPath_, "Crosstrack", &NodeOut_.CrossTrack);
-  LoadOutput(OutputDef, RootPath_, "RefHeading", &NodeOut_.RefHeading);
+  LoadOutput(OutputDef, RootPath_, "HeadingError", &NodeOut_.HeadingError);
 
   // Configure Reference Waypoints
   if (!RouteConfig.HasMember("WaypointDef")) { // WaypointDef not defined
@@ -64,7 +64,7 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
       }
 
       // Retain the Home position in Geodetic, ECEF, and as a DCM
-      pHome_E_rrm_ = D2E(pHome_D_rrm_); // ECEF position of Home
+      pHome_E_m_ = D2E(pHome_D_rrm_); // ECEF position of Home
       T_E2L_ = TransE2L(pHome_D_rrm_).cast <float> (); // Compute ECEF to NED with double precision, cast to float
     } // if "Home"
 
@@ -117,7 +117,7 @@ void RouteMgr::Run() {
   pCurr_D_rrm[2] = NodeIn_.Alt->getDouble();
 
   // Convert Geodetic to NED
-  Vector3f pCurr_L_m = T_E2L_ * (D2E(pCurr_D_rrm) - pHome_E_rrm_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
+  Vector3f pCurr_L_m = T_E2L_ * (D2E(pCurr_D_rrm) - pHome_E_m_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
 
   // Run the selected route
   RouteMap_[RouteSel_]->Run(pCurr_L_m);
@@ -132,11 +132,17 @@ void RouteMgr::Run() {
 
   // Compute Heading to Lead Point
   Vector3f vCurr2Lead = pLead_L_m - pCurr_L_m; // pLead wrt pCurr
-  float headingRef_rad = atan2(vCurr2Lead[1], vCurr2Lead[0]);
+  // float dist2Lead_m = vCurr2Lead.norm();
+  float heading2Lead_rad = atan2(vCurr2Lead[1], vCurr2Lead[0]);
+
+  // Compute Heading error
+  float heading_rad = NodeIn_.Heading->getFloat();
+  float headingErr_rad = WrapToPi(heading2Lead_rad - heading_rad);
+
 
   NodeOut_.RefAlt->setFloat(pAdj_L_m[2]);
   NodeOut_.CrossTrack->setFloat(crosstrack_m);
-  NodeOut_.RefHeading->setFloat(headingRef_rad);
+  NodeOut_.HeadingError->setFloat(headingErr_rad);
 }
 
 /* Route Type - Circle Hold */
@@ -152,16 +158,16 @@ void RouteCircleHold::Run(Vector3f pCurr_L_m) {
   Vector3f vCenter2Curr_nd = vCenter2Curr_m / vCenter2Curr_m.norm();
 
   // Adj Point, Radius from Center along unit vector
-  Vector3f pAdj_L_m_ = distRadius_m_ * vCenter2Curr_nd ;
+  pAdj_L_m_ = distRadius_m_ * vCenter2Curr_nd ;
 
   // Heading of the Circle at Adj
   if (Direction_ == "Left") {
-    headingSeg_rad_ = atan2(vCenter2Curr_nd[0], vCenter2Curr_nd[1]);
+    headingSeg_rad_ = atan2(-vCenter2Curr_nd[0], vCenter2Curr_nd[1]);
   } else { // Right
     headingSeg_rad_ = atan2(vCenter2Curr_nd[0], -vCenter2Curr_nd[1]);
   }
 
-  // Compute the Lead point Location, distLead ahead of pAdj
+  // Compute the angle around circle to Lead, distLead ahead of pAdj
   float angleLead_rad = distLead_m_ / distRadius_m_;
   if (Direction_ == "Left") {
     angleLead_rad = -angleLead_rad;
@@ -171,7 +177,6 @@ void RouteCircleHold::Run(Vector3f pCurr_L_m) {
   Matrix3f T;
   T = AngleAxisf(angleLead_rad, Vector3f::UnitZ());
   pLead_L_m_ = pCenter_L_m_ + (T * vCenter2Curr_nd) * distRadius_m_;
-
 }
 
 
@@ -226,8 +231,8 @@ void RouteWaypoints::Run(Vector3f pCurr_L_m) {
   Vector3f vPrev2Adj = (pCurr_L_m - pPrev_L_m_).cwiseProduct(vSegUnit_L_) ;
 
   // Compute the location of pAdj, Point along the segment
-  Vector3f pAdj_L_m_ = pPrev_L_m_ + vPrev2Adj;
+  pAdj_L_m_ = pPrev_L_m_ + vPrev2Adj;
 
   // Compute the Lead point Location, distLead ahead of pAdj
-  Vector3f pLead_L_m_ = pAdj_L_m_ + distLead_m_ * vSegUnit_L_;
+  pLead_L_m_ = pAdj_L_m_ + distLead_m_ * vSegUnit_L_;
 }

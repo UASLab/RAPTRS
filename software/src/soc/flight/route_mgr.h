@@ -11,10 +11,10 @@ WaypointDef["Home"] is stored in Geodetic [rad,rad,m]
 
 "Route": {
   "InputDef": {
-    "CurrLat": "/Sensor-Processing/Latitude_rad",
-    "CurrLon": "/Sensor-Processing/Longitude_rad",
-    "CurrAlt": "/Sensor-Processing/Alt_rad",
-    "CurrCourse": "/Sensor-Processing/Track_rad"
+    "Lat": "/Sensor-Processing/Latitude_rad",
+    "Lon": "/Sensor-Processing/Longitude_rad",
+    "Alt": "/Sensor-Processing/Alt_rad",
+    "Heading": "/Sensor-Processing/Heading_rad"
   },
 
   "OutputDef": {
@@ -65,7 +65,6 @@ WaypointDef["Home"] is stored in Geodetic [rad,rad,m]
 #include "general-functions.h"
 
 #include <stdio.h>
-#include <iostream>
 #include <vector>
 
 #include <math.h>
@@ -75,25 +74,26 @@ WaypointDef["Home"] is stored in Geodetic [rad,rad,m]
 using namespace Eigen;
 
 // Base Class for Route Types
-class RouteComponentBase {
+class RoutePathBase {
   public:
-    virtual void Configure(const rapidjson::Value& Config) {};
-    virtual void Run(Vector3f pCurr_L_m) {};
-    inline Vector3f Get_Adj() { return pAdj_L_m_; };
-    inline Vector3f Get_Lead() { return pLead_L_m_; };
-    virtual void Clear() {};
+    virtual void Configure(const rapidjson::Value& Config) {}
+    virtual void Run(Vector3f pCurr_L_m) {}
+    virtual Vector3f Get_Adj() { return pAdj_L_m_; }
+    virtual Vector3f Get_Lead() { return pLead_L_m_; }
+    virtual void Clear() {}
   private:
     Vector3f pAdj_L_m_;
     Vector3f pLead_L_m_;
+    float heading2Lead_rad_;
 };
 
-class RouteCircleHold: public RouteComponentBase {
+class RouteCircleHold: public RoutePathBase {
   public:
     void Configure(const rapidjson::Value& Config);
     void Run(Vector3f pCurr_L_m);
-    inline Vector3f Get_Adj() { return pAdj_L_m_; };
-    inline Vector3f Get_Lead() { return pLead_L_m_; };
-    void Clear() {};
+    inline Vector3f Get_Adj() { return pAdj_L_m_; }
+    inline Vector3f Get_Lead() { return pLead_L_m_; }
+    void Clear() {}
   private:
     Vector3f pCenter_L_m_;
     float distRadius_m_;
@@ -104,16 +104,17 @@ class RouteCircleHold: public RouteComponentBase {
 
     Vector3f pAdj_L_m_;
     Vector3f pLead_L_m_;
+    float heading2Lead_rad_;
 };
 
 // Route Waypoints
-class RouteWaypoints: public RouteComponentBase {
+class RouteWaypoints: public RoutePathBase {
   public:
     void Configure(const rapidjson::Value& Config);
     void Run(Vector3f pCurr_L_m);
-    inline Vector3f Get_Adj() { return pAdj_L_m_; };
-    inline Vector3f Get_Lead() { return pLead_L_m_; };
-    void Clear() {};
+    inline Vector3f Get_Adj() { return pAdj_L_m_; }
+    inline Vector3f Get_Lead() { return pLead_L_m_; }
+    void Clear() {}
   private:
     void ComputeSegment();
 
@@ -132,29 +133,30 @@ class RouteWaypoints: public RouteComponentBase {
 
     Vector3f pAdj_L_m_;
     Vector3f pLead_L_m_;
+    float heading2Lead_rad_;
 };
 
 // Route Manager
 class RouteMgr {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Set_RouteSel(std::string RouteSel) {RouteSel_ = RouteSel;};
+    void Set_RouteSel(std::string RouteSel) { RouteSel_ = RouteSel; }
     void Run();
-    void Clear() {};
+    void Clear() {}
   private:
     std::string RootPath_ = "/Route";
 
     struct StructNodeIn {
-      ElementPtr Lat, Lon, Alt, Course;
-      std::string LatKey, LonKey, AltKey, CourseKey;
+      ElementPtr Lat, Lon, Alt, Heading;
+      std::string LatKey, LonKey, AltKey, HeadingKey;
     } NodeIn_;
 
     struct StructNodeOut {
-      ElementPtr RefAlt, CrossTrack, RefHeading;
+      ElementPtr RefAlt, CrossTrack, HeadingError;
     } NodeOut_;
 
     Vector3d pHome_D_rrm_;
-    Vector3d pHome_E_rrm_;
+    Vector3d pHome_E_m_;
     Matrix3f T_E2L_;
 
     std::vector<std::string> WaypointNames_;
@@ -162,5 +164,5 @@ class RouteMgr {
 
     std::string RouteSel_;
     std::vector<std::string> RouteNames_;
-    std::map<std::string, std::shared_ptr<RouteComponentBase>> RouteMap_;
+    std::map<std::string, std::shared_ptr<RoutePathBase>> RouteMap_;
 };
