@@ -5,7 +5,6 @@ Author: Chris Regan
 */
 
 #include "route_mgr.h"
-#include <iostream>
 
 // Route Manager
 void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
@@ -235,25 +234,14 @@ void RouteWaypoints::Run(Vector3f pCurr_L_m) {
     vAdj2Next = vCurr2Next.cwiseProduct(vSegUnit_L_) ;
   }
 
-    Vector3f vPrev2Next = pNext_L_m_ - pPrev_L_m_;
-std::cout << "Index: " << indxSeg_ << std::endl;
-std::cout << "Dist to go along Seg: " << vAdj2Next[0] << std::endl;
-std::cout << "Heading Prev2Next Seg: " << WrapTo2Pi (atan2(vPrev2Next[1], vPrev2Next[0])) *180.0/M_PI << std::endl;
-
   // pCurr along segment from Previous
   Vector3f vPrev2Curr = pCurr_L_m - pPrev_L_m_;
   Vector3f vPrev2Adj = vPrev2Curr.norm() * vSegUnit_L_ ;
 
   // Compute the location of pAdj, Point along the segment
   pAdj_L_m_ = pPrev_L_m_ + vPrev2Adj;
-  Vector3f vCurr2Adj = pAdj_L_m_ - pCurr_L_m;
-  std::cout << "Distance to Adj: " << vCurr2Adj.norm() << std::endl;
-  std::cout << "Heading to Adj: " << WrapTo2Pi (atan2(vCurr2Adj[1], vCurr2Adj[0])) *180.0/M_PI << std::endl;
+  // Vector3f vCurr2Adj = pAdj_L_m_ - pCurr_L_m;
 
   // Compute the Lead point Location, distLead ahead of pAdj
   pLead_L_m_ = pAdj_L_m_ + (distLead_m_ * vSegUnit_L_);
-
-  Vector3f vCurr2Lead = pLead_L_m_ - pCurr_L_m;
-std::cout << "Distance to go: " << vCurr2Lead.norm() << std::endl;
-std::cout << "Heading to Lead: " << WrapTo2Pi (atan2(vCurr2Lead[1], vCurr2Lead[0])) *180.0/M_PI << std::endl;
 }
