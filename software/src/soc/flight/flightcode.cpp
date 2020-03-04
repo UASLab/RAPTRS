@@ -192,9 +192,10 @@ int main(int argc, char* argv[]) {
 
         // Run Route Manager
         profRouteStart_us = micros(); // Start Test timer
-// Route.Set_RouteSel("Loiter");
-Route.Set_RouteSel("Path_1");
-        Route.Run();
+        if (Mission.GetTestRunMode() > 0) { // Armed or Engaged
+          Route.Set_RouteSel(Mission.GetTestRoute());
+          Route.Run();
+        }
         profRoute->setInt(micros() - profRouteStart_us);
 
         // Run Test Control and Excitation

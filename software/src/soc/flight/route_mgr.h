@@ -19,40 +19,30 @@ WaypointDef["Home"] is stored in Geodetic [rad,rad,m]
 
   "OutputDef": {
     "RefAlt": "refAlt_m",
-    "Crosstrack": "xTrack_m",
-    "RefHeading": "heading_rad"
+    "Crosstrack": "crosstrack_m",
+    "HeadingError": "headingErr_rad"
   },
 
-  "WaypointDef": [
-    "Home": {"Waypoint": [Lat, Lon, Alt], "WaypointRef": "WGS84_deg"},
-    "Other": {"Waypoint": [0.0, 0.0, -Height]}
+  "WaypointDef": {
+    "Home": {"Waypoint": [44.725801, -93.075866, 285.2111], "WaypointRef": "WGS84_deg"}
   },
 
-  "RouteDef": [
+  "RouteDef": {
     "Loiter": {
-      "Type": "CircleHold", "Radius": 200, "Direction": "Left",
-      "Waypoint": [0.0, 0.0, -Height], "LeadTime_s": 2
+      "Type": "CircleHold", "Radius": 400, "Direction": "Left",
+      "Waypoint": [0.0, 0.0, -75], "LeadDist": 100
     },
 
-    "Path001": {
-      "Type": "Waypoints", "LeadTime_s": 2
+    "Path_1": {
+      "Type": "Waypoints", "LeadDist": 100,
       "WaypointList": [
-        [N, E, D],
-        [N, E, D],
-        [N, E, D] ]
-    },
-
-    "LandWest": {
-      "Type": "Land", "AltFinal": 50, "GlideSlope": -3, "Heading": 270,
-      "Waypoint": [0.0, 10.0, 0.0]
-    },
-
-    "LandEast": {
-      "Type": "Landing", "AltFinal": 50, "GlideSlope": -3, "Heading": 90,
-      "Waypoint": [0.0, -10.0, 0.0]
+        [400, 0, -75],
+        [0, 400, -75],
+        [-400, 0, -75],
+        [0, -400, -75] ]
     }
-  ]
-}
+  }
+
 */
 
 #pragma once

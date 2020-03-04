@@ -110,7 +110,6 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
 }
 
 void RouteMgr::Run() {
-
   // Get the Current Position, Geodetic [rad, rad, m]
   Vector3d pCurr_D_rrm;
   pCurr_D_rrm[0] = NodeIn_.Lat->getDouble();
@@ -120,12 +119,16 @@ void RouteMgr::Run() {
   // Convert Geodetic to NED
   Vector3f pCurr_L_m = T_E2L_ * (D2E(pCurr_D_rrm) - pHome_E_m_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
 
-  // Run the selected route
-  RouteMap_[RouteSel_]->Run(pCurr_L_m);
+  Vector3f pAdj_L_m; pAdj_L_m.setZero();
+  Vector3f pLead_L_m; pLead_L_m.setZero();
+  if (RouteSel_ != "None") { // If "None" just skip
+    // Run the selected route
+    RouteMap_[RouteSel_]->Run(pCurr_L_m);
 
-  // Get the Adjacent and Lead Waypoints
-  Vector3f pAdj_L_m = RouteMap_[RouteSel_]->Get_Adj();
-  Vector3f pLead_L_m = RouteMap_[RouteSel_]->Get_Lead();
+    // Get the Adjacent and Lead Waypoints
+    pAdj_L_m = RouteMap_[RouteSel_]->Get_Adj();
+    pLead_L_m = RouteMap_[RouteSel_]->Get_Lead();
+  }
 
   // Compute Crosstrack
   Vector3f vAdj2Curr = pCurr_L_m - pAdj_L_m; // pCurr wrt pAdj
@@ -140,11 +143,11 @@ void RouteMgr::Run() {
   float heading_rad = NodeIn_.Heading->getFloat();
   float headingErr_rad = WrapToPi(heading2Lead_rad - heading_rad);
 
-
   NodeOut_.RefAlt->setFloat(pAdj_L_m[2]);
   NodeOut_.CrossTrack->setFloat(crosstrack_m);
   NodeOut_.HeadingError->setFloat(headingErr_rad);
 }
+
 
 /* Route Type - Circle Hold */
 void RouteCircleHold::Configure(const rapidjson::Value& RouteConfig) {
