@@ -84,7 +84,6 @@ class RoutePathBase {
   private:
     Vector3f pAdj_L_m_;
     Vector3f pLead_L_m_;
-    float heading2Lead_rad_;
 };
 
 class RouteCircleHold: public RoutePathBase {
@@ -104,7 +103,6 @@ class RouteCircleHold: public RoutePathBase {
 
     Vector3f pAdj_L_m_;
     Vector3f pLead_L_m_;
-    float heading2Lead_rad_;
 };
 
 // Route Waypoints
@@ -133,7 +131,6 @@ class RouteWaypoints: public RoutePathBase {
 
     Vector3f pAdj_L_m_;
     Vector3f pLead_L_m_;
-    float heading2Lead_rad_;
 };
 
 // Route Manager
