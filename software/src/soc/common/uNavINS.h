@@ -34,9 +34,9 @@ class uNavINS {
   public:
     uNavINS() {};
     void Configure();
-    void Initialize(Vector3f wMeas_B_rps, Vector3f aMeas_B_mps2, Vector3f magMeas_B_uT, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps);
+    void Initialize(Vector3f wMeas_B_rps, Vector3f aMeas_B_mps2, Vector3f magMeas_B_uT, Vector3d pMeas_D_rrm, Vector3f vMeas_NED_mps);
     bool Initialized() { return initialized_; } // returns whether the INS has been initialized
-    void Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_B_rps, Vector3f aMeas_B_mps2, Vector3f magMeas_B_uT, Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps);
+    void Update(uint64_t t_us, unsigned long timeWeek, Vector3f wMeas_B_rps, Vector3f aMeas_B_mps2, Vector3f magMeas_B_uT, Vector3d pMeas_D_rrm, Vector3f vMeas_NED_mps);
 
     // Set Configuration
     inline void Set_AccelSigma(float val) { aNoiseSigma_mps2 = val; }
@@ -65,8 +65,8 @@ class uNavINS {
     inline Vector3f Get_RotRateBias() { return wBias_rps_; }
     inline Vector3f Get_OrientEst() { return euler_BL_rad_; }
     inline Vector3d Get_PosEst() { return pEst_D_rrm_; }
-    inline Vector3f Get_VelEst() { return vEst_L_mps_; }
-    inline float Get_Track() { return atan2f(vEst_L_mps_(1), vEst_L_mps_(0)); }
+    inline Vector3f Get_VelEst() { return vEst_NED_mps_; }
+    inline float Get_Track() { return atan2f(vEst_NED_mps_(1), vEst_NED_mps_(0)); }
 
     // Get Covariance Estimates
     inline Vector3f Get_CovPos() { return P_.block(0,0,3,3).diagonal(); }
@@ -135,10 +135,10 @@ class uNavINS {
     Quaternionf quat_BL_; // Quaternion of B wrt L
     Vector3f aEst_B_mps2_; // Estimated acceleration in Body
     Vector3f wEst_B_rps_; // Estimated rotation rate in Body
-    Vector3f vEst_L_mps_; // Estimated velocity in NED
+    Vector3f vEst_NED_mps_; // Estimated velocity in NED
     Vector3d pEst_D_rrm_; // Estimated position in LLA (rad, rad, m)
 
     // Methods
     void TimeUpdate();
-    void MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_L_mps);
+    void MeasUpdate(Vector3d pMeas_D_rrm, Vector3f vMeas_NED_mps);
 };

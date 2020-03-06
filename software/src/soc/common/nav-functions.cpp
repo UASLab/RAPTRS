@@ -12,7 +12,8 @@ I - ECI (Earch Center Inertial): origin at Earth center
 E - ECEF (Earch Center Earth Fixed): origin at Earth center
 D - Geodetic: origin at Earth center, Uses earth ellisoid definition (example WGS84)
 G - Geocentric: origin at Earth center, Uses spheroid definition
-L - Local Level: origin at specified reference, [x- North, y- East, z- Down]
+NED - Local Level: origin at specified reference, [x- North, y- East, z- Down]
+ENU - Local Level: origin at specified reference, [x- East, y- North, z- Up]
 B - Body: origin at Body CG, [x- Fwd, y- Starboard, z- Down]
 
 All units meters and radians
@@ -23,25 +24,25 @@ All units meters and radians
 
 // Calculate the rate of change of latitude, longitude,
 // and altitude using the velocity in NED coordinates and WGS-84.
-Vector3d L2D_Rate(Vector3d v_L, Vector3d pRef_D) {
+Vector3d NED2D_Rate(Vector3d v_NED, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
 
     Vector3d pDot_D;
-    pDot_D(0) = v_L(0) / (Rns + pRef_D(2)); // latDot = vNorth / (Rns + alt)
-    pDot_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0))); // lonDot = vEast / ((Rns + alt)*cos(lat))
-    pDot_D(2) = -v_L(2);
+    pDot_D(0) = v_NED(0) / (Rns + pRef_D(2)); // latDot = vNorth / (Rns + alt)
+    pDot_D(1) = v_NED(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0))); // lonDot = vEast / ((Rns + alt)*cos(lat))
+    pDot_D(2) = -v_NED(2);
 
     return pDot_D;
 }
-Vector3f L2D_Rate(Vector3f v_L, Vector3d pRef_D) {
+Vector3f NED2D_Rate(Vector3f v_NED, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
 
     Vector3f pDot_D;
-    pDot_D(0) = v_L(0) / (Rns + pRef_D(2));
-    pDot_D(1) = v_L(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
-    pDot_D(2) = -v_L(2);
+    pDot_D(0) = v_NED(0) / (Rns + pRef_D(2));
+    pDot_D(1) = v_NED(1) / ((Rew + pRef_D(2)) * cos(pRef_D(0)));
+    pDot_D(2) = -v_NED(2);
 
     return pDot_D;
 }
@@ -49,27 +50,27 @@ Vector3f L2D_Rate(Vector3f v_L, Vector3d pRef_D) {
 // Calculate the angular velocity of the NED frame,
 // also known as the navigation rate using WGS-84.
 // Rotation rate of the NED frame wrt Geodetic, in NED coordinates.
-Vector3d NavRate(Vector3d v_L, Vector3d pRef_D) {
+Vector3d NavRate(Vector3d v_NED, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
 
-    Vector3d w_L;
-    w_L(0) = v_L(1) / (Rew + pRef_D(2)); // rotation rate about North = vEast / (Rew + alt)
-    w_L(1) = -v_L(0) / (Rns + pRef_D(2)); // rotation rate about East = -vNorth / (Rns + alt)
-    w_L(2) = -v_L(1) * tan(pRef_D(0)) / (Rew + pRef_D(2)); // rotation rate about Down
+    Vector3d w_NED;
+    w_NED(0) = v_NED(1) / (Rew + pRef_D(2)); // rotation rate about North = vEast / (Rew + alt)
+    w_NED(1) = -v_NED(0) / (Rns + pRef_D(2)); // rotation rate about East = -vNorth / (Rns + alt)
+    w_NED(2) = -v_NED(1) * tan(pRef_D(0)) / (Rew + pRef_D(2)); // rotation rate about Down
 
-    return w_L;
+    return w_NED;
 }
-Vector3f NavRate(Vector3f v_L, Vector3d pRef_D) {
+Vector3f NavRate(Vector3f v_NED, Vector3d pRef_D) {
     double Rew, Rns;
     EarthRad(pRef_D(0), &Rew, &Rns);
 
-    Vector3f w_LD_L;
-    w_LD_L(0) = v_L(1) / (Rew + pRef_D(2));
-    w_LD_L(1) = -v_L(0) / (Rns + pRef_D(2));
-    w_LD_L(2) = -v_L(1) * tan(pRef_D(0)) / (Rew + pRef_D(2));
+    Vector3f wNED_NED;
+    wNED_NED(0) = v_NED(1) / (Rew + pRef_D(2));
+    wNED_NED(1) = -v_NED(0) / (Rns + pRef_D(2));
+    wNED_NED(2) = -v_NED(1) * tan(pRef_D(0)) / (Rew + pRef_D(2));
 
-    return w_LD_L;
+    return wNED_NED;
 }
 
 // Calculates the ECEF Coordinates given the
@@ -157,27 +158,27 @@ Vector3d E2D( Vector3d p_E ) {
 }
 
 // Transform a vector in ECEF coord to NED coord centered at pRef.
-Vector3d E2L(Vector3d p_E, Vector3d pRef_D) {
-  Vector3d p_L = TransE2L(pRef_D) * p_E;
+Vector3d E2NED(Vector3d p_E, Vector3d pRef_D) {
+  Vector3d p_NED = TransE2NED(pRef_D) * p_E;
 
-  return p_L;
+  return p_NED;
 }
 
-// Calculate the ECEF to NED coordinate transform DCM
-Matrix3d TransE2L(Vector3d pRef_D) {
-  Matrix3d T_E2L;
-  T_E2L = AngleAxisd(pRef_D(0) - 3*M_PI/2, Vector3d::UnitY())
+// Calculate the ECEF to NED coordinate transform DCM, rotation only
+Matrix3d TransE2NED(Vector3d pRef_D) {
+  Matrix3d T_E2NED;
+  T_E2NED = AngleAxisd(pRef_D(0) - 3*M_PI/2, Vector3d::UnitY())
     * AngleAxisd(-pRef_D(1), Vector3d::UnitZ());
 
-  // T_E2L(0,0) = -sin(pRef_D(0))*cos(pRef_D(1)); T_E2L(0,1) = -sin(pRef_D(0))*sin(pRef_D(1)); T_E2L(0,2) = cos(pRef_D(0));
-  // T_E2L(1,0) = -sin(pRef_D(1));                T_E2L(1,1) = cos(pRef_D(1));                 T_E2L(1,2) = 0.0f;
-  // T_E2L(2,0) = -cos(pRef_D(0))*cos(pRef_D(1)); T_E2L(2,1) = -cos(pRef_D(0))*sin(pRef_D(1)); T_E2L(2,2) = -sin(pRef_D(0));
-  return T_E2L;
+  // T_E2NED(0,0) = -sin(pRef_D(0))*cos(pRef_D(1)); T_E2NED(0,1) = -sin(pRef_D(0))*sin(pRef_D(1)); T_E2NED(0,2) = cos(pRef_D(0));
+  // T_E2NED(1,0) = -sin(pRef_D(1));                T_E2NED(1,1) = cos(pRef_D(1));                 T_E2NED(1,2) = 0.0f;
+  // T_E2NED(2,0) = -cos(pRef_D(0))*cos(pRef_D(1)); T_E2NED(2,1) = -cos(pRef_D(0))*sin(pRef_D(1)); T_E2NED(2,2) = -sin(pRef_D(0));
+  return T_E2NED;
 }
 
 
-// Calculate the ECEF to NED coordinate transform quaternion
-Quaterniond E2L_Quat(Vector3d pRef_D) {
+// Calculate the ECEF to NED coordinate rotation quaternion
+Quaterniond TransE2NED_Quat(Vector3d pRef_D) {
   double zd2 = 0.5 * pRef_D(1);
   double yd2 = -0.25 * M_PI - 0.5 * pRef_D(0);
 

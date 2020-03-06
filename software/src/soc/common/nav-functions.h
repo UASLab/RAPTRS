@@ -12,7 +12,8 @@ I - ECI (Earch Center Inertial): origin at Earth center
 E - ECEF (Earch Center Earth Fixed): origin at Earth center
 D - Geodetic: origin at Earth center, Uses earth ellisoid definition (example WGS84)
 G - Geocentric: origin at Earth center, Uses spheroid definition
-L - Local Level: origin at specified reference, [x- North, y- East, z- Down]
+NED - Local Level: origin at specified reference, [x- North, y- East, z- Down]
+ENU - Local Level: origin at specified reference, [x- East, y- North, z- Up]
 B - Body: origin at Body CG, [x- Fwd, y- Starboard, z- Down]
 
 All units meters and radians
@@ -41,19 +42,19 @@ const double ECC2 = 0.0066943799901;         // major eccentricity squared
 // const double GravityNom = 9.81;              // nominal gravity
 // const double Schuler2 = 1.533421593170545E-06; // Schuler Frequency (rad/sec) Squared
 
-Vector3d L2D_Rate(Vector3d v_L, Vector3d pRef_D);
-Vector3f L2D_Rate(Vector3f v_L, Vector3d pRef_D);
+Vector3d NED2D_Rate(Vector3d v_NED, Vector3d pRef_D);
+Vector3f NED2D_Rate(Vector3f v_NED, Vector3d pRef_D);
 
-Vector3d NavRate(Vector3d v_L, Vector3d pRef_D);
-Vector3f NavRate(Vector3f v_L, Vector3d pRef_D);
+Vector3d NavRate(Vector3d v_NED, Vector3d pRef_D);
+Vector3f NavRate(Vector3f v_NED, Vector3d pRef_D);
 
 Vector3d D2E(Vector3d p_D);
 
 Vector3d E2D(Vector3d p_E);
 
-Vector3d E2L(Vector3d p_E, Vector3d pRef_D);
-Matrix3d TransE2L(Vector3d pRef_D);
-Quaterniond E2L_Quat(Vector3d pRef_D);
+Vector3d E2NED(Vector3d p_E, Vector3d pRef_D);
+Matrix3d TransE2NED(Vector3d pRef_D);
+Quaterniond TransE2NED_Quat(Vector3d pRef_D);
 
 Matrix3d Skew(Vector3d w);
 Matrix3f Skew(Vector3f w);

@@ -26,8 +26,10 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
   }
   const rapidjson::Value& OutputDef = RouteConfig["OutputDef"];
 
-  LoadOutput(OutputDef, RootPath_, "RefAlt", &NodeOut_.RefAlt);
+  LoadOutput(OutputDef, RootPath_, "AltRef", &NodeOut_.AltRef);
+  LoadOutput(OutputDef, RootPath_, "AltError", &NodeOut_.AltError);
   LoadOutput(OutputDef, RootPath_, "Crosstrack", &NodeOut_.CrossTrack);
+  LoadOutput(OutputDef, RootPath_, "HeadingRef", &NodeOut_.HeadingRef);
   LoadOutput(OutputDef, RootPath_, "HeadingError", &NodeOut_.HeadingError);
 
   // Configure Reference Waypoints
@@ -65,11 +67,12 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
 
       // Retain the Home position in Geodetic, ECEF, and as a DCM
       pHome_E_m_ = D2E(pHome_D_rrm_); // ECEF position of Home
-      T_E2L_ = TransE2L(pHome_D_rrm_).cast <float> (); // Compute ECEF to NED with double precision, cast to float
+      T_E2NED_ = TransE2NED(pHome_D_rrm_).cast <float> (); // Compute ECEF to NED with double precision, cast to float
     } // if "Home"
 
-    // WaypointNames_.push_back(WaypointName);
-    // WaypointMap_.make_pair(WaypointName, WaypointVal.cast<float>()); // a float precision will get stored into the map
+    // Retain Names in a Vector and Waypoints in a map
+    WaypointNames_.push_back(WaypointName);
+    WaypointMap_.insert(std::make_pair(WaypointName, WaypointVal.cast<float>())); // a float precision will get stored into the map
   } // for WaypointDef
 
   // Route Definitions
@@ -115,35 +118,53 @@ void RouteMgr::Run() {
   pCurr_D_rrm[1] = NodeIn_.Lon->getDouble();
   pCurr_D_rrm[2] = NodeIn_.Alt->getDouble();
 
-  // Convert Geodetic to NED
-  Vector3f pCurr_L_m = T_E2L_ * (D2E(pCurr_D_rrm) - pHome_E_m_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
+  // Get the Current heading, radians
+  float heading_rad = NodeIn_.Heading->getFloat();
 
-  Vector3f pAdj_L_m; pAdj_L_m.setZero();
-  Vector3f pLead_L_m; pLead_L_m.setZero();
+  // Convert poition from Geodetic to NED
+  Vector3f pCurr_NED_m = T_E2NED_ * (D2E(pCurr_D_rrm) - pHome_E_m_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
+
+  Vector3f pAdj_NED_m; pAdj_NED_m.setZero();
+  Vector3f pLead_NED_m; pLead_NED_m.setZero();
+  Vector3f pTrail_NED_m; pTrail_NED_m.setZero();
+  bool holdFlag; holdFlag = false;
   if (RouteSel_ != "None") { // If "None" just skip
     // Run the selected route
-    RouteMap_[RouteSel_]->Run(pCurr_L_m);
+    RouteMap_[RouteSel_]->Run(pCurr_NED_m);
 
     // Get the Adjacent and Lead Waypoints
-    pAdj_L_m = RouteMap_[RouteSel_]->Get_Adj();
-    pLead_L_m = RouteMap_[RouteSel_]->Get_Lead();
+    pAdj_NED_m = RouteMap_[RouteSel_]->Get_Adj();
+    pLead_NED_m = RouteMap_[RouteSel_]->Get_Lead();
+    pTrail_NED_m = RouteMap_[RouteSel_]->Get_Trail();
+    holdFlag = RouteMap_[RouteSel_]->Get_HoldFlag();
   }
 
-  // Compute Crosstrack
-  Vector3f vAdj2Curr = pCurr_L_m - pAdj_L_m; // pCurr wrt pAdj
-  float crosstrack_m = vAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+  // Compute Heading reference, between trail and lead
+  Vector3f vecTrail2Lead = pLead_NED_m - pTrail_NED_m; // pLead wrt pTrail
+  float headingRef_rad = atan2(vecTrail2Lead[1], vecTrail2Lead[0]);
 
   // Compute Heading to Lead Point
-  Vector3f vCurr2Lead = pLead_L_m - pCurr_L_m; // pLead wrt pCurr
-  // float dist2Lead_m = vCurr2Lead.norm();
-  float heading2Lead_rad = atan2(vCurr2Lead[1], vCurr2Lead[0]);
+  Vector3f vecCurr2Lead = pLead_NED_m - pCurr_NED_m; // pLead wrt pCurr
+  // float dist2Lead_m = vecCurr2Lead.norm();
+  float headingLead_rad = atan2(vecCurr2Lead[1], vecCurr2Lead[0]);
 
   // Compute Heading error
-  float heading_rad = NodeIn_.Heading->getFloat();
-  float headingErr_rad = WrapToPi(heading2Lead_rad - heading_rad);
+  float headingErr_rad = WrapToPi(headingLead_rad - heading_rad);
 
-  NodeOut_.RefAlt->setFloat(pAdj_L_m[2]);
+  // Compute Crosstrack
+  Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m; // pCurr wrt pAdj
+  float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+
+  // If the crosstrack is large, or heading is more the 90deg out, then zero the crosstrack
+  if ((holdFlag == false) | (abs(headingErr_rad) > M_PI/2.0)) {
+    crosstrack_m = 0.0;
+  }
+
+  // Outputs to Nodes
+  NodeOut_.AltRef->setFloat(-pAdj_NED_m[2]);
+  NodeOut_.AltError->setFloat(-pAdj_NED_m[2] - -pCurr_NED_m[2]);
   NodeOut_.CrossTrack->setFloat(crosstrack_m);
+  NodeOut_.HeadingRef->setFloat(headingRef_rad);
   NodeOut_.HeadingError->setFloat(headingErr_rad);
 }
 
@@ -152,22 +173,25 @@ void RouteMgr::Run() {
 void RouteCircleHold::Configure(const rapidjson::Value& RouteConfig) {
   LoadVal(RouteConfig, "Radius", &distRadius_m_, true);
   LoadVal(RouteConfig, "Direction", &Direction_, true);
-  LoadVal(RouteConfig, "Waypoint", &pCenter_L_m_, true);
+  LoadVal(RouteConfig, "Waypoint", &pCenter_NED_m_, true);
   LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
+  LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
 }
 
-void RouteCircleHold::Run(Vector3f pCurr_L_m) {
-  Vector3f vCenter2Curr_m = pCurr_L_m - pCenter_L_m_; // Vector from pCenter to pCurr
-  Vector3f vCenter2Curr_nd = vCenter2Curr_m / vCenter2Curr_m.norm();
+void RouteCircleHold::Run(Vector3f pCurr_NED_m) {
+  Vector3f vecCenter2Curr_m = pCurr_NED_m - pCenter_NED_m_; // Vector from pCenter to pCurr
 
-  // Adj Point, Radius from Center along unit vector
-  pAdj_L_m_ = distRadius_m_ * vCenter2Curr_nd ;
+  // Adj Point, Radius from Center along vector from Center to Current
+  pAdj_NED_m_.segment(0,2) = (distRadius_m_ / vecCenter2Curr_m.segment(0,2).norm()) * vecCenter2Curr_m.segment(0,2) ;
+  pAdj_NED_m_[2] = pCenter_NED_m_[2];
 
-  // Heading of the Circle at Adj
-  if (Direction_ == "Left") {
-    headingSeg_rad_ = atan2(-vCenter2Curr_nd[0], vCenter2Curr_nd[1]);
-  } else { // Right
-    headingSeg_rad_ = atan2(vCenter2Curr_nd[0], -vCenter2Curr_nd[1]);
+  // Compute Crosstrack, set Hold/Agcuire Flag
+  Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m_; // pCurr wrt pAdj
+  float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+
+  holdFlag_ = false;
+  if (crosstrack_m < distHold_m_) {
+    holdFlag_ = true;
   }
 
   // Compute the angle around circle to Lead, distLead ahead of pAdj
@@ -176,19 +200,22 @@ void RouteCircleHold::Run(Vector3f pCurr_L_m) {
     angleLead_rad = -angleLead_rad;
   }
 
-  // Compute the Lead point, rotate vCenter2Curr_nd by angleLead
+  // Compute the Lead point and Trail point, rotate vecCenter2Adj_m by angleLead
   Matrix3f T;
   T = AngleAxisf(angleLead_rad, Vector3f::UnitZ());
-  pLead_L_m_ = pCenter_L_m_ + (T * vCenter2Curr_nd) * distRadius_m_;
+  Vector3f vecCenter2Adj_m = pAdj_NED_m_ - pCenter_NED_m_;
+  pLead_NED_m_ = pCenter_NED_m_ + (T * vecCenter2Adj_m);
+  pTrail_NED_m_ = pCenter_NED_m_ - (T * vecCenter2Adj_m);
 }
 
 
 /* Route Type - Waypoints */
 void RouteWaypoints::Configure(const rapidjson::Value& RouteConfig) {
-  LoadVal(RouteConfig, "WaypointList", &WaypointList_L_, true);
+  LoadVal(RouteConfig, "WaypointList", &WaypointList_NED_, true);
   LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
+  LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
 
-  numWaypoints_ = WaypointList_L_.size();
+  numWaypoints_ = WaypointList_NED_.size();
 }
 
 void RouteWaypoints::ComputeSegment() {
@@ -207,41 +234,47 @@ void RouteWaypoints::ComputeSegment() {
   }
 
   // Retrieve Waypoint from the List
-  pPrev_L_m_ = WaypointList_L_[indxPrev_];
-  pNext_L_m_ = WaypointList_L_[indxNext_];
+  pPrev_NED_m_ = WaypointList_NED_[indxPrev_];
+  pNext_NED_m_ = WaypointList_NED_[indxNext_];
 
   // Segment values
-  Vector3f vSeg_L_m = pNext_L_m_ - pPrev_L_m_; // Vector along segment
-  lenSeg_m_ = vSeg_L_m.norm(); // Length of segment
-  vSegUnit_L_ = vSeg_L_m / lenSeg_m_; // unit vector along segment
-
-  headingSeg_rad_ = atan2(vSeg_L_m[1], vSeg_L_m[0]);
+  Vector3f vecSeg_NED_m = pNext_NED_m_ - pPrev_NED_m_; // Vector along segment
+  lenSeg_m_ = vecSeg_NED_m.norm(); // Length of segment
+  vSegUnit_NED_ = vecSeg_NED_m / lenSeg_m_; // unit vector along segment
 }
 
-void RouteWaypoints::Run(Vector3f pCurr_L_m) {
+void RouteWaypoints::Run(Vector3f pCurr_NED_m) {
   // pCurr along segment to Next
-  Vector3f vCurr2Next = pNext_L_m_ - pCurr_L_m;
-  // Vector3f vAdj2Next = vCurr2Next.() * vSegUnit_L_ ;
-  Vector3f vAdj2Next = vCurr2Next.cwiseProduct(vSegUnit_L_) ;
+  Vector3f vecCurr2Next = pNext_NED_m_ - pCurr_NED_m;
+  Vector3f vecvAdj2Next = vecCurr2Next.cwiseProduct(vSegUnit_NED_) ;
 
   // Check if we're past Next, or within the threshold
   float distNextThresh = 1.0;
-  if (vAdj2Next[0] <= distNextThresh) { // pCurr is beyond pNext
+  if (vecvAdj2Next[0] <= distNextThresh) { // pCurr is beyond pNext
     indxSeg_ = indxNext_; // advance indx to Next
     ComputeSegment(); // Compute segment values
 
-    vCurr2Next = pNext_L_m_ - pCurr_L_m;
-    vAdj2Next = vCurr2Next.cwiseProduct(vSegUnit_L_) ;
+    vecCurr2Next = pNext_NED_m_ - pCurr_NED_m;
+    vecvAdj2Next = vecCurr2Next.cwiseProduct(vSegUnit_NED_) ;
   }
 
   // pCurr along segment from Previous
-  Vector3f vPrev2Curr = pCurr_L_m - pPrev_L_m_;
-  Vector3f vPrev2Adj = vPrev2Curr.norm() * vSegUnit_L_ ;
+  Vector3f vecPrev2Curr = pCurr_NED_m - pPrev_NED_m_;
+  Vector3f vecPrev2Adj = vecPrev2Curr.norm() * vSegUnit_NED_ ;
 
   // Compute the location of pAdj, Point along the segment
-  pAdj_L_m_ = pPrev_L_m_ + vPrev2Adj;
-  // Vector3f vCurr2Adj = pAdj_L_m_ - pCurr_L_m;
+  pAdj_NED_m_ = pPrev_NED_m_ + vecPrev2Adj;
 
-  // Compute the Lead point Location, distLead ahead of pAdj
-  pLead_L_m_ = pAdj_L_m_ + (distLead_m_ * vSegUnit_L_);
+  // Compute Crosstrack, set Hold/Agcuire Flag
+  Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m_; // pCurr wrt pAdj
+  float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+
+  holdFlag_ = false;
+  if (crosstrack_m < distHold_m_) {
+    holdFlag_ = true;
+  }
+
+  // Compute the Lead point and Trail point Locations, distLead from of pAdj
+  pLead_NED_m_ = pAdj_NED_m_ + (distLead_m_ * vSegUnit_NED_);
+  pTrail_NED_m_ = pAdj_NED_m_ - (distLead_m_ * vSegUnit_NED_);
 }

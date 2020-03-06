@@ -67,60 +67,74 @@ using namespace Eigen;
 class RoutePathBase {
   public:
     virtual void Configure(const rapidjson::Value& Config) {}
-    virtual void Run(Vector3f pCurr_L_m) {}
-    virtual Vector3f Get_Adj() { return pAdj_L_m_; }
-    virtual Vector3f Get_Lead() { return pLead_L_m_; }
+    virtual void Run(Vector3f pCurr_NED_m) {}
+    virtual Vector3f Get_Adj() { return pAdj_NED_m_; }
+    virtual Vector3f Get_Lead() { return pLead_NED_m_; }
+    virtual Vector3f Get_Trail() { return pTrail_NED_m_; }
+    virtual bool Get_HoldFlag() { return holdFlag_; }
     virtual void Clear() {}
   private:
-    Vector3f pAdj_L_m_;
-    Vector3f pLead_L_m_;
+    Vector3f pAdj_NED_m_;
+    Vector3f pLead_NED_m_;
+    Vector3f pTrail_NED_m_;
+    bool holdFlag_ = false; // true is tracking within distHold
 };
 
 class RouteCircleHold: public RoutePathBase {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(Vector3f pCurr_L_m);
-    inline Vector3f Get_Adj() { return pAdj_L_m_; }
-    inline Vector3f Get_Lead() { return pLead_L_m_; }
+    void Run(Vector3f pCurr_NED_m);
+    inline Vector3f Get_Adj() { return pAdj_NED_m_; }
+    inline Vector3f Get_Lead() { return pLead_NED_m_; }
+    inline Vector3f Get_Trail() { return pTrail_NED_m_; }
+    inline bool Get_HoldFlag() { return holdFlag_; }
     void Clear() {}
   private:
-    Vector3f pCenter_L_m_;
+    Vector3f pCenter_NED_m_;
     float distRadius_m_;
     std::string Direction_;
     float distLead_m_;
+    float distHold_m_;
+    bool holdFlag_ = false; // true is tracking within distHold
 
     float headingSeg_rad_; // Segment heading
 
-    Vector3f pAdj_L_m_;
-    Vector3f pLead_L_m_;
+    Vector3f pAdj_NED_m_;
+    Vector3f pLead_NED_m_;
+    Vector3f pTrail_NED_m_;
 };
 
 // Route Waypoints
 class RouteWaypoints: public RoutePathBase {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(Vector3f pCurr_L_m);
-    inline Vector3f Get_Adj() { return pAdj_L_m_; }
-    inline Vector3f Get_Lead() { return pLead_L_m_; }
+    void Run(Vector3f pCurr_NED_m);
+    inline Vector3f Get_Adj() { return pAdj_NED_m_; }
+    inline Vector3f Get_Lead() { return pLead_NED_m_; }
+    inline Vector3f Get_Trail() { return pTrail_NED_m_; }
+    inline bool Get_HoldFlag() { return holdFlag_; }
     void Clear() {}
   private:
     void ComputeSegment();
 
-    std::vector<Vector3f> WaypointList_L_;
+    std::vector<Vector3f> WaypointList_NED_;
     float distLead_m_;
+    float distHold_m_;
+    bool holdFlag_ = false; // true if tracking within distHold
 
     size_t numWaypoints_;
     size_t indxSeg_ = 0;
     size_t indxPrev_ = 0;
     size_t indxNext_ = 0;
-    Vector3f pPrev_L_m_;
-    Vector3f pNext_L_m_;
+    Vector3f pPrev_NED_m_;
+    Vector3f pNext_NED_m_;
     float lenSeg_m_;
-    Vector3f vSegUnit_L_;
+    Vector3f vSegUnit_NED_;
     float headingSeg_rad_; // Segment heading
 
-    Vector3f pAdj_L_m_;
-    Vector3f pLead_L_m_;
+    Vector3f pAdj_NED_m_;
+    Vector3f pLead_NED_m_;
+    Vector3f pTrail_NED_m_;
 };
 
 // Route Manager
@@ -139,12 +153,12 @@ class RouteMgr {
     } NodeIn_;
 
     struct StructNodeOut {
-      ElementPtr RefAlt, CrossTrack, HeadingError;
+      ElementPtr AltRef, AltError, CrossTrack, HeadingRef, HeadingError;
     } NodeOut_;
 
     Vector3d pHome_D_rrm_;
     Vector3d pHome_E_m_;
-    Matrix3f T_E2L_;
+    Matrix3f T_E2NED_;
 
     std::vector<std::string> WaypointNames_;
     std::map<std::string, Vector3f> WaypointMap_;
