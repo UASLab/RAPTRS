@@ -190,7 +190,7 @@ void RouteCircleHold::Run(Vector3f pCurr_NED_m) {
   float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
 
   holdFlag_ = false;
-  if (crosstrack_m < distHold_m_) {
+  if (fabs(crosstrack_m) < distHold_m_) {
     holdFlag_ = true;
   }
 
@@ -270,7 +270,7 @@ void RouteWaypoints::Run(Vector3f pCurr_NED_m) {
   float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
 
   holdFlag_ = false;
-  if (crosstrack_m < distHold_m_) {
+  if (fabs(crosstrack_m) < distHold_m_) {
     holdFlag_ = true;
   }
 

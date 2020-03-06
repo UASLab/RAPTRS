@@ -237,8 +237,9 @@ int main(int argc, char* argv[]) {
 
         std::cout << Mission.GetBaselineController() << ":" << Mission.GetBaselineRunMode() << "\t"
                   << Mission.GetTestController() << ":" << Mission.GetTestRunMode() << "\t"
-                  << Mission.GetExcitation()
-                  << "\tdt (ms):  " << dt_ms
+                  << "Route: " << Mission.GetTestRoute() << "\t"
+                  << "Excite: " << Mission.GetExcitation() << "\t"
+                  << "dt (ms):  " << dt_ms
                   << std::endl;
       }
 
