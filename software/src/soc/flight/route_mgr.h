@@ -67,7 +67,7 @@ using namespace Eigen;
 class RoutePathBase {
   public:
     virtual void Configure(const rapidjson::Value& Config) {}
-    virtual void Run(Vector3f pCurr_NED_m) {}
+    virtual void Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {}
     virtual Vector3f Get_Adj() { return pAdj_NED_m_; }
     virtual Vector3f Get_Lead() { return pLead_NED_m_; }
     virtual Vector3f Get_Trail() { return pTrail_NED_m_; }
@@ -83,7 +83,7 @@ class RoutePathBase {
 class RouteCircleHold: public RoutePathBase {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(Vector3f pCurr_NED_m);
+    void Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps);
     inline Vector3f Get_Adj() { return pAdj_NED_m_; }
     inline Vector3f Get_Lead() { return pLead_NED_m_; }
     inline Vector3f Get_Trail() { return pTrail_NED_m_; }
@@ -93,7 +93,7 @@ class RouteCircleHold: public RoutePathBase {
     Vector3f pCenter_NED_m_;
     float distRadius_m_;
     std::string Direction_;
-    float distLead_m_;
+    float tLead_s_;
     float distHold_m_;
     bool holdFlag_ = false; // true is tracking within distHold
 
@@ -108,7 +108,7 @@ class RouteCircleHold: public RoutePathBase {
 class RouteWaypoints: public RoutePathBase {
   public:
     void Configure(const rapidjson::Value& Config);
-    void Run(Vector3f pCurr_NED_m);
+    void Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps);
     inline Vector3f Get_Adj() { return pAdj_NED_m_; }
     inline Vector3f Get_Lead() { return pLead_NED_m_; }
     inline Vector3f Get_Trail() { return pTrail_NED_m_; }
@@ -118,7 +118,7 @@ class RouteWaypoints: public RoutePathBase {
     void ComputeSegment();
 
     std::vector<Vector3f> WaypointList_NED_;
-    float distLead_m_;
+    float tLead_s_;
     float distHold_m_;
     bool holdFlag_ = false; // true if tracking within distHold
 
@@ -129,7 +129,7 @@ class RouteWaypoints: public RoutePathBase {
     Vector3f pPrev_NED_m_;
     Vector3f pNext_NED_m_;
     float lenSeg_m_;
-    Vector3f vSegUnit_NED_;
+    Vector3f vecSegUnit_NED_;
     float headingSeg_rad_; // Segment heading
 
     Vector3f pAdj_NED_m_;
@@ -148,8 +148,8 @@ class RouteMgr {
     std::string RootPath_ = "/Route";
 
     struct StructNodeIn {
-      ElementPtr Lat, Lon, Alt, Heading;
-      std::string LatKey, LonKey, AltKey, HeadingKey;
+      ElementPtr Lat, Lon, Alt, Heading, vNorth, vEast, vDown;
+      std::string LatKey, LonKey, AltKey, HeadingKey, vNorthKey, vEastKey, vDownKey;
     } NodeIn_;
 
     struct StructNodeOut {

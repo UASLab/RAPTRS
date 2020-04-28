@@ -18,6 +18,9 @@ void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
   LoadInput(InputDef, RootPath_, "Lat", &NodeIn_.Lat, &NodeIn_.LatKey);
   LoadInput(InputDef, RootPath_, "Lon", &NodeIn_.Lon, &NodeIn_.LonKey);
   LoadInput(InputDef, RootPath_, "Alt", &NodeIn_.Alt, &NodeIn_.AltKey);
+  LoadInput(InputDef, RootPath_, "VelNorth", &NodeIn_.vNorth, &NodeIn_.vNorthKey);
+  LoadInput(InputDef, RootPath_, "VelEast", &NodeIn_.vEast, &NodeIn_.vEastKey);
+  LoadInput(InputDef, RootPath_, "VelDown", &NodeIn_.vDown, &NodeIn_.vDownKey);
   LoadInput(InputDef, RootPath_, "Heading", &NodeIn_.Heading, &NodeIn_.HeadingKey);
 
   // Configure Output Definitions
@@ -121,6 +124,12 @@ void RouteMgr::Run() {
   // Get the Current heading, radians
   float heading_rad = NodeIn_.Heading->getFloat();
 
+  // Get the Current Velocity, NED [m/s]
+  Vector3f vCurr_NED_mps;
+  vCurr_NED_mps[0] = NodeIn_.vNorth->getFloat();
+  vCurr_NED_mps[1] = NodeIn_.vEast->getFloat();
+  vCurr_NED_mps[2] = NodeIn_.vDown->getFloat();
+
   // Convert poition from Geodetic to NED
   Vector3f pCurr_NED_m = T_E2NED_ * (D2E(pCurr_D_rrm) - pHome_E_m_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
 
@@ -130,7 +139,7 @@ void RouteMgr::Run() {
   bool holdFlag; holdFlag = false;
   if (RouteSel_ != "None") { // If "None" just skip
     // Run the selected route
-    RouteMap_[RouteSel_]->Run(pCurr_NED_m);
+    RouteMap_[RouteSel_]->Run(pCurr_NED_m, vCurr_NED_mps);
 
     // Get the Adjacent and Lead Waypoints
     pAdj_NED_m = RouteMap_[RouteSel_]->Get_Adj();
@@ -174,16 +183,31 @@ void RouteCircleHold::Configure(const rapidjson::Value& RouteConfig) {
   LoadVal(RouteConfig, "Radius", &distRadius_m_, true);
   LoadVal(RouteConfig, "Direction", &Direction_, true);
   LoadVal(RouteConfig, "Waypoint", &pCenter_NED_m_, true);
-  LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
+  LoadVal(RouteConfig, "LeadTime", &tLead_s_, true);
   LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
 }
 
-void RouteCircleHold::Run(Vector3f pCurr_NED_m) {
+void RouteCircleHold::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
   Vector3f vecCenter2Curr_m = pCurr_NED_m - pCenter_NED_m_; // Vector from pCenter to pCurr
 
   // Adj Point, Radius from Center along vector from Center to Current
   pAdj_NED_m_.segment(0,2) = (distRadius_m_ / vecCenter2Curr_m.segment(0,2).norm()) * vecCenter2Curr_m.segment(0,2) ;
   pAdj_NED_m_[2] = pCenter_NED_m_[2];
+
+
+  // Heading of the Circle at Adj
+  if (Direction_ == "Left") {
+    headingSeg_rad_ = atan2(-vecCenter2Curr_m[0], vecCenter2Curr_m[1]);
+  } else { // Right
+    headingSeg_rad_ = atan2(vecCenter2Curr_m[0], -vecCenter2Curr_m[1]);
+  }
+
+  // Velocity along segment
+  Matrix3f T_seg;
+  T_seg = AngleAxisf(headingSeg_rad_, Vector3f::UnitZ());
+  Vector3f vSeg_mps = T_seg * vCurr_NED_mps;
+
+  float distLead_m = vSeg_mps[0] * tLead_s_;
 
   // Compute Crosstrack, set Hold/Agcuire Flag
   Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m_; // pCurr wrt pAdj
@@ -195,24 +219,24 @@ void RouteCircleHold::Run(Vector3f pCurr_NED_m) {
   }
 
   // Compute the angle around circle to Lead, distLead ahead of pAdj
-  float angleLead_rad = distLead_m_ / distRadius_m_;
+  float angleLead_rad = distLead_m / distRadius_m_;
   if (Direction_ == "Left") {
     angleLead_rad = -angleLead_rad;
   }
 
   // Compute the Lead point and Trail point, rotate vecCenter2Adj_m by angleLead
-  Matrix3f T;
-  T = AngleAxisf(angleLead_rad, Vector3f::UnitZ());
+  Matrix3f T_Lead;
+  T_Lead = AngleAxisf(angleLead_rad, Vector3f::UnitZ());
   Vector3f vecCenter2Adj_m = pAdj_NED_m_ - pCenter_NED_m_;
-  pLead_NED_m_ = pCenter_NED_m_ + (T * vecCenter2Adj_m);
-  pTrail_NED_m_ = pCenter_NED_m_ - (T * vecCenter2Adj_m);
+  pLead_NED_m_ = pCenter_NED_m_ + (T_Lead * vecCenter2Adj_m);
+  pTrail_NED_m_ = pCenter_NED_m_ - (T_Lead * vecCenter2Adj_m);
 }
 
 
 /* Route Type - Waypoints */
 void RouteWaypoints::Configure(const rapidjson::Value& RouteConfig) {
   LoadVal(RouteConfig, "WaypointList", &WaypointList_NED_, true);
-  LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
+  LoadVal(RouteConfig, "LeadTime", &tLead_s_, true);
   LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
 
   numWaypoints_ = WaypointList_NED_.size();
@@ -240,13 +264,13 @@ void RouteWaypoints::ComputeSegment() {
   // Segment values
   Vector3f vecSeg_NED_m = pNext_NED_m_ - pPrev_NED_m_; // Vector along segment
   lenSeg_m_ = vecSeg_NED_m.norm(); // Length of segment
-  vSegUnit_NED_ = vecSeg_NED_m / lenSeg_m_; // unit vector along segment
+  vecSegUnit_NED_ = vecSeg_NED_m / lenSeg_m_; // unit vector along segment
 }
 
-void RouteWaypoints::Run(Vector3f pCurr_NED_m) {
+void RouteWaypoints::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
   // pCurr along segment to Next
   Vector3f vecCurr2Next = pNext_NED_m_ - pCurr_NED_m;
-  Vector3f vecvAdj2Next = vecCurr2Next.cwiseProduct(vSegUnit_NED_) ;
+  Vector3f vecvAdj2Next = vecCurr2Next.cwiseProduct(vecSegUnit_NED_) ;
 
   // Check if we're past Next, or within the threshold
   float distNextThresh = 1.0;
@@ -255,12 +279,12 @@ void RouteWaypoints::Run(Vector3f pCurr_NED_m) {
     ComputeSegment(); // Compute segment values
 
     vecCurr2Next = pNext_NED_m_ - pCurr_NED_m;
-    vecvAdj2Next = vecCurr2Next.cwiseProduct(vSegUnit_NED_) ;
+    vecvAdj2Next = vecCurr2Next.cwiseProduct(vecSegUnit_NED_) ;
   }
 
   // pCurr along segment from Previous
   Vector3f vecPrev2Curr = pCurr_NED_m - pPrev_NED_m_;
-  Vector3f vecPrev2Adj = vecPrev2Curr.norm() * vSegUnit_NED_ ;
+  Vector3f vecPrev2Adj = vecPrev2Curr.norm() * vecSegUnit_NED_ ;
 
   // Compute the location of pAdj, Point along the segment
   pAdj_NED_m_ = pPrev_NED_m_ + vecPrev2Adj;
@@ -274,7 +298,11 @@ void RouteWaypoints::Run(Vector3f pCurr_NED_m) {
     holdFlag_ = true;
   }
 
+  // Velocity along segment
+  Vector3f vSeg_mps = vCurr_NED_mps.cwiseProduct(vecSegUnit_NED_);
+  float distLead_m = vSeg_mps[0] * tLead_s_;
+
   // Compute the Lead point and Trail point Locations, distLead from of pAdj
-  pLead_NED_m_ = pAdj_NED_m_ + (distLead_m_ * vSegUnit_NED_);
-  pTrail_NED_m_ = pAdj_NED_m_ - (distLead_m_ * vSegUnit_NED_);
+  pLead_NED_m_ = pAdj_NED_m_ + (distLead_m * vecSegUnit_NED_);
+  pTrail_NED_m_ = pAdj_NED_m_ - (distLead_m * vecSegUnit_NED_);
 }
