@@ -147,6 +147,12 @@ void MissionManager::Configure(const rapidjson::Value& Config) {
         TestPointCurr.Control = TestPoint["Control"].GetString();
         TestPointCurr.Excitation = TestPoint["Excitation"].GetString();
 
+        if  (TestPoint.HasMember("Route")) {
+          TestPointCurr.Route = TestPoint["Route"].GetString();
+        } else {
+          TestPointCurr.Route = "None";
+        }
+
         TestPointsVec_.push_back(TestPointCurr);
       } else {
         throw std::runtime_error(std::string("ERROR")+RootPath_+std::string(": Test-ID, Sensor-Processing, Control, or Excitation not included in test point definition."));
@@ -230,6 +236,7 @@ void MissionManager::Run() {
   if (SocEngageName == "Soc") {
     SocEngageMode_= true;
     TestSenProcSel_ = TestPointsVec_[TestPtID_].SensorProcessing;
+    TestRouteSel_ = TestPointsVec_[TestPtID_].Route;
     TestCtrlSel_ = TestPointsVec_[TestPtID_].Control;
 
     if (TestModeName == "Arm") { // SOC Baseline Engaged, Test Armed
@@ -287,6 +294,11 @@ std::string MissionManager::GetBaselineController() {
 /* returns the string of the test sensor processing group that is selected */
 std::string MissionManager::GetTestSensorProcessing() {
   return TestSenProcSel_;
+}
+
+/* returns the string of the test control group that is selected */
+std::string MissionManager::GetTestRoute() {
+  return TestRouteSel_;
 }
 
 /* returns the string of the test control group that is selected */

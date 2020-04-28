@@ -1,282 +1,308 @@
-// route_mgr.cc - manage a route
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan
+*/
 
-#include <math.h>
-#include <stdlib.h>
-
-#include "waypoint.h"
 #include "route_mgr.h"
 
-static const double r2d = 180.0 / M_PI;
-static const double d2r = M_PI / 180.0;
+// Route Manager
+void RouteMgr::Configure(const rapidjson::Value& RouteConfig) {
 
-static ElementPtr vn_node;
-static ElementPtr ve_node;
-static ElementPtr track_node;
-static ElementPtr lat_rad_node;
-static ElementPtr lon_rad_node;
-static ElementPtr gps_fix_node;
-static ElementPtr course_error_node;
-static ElementPtr nav_course_error_node;
-static ElementPtr xtrack_node;
-static ElementPtr nav_dist_node;
-
-RouteMgr::RouteMgr() :
-  active( new SGRoute ),
-  standby( new SGRoute ),
-  last_lon( 0.0 ),
-  last_lat( 0.0 ),
-  last_az( 0.0 ),
-  pos_set( false ),
-  start_mode( FIRST_WPT ),
-  completion_mode( LOOP ),
-  xtrack_gain( 0.0 ),
-  dist_remaining_m( 0.0 )
-{
-}
-
-
-RouteMgr::~RouteMgr() {
-  delete standby;
-  delete active;
-}
-
-
-void RouteMgr::init( const rapidjson::Value& Config ) {
-  printf("Initializing Route Manager...\n");
-
-  // configuration
-  if ( Config.HasMember("XtrackGain") ) {
-    xtrack_gain = Config["XtrackGain"].GetFloat();
-  } else {
-    xtrack_gain = 1.0;
+  // Configure Input Definitions
+  if (!RouteConfig.HasMember("InputDef")) { // ControlDef not defined
+    throw std::runtime_error(std::string("ERROR - InputDef not found in Route."));
   }
+  const rapidjson::Value& InputDef = RouteConfig["InputDef"];
 
-  // input signals
-  vn_node = deftree.getElement("/Sensor-Processing/NorthVelocity_ms", true);
-  ve_node = deftree.getElement("/Sensor-Processing/EastVelocity_ms", true);
-  track_node = deftree.getElement("/Sensor-Processing/Track_rad", true);
-  lat_rad_node = deftree.getElement("/Sensor-Processing/Latitude_rad", true);
-  lon_rad_node = deftree.getElement("/Sensor-Processing/Longitude_rad", true);
-  gps_fix_node = deftree.getElement("/Sensors/uBlox/Fix");
+  LoadInput(InputDef, RootPath_, "Lat", &NodeIn_.Lat, &NodeIn_.LatKey);
+  LoadInput(InputDef, RootPath_, "Lon", &NodeIn_.Lon, &NodeIn_.LonKey);
+  LoadInput(InputDef, RootPath_, "Alt", &NodeIn_.Alt, &NodeIn_.AltKey);
+  LoadInput(InputDef, RootPath_, "VelNorth", &NodeIn_.vNorth, &NodeIn_.vNorthKey);
+  LoadInput(InputDef, RootPath_, "VelEast", &NodeIn_.vEast, &NodeIn_.vEastKey);
+  LoadInput(InputDef, RootPath_, "VelDown", &NodeIn_.vDown, &NodeIn_.vDownKey);
+  LoadInput(InputDef, RootPath_, "Heading", &NodeIn_.Heading, &NodeIn_.HeadingKey);
 
-  // output signals
-  course_error_node = deftree.initElement("/Route/course_error_rad", "Route manager course error", LOG_FLOAT, LOG_NONE);
-  nav_course_error_node = deftree.initElement("/Route/nav_course_error_rad", "Route manager course (corrected for xtrack) error", LOG_FLOAT, LOG_NONE);
-  xtrack_node = deftree.initElement("/Route/xtrack_m", "Route manager cross track error", LOG_FLOAT, LOG_NONE);
-  nav_dist_node = deftree.initElement("/Route/dist_m", "Route manager distance remaining on leg", LOG_FLOAT, LOG_NONE);
-
-  active->clear();
-  standby->clear();
-
-  if ( ! build(Config) ) {
-    printf("Detected an internal inconsistency in the route\n");
-    printf(" configuration.  See earlier errors for details.\n" );
-    exit(-1);
+  // Configure Output Definitions
+  if (!RouteConfig.HasMember("OutputDef")) { // ControlDef not defined
+    throw std::runtime_error(std::string("ERROR - OutputDef not found in Route."));
   }
+  const rapidjson::Value& OutputDef = RouteConfig["OutputDef"];
 
-  // build() constructs the new route in the "standby" slot,
-  // swap it to "active"
-  swap();
+  LoadOutput(OutputDef, RootPath_, "AltRef", &NodeOut_.AltRef);
+  LoadOutput(OutputDef, RootPath_, "AltError", &NodeOut_.AltError);
+  LoadOutput(OutputDef, RootPath_, "Crosstrack", &NodeOut_.CrossTrack);
+  LoadOutput(OutputDef, RootPath_, "HeadingRef", &NodeOut_.HeadingRef);
+  LoadOutput(OutputDef, RootPath_, "HeadingError", &NodeOut_.HeadingError);
 
-  initialized = true;
-}
-
-
-void RouteMgr::update() {
-  if ( !initialized ) {
-    // bail out if we were never initialized (i.e. no Route section in
-    // the config file.)
-    return;
+  // Configure Reference Waypoints
+  if (!RouteConfig.HasMember("WaypointDef")) { // WaypointDef not defined
+    throw std::runtime_error(std::string("ERROR - WaypointDef not found in Route."));
   }
+  const rapidjson::Value& WaypointDef = RouteConfig["WaypointDef"];
 
-  float direct_course, direct_distance;
-  float leg_distance;
+  // Loop through each of the defined Waypoints
+  for (rapidjson::Value::ConstMemberIterator WaypointDefInst = WaypointDef.MemberBegin(); WaypointDefInst != WaypointDef.MemberEnd(); ++WaypointDefInst) {
+    // Get the (Name, Object)
+    std::string WaypointName = WaypointDefInst->name.GetString();
+    const rapidjson::Value& WaypointConfig = WaypointDefInst->value;
 
-  float gs_mps = sqrt(vn_node->getFloat() * vn_node->getFloat()
-                      + ve_node->getFloat() * ve_node->getFloat());
-  float track_deg = track_node->getFloat() * r2d;
-  double lat_deg = lat_rad_node->getDouble() * r2d;
-  double lon_deg = lon_rad_node->getDouble() * r2d;
+    // Read the Waypoint values
+    Vector3d WaypointVal;
+    LoadVal(WaypointConfig, "Waypoint", &WaypointVal, true);
 
-  if ( !pos_set && gps_fix_node->getInt() == 1 ) {
-    printf("Positioning relative waypoints...\n");
-    active->refresh_offset_positions(SGWayPoint(lon_deg, lat_deg), 0.0);
-    pos_set = true;
-  }
+    // Read the Waypoint
+    std::string WaypointRef;
 
-  // route_node.setLong("route_size", active->size());
-  if ( active->size() > 0 ) {
-    // route start up logic: if start_mode == first_wpt then
-    // there is nothing to do, we simply continue to track wpt
-    // 0 if that is the current waypoint.  If start_mode ==
-    // "first_leg", then if we are tracking wpt 0, increment
-    // it so we track the 2nd waypoint along the first leg.
-    // If only a 1 point route is given along with first_leg
-    // startup behavior, then don't do that again, force some
-    // sort of sane route parameters instead!
-    if ( (start_mode == FIRST_LEG)
-         && (active->get_waypoint_index() == 0) ) {
-      if ( active->size() > 1 ) {
-        active->increment_current();
+    if (WaypointName == "Home") {
+      pHome_D_rrm_ = WaypointVal;
+
+      // Read the Waypoint Reference type
+      LoadVal(WaypointConfig, "WaypointRef", &WaypointRef, true);
+
+      if (WaypointRef == "WGS84_deg") { // GPS coordinates [deg, deg, m]
+        pHome_D_rrm_.segment(0, 2) *= M_PI/180.0; // convert to [rad, rad, m]
+      } else if (WaypointRef == "WGS84") { // GPS coordinates [rad, rad, m]
+        // Do nothing
       } else {
-        start_mode = FIRST_WPT;
+        throw std::runtime_error(std::string("ERROR - ") + std::string("WaypointDef - Home WaypointRef must be WGS84 or WGS84_deg."));
       }
-    }
 
-    // track current waypoint of route (only if we have fresh gps data)
-    SGWayPoint prev = active->get_previous();
-    SGWayPoint wp = active->get_current();
+      // Retain the Home position in Geodetic, ECEF, and as a DCM
+      pHome_E_m_ = D2E(pHome_D_rrm_); // ECEF position of Home
+      T_E2NED_ = TransE2NED(pHome_D_rrm_).cast <float> (); // Compute ECEF to NED with double precision, cast to float
+    } // if "Home"
 
-    // compute direct-to course and distance
-    wp.CourseAndDistance( lon_deg, lat_deg, &direct_course, &direct_distance );
+    // Retain Names in a Vector and Waypoints in a map
+    WaypointNames_.push_back(WaypointName);
+    WaypointMap_.insert(std::make_pair(WaypointName, WaypointVal.cast<float>())); // a float precision will get stored into the map
+  } // for WaypointDef
 
-    // compute leg course and distance
-    float leg_course;
-    wp.CourseAndDistance( prev, &leg_course, &leg_distance );
+  // Route Definitions
+  if (!RouteConfig.HasMember("RouteDef")) { // RouteDef not defined
+    throw std::runtime_error(std::string("ERROR - RouteDef not found in Route."));
+  }
+  const rapidjson::Value& RouteDef = RouteConfig["RouteDef"];
 
-    // difference between ideal (leg) course and direct course
-    float angle = leg_course - direct_course;
-    if ( angle < -180.0 ) {
-      angle += 360.0;
-    } else if ( angle > 180.0 ) {
-      angle -= 360.0;
-    }
+  // Loop through each of the defined Routes
+  for (rapidjson::Value::ConstMemberIterator RouteDefInst = RouteDef.MemberBegin(); RouteDefInst != RouteDef.MemberEnd(); ++RouteDefInst) {
+    // Get the (Name, Object)
+    std::string RouteName = RouteDefInst->name.GetString();
+    const rapidjson::Value& RouteDefConfig = RouteDefInst->value;
 
-    // compute course error
-    float course_error = leg_course - track_deg;
-    if ( course_error < -180.0 ) {
-      course_error += 360.0;
-    } else if ( course_error > 180.0 ) {
-      course_error -= 360.0;
-    }
-    course_error_node->setFloat(course_error * d2r);
+    // Add the Name to the Name Vector
+    RouteNames_.push_back(RouteName);
 
-    // compute cross-track error
-    float angle_rad = angle * d2r;
-    float xtrack_m = sin( angle_rad ) * direct_distance;
-    float dist_m = cos( angle_rad ) * direct_distance;
-    /* printf("direct_dist = %.1f angle = %.1f dist_m = %.1f\n",
-       direct_distance, angle, dist_m); */
+    // Route type
+    std::string RouteType;
+    LoadVal(RouteDefConfig, "Type", &RouteType, true);
 
-    xtrack_node->setFloat(xtrack_m);
-    nav_dist_node->setFloat(dist_m);
+    // Create the Component Object, add to Map
+    if (RouteType == "CircleHold") {
+      RouteMap_.insert(std::make_pair(RouteName, std::make_shared<RouteCircleHold>()));
+    } else if (RouteType == "Waypoints") {
+      RouteMap_.insert(std::make_pair(RouteName, std::make_shared<RouteWaypoints>()));
+    // } else if (RouteType == "Land") {
+    //   RouteMap_.insert(std::make_pair(RouteName, std::make_shared<RouteLand>()));
+    } else {
+      throw std::runtime_error(std::string("ERROR - ") + RouteType + std::string(": Route Type does not match known types."));
+    } // if Type
 
-    // compute navigation course with xtrack correction
-    float xtrack_comp = xtrack_m * xtrack_gain;
-    if ( xtrack_comp < -45.0 ) { xtrack_comp = -45.0; }
-    if ( xtrack_comp > 45.0 ) { xtrack_comp = 45.0; }
-    float nav_course = leg_course - xtrack_comp;
-    if ( nav_course < 0.0 ) {
-      nav_course += 360.0;
-    } else if ( nav_course > 360.0 ) {
-      nav_course -= 360.0;
-    }
-    // compute navigation course error
-    float nav_course_error = nav_course - track_deg;
-    if ( nav_course_error < -180.0 ) {
-      nav_course_error += 360.0;
-    } else if ( nav_course_error > 180.0 ) {
-      nav_course_error -= 360.0;
-    }
-    nav_course_error_node->setFloat(nav_course_error * d2r);
+    // Call Configuration for Component
+    RouteMap_[RouteName]->Configure(RouteDefConfig);
 
-    // default distance for waypoint acquisition = direct
-    // distance to the target waypoint.  This can be
-    // overridden later by leg following and replaced with
-    // distance remaining along the leg.
-    //nav_dist_m = direct_distance;
-    float nav_dist_m = dist_m;
+  } // for RouteDef
+}
 
-    // static int count = 0;
-    // if ( count++ > 10 ) {
-    //   printf("crs:%.0f err:%.0f xtrk:%.1f dist:%.0f\n", leg_course, course_error, xtrack_m, nav_dist_m);
-    //   count = 0;
-    // }
+void RouteMgr::Run() {
+  // Get the Current Position, Geodetic [rad, rad, m]
+  Vector3d pCurr_D_rrm;
+  pCurr_D_rrm[0] = NodeIn_.Lat->getDouble();
+  pCurr_D_rrm[1] = NodeIn_.Lon->getDouble();
+  pCurr_D_rrm[2] = NodeIn_.Alt->getDouble();
 
-    // estimate distance remaining to completion of route
-    dist_remaining_m = nav_dist_m
-      + active->get_remaining_distance_from_current_waypoint();
+  // Get the Current heading, radians
+  float heading_rad = NodeIn_.Heading->getFloat();
 
-    // logic to mark completion of leg and move to next leg.
-    if ( completion_mode == LOOP ) {
-      if ( nav_dist_m < 50.0 ) {
-        active->set_acquired( true );
-        active->increment_current();
-      }
-    } else if ( completion_mode == EXTEND_LAST_LEG ) {
-      if ( nav_dist_m < 50.0 ) {
-        active->set_acquired( true );
-        if ( active->get_waypoint_index() < active->size() - 1 ) {
-          active->increment_current();
-        } else {
-          // follow the last leg forever
-        }
-      }
-    }
+  // Get the Current Velocity, NED [m/s]
+  Vector3f vCurr_NED_mps;
+  vCurr_NED_mps[0] = NodeIn_.vNorth->getFloat();
+  vCurr_NED_mps[1] = NodeIn_.vEast->getFloat();
+  vCurr_NED_mps[2] = NodeIn_.vDown->getFloat();
 
-    // publish current target waypoint
-    // route_node.setLong( "target_waypoint_idx",
-    //                     active->get_waypoint_index() );
+  // Convert poition from Geodetic to NED
+  Vector3f pCurr_NED_m = T_E2NED_ * (D2E(pCurr_D_rrm) - pHome_E_m_).cast <float> ();// Compute position error double precision, cast to float, apply transformation
 
-  } else {
-    // FIXME: we've been commanded to follow a route, but no route
-    // has been defined.  Assert something?  Print a warning message?
+  Vector3f pAdj_NED_m; pAdj_NED_m.setZero();
+  Vector3f pLead_NED_m; pLead_NED_m.setZero();
+  Vector3f pTrail_NED_m; pTrail_NED_m.setZero();
+  bool holdFlag; holdFlag = false;
+  if (RouteSel_ != "None") { // If "None" just skip
+    // Run the selected route
+    RouteMap_[RouteSel_]->Run(pCurr_NED_m, vCurr_NED_mps);
+
+    // Get the Adjacent and Lead Waypoints
+    pAdj_NED_m = RouteMap_[RouteSel_]->Get_Adj();
+    pLead_NED_m = RouteMap_[RouteSel_]->Get_Lead();
+    pTrail_NED_m = RouteMap_[RouteSel_]->Get_Trail();
+    holdFlag = RouteMap_[RouteSel_]->Get_HoldFlag();
   }
 
-  if ( gs_mps > 0.1 ) {
-    // route_node.setDouble( "wp_eta_sec", direct_distance / gs_mps );
-  } else {
-    // route_node.setDouble( "wp_eta_sec", 0.0 );
+  // Compute Heading reference, between trail and lead
+  Vector3f vecTrail2Lead = pLead_NED_m - pTrail_NED_m; // pLead wrt pTrail
+  float headingRef_rad = atan2(vecTrail2Lead[1], vecTrail2Lead[0]);
+
+  // Compute Heading to Lead Point
+  Vector3f vecCurr2Lead = pLead_NED_m - pCurr_NED_m; // pLead wrt pCurr
+  // float dist2Lead_m = vecCurr2Lead.norm();
+  float headingLead_rad = atan2(vecCurr2Lead[1], vecCurr2Lead[0]);
+
+  // Compute Heading error
+  float headingErr_rad = WrapToPi(headingLead_rad - heading_rad);
+
+  // Compute Crosstrack
+  Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m; // pCurr wrt pAdj
+  float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+
+  // If the crosstrack is large, or heading is more the 90deg out, then zero the crosstrack
+  if ((holdFlag == false) | (abs(headingErr_rad) > M_PI/2.0)) {
+    crosstrack_m = 0.0;
   }
+
+  // Outputs to Nodes
+  NodeOut_.AltRef->setFloat(-pAdj_NED_m[2]);
+  NodeOut_.AltError->setFloat(-pAdj_NED_m[2] - -pCurr_NED_m[2]);
+  NodeOut_.CrossTrack->setFloat(crosstrack_m);
+  NodeOut_.HeadingRef->setFloat(headingRef_rad);
+  NodeOut_.HeadingError->setFloat(headingErr_rad);
 }
 
 
-bool RouteMgr::swap() {
-  if ( !standby->size() ) {
-    // standby route is empty
-    return false;
+/* Route Type - Circle Hold */
+void RouteCircleHold::Configure(const rapidjson::Value& RouteConfig) {
+  LoadVal(RouteConfig, "Radius", &distRadius_m_, true);
+  LoadVal(RouteConfig, "Direction", &Direction_, true);
+  LoadVal(RouteConfig, "Waypoint", &pCenter_NED_m_, true);
+  LoadVal(RouteConfig, "LeadTime", &tLead_s_, true);
+  LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
+}
+
+void RouteCircleHold::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
+  Vector3f vecCenter2Curr_m = pCurr_NED_m - pCenter_NED_m_; // Vector from pCenter to pCurr
+
+  // Adj Point, Radius from Center along vector from Center to Current
+  pAdj_NED_m_.segment(0,2) = (distRadius_m_ / vecCenter2Curr_m.segment(0,2).norm()) * vecCenter2Curr_m.segment(0,2) ;
+  pAdj_NED_m_[2] = pCenter_NED_m_[2];
+
+
+  // Heading of the Circle at Adj
+  if (Direction_ == "Left") {
+    headingSeg_rad_ = atan2(-vecCenter2Curr_m[0], vecCenter2Curr_m[1]);
+  } else { // Right
+    headingSeg_rad_ = atan2(vecCenter2Curr_m[0], -vecCenter2Curr_m[1]);
   }
 
-  // swap standby <=> active routes
-  SGRoute *tmp = active;
-  active = standby;
-  standby = tmp;
+  // Velocity along segment
+  Matrix3f T_seg;
+  T_seg = AngleAxisf(headingSeg_rad_, Vector3f::UnitZ());
+  Vector3f vSeg_mps = T_seg * vCurr_NED_mps;
 
-  // set target way point to the first waypoint in the new active route
-  active->set_current( 0 );
-  pos_set = false;
+  float distLead_m = vSeg_mps[0] * tLead_s_;
 
-  return true;
+  // Compute Crosstrack, set Hold/Agcuire Flag
+  Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m_; // pCurr wrt pAdj
+  float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+
+  holdFlag_ = false;
+  if (fabs(crosstrack_m) < distHold_m_) {
+    holdFlag_ = true;
+  }
+
+  // Compute the angle around circle to Lead, distLead ahead of pAdj
+  float angleLead_rad = distLead_m / distRadius_m_;
+  if (Direction_ == "Left") {
+    angleLead_rad = -angleLead_rad;
+  }
+
+  // Compute the Lead point and Trail point, rotate vecCenter2Adj_m by angleLead
+  Matrix3f T_Lead;
+  T_Lead = AngleAxisf(angleLead_rad, Vector3f::UnitZ());
+  Vector3f vecCenter2Adj_m = pAdj_NED_m_ - pCenter_NED_m_;
+  pLead_NED_m_ = pCenter_NED_m_ + (T_Lead * vecCenter2Adj_m);
+  pTrail_NED_m_ = pCenter_NED_m_ - (T_Lead * vecCenter2Adj_m);
 }
 
 
-// build a route from a property (sub) tree
-bool RouteMgr::build( const rapidjson::Value& Config ) {
-  standby->clear();
-  if ( Config.HasMember("waypoints") ) {
-    const rapidjson::Value& waypoints = Config["waypoints"];
-    for (rapidjson::Value::ConstValueIterator it = waypoints.Begin(); it != waypoints.End(); ++it) {
-      SGWayPoint wpt(*it);
-      standby->add_waypoint(wpt);
-    }
-  }
-  printf("loaded %d waypoints\n", standby->size());
-  return true;
+/* Route Type - Waypoints */
+void RouteWaypoints::Configure(const rapidjson::Value& RouteConfig) {
+  LoadVal(RouteConfig, "WaypointList", &WaypointList_NED_, true);
+  LoadVal(RouteConfig, "LeadTime", &tLead_s_, true);
+  LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
+
+  numWaypoints_ = WaypointList_NED_.size();
 }
 
-
-int RouteMgr::new_waypoint( const double field1, const double field2,
-			      const int mode )
-{
-  if ( mode == 0 ) {
-    // relative waypoint
-    SGWayPoint wp( field2, field1, SGWayPoint::RELATIVE );
-    standby->add_waypoint( wp );
-  } else if ( mode == 1 ) {
-    // absolute waypoint
-    SGWayPoint wp( field1, field2, SGWayPoint::ABSOLUTE );
-    standby->add_waypoint( wp );
+void RouteWaypoints::ComputeSegment() {
+  // Ensure indx in range
+  if (indxSeg_ > (numWaypoints_-1)) {
+    indxSeg_ = 0;
   }
 
-  return 1;
+  // Set index of Previous Waypoint
+  indxPrev_ = indxSeg_;
+
+  // Set index of Previous Waypoint, make sure it is in range
+  indxNext_ = indxPrev_ + 1;
+  if (indxNext_ > (numWaypoints_-1)) {
+    indxNext_ = 0;
+  }
+
+  // Retrieve Waypoint from the List
+  pPrev_NED_m_ = WaypointList_NED_[indxPrev_];
+  pNext_NED_m_ = WaypointList_NED_[indxNext_];
+
+  // Segment values
+  Vector3f vecSeg_NED_m = pNext_NED_m_ - pPrev_NED_m_; // Vector along segment
+  lenSeg_m_ = vecSeg_NED_m.norm(); // Length of segment
+  vecSegUnit_NED_ = vecSeg_NED_m / lenSeg_m_; // unit vector along segment
+}
+
+void RouteWaypoints::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
+  // pCurr along segment to Next
+  Vector3f vecCurr2Next = pNext_NED_m_ - pCurr_NED_m;
+  Vector3f vecvAdj2Next = vecCurr2Next.cwiseProduct(vecSegUnit_NED_) ;
+
+  // Check if we're past Next, or within the threshold
+  float distNextThresh = 1.0;
+  if (vecvAdj2Next[0] <= distNextThresh) { // pCurr is beyond pNext
+    indxSeg_ = indxNext_; // advance indx to Next
+    ComputeSegment(); // Compute segment values
+
+    vecCurr2Next = pNext_NED_m_ - pCurr_NED_m;
+    vecvAdj2Next = vecCurr2Next.cwiseProduct(vecSegUnit_NED_) ;
+  }
+
+  // pCurr along segment from Previous
+  Vector3f vecPrev2Curr = pCurr_NED_m - pPrev_NED_m_;
+  Vector3f vecPrev2Adj = vecPrev2Curr.norm() * vecSegUnit_NED_ ;
+
+  // Compute the location of pAdj, Point along the segment
+  pAdj_NED_m_ = pPrev_NED_m_ + vecPrev2Adj;
+
+  // Compute Crosstrack, set Hold/Agcuire Flag
+  Vector3f vecAdj2Curr = pCurr_NED_m - pAdj_NED_m_; // pCurr wrt pAdj
+  float crosstrack_m = vecAdj2Curr[1]; // Cross track error is positive if pCurr to the right of line segment
+
+  holdFlag_ = false;
+  if (fabs(crosstrack_m) < distHold_m_) {
+    holdFlag_ = true;
+  }
+
+  // Velocity along segment
+  Vector3f vSeg_mps = vCurr_NED_mps.cwiseProduct(vecSegUnit_NED_);
+  float distLead_m = vSeg_mps[0] * tLead_s_;
+
+  // Compute the Lead point and Trail point Locations, distLead from of pAdj
+  pLead_NED_m_ = pAdj_NED_m_ + (distLead_m * vecSegUnit_NED_);
+  pTrail_NED_m_ = pAdj_NED_m_ - (distLead_m * vecSegUnit_NED_);
 }
