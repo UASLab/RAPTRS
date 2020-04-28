@@ -15,10 +15,10 @@ using std::endl;
 #include "fmu_messages.h"
 
 /* Opens port to communicate with FMU. */
-void FlightManagementUnit::Begin() {
-  _serial = new HardwareSerial(Port_);
+void FlightManagementUnit::Begin(std::string Port, uint32_t Baud) {
+  _serial = new HardwareSerial(Port);
   _bus = new SerialLink(*_serial);
-  _bus->begin(Baud_);
+  _bus->begin(Baud);
 }
 
 /* Updates FMU configuration given a JSON value and registers data with global defs */

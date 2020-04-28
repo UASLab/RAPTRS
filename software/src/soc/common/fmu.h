@@ -38,7 +38,7 @@ class FlightManagementUnit {
       kConfigMode,
       kRunMode
     };
-    void Begin();
+    void Begin(std::string Port = FmuPort, uint32_t Baud = FmuBaud);
     void Configure(const rapidjson::Value& Config);
     void SendModeCommand(Mode mode);
     bool ReceiveSensorData(bool publish=true);
@@ -209,9 +209,7 @@ class FlightManagementUnit {
       vector<SbusSensorNodes> Sbus;
       vector<AnalogSensorNodes> Analog;
     };
-    const std::string Port_ = FmuPort;
     const std::string RootPath_ = "/Sensors";
-    const uint32_t Baud_ = FmuBaud;
     HardwareSerial *_serial;
     SerialLink *_bus;
     SensorData SensorData_;

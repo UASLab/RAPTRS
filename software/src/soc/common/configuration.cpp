@@ -92,6 +92,13 @@ void LoadVal(const rapidjson::Value& Config, std::string ValName, int *Val, bool
     throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
   }
 }
+void LoadVal(const rapidjson::Value& Config, std::string ValName, uint *Val, bool required) {
+  if (Config.HasMember(ValName.c_str())) {
+    (*Val) = Config[ValName.c_str()].GetInt();
+  } else if (required) {
+    throw std::runtime_error(std::string("ERROR - ") + ValName + std::string(" not specified in configuration."));
+  }
+}
 void LoadVal(const rapidjson::Value& Config, std::string ValName, float *Val, bool required) {
   if (Config.HasMember(ValName.c_str())) {
     (*Val) = Config[ValName.c_str()].GetFloat();

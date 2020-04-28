@@ -17,7 +17,7 @@ bool SimMgr::Configure( const rapidjson::Value& Config ) {
 
     std::cout << "JSBSim model: " << ModelName << std::endl;
     std::cout << "Sim FMU interface on Port: " << FmuPort  << " Baud: " << FmuBaud << std::endl;
-    std::cout << std::endl
+    std::cout << std::endl;
 
     return true;
   } else {

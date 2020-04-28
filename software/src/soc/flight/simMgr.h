@@ -17,6 +17,6 @@ class SimMgr {
     bool Configure( const rapidjson::Value& Config );
 
     std::string ModelName;
-    char FmuPort[] = "/dev/ttyO4";
+    std::string FmuPort = "/dev/ttyO4";
     uint32_t FmuBaud = 1500000;
-  }
+};

@@ -58,20 +58,6 @@ int main(int argc, char* argv[]) {
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
 
-  /* initialize simulation */
-  std::cout << "Configuring Simulation..." << std::endl;
-  bool simFlag = Sim.Configure(AircraftConfiguration);
-  std::cout << "\tdone!" << std::endl;
-
-  /* initialize FMU */
-  std::cout << "\tInitializing FMU..." << std::flush;
-  if (simFlag) {
-    Fmu.Begin(Sim.FmuPort, Sim.FmuBaud);
-  } else {
-    Fmu.Begin();
-  }
-  std::cout << "done!" << std::endl;
-
   /* configure classes and register with global defs */
   std::cout << "Configuring aircraft." << std::endl;
   rapidjson::Document AircraftConfiguration;
@@ -79,9 +65,21 @@ int main(int argc, char* argv[]) {
   Config.LoadConfiguration(argv[1], &AircraftConfiguration);
   std::cout << "done!" << std::endl;
 
+  /* initialize simulation */
+  std::cout << "Configuring Simulation..." << std::endl;
+  bool simFlag = Sim.Configure(AircraftConfiguration);
+  std::cout << "\tdone!" << std::endl;
 
-  /* configure FMU */
-  std::cout << "\tConfiguring flight management unit..." << std::endl;
+  /* initialize and configure FMU */
+  std::cout << "\tInitializing FMU..." << std::flush;
+  if (simFlag) {
+    Fmu.Begin(Sim.FmuPort, Sim.FmuBaud);
+  } else {
+    Fmu.Begin();
+  }
+  std::cout << "\tdone!" << std::endl;
+
+  std::cout << "\tConfiguring FMU..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
   // deftree.PrettyPrint("/Sensors/");
