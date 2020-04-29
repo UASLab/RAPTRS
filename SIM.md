@@ -1,34 +1,70 @@
-Simulation modes:
 
-HIL (Hardware in the Loop) Run the SOC code on a BBB attached to a PC which is running JSBSim If "JSBSim" is in the provided .json config, then the SOC should open the port as provided in the config: "JSBSim": { "Model": "UltraStick25e", "SimFmuPort": /dev/ttyACM0, "SimFmuBaud": 1500000, },
+# Principles
+- JSBSim is the NL simulation source
+	- Attempt to wrap with Python with the provided Python bindings for JSBSim
+- A fake version of the FMU emulates the behavior of the FMU
+	- Somthing like: "SimFmu.py"
+	- Priority on simulation and communication; rather than any control aspects the real FMU provides
+- Minimal intrusion to SOC code
+	- SOC code is what we're really testing
+	- Preserve as much of the SOC side of the SOC-FMU comm as possible
 
-On the SOC the port is hardcoded in hardware-defs.h as: "/dev/ttyO4" @ 1500000 baud FlightManagementUnit::Begin() uses those values to setup the FMU serial comm flightcode.cpp calls: Fmu.Begin();
+- SOC Modification for SIL/HIL testing:
+	- If "JSBSim" is in the provided in the aircraft .json config file, then the SOC opens the defined port as the FMU connection:
+	> 	"JSBSim": { 
+			"Model": "UltraStick25e",
+			"SimFmuPort": <port on SOC side>,
+			"SimFmuBaud": 1500000
+	> 		},
 
-Recommend: change: FlightManagementUnit::Begin() to take Port and Baud arguments, default to the hardcoded values change: flightcode.cpp to read the config and pass the Port and Baud arguments
+# Simulation modes:
 
- "SimFmu.py" needs to get the same SimFmuPort defintion (either by getting the JSON or via command line arg)
-SIL (Software in the Loop) Run the SOC code (make flight_amd64) on the PC along side JSBSim On Linux I think this would work the same as the HIL mode: Python and flight_amd64 application would chat via a common serial device On Windows we'd need to figure out how make it work.
+## HIL (Hardware in the Loop)
+- Run the SOC code (./flight) on a BBB attached to a PC which is running JSBSim
 
-For SIL there is also the option of letting the sim run as fast as possible (or at different rates) (assuming a pilot isn't in the loop) this should just be handled on the Python side.
+- Comments:
+	- The BBB-PC USB connection is already used as the Ethernet connection
+		- Could be used as a UDP conduit (Socket or TCP...)
+			- Need SOC serial to UDP bridge on the SOC side
+			- Need UDP to serial bridge on the SimFmu.py side (or SimFmu.py is just UDP)
+	- An FTDI-USB could be used on a BBB-UART
 
-In both sim modes: JSBSim runs in Python A fake version of the FMU "SimFmu.py" emulates the behavior of the FMU
 
-Sim FMU:
+## SIL (Software in the Loop)
+- Run the SOC code (./flight_amd64) on the PC along side JSBSim
 
-Read Sensors (JSBSim source, or otherwise faked)
-Send Sensor messages to SOC
-Read effector messages from SOC
-Send effector commands (JSBSim)
-Step Simulation (X times, for 20ms worth)
-wait until 20ms (from Sensor read)
-Note: Need to think about how to "fake" some of the data that isn't readily in JSBSim. I've seen a few examples of OpenTx being read as a joystick in Python.
+- Comments:
+	- Makes sense to have SimFmu.py as similar to the HIL case as possible
+	- For SIL there is also the option of letting the sim run as fast as possible (or at different rates) (assuming a pilot isn't in the loop). This should just be handled on the Python side only, the SOC has no internal sense of time and will run as fast as possible.
 
-Just for reference... Normal FMU:
+# Simulated/Fake FMU Flow (Python):
+### Config:
+1. Read each config message, Ack each
+2. Map JSBSim properties and faked sources in order to populate messages
+3. Setup JSBSim to start (trim, etc. - may need to step it a few times to get sensor data fully populated)
 
-Read Sensors (self and Nodes)
-Send Sensor messages to SOC
-Run control
-Read effector messages from SOC
-Send effector commands (self and Nodes)
-wait until 18ms
-Send effector trigger
+### Run:
+1. Read Sensors (JSBSim source, or otherwise faked)
+2. Send Sensor messages to SOC (including joystick)
+3. Read effector messages from SOC
+4. Send effector commands (JSBSim)
+5. Step Simulation (X times, for 20ms worth)
+6. Wait until 20ms (from Sensor read) - **probably a lot of jitter**
+
+- Note: Need to think about how to "fake" some of the data that isn't readily in JSBSim.
+- Note: https://www.pygame.org/ should work to provide a joystick source directly to Python
+
+## Normal FMU Flow (Just for reference... ):
+### Config:
+1. Read each config message, Ack each
+2. Configure via Nodes, devices, ect.
+3. Start all Nodes, devices, ect. (upon first entering Run I think)
+### Run:
+1. Read Sensors (self and Nodes)
+2. Send Sensor messages to SOC
+3. Run control
+4. Read effector messages from SOC
+5. Send effector commands (self and Nodes)
+6. Wait until 18ms (from Read Sensors start)
+7. Send effector trigger
+
