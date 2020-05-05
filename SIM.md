@@ -11,7 +11,7 @@
 
 - SOC Modification for SIL/HIL testing:
 	- If "JSBSim" is in the provided in the aircraft .json config file, then the SOC opens the defined port as the FMU connection:
-	> 	"JSBSim": { 
+	> 	"JSBSim": {
 			"Model": "UltraStick25e",
 			"SimFmuPort": <port on SOC side>,
 			"SimFmuBaud": 1500000
@@ -67,4 +67,3 @@
 5. Send effector commands (self and Nodes)
 6. Wait until 18ms (from Read Sensors start)
 7. Send effector trigger
-
