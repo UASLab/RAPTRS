@@ -91,6 +91,8 @@ def crc16(data, crc=0):
 #%% SerialLink
 import serial
     
+## Serial Framing:
+# FrameEdge(1) + MsgType(1) + ID(1) + Address(1) + Payload + CRC(2) + FrameEdge(1)
 
 class SerialLink():
     
@@ -109,10 +111,13 @@ class SerialLink():
         self.ser.open()
         self.ser.flush()
 
-    def write(self, msgID, msgAddress, msgPayload):
+    def write(self, msgType, msgID, msgAddress, msgPayload):
         
-        # Join msgData as: Address + ID + Payload
+        # print('Message Send: ' + '\tType: ' + str(msgType) + '\tID: ' + str(msgID) + '\tAddress: ' + str(msgAddress) + '\tPayload: ' + str(msgPayload))
+        
+        # Join msgData as: Type + ID + Address + Payload
         msgData = b''
+        msgData += msgType.to_bytes(1, byteorder = 'little')
         msgData += msgID.to_bytes(1, byteorder = 'little')
         msgData += msgAddress.to_bytes(1, byteorder = 'little')
         msgData += msgPayload
@@ -148,11 +153,15 @@ class SerialLink():
     
 
     def read(self):
-        
+        msgType = -1
+        msgID = -1
+        msgAddress = -1
+        msgPayload = b''
+            
          # Pop the oldest message off front
         msgBytes = self.readBufList.pop(0)
         
-        print('Raw Recv: ' + str(msgBytes))
+        # print('Raw Recv: ' + str(msgBytes))
         
         # Un-Escape the Message
         msgBytes = UnescapeMessage(msgBytes)
@@ -162,17 +171,29 @@ class SerialLink():
         msgCRC = int.from_bytes(msgBytes[-2:], byteorder = 'little') # Last 2 bytes as integer
     
         if (crc16(msgData) == msgCRC):
-            # Split msgData into: ID + Address + Payload
-            msgID = int.from_bytes(msgData[1:2], byteorder = 'little') # Message ID
-            msgAddress = int.from_bytes(msgData[2:3], byteorder = 'little') # Address - FIXIT
-            msgPayload = msgData[2:]
+            # Split msgData into: Type + ID + Address + Payload
+            msgType = int.from_bytes(msgData[0:1], byteorder = 'little') # Message ID
+            if msgType == 0: # Command type
+                msgID = int.from_bytes(msgData[1:2], byteorder = 'little') # Message ID
+                msgAddress = int.from_bytes(msgData[2:3], byteorder = 'little') # Address - FIXIT
+                msgPayload = msgData[3:]
+                
+                # print('Command Recv: ' + '\tID: ' + str(msgID) + '\tAddress: ' + str(msgAddress) + '\tPayload: ' + str(msgPayload))
+                
+            elif msgType == 1: # Ack type
+                # print('Ack Recv')
+                pass
+            elif msgType == 2: # Nack type
+                # print('Nack Recv')
+                pass
+            else:
+                print('Unknown Type Recv: ' + str(msgBytes))
+                    
         else:
             print('\tCRC Fail: ' + str(msgBytes))
-            msgID = -1
-            msgAddress = -1
-            msgPayload = b''
+
         
-        return msgID, msgAddress, msgPayload
+        return msgType, msgID, msgAddress, msgPayload
    
 
 #%%
@@ -188,12 +209,9 @@ class AircraftSocComms():
         
         return True
         
-    def SendMessage(self, message, Payload):
-        address = 0
-        
-        print('Message Send - ID: ' + str(message) + '\tAddress: ' + str(address) + '\tPayload: ' + str(Payload))
-        
-        self.serialLink.write(message, address, Payload);
+    def SendMessage(self, msgType, msgID, msgAddress, msgPayload):
+
+        self.serialLink.write(msgType, msgID, msgAddress, msgPayload);
         
         return True
         
@@ -202,19 +220,17 @@ class AircraftSocComms():
         return self.serialLink.available()
         
     def ReceiveMessage(self):
-        message, address, Payload = self.serialLink.read()
+        msgType, msgID, msgAddress, msgPayload = self.serialLink.read()
+
+        return msgType, msgID, msgAddress, msgPayload
         
-        print('Message Recv - ID: ' + str(message) + '\tAddress: ' + str(address) + '\tPayload: ' + str(Payload))
-        
-        return message, address, Payload
-        
-    def SendAck(self, msgID, msgSubID = 0):
+    def SendAck(self, msgID, msgSubID = 0): # This is a Config Message Ack (not a SerialLink Ack!)
         
         configMsgAck = fmu_messages.config_ack()
         configMsgAck.ack_id = msgID
         configMsgAck.ack_subid = msgSubID
         
-        self.SendMessage(configMsgAck.id, configMsgAck.pack())
+        self.SendMessage(0, configMsgAck.id, 0, configMsgAck.pack())
 
         return True
 
@@ -273,17 +289,17 @@ while (True):
         # Send Data Messages to SOC
         # Loop through all items that have been configured
         # FIXIT
-        
-        SocComms.SendMessage(dataMsgMpu9250.id, dataMsgMpu9250.pack())
-        SocComms.SendMessage(dataMsgBme280.id, dataMsgBme280.pack())
-        SocComms.SendMessage(dataMsgUblox.id, dataMsgUblox.pack())
-        SocComms.SendMessage(dataMsgSwift.id, dataMsgSwift.pack())
-        SocComms.SendMessage(dataMsgSbus.id, dataMsgSbus.pack())
+
+#        SocComms.SendMessage(0, dataMsgMpu9250.id, 0, dataMsgMpu9250.pack())
+#        SocComms.SendMessage(0, dataMsgBme280.id, 0, dataMsgBme280.pack())
+#        SocComms.SendMessage(0, dataMsgUblox.id, 0, dataMsgUblox.pack())
+#        SocComms.SendMessage(0, dataMsgSwift.id, 0, dataMsgSwift.pack())
+#        SocComms.SendMessage(0, dataMsgSbus.id, 0, dataMsgSbus.pack())
+        pass
     
     # Check and Recieve Messages
-
     while(SocComms.CheckMessage()):
-        msgID, msgAddress, msgPayload = SocComms.ReceiveMessage()
+        msgType, msgID, msgAddress, msgPayload = SocComms.ReceiveMessage()
         
         if msgID == fmu_messages.command_mode_id: # request mode
                     
@@ -298,7 +314,6 @@ while (True):
             print ('Set FMU Mode: ' + fmuMode)
                 
         elif (fmuMode is 'Run'):
-                        
             # Receive Command Effectors
             if msgID == dataMsgCommand.id:
                 dataMsgCommand.unpack(msg = msgPayload.to_bytes(1, byteorder = 'little'))
@@ -310,16 +325,23 @@ while (True):
             
         elif (fmuMode is 'Config'):
             
-            if (msgID in [cfgMsgBasic.id, cfgMsgMpu9250.id, cfgMsgBme280.id, cfgMsgUblox.id, cfgMsgSwift.id]) : 
-                
-                # FIXIT - do something with the config messages!!
-                
-                print("\tConfig " + str(msgPayload))
-                
-                SocComms.SendAck(msgID, 0);
-            else:
-                print("Unhandled message while in Configuration mode, id: " + str(msgID))
             
+            cfgIdList = [cfgMsgBasic.id, cfgMsgMpu9250.id, cfgMsgBme280.id, cfgMsgUblox.id, 
+                         cfgMsgAms5915.id, cfgMsgSwift.id, cfgMsgAnalog.id, cfgMsgEffector.id, 
+                         cfgMsgMission.id, cfgMsgControlGain.id]
+            
+            if msgType == 0:
+                if msgID in cfgIdList: 
+                
+                    # FIXIT - do something with the config messages!!
+                    
+                    print("Config Set: " + str(msgPayload))
+                    
+                    SocComms.SendAck(msgID);
+                else:
+                    print("Unhandled message while in Configuration mode, id: " + str(msgID))
+            # if msgType
+        # if 
         
 #SocComms.Close()
 
