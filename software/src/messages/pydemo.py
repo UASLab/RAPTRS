@@ -24,10 +24,6 @@ from SerialLink import SerialLink
 #On Host: socat -d -d PTY,link=ptySimFmu,rawer tcp:192.168.7.2:8000; stty sane;
 
 
-#socat -vx -d udp4-datagram:127.0.0.1:6223 PTY,link=ptySimSoc,rawer,nonblock,crnl | 
-#socat -vx -d PTY,link=ptySimSoc,rawer,nonblock,crnl udp4-datagram:127.0.0.1:6222
-
-
 # SOC will request the FMU to Config Mode, then Run Mode
 
 #Config:
