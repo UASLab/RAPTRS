@@ -17,11 +17,11 @@ from SerialLink import SerialLink
 # SOC will connect to ptySimSoc : 
 
 # Start a Virtual link for a psuedo-tty, SIL
-#On Host: socat -vx -d -d PTY,link=ptySimSoc,rawer PTY,link=ptySimFmu,rawer; stty sane;
+#On Host: socat -d -d PTY,link=ptySimSoc,rawer PTY,link=ptySimFmu,rawer; stty sane;
 
 # Start a Virtual link for a psuedo-tty through BBB USB, HIL
-#On BBB: socat -d -d tcp-listen:8000,reuseaddr,fork PTY,link=ptySimSoc,rawer
-#On Host: socat -d -d PTY,link=ptySimFmu,rawer tcp:192.168.7.2:8000
+#On BBB: socat -d -d tcp-listen:8000,reuseaddr,fork PTY,link=ptySimSoc,rawer; stty sane;
+#On Host: socat -d -d PTY,link=ptySimFmu,rawer tcp:192.168.7.2:8000; stty sane;
 
 
 #socat -vx -d udp4-datagram:127.0.0.1:6223 PTY,link=ptySimSoc,rawer,nonblock,crnl | 
