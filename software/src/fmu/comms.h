@@ -15,11 +15,12 @@ Author: Brian Taylor
 class AircraftSocComms {
   public:
     enum Message {
-      ModeCommand,              // not used
-      Configuration,            // not used
-      SensorData,               // eventually will go away
-      EffectorCommand           // not used
+      kModeCommand,
+      kConfigMesg,
+      kSensorData,
+      kEffectorCommand
     };
+
     AircraftSocComms(HardwareSerial& bus,uint32_t baud);
     void Begin();
     void SendMessage(uint8_t message, uint8_t *Payload, int len);
@@ -29,4 +30,3 @@ class AircraftSocComms {
     SerialLink *bus_;
     uint32_t baud_;
 };
-

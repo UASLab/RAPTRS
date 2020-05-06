@@ -147,14 +147,10 @@ class SerialLink():
     
 
     def read(self):
-        
-        # Set the Flag to require an Ack, based on received msgType
-#        ackRequired = False
-        
         # Pop the oldest message off front
         msgBytes = self.readBufList.pop(0)
         
-        # print('SerialLink Read: ' + str(msgBytes))
+#        print('SerialLink Read: ' + str(msgBytes))
 
         # Pull apart Serial: Start + Escaped(Type + Data + CRC) + End
         # Start and End are already removed by checkReceived()
@@ -168,27 +164,25 @@ class SerialLink():
         if (crc16(msgBytes[0:-2]) == msgCRC):
             # Split msgData into: ID + Address + Payload
             
-            if msgType == 0: # Command type
-                msgData = msgBytes[1:-2] # Data Bytes
-                
-                # Send an Ack - FIXIT
-#                if ackRequired:
-#                    self.sendStatus(True)
-
+            if msgType == 0: # Nack type
+                # print('Nack Recv')
+                pass
             elif msgType == 1: # Ack type
                 # print('Ack Recv')
                 pass
-            elif msgType == 2: # Nack type
-                # print('Nack Recv')
-                pass
+            elif msgType == 2: # Command type, NOACK
+                msgData = msgBytes[1:-2] # Data Bytes
+
+            elif msgType == 3: # Command type, REQACK
+                msgData = msgBytes[1:-2] # Data Bytes
+                self.sendStatus(True)
+                
             else:
                 print('Unknown Type Recv: ' + str(msgBytes))
                     
-        else: # CRC Failed - Send Nack if a required
+        else: # CRC Failed - Send Nack (Can't be sure if required or not with good CRC)
             print('\tCRC Fail: ' + str(msgBytes))
-            
-#            if ackRequired: # FIXIT
-#                self.sendStatus(False)
+            self.sendStatus(False)
 
         return msgType, msgData
     
@@ -196,7 +190,7 @@ class SerialLink():
         if ack == True:
             msgType = 1
         else:
-            msgType = 2
+            msgType = 0
         
         self.write(msgType, b'')
         

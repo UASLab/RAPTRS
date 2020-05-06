@@ -22,11 +22,20 @@ void AircraftSocComms::Begin() {
 
 /* builds and sends a BFS message given a message ID and payload */
 void AircraftSocComms::SendMessage(uint8_t message, uint8_t *Payload, int len) {
-  bus_->beginTransmission();
+
+  bool ackReq = false;
+  SerialLink::MsgType type = SerialLink::MsgType::NOACK;
+
+  if ((message == kModeCommand)||(message == kConfigMesg)) {
+    ackReq = true;
+    type = SerialLink::MsgType::REQACK;
+  }
+
+  bus_->beginTransmission(type);
   bus_->write(message);
   bus_->write(0);
   bus_->write(Payload, len);
-  bus_->sendTransmission();
+  bus_->endTransmission(ackReq);
 }
 
 /* parses BFS messages returning message ID and payload on success */
@@ -37,7 +46,7 @@ bool AircraftSocComms::ReceiveMessage(uint8_t *message, uint8_t *address, std::v
     // Serial.print("received id: "); Serial.print(*message); Serial.print(" addr: "); Serial.println(*address);
     Payload->resize(bus_->available());
     bus_->read(Payload->data(),Payload->size());
-    bus_->sendStatus(true);
+    // bus_->sendStatus(true);
     return true;
   } else {
     return false;

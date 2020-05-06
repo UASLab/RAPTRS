@@ -969,15 +969,20 @@ void FlightManagementUnit::SendMessage(Message message, uint8_t address, std::ve
 
 /* Send a (Serial) BFS Bus message. */
 void FlightManagementUnit::SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len) {
-  _bus->beginTransmission();
+
+  bool ackReq = false;
+  SerialLink::MsgType type = SerialLink::MsgType::NOACK;
+
+  if ((message == kModeCommand)||(message == kConfigMesg)) {
+    ackReq = true;
+    type = SerialLink::MsgType::REQACK;
+  }
+  
+  _bus->beginTransmission(type);
   _bus->write(message);
   _bus->write(address);
   _bus->write(Payload, len);
-  if ((message == kModeCommand)||(message == kConfigMesg)) {
-    _bus->endTransmission();
-  } else {
-    _bus->sendTransmission();
-  }
+  _bus->endTransmission(ackReq);
 }
 
 /* Receive a BFS Bus message. */

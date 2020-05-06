@@ -17,9 +17,13 @@ from SerialLink import SerialLink
 # SOC will connect to ptySimSoc : 
 
 # Start a Virtual link for a psuedo-tty, SIL
-# socat -vx -d -d PTY,link=ptySimSoc,rawer PTY,link=ptySimFmu,rawer; stty sane;
+#On Host: socat -vx -d -d PTY,link=ptySimSoc,rawer PTY,link=ptySimFmu,rawer; stty sane;
 
-# Start a Virtual link for a psuedo-tty through BBB USB, HIL (FIXIT - ??)
+# Start a Virtual link for a psuedo-tty through BBB USB, HIL
+#On BBB: socat -d -d tcp-listen:8000,reuseaddr,fork PTY,link=ptySimSoc,rawer
+#On Host: socat -d -d PTY,link=ptySimFmu,rawer tcp:192.168.7.2:8000
+
+
 #socat -vx -d udp4-datagram:127.0.0.1:6223 PTY,link=ptySimSoc,rawer,nonblock,crnl | 
 #socat -vx -d PTY,link=ptySimSoc,rawer,nonblock,crnl udp4-datagram:127.0.0.1:6222
 
@@ -50,8 +54,13 @@ class AircraftSocComms():
         
         return True
         
-    def SendMessage(self, msgID, msgAddress, msgPayload):
-        msgType = 0
+    def SendMessage(self, msgID, msgAddress, msgPayload, ackReq = True):
+        # msgType is used by SerialLink to determine if a SerialLink-level Ack is required
+        if ackReq:
+            msgType = 3
+        else:
+            msgType = 2
+            
         # print('Message Send: ' + '\tID: ' + str(msgID) + '\tAddress: ' + str(msgAddress) + '\tPayload: ' + str(msgPayload))
         
         # Join msgData as: ID + Address + Payload
@@ -75,26 +84,26 @@ class AircraftSocComms():
         
         msgType, msgData = self.serialLink.read()
         
-        if msgType == 0: # command type message
+        if msgType >= 2: # command type message
             # Data = ID + Address + Payload
             msgID = int.from_bytes(msgData[0:1], byteorder = 'little') # Message ID
             msgAddress = int.from_bytes(msgData[1:2], byteorder = 'little') # Address
             msgPayload = msgData[2:]
             
             # Send an SerialLink Ack - FIXIT - move to SerialLink
-            self.serialLink.sendStatus(True)
+#            self.serialLink.sendStatus(True)
 
         # print('Message Recv: ' + '\tID: ' + str(msgID) + '\tAddress: ' + str(msgAddress) + '\tPayload: ' + str(msgPayload))
         
         return msgID, msgAddress, msgPayload
         
     def SendAck(self, msgID, msgSubID = 0): # This is a Config Message Ack (not a SerialLink Ack!)
-        
+
         configMsgAck = fmu_messages.config_ack()
         configMsgAck.ack_id = msgID
         configMsgAck.ack_subid = msgSubID
         
-        self.SendMessage(configMsgAck.id, 0, configMsgAck.pack())
+        self.SendMessage(configMsgAck.id, 0, configMsgAck.pack(), ackReq = False)
 
         return True
 
@@ -149,11 +158,11 @@ while (True):
         # Loop through all items that have been configured
         # FIXIT
 
-#        SocComms.SendMessage(0, dataMsgMpu9250.id, 0, dataMsgMpu9250.pack())
-#        SocComms.SendMessage(0, dataMsgBme280.id, 0, dataMsgBme280.pack())
-#        SocComms.SendMessage(0, dataMsgUblox.id, 0, dataMsgUblox.pack())
-#        SocComms.SendMessage(0, dataMsgSwift.id, 0, dataMsgSwift.pack())
-#        SocComms.SendMessage(0, dataMsgSbus.id, 0, dataMsgSbus.pack())
+#        SocComms.SendMessage(dataMsgMpu9250.id, 0, dataMsgMpu9250.pack())
+#        SocComms.SendMessage(dataMsgBme280.id, 0, dataMsgBme280.pack())
+#        SocComms.SendMessage(dataMsgUblox.id, 0, dataMsgUblox.pack())
+#        SocComms.SendMessage(dataMsgSwift.id, 0, dataMsgSwift.pack())
+#        SocComms.SendMessage(dataMsgSbus.id, 0, dataMsgSbus.pack())
         pass
     
     # Check and Recieve Messages
