@@ -150,7 +150,7 @@ class SerialLink():
         # Pop the oldest message off front
         msgBytes = self.readBufList.pop(0)
         
-#        print('SerialLink Read: ' + str(msgBytes))
+        # print('SerialLink Read: ' + str(msgBytes))
 
         # Pull apart Serial: Start + Escaped(Type + Data + CRC) + End
         # Start and End are already removed by checkReceived()
