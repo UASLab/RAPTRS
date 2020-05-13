@@ -153,14 +153,16 @@ def add_msg(msgID, msgIndx, msgPayload):
 
 
 #
-tRate_s = 1/50 # Desired Run rate
+tFrameRate_s = 1/50 # Desired Run rate
 SocComms.Begin()
 cfgMsgList = []
 sensorList = []
 effList = []
 
+tStart_s = time.time()
+
 while (True):
-    tStart_s = time.time()
+    tFrameStart_s = time.time()
         
     # Run Stuff
     # Send Bifrost Data...
@@ -173,6 +175,10 @@ while (True):
     if (fmuMode is 'Run'):
         # Read all data from Sim, populate into the message
         # FIXIT
+        
+        dataMsgTime.time_us = int((tFrameStart_s - tStart_s) * 1e6)
+        
+        dataMsgUblox.Fix = True
         
         # Send Data Messages to SOC
         # Loop through all items that have been configured
@@ -234,12 +240,12 @@ while (True):
         elif (fmuMode is 'Run'):
             # Receive Command Effectors
             if msgID == dataMsgCommand.id:
-                dataMsgCommand.unpack(msg = msgPayload.to_bytes(1, byteorder = 'little'))
+                dataMsgCommand.unpack(msg = msgPayload)
 
-                print(dataMsgCommand.command[:2])
+                print(dataMsgCommand.command[:6])
             elif msgID == dataMsgBifrost.id:
                 pass
-                # dataMsgBifrost.unpack(msg = msgPayload.to_bytes(len(msgPayload), byteorder = 'little'))
+                # dataMsgBifrost.unpack(msg = msgPayload)
             
             
         elif (fmuMode is 'Config'):
@@ -349,7 +355,7 @@ while (True):
     #
     
     # Timer
-    tHold_s = tRate_s - (time.time() - tStart_s)
+    tHold_s = tFrameRate_s - (time.time() - tFrameStart_s)
     if tHold_s > 0:
         time.sleep(tHold_s)
     
