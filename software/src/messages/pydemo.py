@@ -123,16 +123,6 @@ cfgMsgControlGain = fmu_messages.config_control_gain()
 
 # Data Messages
 dataMsgCommand = fmu_messages.command_effectors()
-
-dataMsgTime = fmu_messages.data_time()
-dataMsgMpu9250Short = fmu_messages.data_mpu9250_short()
-dataMsgMpu9250 = fmu_messages.data_mpu9250()
-dataMsgBme280 = fmu_messages.data_bme280()
-dataMsgUblox = fmu_messages.data_ublox()
-dataMsgAms5915 = fmu_messages.data_ams5915()
-dataMsgSwift = fmu_messages.data_swift()
-dataMsgSbus = fmu_messages.data_sbus()
-dataMsgAnalog = fmu_messages.data_analog()
 dataMsgCompound = fmu_messages.data_compound()
 dataMsgBifrost = fmu_messages.data_bifrost()
 
@@ -176,43 +166,46 @@ while (True):
         # Read all data from Sim, populate into the message
         # FIXIT
         
-        dataMsgTime.time_us = int((tFrameStart_s - tStart_s) * 1e6)
-        
-        dataMsgUblox.Fix = True
         
         # Send Data Messages to SOC
         # Loop through all items that have been configured
         dataMsg = b''
 
         if AcquireTimeData:
-            dataMsg += add_msg(dataMsgTime.id, 0, dataMsgTime.pack())
+            msg = next((s for s in sensorList if s.id is fmu_messages.data_time().id), None)
+            msg.time_us = int((tFrameStart_s - tStart_s) * 1e6)
+            dataMsg += add_msg(msg.id, 0, msg.pack())
             
         if AcquireInternalMpu9250Data:
-            dataMsg += add_msg(dataMsgMpu9250.id, 0, dataMsgMpu9250.pack())
+            msg = next((s for s in sensorList if s.id is fmu_messages.data_mpu9250().id), None)
+            dataMsg += add_msg(msg.id, 0, msg.pack())
             
         if AcquireInternalBme280Data:
-            dataMsg += add_msg(dataMsgBme280.id, 0, dataMsgBme280.pack())
+            msg = next((s for s in sensorList if s.id is fmu_messages.data_bme280().id), None)
+            dataMsg += add_msg(msg.id, 0, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgMpu9250Short.id)):
-            dataMsg += add_msg(dataMsgMpu9250Short.id, indx, dataMsgMpu9250Short.pack())
+        for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_mpu9250_short().id]):
+            dataMsg += add_msg(msg.id, indx, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgBme280.id) - 1):
-            dataMsg += add_msg(dataMsgBme280.id, indx, dataMsgBme280.pack())
+        for indx, msg in  enumerate([s for s in sensorList if s.id is fmu_messages.data_bme280().id]):
+            if not (AcquireInternalBme280Data and indx == 1):
+                dataMsg += add_msg(msg.id, indx, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgUblox.id)):
-            dataMsg += add_msg(dataMsgUblox.id, indx, dataMsgUblox.pack())
+        for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_ublox().id]):
+            msg.Fix = True
+            dataMsg += add_msg(msg.id, indx, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgSwift.id)):
-            dataMsg += add_msg(dataMsgSwift.id, indx, dataMsgSwift.pack())
+        for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_swift().id]):
+            dataMsg += add_msg(msg.id, indx, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgSbus.id)):
-            dataMsg += add_msg(dataMsgSbus.id, indx, dataMsgSbus.pack())
+        for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_sbus().id]):
+            dataMsg += add_msg(msg.id, indx, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgAms5915.id)):
-            dataMsg += add_msg(dataMsgAms5915.id, indx, dataMsgAms5915.pack())
+        for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_ams5915().id]):
+            dataMsg += add_msg(msg.id, indx, msg.pack())
             
-        for indx in range(sensorList.count(dataMsgAnalog.id)):
-            dataMsg += add_msg(dataMsgAnalog.id, indx, dataMsgAnalog.pack())
+        for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_analog().id]):
+            dataMsg += add_msg(msg.id, indx, msg.pack())
         
         # Send the Compound Sensor Message
         SocComms.SendMessage(dataMsgCompound.id, 0, dataMsg)
@@ -242,7 +235,7 @@ while (True):
             if msgID == dataMsgCommand.id:
                 dataMsgCommand.unpack(msg = msgPayload)
 
-                print(dataMsgCommand.command[:6])
+                print(dataMsgCommand.command)
             elif msgID == dataMsgBifrost.id:
                 pass
                 # dataMsgBifrost.unpack(msg = msgPayload)
@@ -258,35 +251,37 @@ while (True):
                 cfgMsgList.append((msgID, sensorType))
                 
                 if sensorType == fmu_messages.sensor_type_time:
-                    sensorList.append(fmu_messages.data_time_id)
+                    sensorList.append(fmu_messages.data_time())
                     AcquireTimeData = True
                     
                 elif sensorType in [fmu_messages.sensor_type_input_voltage, fmu_messages.sensor_type_regulated_voltage, fmu_messages.sensor_type_pwm_voltage, fmu_messages.sensor_type_sbus_voltage]:
-                    sensorList.append(fmu_messages.data_analog_id)
+                    sensorList.append(fmu_messages.data_analog())
                     
                 elif sensorType == fmu_messages.sensor_type_internal_bme280:
-                    sensorList.append(fmu_messages.data_bme280_id)
+                    sensorList.append(fmu_messages.data_bme280())
                     AcquireInternalBme280Data = True
                     
                 elif sensorType == fmu_messages.sensor_type_sbus:
-                    sensorList.append(fmu_messages.data_sbus_id)
+                    sensorList.append(fmu_messages.data_sbus())
                     
                 SocComms.SendAck(msgID)
                     
             elif msgID == cfgMsgMpu9250.id:
                 cfgMsgList.append((msgID, 0))
-                sensorList.append(fmu_messages.data_mpu9250_id)
                 
                 cfgMsgMpu9250.unpack(msgPayload)
                 
                 if cfgMsgMpu9250.internal == True:
                     AcquireInternalMpu9250Data = True
+                    sensorList.append(fmu_messages.data_mpu9250())
+                else:
+                    sensorList.append(fmu_messages.data_mpu9250_short())
                 
                 SocComms.SendAck(msgID)
                 
             elif msgID == cfgMsgBme280.id:
                 cfgMsgList.append((msgID, 0))
-                sensorList.append(fmu_messages.data_bme280_id)
+                sensorList.append(fmu_messages.data_bme280())
                 
                 cfgMsgBme280.unpack(msgPayload)
                 
@@ -294,7 +289,7 @@ while (True):
                 
             elif msgID == cfgMsgUblox.id:
                 cfgMsgList.append((msgID, 0))
-                sensorList.append(fmu_messages.data_ublox_id)
+                sensorList.append(fmu_messages.data_ublox())
                 
                 cfgMsgUblox.unpack(msgPayload)
                 
@@ -302,7 +297,7 @@ while (True):
                 
             elif msgID == cfgMsgAms5915.id:
                 cfgMsgList.append((msgID, 0))
-                sensorList.append(fmu_messages.data_ams5915_id)
+                sensorList.append(fmu_messages.data_ams5915())
                 
                 cfgMsgAms5915.unpack(msgPayload)
                 cfgMsgAms5915.output
@@ -311,7 +306,7 @@ while (True):
                 
             elif msgID == cfgMsgSwift.id:
                 cfgMsgList.append((msgID, 0))
-                sensorList.append(fmu_messages.data_swift_id)
+                sensorList.append(fmu_messages.data_swift())
                 
                 cfgMsgSwift.unpack(msgPayload)
                 cfgMsgSwift.output
@@ -320,7 +315,7 @@ while (True):
                 
             elif msgID == cfgMsgAnalog.id:
                 cfgMsgList.append((msgID, 0))
-                sensorList.append(fmu_messages.data_analog_id)
+                sensorList.append(fmu_messages.data_analog())
                 
                 cfgMsgAnalog.unpack(msgPayload)
                 
