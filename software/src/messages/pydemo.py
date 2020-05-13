@@ -9,6 +9,7 @@ Author: Chris Regan
 
 import time
 import os
+import pygame
 
 import fmu_messages
 from SerialLink import SerialLink
@@ -104,6 +105,51 @@ class AircraftSocComms():
         return True
 
 
+#%% Joystick as SBUS source
+pygame.init()
+
+# Set up the joystick
+pygame.joystick.init()
+
+# Enumerate joysticks
+joyList = []
+for i in range(0, pygame.joystick.get_count()):
+    joyList.append(pygame.joystick.Joystick(i).get_name())
+    
+print(joyList)
+
+
+# By default, load the first available joystick.
+if (len(joyList) > 0):
+    joy = pygame.joystick.Joystick(0)
+    joy.init()
+    
+
+# Joystick Map, FIXIT - this is hacky
+# OpenTX Mixer: 1-Ail, 2-Elev, 3-Thrt, 4-Rud, 5-SA, 6-SB, 7-SC, 8-<blank>, 9-SF, 10-SH, 11-SD
+def JoyMap(joy):
+    joyAxes = [joy.get_axis(i) for i in range(joy.get_numaxes())]
+    joyButtons = [joy.get_button(i) for i in range(joy.get_numbuttons())]
+    #joyHats = [joy.get_hat(i) for i in range(joy.get_numhats())]
+    
+    msgSbus = [0.0] * 16
+    
+    msgSbus[0] = 2*joyButtons[0]-1 # Autopilot mode (-1=FMU, 1=SOC)
+    msgSbus[1] = 2*joyButtons[2]-1 # Throttle Cut
+    msgSbus[2] = 0 # RSSI
+    msgSbus[3] = joyAxes[0] # Roll
+    msgSbus[4] = joyAxes[1] # Pitch
+    msgSbus[5] = joyAxes[3] # Yaw
+    msgSbus[6] = 0 # Flap
+    msgSbus[7] = joyAxes[2] # Throttle
+    msgSbus[8] = joyAxes[4] # Control Mode
+    msgSbus[9] = joyAxes[5] # Test Select
+    msgSbus[10] = 2*joyButtons[1]-1 # Trigger (-1=Nothing, 1=Trigger)
+    msgSbus[11] = joyAxes[6] # Baseline Select
+    
+    return msgSbus
+    
+    
 #%%
 SocComms = AircraftSocComms(port = 'ptySimFmu')
 fmuMode = 'Config'
@@ -158,6 +204,13 @@ while (True):
     # Send Bifrost Data...
     # FIXIT
     
+    # Joystick
+    pygame.event.get(pump = True) # Pump, retreive events so they clear
+    
+    # Read all the joystick values, populate the SBUS message
+    msgSbus = JoyMap(joy)
+    
+    
     # Update Mission run mode
     # FIXIT
     
@@ -199,6 +252,7 @@ while (True):
             dataMsg += add_msg(msg.id, indx, msg.pack())
             
         for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_sbus().id]):
+            msg.channels = msgSbus
             dataMsg += add_msg(msg.id, indx, msg.pack())
             
         for indx, msg in enumerate([s for s in sensorList if s.id is fmu_messages.data_ams5915().id]):
