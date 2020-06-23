@@ -106,7 +106,7 @@ class FlightManagementUnit {
       ElementPtr hum;
     };
     struct uBloxSensorData {
-      bool Fix;                                 // True for 3D fix only
+      uint8_t Fix;                              // True for 3D fix only
       uint8_t NumberSatellites;                 // Number of satellites used in solution
       uint32_t TOW;                             // GPS time of the navigation epoch
       uint16_t Year;                            // UTC year
@@ -161,7 +161,7 @@ class FlightManagementUnit {
     };
     struct SbusSensorData {
       float Channels[16];
-      bool FailSafe;
+      uint8_t FailSafe;
       uint64_t LostFrames;
     };
     struct SbusSensorNodes {

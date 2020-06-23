@@ -977,7 +977,7 @@ void FlightManagementUnit::SendMessage(uint8_t message, uint8_t address, uint8_t
     ackReq = true;
     type = SerialLink::MsgType::REQACK;
   }
-  
+
   _bus->beginTransmission(type);
   _bus->write(message);
   _bus->write(address);

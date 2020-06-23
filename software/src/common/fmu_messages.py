@@ -1000,10 +1000,10 @@ class data_compound():
         if msg: self.unpack(msg)
 
     def pack(self):
-        msg = struct.pack(self._pack_string,
+        msg = struct.pack(self._pack_string)
         return msg
 
-    def unpack(self, msg):
+#    def unpack(self, msg):
 
 # Message: data_bifrost
 # Id: 50
