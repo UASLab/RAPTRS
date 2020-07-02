@@ -54,6 +54,7 @@ class MissionManager {
       std::string ID;
       std::string SensorProcessing;
       std::string Control;
+      std::string Route;
       std::string Excitation;
     };
     void Configure(const rapidjson::Value& Config);
@@ -62,6 +63,7 @@ class MissionManager {
     std::string GetBaselineController();
     Mode GetBaselineRunMode();
     std::string GetTestSensorProcessing();
+    std::string GetTestRoute();
     std::string GetTestController();
     Mode GetTestRunMode();
     std::string GetExcitation();
@@ -95,6 +97,7 @@ class MissionManager {
     Mode BaseCtrlMode_ = Mode::kArm; // Armed
 
     std::string TestSenProcSel_ = "None";
+    std::string TestRouteSel_ = "None";
     std::string TestCtrlSel_ = "None";
     Mode TestCtrlMode_ = Mode::kStandby; // Standby
 

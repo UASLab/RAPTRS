@@ -34,9 +34,12 @@ void LoadVal(const rapidjson::Value& Config, std::string ValName, int *Val, bool
 void LoadVal(const rapidjson::Value& Config, std::string ValName, float *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, std::string *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string VecName, std::vector<float> *Val, bool required = 0);
-void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<std::string> *Val, bool required);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<std::string> *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::ArrayXf *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::Vector3f *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::VectorXf *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::Vector3d *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::VectorXd *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string MatName, std::vector<std::vector<float>> *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, Eigen::MatrixXf *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string MatName, std::vector<Eigen::Vector3f> *Val, bool required = 0);

@@ -1,128 +1,169 @@
-// route_mgr.hxx - manage a route (i.e. a collection of waypoints)
-//
-// Written by Curtis Olson, started January 2004.
-//
-// Copyright (C) 2004  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
-// License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+/*
+Copyright (c) 2016 - 2019 Regents of the University of Minnesota and Bolder Flight Systems Inc.
+MIT License; See LICENSE.md for complete details
+Author: Chris Regan
+*/
 
+/*
+"WaypointRef" is either "WGS84", "WGS84_deg", or a previously named element of "WaypointDef"
+All coordinates are provided as NED and internally stored and used in an NED system relative to "Home"
+WaypointDef["Home"] is stored in Geodetic [rad,rad,m]
+
+"Route": {
+  "InputDef": {
+    "Lat": "/Sensor-Processing/Latitude_rad",
+    "Lon": "/Sensor-Processing/Longitude_rad",
+    "Alt": "/Sensor-Processing/Alt_rad",
+    "Heading": "/Sensor-Processing/Heading_rad"
+  },
+
+  "OutputDef": {
+    "RefAlt": "refAlt_m",
+    "Crosstrack": "crosstrack_m",
+    "HeadingError": "headingErr_rad"
+  },
+
+  "WaypointDef": {
+    "Home": {"Waypoint": [44.725801, -93.075866, 285.2111], "WaypointRef": "WGS84_deg"}
+  },
+
+  "RouteDef": {
+    "Loiter": {
+      "Type": "CircleHold", "Radius": 400, "Direction": "Left",
+      "Waypoint": [0.0, 0.0, -75], "LeadDist": 100
+    },
+
+    "Path_1": {
+      "Type": "Waypoints", "LeadDist": 100,
+      "WaypointList": [
+        [400, 0, -75],
+        [0, 400, -75],
+        [-400, 0, -75],
+        [0, -400, -75] ]
+    }
+  }
+
+*/
 
 #pragma once
 
-#include <string>
-#include <vector>
-using std::string;
-using std::vector;
-
-#include "rapidjson/document.h"
+#include "configuration.h"
 #include "definition-tree2.h"
-#include "route.h"
+#include "nav-functions.h"
 
+#include "generic-function.h"
+#include "general-functions.h"
 
-/**
- * Top level route manager class
- * 
- */
+#include <stdio.h>
+#include <vector>
 
+#include <math.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+using namespace Eigen;
+
+// Base Class for Route Types
+class RoutePathBase {
+  public:
+    virtual void Configure(const rapidjson::Value& Config) {}
+    virtual void Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {}
+    virtual Vector3f Get_Adj() { return pAdj_NED_m_; }
+    virtual Vector3f Get_Lead() { return pLead_NED_m_; }
+    virtual Vector3f Get_Trail() { return pTrail_NED_m_; }
+    virtual bool Get_HoldFlag() { return holdFlag_; }
+    virtual void Clear() {}
+  private:
+    Vector3f pAdj_NED_m_;
+    Vector3f pLead_NED_m_;
+    Vector3f pTrail_NED_m_;
+    bool holdFlag_ = false; // true is tracking within distHold
+};
+
+class RouteCircleHold: public RoutePathBase {
+  public:
+    void Configure(const rapidjson::Value& Config);
+    void Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps);
+    inline Vector3f Get_Adj() { return pAdj_NED_m_; }
+    inline Vector3f Get_Lead() { return pLead_NED_m_; }
+    inline Vector3f Get_Trail() { return pTrail_NED_m_; }
+    inline bool Get_HoldFlag() { return holdFlag_; }
+    void Clear() {}
+  private:
+    Vector3f pCenter_NED_m_;
+    float distRadius_m_;
+    std::string Direction_;
+    float tLead_s_;
+    float distHold_m_;
+    bool holdFlag_ = false; // true is tracking within distHold
+
+    float headingSeg_rad_; // Segment heading
+
+    Vector3f pAdj_NED_m_;
+    Vector3f pLead_NED_m_;
+    Vector3f pTrail_NED_m_;
+};
+
+// Route Waypoints
+class RouteWaypoints: public RoutePathBase {
+  public:
+    void Configure(const rapidjson::Value& Config);
+    void Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps);
+    inline Vector3f Get_Adj() { return pAdj_NED_m_; }
+    inline Vector3f Get_Lead() { return pLead_NED_m_; }
+    inline Vector3f Get_Trail() { return pTrail_NED_m_; }
+    inline bool Get_HoldFlag() { return holdFlag_; }
+    void Clear() {}
+  private:
+    void ComputeSegment();
+
+    std::vector<Vector3f> WaypointList_NED_;
+    float tLead_s_;
+    float distHold_m_;
+    bool holdFlag_ = false; // true if tracking within distHold
+
+    size_t numWaypoints_;
+    size_t indxSeg_ = 0;
+    size_t indxPrev_ = 0;
+    size_t indxNext_ = 0;
+    Vector3f pPrev_NED_m_;
+    Vector3f pNext_NED_m_;
+    float lenSeg_m_;
+    Vector3f vecSegUnit_NED_;
+    float headingSeg_rad_; // Segment heading
+
+    Vector3f pAdj_NED_m_;
+    Vector3f pLead_NED_m_;
+    Vector3f pTrail_NED_m_;
+};
+
+// Route Manager
 class RouteMgr {
+  public:
+    void Configure(const rapidjson::Value& Config);
+    void Set_RouteSel(std::string RouteSel) { RouteSel_ = RouteSel; }
+    void Run();
+    void Clear() {}
+  private:
+    std::string RootPath_ = "/Route";
 
-public:
+    struct StructNodeIn {
+      ElementPtr Lat, Lon, Alt, Heading, vNorth, vEast, vDown;
+      std::string LatKey, LonKey, AltKey, HeadingKey, vNorthKey, vEastKey, vDownKey;
+    } NodeIn_;
 
-  enum StartMode {
-    FIRST_WPT = 0,		// Go to first waypoint
-    FIRST_LEG = 1,		// Go to 2nd waypoint along route leg
-  };
+    struct StructNodeOut {
+      ElementPtr AltRef, AltError, CrossTrack, HeadingRef, HeadingError;
+    } NodeOut_;
 
-  enum CompletionMode {
-    LOOP = 0,		// loop the route when finished
-    EXTEND_LAST_LEG = 1	// track the last route leg indefinitely
-  };
+    Vector3d pHome_D_rrm_;
+    Vector3d pHome_E_m_;
+    Matrix3f T_E2NED_;
 
-private:
+    std::vector<std::string> WaypointNames_;
+    std::map<std::string, Vector3f> WaypointMap_;
 
-  bool initialized{false};
-  
-  SGRoute *active;
-  SGRoute *standby;
-
-  double last_lon;
-  double last_lat;
-  float last_az;
-  bool pos_set;
-    
-  // route behaviors
-  StartMode start_mode;
-  CompletionMode completion_mode;
-  float xtrack_gain;
-
-  // stats
-  float dist_remaining_m;
-
-  SGWayPoint make_waypoint( const string& wpt_string );
-
-  // build a route from a property (sub) tree
-  bool build( const rapidjson::Value& Config );
-    
-public:
-
-  RouteMgr();
-  ~RouteMgr();
-
-  void init( const rapidjson::Value& Config );
-
-  // set route start mode
-  inline void set_start_mode( enum StartMode mode ) {
-    start_mode = mode;
-  }
-
-  // set route completion mode
-  inline void set_completion_mode( enum CompletionMode mode ) {
-    completion_mode = mode;
-  }
-
-  void update();
-
-  // swap the "active" and the "standby" routes, but only if the
-  // "standby" route has some waypoints.
-  bool swap();
-
-  // these modify the "standby" route
-  inline void clear_standby() {
-    standby->clear();
-  }
-  int new_waypoint( const double lon, const double lat,
-                    const int mode );
-
-  // returns info on the "active" route
-  inline SGWayPoint get_waypoint( int i ) const {
-    return active->get_waypoint(i);
-  }
-  inline int get_waypoint_index() const {
-    return active->get_waypoint_index();
-  }
-  inline int size() const {
-    return active->size();
-  }
-  inline float get_dist_remaining_m() const {
-    return dist_remaining_m;
-  }
-
-  // restart the route from the beginning
-  inline void restart() {
-    active->set_acquired( false );
-    active->set_current( 0 );
-  }
+    std::string RouteSel_;
+    std::vector<std::string> RouteNames_;
+    std::map<std::string, std::shared_ptr<RoutePathBase>> RouteMap_;
 };
