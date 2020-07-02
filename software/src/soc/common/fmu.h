@@ -215,7 +215,7 @@ class FlightManagementUnit {
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const
-    bool WaitForAck(uint8_t id, uint8_t subid, float timeout_millis=500);
+    bool WaitForAck(uint8_t wait_id, uint8_t subid, float timeout_millis=500);
     bool GenConfigMessage(const rapidjson::Value& Sensor, uint8_t node_address);
     void ConfigureSensors(const rapidjson::Value& Config, uint8_t node_address);
     bool ConfigureMissionManager(const rapidjson::Value& Config);
@@ -223,6 +223,6 @@ class FlightManagementUnit {
     void ConfigureEffectors(const rapidjson::Value& Config, uint8_t node_address);
     void SendMessage(Message message, uint8_t address, std::vector<uint8_t> &Payload);
     void SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len);
-    bool ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload);
+    bool ReceiveMessage(uint8_t *message, uint8_t *index, std::vector<uint8_t> *Payload);
     void PublishSensors();
 };

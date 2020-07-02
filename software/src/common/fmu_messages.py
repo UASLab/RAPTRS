@@ -23,8 +23,7 @@ data_ams5915_id = 45
 data_swift_id = 46
 data_sbus_id = 47
 data_analog_id = 48
-data_compound_id = 49
-data_bifrost_id = 50
+data_bifrost_id = 49
 
 # Constants
 num_effectors = 16  # number of effector channels
@@ -988,27 +987,10 @@ class data_analog():
     def unpack(self, msg):
         (self.calibrated_value,) = struct.unpack(self._pack_string, msg)
 
-# Message: data_compound
-# Id: 49
-class data_compound():
-    id = 49
-    _pack_string = "<"
-
-    def __init__(self, msg=None):
-        # public fields
-        # unpack if requested
-        if msg: self.unpack(msg)
-
-    def pack(self):
-        msg = struct.pack(self._pack_string)
-        return msg
-
-#    def unpack(self, msg):
-
 # Message: data_bifrost
-# Id: 50
+# Id: 49
 class data_bifrost():
-    id = 50
+    id = 49
     _pack_string = "<fBfBBB"
 
     def __init__(self, msg=None):

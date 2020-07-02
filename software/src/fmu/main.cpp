@@ -89,12 +89,8 @@ int main()
         Sensors.ReadSyncSensors();
 // Serial.print("\tRead: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
-        // buffer for transmitting data
-        Sensors.MakeCompoundMessage(&DataBuffer);
-// Serial.print("\tDataBuffer: ");
-// Serial.print(DataBuffer.size());
-        // transmit data to SOC
-        SocComms.SendMessage(message::data_compound_id, DataBuffer.data(), DataBuffer.size());
+        // generate and send sensor data messages to SOC
+        SocComms.SendSensorMessages(&Sensors);
 // Serial.print("\tSync: ");
 // Serial.print(float(micros_64() - ts) * 1e-3, 2);
 

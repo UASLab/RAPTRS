@@ -261,22 +261,16 @@
                 { "type": "float", "name": "calibrated_value" }
             ]
         },
-        {
-            "name": "data_compound",
-            "desc": "reserve a message id for compound messages, but external code will handle the message contents, packing, and unpacking",
+	{
+	    "name": "data_bifrost",
             "fields": [
-            ]
-        },
-	      {
-	          "name": "data_bifrost",
-            "fields": [
-	         	   { "type": "float", "name": "airspeed"},
-		           { "type": "uint8_t", "name": "test_id"},
-		           { "type": "float", "name": "voltage"},
-		           { "type": "bool", "name": "soc_eng"},
-		           { "type": "uint8_t", "name": "cont_sel"},
-		           { "type": "bool", "name": "ext_eng"}
-		        ]
-	      }
+	        { "type": "float", "name": "airspeed"},
+		{ "type": "uint8_t", "name": "test_id"},
+		{ "type": "float", "name": "voltage"},
+		{ "type": "bool", "name": "soc_eng"},
+		{ "type": "uint8_t", "name": "cont_sel"},
+		{ "type": "bool", "name": "ext_eng"}
+	    ]
+	}
     ]
 }

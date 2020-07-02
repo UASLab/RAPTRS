@@ -327,24 +327,23 @@ class AircraftSensors {
       std::vector<AnalogSensor> Analog;
       std::vector<SensorNodes> Nodes;
     };
+    Classes classes;
+    bool AcquireInternalMpu9250Data = false;
+    bool AcquireInternalBme280Data = false;
+    bool AcquireTimeData = false;
+    bool AcquireInputVoltageData = false;
+    bool AcquireRegulatedVoltageData = false;
+    bool AcquirePwmVoltageData = false;
+    bool AcquireSbusVoltageData = false;
     bool UpdateConfig(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, DefinitionTree *DefinitionTreePtr);
     void Begin();
     void ReadSyncSensors();
     void ReadAsyncSensors();
-    void MakeCompoundMessage(std::vector<uint8_t> *Buffer);
     void End();
   private:
     std::string RootPath_ = "/Sensors";
-    Classes classes_;
     bool ResetI2cBus_;
     bool ResetBfsBus_;
-    bool AcquireInternalMpu9250Data_ = false;
-    bool AcquireInternalBme280Data_ = false;
-    bool AcquireTimeData_ = false;
-    bool AcquireInputVoltageData_ = false;
-    bool AcquireRegulatedVoltageData_ = false;
-    bool AcquirePwmVoltageData_ = false;
-    bool AcquireSbusVoltageData_ = false;
     size_t SerializedDataMetadataSize = 10;
 };
 

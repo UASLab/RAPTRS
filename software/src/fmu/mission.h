@@ -13,6 +13,9 @@ Author: Brian Taylor
 #include "sensors.h"
 #include "Arduino.h"
 
+// forward declaration
+class AircraftSensors;
+
 class AircraftMission {
   public:
     enum State {
