@@ -10,12 +10,10 @@ Author: Chris Regan, Curt Olson
 bool SimMgr::Configure( const rapidjson::Value& Config ) {
   if ( Config.HasMember("JSBSim") ) {
     const rapidjson::Value& JsbConfig = Config["JSBSim"];
-
-    LoadVal(JsbConfig, "Model", &ModelName, true);
+    
     LoadVal(JsbConfig, "SimFmuPort", &FmuPort, true);
     LoadVal(JsbConfig, "SimFmuBaud", &FmuBaud, true);
 
-    std::cout << "JSBSim model: " << ModelName << std::endl;
     std::cout << "Sim FMU interface on Port: " << FmuPort  << " Baud: " << FmuBaud << std::endl;
     std::cout << std::endl;
 
