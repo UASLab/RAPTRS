@@ -15,8 +15,6 @@ Author: Chris Regan, Curt Olson
 class SimMgr {
   public:
     bool Configure( const rapidjson::Value& Config );
-
-    std::string ModelName;
     std::string FmuPort = "/dev/ttyO4";
     uint32_t FmuBaud = 1500000;
 };
