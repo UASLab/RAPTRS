@@ -59,10 +59,33 @@ class PID2Class: public GenericFunction {
     float Max = std::numeric_limits<float>::max();
 
     ElementPtr output_node;
+
+    __PID2Class PID2Class_;
+
+    std::string OutputKey_, ReferenceKey_, FeedbackKey_, TimeKey_;
+};
+
+class PID2ClassExcite: public GenericFunction {
+  public:
+    void Configure(const rapidjson::Value& Config, std::string SystemPath);
+    void Initialize();
+    bool Initialized();
+    void Run(Mode mode);
+    void Clear();
+  private:
+    float dt_ = 0.0f;
+    bool UseFixedTimeSample = false;
+    ElementPtr reference_node;
+    ElementPtr feedback_node;
+    ElementPtr time_node;
+    float Min = std::numeric_limits<float>::lowest();
+    float Max = std::numeric_limits<float>::max();
+
+    ElementPtr output_node;
     ElementPtr ff_node;
     ElementPtr fb_node;
 
-    __PID2Class PID2Class_;
+    __PID2ClassExcite PID2ClassExcite_;
 
     std::string OutputKey_, ReferenceKey_, FeedbackKey_, TimeKey_;
 };
@@ -106,8 +129,6 @@ class PIDClass: public GenericFunction {
     ElementPtr input_node;
     ElementPtr time_node;
     ElementPtr output_node;
-    ElementPtr ff_node;
-    ElementPtr fb_node;
 
     __PID2Class PID2Class_;
 

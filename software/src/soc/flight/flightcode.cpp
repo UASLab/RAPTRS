@@ -20,6 +20,7 @@ Author: Brian Taylor, Chris Regan, Curt Olson
 #include "simMgr.h"
 #include "route_mgr.h"
 #include "rapidjson/document.h"
+#include "elapsedMillis.h"
 
 #include <iostream>
 #include <iomanip>

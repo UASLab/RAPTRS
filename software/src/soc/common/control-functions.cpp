@@ -7,7 +7,7 @@ Author: Brian Taylor and Chris Regan
 #include "control-functions.h"
 
 /* PID2 class methods, see control-functions.hxx for more information */
-void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+void PID2ClassExcite::Configure(const rapidjson::Value& Config, std::string SystemPath) {
   float Kp = 1.0;
   float Ki = 0.0;
   float Kd = 0.0;
@@ -46,6 +46,81 @@ void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath
   LoadVal(Config, "Max", &Max);
 
   // configure PID2 Class
+  PID2ClassExcite_.Configure(Kp, Ki, Kd, Tf, b, c, Min, Max);
+}
+
+void PID2ClassExcite::Initialize() {}
+bool PID2ClassExcite::Initialized() {return true;}
+
+void PID2ClassExcite::Run(Mode mode) {
+  // sample time
+  float dt = 0.0f;
+  if(!UseFixedTimeSample) {
+    dt = time_node->getFloat();
+  } else {
+    dt = dt_;
+  }
+
+  // Run
+  float y = 0.0f;
+  float ff = 0.0f;
+  float fb = 0.0f;
+
+  PID2ClassExcite_.Run(mode, reference_node->getFloat(), feedback_node->getFloat(), dt, &y, &ff, &fb);
+
+  output_node->setFloat(y);
+  ff_node->setFloat(ff);
+  fb_node->setFloat(fb);
+}
+
+void PID2ClassExcite::Clear() {
+  UseFixedTimeSample = false;
+  output_node->setFloat(0.0f);
+  ff_node->setFloat(0.0f);
+  fb_node->setFloat(0.0f);
+  ReferenceKey_.clear();
+  FeedbackKey_.clear();
+  TimeKey_.clear();
+  PID2ClassExcite_.Clear();
+}
+
+//
+void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+  float Kp = 1.0;
+  float Ki = 0.0;
+  float Kd = 0.0;
+  float Tf = 0.0;
+  float b = 1.0;
+  float c = 1.0;
+  float Min = std::numeric_limits<float>::lowest();
+  float Max = std::numeric_limits<float>::max();
+
+  LoadInput(Config, SystemPath, "Reference", &reference_node, &ReferenceKey_);
+  LoadInput(Config, SystemPath, "Feedback", &feedback_node, &FeedbackKey_);
+  LoadOutput(Config, SystemPath, "Output", &output_node);
+
+  std::string OutputKey = Config["Output"].GetString();
+
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
+    UseFixedTimeSample = true;
+  } else {
+    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
+  }
+
+  LoadVal(Config, "Kp", &Kp);
+  LoadVal(Config, "Ki", &Ki);
+  LoadVal(Config, "Kd", &Kd);
+  if (Kd != 0.0){
+    LoadVal(Config, "Tf", &Tf);
+  }
+
+  LoadVal(Config, "b", &b);
+  LoadVal(Config, "c", &c);
+  LoadVal(Config, "Min", &Min);
+  LoadVal(Config, "Max", &Max);
+
+  // configure PID2 Class
   PID2Class_.Configure(Kp, Ki, Kd, Tf, b, c, Min, Max);
 }
 
@@ -63,21 +138,15 @@ void PID2Class::Run(Mode mode) {
 
   // Run
   float y = 0.0f;
-  float ff = 0.0f;
-  float fb = 0.0f;
 
-  PID2Class_.Run(mode, reference_node->getFloat(), feedback_node->getFloat(), dt, &y, &ff, &fb);
+  PID2Class_.Run(mode, reference_node->getFloat(), feedback_node->getFloat(), dt, &y);
 
   output_node->setFloat(y);
-  ff_node->setFloat(ff);
-  fb_node->setFloat(fb);
 }
 
 void PID2Class::Clear() {
   UseFixedTimeSample = false;
   output_node->setFloat(0.0f);
-  ff_node->setFloat(0.0f);
-  fb_node->setFloat(0.0f);
   ReferenceKey_.clear();
   FeedbackKey_.clear();
   TimeKey_.clear();
@@ -97,9 +166,6 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) 
   LoadOutput(Config, SystemPath, "Output", &output_node);
 
   std::string OutputKey = Config["Output"].GetString();
-
-  ff_node = deftree.initElement(SystemPath + "/" + OutputKey + "FF", ": System feedforward component", LOG_FLOAT, LOG_NONE);
-  fb_node = deftree.initElement(SystemPath + "/" + OutputKey + "FB", ": System feedback component", LOG_FLOAT, LOG_NONE);
 
   LoadVal(Config, "dt", &dt_);
   if (dt_ > 0.0) {
@@ -136,21 +202,15 @@ void PIDClass::Run(Mode mode) {
 
   // Run
   float y = 0.0f;
-  float ff = 0.0f;
-  float fb = 0.0f;
 
-  PID2Class_.Run(mode, input_node->getFloat(), 0.0, dt, &y, &ff, &fb);
+  PID2Class_.Run(mode, input_node->getFloat(), 0.0, dt, &y);
 
   output_node->setFloat(y);
-  ff_node->setFloat(ff);
-  fb_node->setFloat(fb);
 }
 
 void PIDClass::Clear() {
   UseFixedTimeSample = false;
   output_node->setFloat(0.0f);
-  ff_node->setFloat(0.0f);
-  fb_node->setFloat(0.0f);
   InputKey_.clear();
   TimeKey_.clear();
   PID2Class_.Clear();

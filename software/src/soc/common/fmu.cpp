@@ -835,7 +835,7 @@ bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
     }
     printf("Control laws size: %d\n", Config["ControlDef"][control_name.c_str()].Size());
     for ( size_t j = 0; j < Config["ControlDef"][control_name.c_str()].Size(); j++ ) {
-      printf("  component: %d\n", i);
+      printf("  component: %d\n", (int) i);
       const rapidjson::Value &Component = Config["ControlDef"][control_name.c_str()][j];
       if ( Component.HasMember("Type") and Component["Type"] == "Gain" ) {
         message::config_control_gain_t msg;
@@ -974,6 +974,7 @@ void FlightManagementUnit::SendMessage(uint8_t message, uint8_t address, uint8_t
   _bus->write(address);
   _bus->write(Payload, len);
   _bus->endTransmission(ackReq);
+  // printf("send msg: %d (size = %d)\n", message, len);
 }
 
 /* Receive a BFS Bus message. */
