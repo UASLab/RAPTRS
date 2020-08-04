@@ -97,7 +97,7 @@
 
   "Control": {
     "Fmu": ["PilotDirect"],
-    "Baseline": ["PilotDirect", "PilotRate"],
+    "Baseline": ["PilotDirect", "PilotRate", "PilotAttitude"],
     "Test": ["PilotAttitude"],
 
     "GroupDef": {
@@ -125,10 +125,10 @@
 
       "ScasAttitude": [
         {"Type": "PID2", "Reference": "../refPhi", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "refRoll",
-          "Kp": 0.100, "Ki": 0.000, "Kd": 0.000, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
+          "Kp": 0.500, "Ki": 0.000, "Kd": 0.000, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
 
         {"Type": "PID2", "Reference": "../refTheta", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "refPitch",
-          "Kp": 0.100, "Ki": 0.000, "Kd": 0.000, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0}
+          "Kp": 0.500, "Ki": 0.000, "Kd": 0.000, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0}
       ],
 
       "Pilot-Rate": [
@@ -142,13 +142,13 @@
         {"Type": "Gain", "Input": "../refHeave", "Output": "cmdHeave", "Gain": 1.0},
 
         {"Type": "PID2", "Reference": "../refRoll", "Feedback": "/Sensors/Fmu/Mpu9250/GyroX_rads", "Output": "cmdRoll",
-          "Kp": 0.050, "Ki": 0.000, "Kd": 0.036, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
+          "Kp": 0.150, "Ki": 0.050, "Kd": 0.025, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
 
         {"Type": "PID2", "Reference": "../refPitch", "Feedback": "/Sensors/Fmu/Mpu9250/GyroY_rads", "Output": "cmdPitch",
-          "Kp": 0.050, "Ki": 0.000, "Kd": 0.036, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
+          "Kp": 0.150, "Ki": 0.050, "Kd": 0.025, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
 
         {"Type": "PID2", "Reference": "../refYaw", "Feedback": "/Sensors/Fmu/Mpu9250/GyroZ_rads", "Output": "cmdYaw",
-          "Kp": 0.250, "Ki": 0.000, "Kd": 0.100, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0}
+          "Kp": 0.300, "Ki": 0.050, "Kd": 0.100, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0}
       ],
 
       "Allocator": [
@@ -171,9 +171,9 @@
     "Time": "/Sensors/Fmu/Time_us",
     "ExciteDef": {
       "RTSM": {"Level": "Alloc", "Waveforms": [
-        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll", "Start-Time": 1, "Scale-Factor": 0.01},
-        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch", "Start-Time": 1, "Scale-Factor": 0.01},
-        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw", "Start-Time": 1, "Scale-Factor": 0.01}
+        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll", "Start-Time": 1, "Scale-Factor": 0.02},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch", "Start-Time": 1, "Scale-Factor": 0.02},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw", "Start-Time": 1, "Scale-Factor": 0.02}
       ]}
     },
 
@@ -209,7 +209,7 @@
       "ModeSel": {"Standby": -2, "Trigger": 0.0}},
 
     "Baseline-Select-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Gain": 1,
-      "ControlSel": {"PilotDirect": -2, "PilotRate": -0.5, "PilotRate": 0.5}},
+      "ControlSel": {"PilotDirect": -2, "PilotRate": -0.5, "PilotAttitude": 0.5}},
 
     "Test-Points": [
       {"Test-ID": "0", "Sensor-Processing": "Standard", "Control": "PilotAttitude", "Excitation": "RTSM"}

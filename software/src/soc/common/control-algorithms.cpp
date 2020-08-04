@@ -77,8 +77,8 @@ void __PID2Class::ComputeDerivative(float dt) {
 
   float ErrorChange = DerivativeError_ - PreviousDerivativeError_;
 
-  if ((Tf_ + dt) != 0) {
-    DerivativeErrorState_ = Tf_ * (PreviousDerivativeErrorState_ + ErrorChange) / (Tf_ + dt);
+  if (Tf_ != 0) {
+    DerivativeErrorState_ = (1 / Tf_) * ErrorChange + (1 - dt/Tf_) * PreviousDerivativeErrorState_;
   } else {
     DerivativeErrorState_ = 0.0f;
   }
@@ -224,9 +224,9 @@ void __PID2ClassExcite::ComputeDerivative(float dt) {
   float ffErrorChange = ffDerivativeError_ - ffPreviousDerivativeError_;
   float fbErrorChange = fbDerivativeError_ - fbPreviousDerivativeError_;
 
-  if ((Tf_ + dt) != 0) {
-    ffDerivativeErrorState_ = Tf_ * (ffPreviousDerivativeErrorState_ + ffErrorChange) / (Tf_ + dt);
-    fbDerivativeErrorState_ = Tf_ * (fbPreviousDerivativeErrorState_ + fbErrorChange) / (Tf_ + dt);
+  if (Tf_ != 0) {
+    ffDerivativeErrorState_ = (1 / Tf_) * ffErrorChange + (1 - dt/Tf_) * ffPreviousDerivativeErrorState_;
+    fbDerivativeErrorState_ = (1 / Tf_) * fbErrorChange + (1 - dt/Tf_) * fbPreviousDerivativeErrorState_;
   } else {
     ffDerivativeErrorState_ = 0.0f;
     fbDerivativeErrorState_ = 0.0f;

@@ -97,17 +97,17 @@
 
     "RouteDef": {
       "Loiter": {
-        "Type": "CircleHold", "Radius": 400, "Direction": "Left",
+        "Type": "CircleHold", "Radius": 800, "Direction": "Left",
         "Waypoint": [0.0, 0.0, -75], "LeadTime": 3, "HoldDist": 20
       },
 
       "Path_1": {
         "Type": "Waypoints", "LeadTime": 3, "HoldDist": 20,
         "WaypointList": [
-          [400, 0, -75],
-          [0, 400, -75],
-          [-400, 0, -75],
-          [0, -400, -75] ]
+          [800, 0, -75],
+          [0, 800, -75],
+          [-800, 0, -75],
+          [0, -800, -75] ]
       }
     }
   },

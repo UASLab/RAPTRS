@@ -38,6 +38,9 @@ void PID2ClassExcite::Configure(const rapidjson::Value& Config, std::string Syst
   LoadVal(Config, "Kd", &Kd);
   if (Kd != 0.0){
     LoadVal(Config, "Tf", &Tf);
+    if (Tf < 0) {
+      Tf = 0;
+    }
   }
 
   LoadVal(Config, "b", &b);
@@ -113,6 +116,9 @@ void PID2Class::Configure(const rapidjson::Value& Config, std::string SystemPath
   LoadVal(Config, "Kd", &Kd);
   if (Kd != 0.0){
     LoadVal(Config, "Tf", &Tf);
+    if (Tf < 0) {
+      Tf = 0;
+    }
   }
 
   LoadVal(Config, "b", &b);
@@ -179,6 +185,9 @@ void PIDClass::Configure(const rapidjson::Value& Config,std::string SystemPath) 
   LoadVal(Config, "Kd", &Kd);
   if (Kd != 0.0){
     LoadVal(Config, "Tf", &Tf);
+    if (Tf < 0) {
+      Tf = 0;
+    }
   }
 
   LoadVal(Config, "Min", &Min);
