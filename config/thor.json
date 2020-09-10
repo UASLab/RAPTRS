@@ -129,7 +129,7 @@
       "Route17": {
         "Guid_Route": "Guid_Route17", "Pilot": "Pilot-Att",
         "Guid_Lat": "Guidance_Lateral", "Guid_Long": "Guidance_Longitudinal",
-        "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"}
+        "SCAS": "SCAS-Att_HighGain", "Alloc": "Allocator", "Eff": "Effector"}
     },
 
     "ControlDef": {
@@ -154,7 +154,7 @@
       ],
 
       "Guid_Ref17": [
-        {"Type": "Constant", "Output": "refV_ms", "Constant": 20},
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 17},
         {"Type": "Latch", "Input": "/Sensor-Processing/hBaro_m", "Output": "refAlt_m"},
         {"Type": "Gain", "Input": "/Sensor-Processing/hBaro_m", "Output": "negAlt_m", "Gain": -1},
         {"Type": "Sum", "Inputs": ["refAlt_m", "negAlt_m"], "Output": "errAlt_m"}
@@ -180,7 +180,7 @@
 
       "Guidance_Lateral": [
         {"Type": "PID", "Input": "/Route/errHeading_rad", "Output": "refPhi_head",
-          "Kp": 0.75, "Ki": 0.20, "Kd": 0.10, "Tf": 0.2, "dt": 0.02,
+          "Kp": 0.75, "Ki": 0.20, "Kd": 0.20, "Tf": 0.2, "dt": 0.02,
           "Max": 0.523599, "Min": -0.523599},
         {"Type": "PID", "Input": "/Route/crosstrack_m", "Output": "refPhi_xtrack",
           "Kp": -0.01, "Ki": -0.0005, "Kd": -0.0, "Tf": 0.2, "dt": 0.02,

@@ -110,56 +110,67 @@
 
     "ControlDef": {
       "Direct": [
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorFR_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorAL_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorFL_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorAR_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorFR_nd", "Gain": 0.4, "Limits": {"Lower": 0, "Upper": 1}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorAL_nd", "Gain": 0.4, "Limits": {"Lower": 0, "Upper": 1}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorFL_nd", "Gain": 0.4, "Limits": {"Lower": 0, "Upper": 1}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotorAR_nd", "Gain": 0.4, "Limits": {"Lower": 0, "Upper": 1}}
       ],
 
       "Pilot-Attitude": [
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "refHeave", "Gain": 1.0},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "refHeave", "Gain": 0.4},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refPhi", "Gain": 0.523599},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refTheta", "Gain": 0.523599},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw", "Gain": 1.0}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refR", "Gain": 1.0472}
       ],
 
       "ScasAttitude": [
-        {"Type": "PID2", "Reference": "../refPhi", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "refRoll",
-          "Kp": 0.500, "Ki": 0.000, "Kd": 0.000, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
+        {"Type": "Constant", "Output": "refAltRate", "Constant": 0},
+        {"Type": "Gain", "Input": "/Sensor-Processing/DownVelocity_ms", "Output": "UpVelocity_ms", "Gain": -1},
 
-        {"Type": "PID2", "Reference": "../refTheta", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "refPitch",
-          "Kp": 0.500, "Ki": 0.000, "Kd": 0.000, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0}
+        {"Type": "PID2", "Reference": "refAltRate", "Feedback": "UpVelocity_ms", "Output": "refAltRate",
+          "Kp": 0.075, "Ki": 0.000, "Kd": 0.020, "Tf": 0.02, "dt": 0.02, "b": 1, "c": 0},
+
+        {"Type": "PID2", "Reference": "../refPhi", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "refP",
+          "Kp": 0.500, "Ki": 0.010, "Kd": 0.000, "Tf": 0.02, "dt": 0.02, "b": 1, "c": 0,
+          "Min": -0.523599, "Max": 0.523599},
+
+        {"Type": "PID2", "Reference": "../refTheta", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "refQ",
+          "Kp": 0.500, "Ki": 0.010, "Kd": 0.000, "Tf": 0.02, "dt": 0.02, "b": 1, "c": 0,
+          "Min": -0.523599, "Max": 0.523599}
       ],
 
       "Pilot-Rate": [
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "refHeave", "Gain": 1.0},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refRoll", "Gain": 1.0},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refPitch", "Gain": 1.0},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw", "Gain": 1.0}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "refHeave", "Gain": 0.4},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refP", "Gain": 1.0472},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refQ", "Gain": 1.0472},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refR", "Gain": 0.349066}
       ],
 
       "ScasRate": [
-        {"Type": "Gain", "Input": "../refHeave", "Output": "cmdHeave", "Gain": 1.0},
+        {"Type": "Sum", "Inputs": ["../refAltRate", "../refHeave"], "Output": "cmdHeave"},
 
-        {"Type": "PID2", "Reference": "../refRoll", "Feedback": "/Sensors/Fmu/Mpu9250/GyroX_rads", "Output": "cmdRoll",
-          "Kp": 0.150, "Ki": 0.050, "Kd": 0.025, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
+        {"Type": "PID2", "Reference": "../refP", "Feedback": "/Sensors/Fmu/Mpu9250/GyroX_rads", "Output": "cmdP",
+          "Kp": 0.150, "Ki": 0.020, "Kd": 0.040, "Tf": 0.02, "dt": 0.02, "b": 1, "c": 0,
+          "Min": -0.150, "Max": 0.150},
 
-        {"Type": "PID2", "Reference": "../refPitch", "Feedback": "/Sensors/Fmu/Mpu9250/GyroY_rads", "Output": "cmdPitch",
-          "Kp": 0.150, "Ki": 0.050, "Kd": 0.025, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0},
+        {"Type": "PID2", "Reference": "../refQ", "Feedback": "/Sensors/Fmu/Mpu9250/GyroY_rads", "Output": "cmdQ",
+          "Kp": 0.150, "Ki": 0.020, "Kd": 0.040, "Tf": 0.02, "dt": 0.02, "b": 1, "c": 0,
+          "Min": -0.150, "Max": 0.150},
 
-        {"Type": "PID2", "Reference": "../refYaw", "Feedback": "/Sensors/Fmu/Mpu9250/GyroZ_rads", "Output": "cmdYaw",
-          "Kp": 0.300, "Ki": 0.050, "Kd": 0.100, "Tf": 0.1, "dt": 0.02, "b": 1, "c": 0}
+        {"Type": "PID2", "Reference": "../refR", "Feedback": "/Sensors/Fmu/Mpu9250/GyroZ_rads", "Output": "cmdR",
+          "Kp": 0.750, "Ki": 0.100, "Kd": 0.200, "Tf": 0.02, "dt": 0.02, "b": 1, "c": 0,
+          "Min": -0.150, "Max": 0.150}
       ],
 
       "Allocator": [
         {"Type": "PseudoInverse",
-          "Inputs": ["../cmdHeave", "../cmdRoll", "../cmdPitch", "../cmdYaw"],
+          "Inputs": ["../cmdHeave", "../cmdP", "../cmdQ", "../cmdR"],
           "Outputs": ["cmdMotorFR_nd", "cmdMotorAL_nd", "cmdMotorFL_nd", "cmdMotorAR_nd"],
           "Effectiveness": [
             [ 0.25000, 0.25000, 0.25000, 0.25000],
             [-0.25000, 0.25000, 0.25000,-0.25000],
             [ 0.25000,-0.25000, 0.25000,-0.25000],
-            [-0.25000,-0.25000, 0.25000, 0.25000]],
+            [ 0.25000, 0.25000,-0.25000,-0.25000]],
           "Min": [0.025, 0.025, 0.025, 0.025],
           "Max": [1.0, 1.0, 1.0, 1.0]
         }
@@ -171,9 +182,9 @@
     "Time": "/Sensors/Fmu/Time_us",
     "ExciteDef": {
       "RTSM": {"Level": "Alloc", "Waveforms": [
-        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll", "Start-Time": 1, "Scale-Factor": 0.02},
-        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch", "Start-Time": 1, "Scale-Factor": 0.02},
-        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw", "Start-Time": 1, "Scale-Factor": 0.02}
+        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdP", "Start-Time": 1, "Scale-Factor": 0.02},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdQ", "Start-Time": 1, "Scale-Factor": 0.02},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdR", "Start-Time": 1, "Scale-Factor": 0.02}
       ]}
     },
 

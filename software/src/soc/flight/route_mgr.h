@@ -30,11 +30,11 @@ WaypointDef["Home"] is stored in Geodetic [rad,rad,m]
   "RouteDef": {
     "Loiter": {
       "Type": "CircleHold", "Radius": 400, "Direction": "Left",
-      "Waypoint": [0.0, 0.0, -75], "LeadDist": 100
+      "Waypoint": [0.0, 0.0, -75], "LeadTime": 3
     },
 
     "Path_1": {
-      "Type": "Waypoints", "LeadDist": 100,
+      "Type": "Waypoints", "LeadTime": 3,
       "WaypointList": [
         [400, 0, -75],
         [0, 400, -75],

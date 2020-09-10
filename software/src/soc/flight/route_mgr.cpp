@@ -251,7 +251,7 @@ void RouteWaypoints::ComputeSegment() {
   // Set index of Previous Waypoint
   indxPrev_ = indxSeg_;
 
-  // Set index of Previous Waypoint, make sure it is in range
+  // Set index of Next Waypoint, make sure it is in range
   indxNext_ = indxPrev_ + 1;
   if (indxNext_ > (numWaypoints_-1)) {
     indxNext_ = 0;
@@ -273,7 +273,7 @@ void RouteWaypoints::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
   Vector3f vecvAdj2Next = vecCurr2Next.cwiseProduct(vecSegUnit_NED_) ;
 
   // Check if we're past Next, or within the threshold
-  float distNextThresh = 1.0;
+  float distNextThresh = 50.0;
   if (vecvAdj2Next[0] <= distNextThresh) { // pCurr is beyond pNext
     indxSeg_ = indxNext_; // advance indx to Next
     ComputeSegment(); // Compute segment values
