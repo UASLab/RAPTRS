@@ -192,3 +192,21 @@ void LatchClass::Clear() {
   Output_node_->setFloat(0.0f);
   InputKey_.clear();
 }
+
+/* ABS class methods, see general-functions.h for more information */
+void ABSClass::Configure(const rapidjson::Value& Config,std::string SystemName) {
+  LoadInput(Config, SystemName, "Input", &Input_node_, &InputKey_);
+  LoadOutput(Config, SystemName, "Output", &Output_node_);
+}
+
+void ABSClass::Initialize() {}
+bool ABSClass::Initialized() {return true;}
+
+void ABSClass::Run(Mode mode) {
+  Output_node_->setFloat( fabs(Input_node_->getFloat()) );
+}
+
+void ABSClass::Clear() {
+  Output_node_->setFloat(0.0f);
+  InputKey_.clear();
+}

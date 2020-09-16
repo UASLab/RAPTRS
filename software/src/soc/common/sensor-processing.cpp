@@ -136,6 +136,8 @@ void SystemWrapper::Configure (std::string SystemPath, const rapidjson::Value& S
       ComponentVec_.push_back(std::make_shared<ProductClass>());
     } else if (ComponentType == "Delay") {
       ComponentVec_.push_back(std::make_shared<DelayClass>());
+    } else if (ComponentType == "ABS") {
+      ComponentVec_.push_back(std::make_shared<ABSClass>());
     } else if (ComponentType == "IAS") {
       ComponentVec_.push_back(std::make_shared<IndicatedAirspeed>());
     } else if (ComponentType == "AGL") {

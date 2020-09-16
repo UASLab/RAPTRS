@@ -7,8 +7,8 @@ Author: Brian Taylor
 
 #pragma once
 
-#include <algorithm>
 #include <vector>
+#include "generic-function.h"
 
 /*
 General Filter - Implements a general discrete time filter using the
@@ -16,14 +16,17 @@ general filter difference equation. Matches the MATLAB filter function.
 */
 class __GeneralFilter {
   public:
-    void Configure(std::vector<float> num,std::vector<float> den);
-    float Run(float input);
+    void Configure(std::vector<float> num, std::vector<float> den, float dt);
+    void Run(GenericFunction::Mode mode, float u, float dt, float *y);
     void Clear();
   private:
-    std::vector<float> num_;
-    std::vector<float> den_;
+    uint8_t mode_ = GenericFunction::Mode::kStandby;
+    bool initLatch_ = false;
 
-    std::vector<float> x_;
-    std::vector<float> y_;
+    std::vector<float> num_, den_;
+    std::vector<float> x_, y_;
 
+    void InitializeState();
+    void OutputEquation(float u);
+    void Reset();
 };

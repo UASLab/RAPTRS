@@ -6,27 +6,45 @@ Author: Brian Taylor
 
 #include "filter-functions.h"
 
-void GeneralFilter::Configure(const rapidjson::Value& Config,std::string SystemName) {
+void GeneralFilter::Configure(const rapidjson::Value& Config,std::string SystemPath) {
   // I/O signals
-  LoadInput(Config, SystemName, "Input", &u_node, &InputKey_);
-  LoadOutput(Config, SystemName, "Output", &y_node);
+  LoadInput(Config, SystemPath, "Input", &u_node, &InputKey_);
+  LoadOutput(Config, SystemPath, "Output", &y_node);
 
   // Coefficient vectors
   LoadVal(Config, "num", &num, true);
   LoadVal(Config, "den", &den, true);
 
+  // Sample time (required)
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
+    UseFixedTimeSample = true;
+  } else {
+    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
+  }
+
   // Configure filter
-  filter_.Configure(num, den);
+  filter_.Configure(num, den, dt_);
 }
 
 void GeneralFilter::Initialize() {}
-
 bool GeneralFilter::Initialized() {
   return true;
 }
 
 void GeneralFilter::Run(Mode mode) {
-  y_node->setFloat( filter_.Run(u_node->getFloat()) );
+  // sample time computation
+  float dt = 0;
+  if(UseFixedTimeSample == false) {
+    dt = time_node->getFloat();
+  } else {
+    dt = dt_;
+  }
+
+  float u = u_node->getFloat();
+  float y = 0.0f;
+  filter_.Run(mode, u, dt, &y);
+  y_node->setFloat(y);
 }
 
 void GeneralFilter::Clear() {

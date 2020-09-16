@@ -7,7 +7,8 @@ Author: Brian Taylor
 
 #include "filter-algorithms.h"
 
-void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) {
+void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den, float dt) {
+  Clear(); // Clear and set to defaults
 
   x_.resize(num.size());
   y_.resize(den.size());
@@ -28,7 +29,38 @@ void __GeneralFilter::Configure(std::vector<float> num, std::vector<float> den) 
   den_ = den;
 }
 
-float __GeneralFilter::Run(float input) {
+void __GeneralFilter::Run(GenericFunction::Mode mode, float u, float dt, float *y) {
+  mode_ = mode;
+
+  switch(mode_) {
+    case GenericFunction::Mode::kStandby: {
+      initLatch_ = false;
+      break;
+    }
+    case GenericFunction::Mode::kArm: {
+      Reset();
+      InitializeState();
+      initLatch_ = true;
+      OutputEquation(u);
+      break;
+    }
+    case GenericFunction::Mode::kHold: {
+      OutputEquation(u);
+      break;
+    }
+    case GenericFunction::Mode::kEngage: {
+      if (initLatch_ == false) {
+        InitializeState();
+        initLatch_ = true;
+      }
+      OutputEquation(u);
+      break;
+    }
+  }
+  *y = y_[0];
+}
+
+void __GeneralFilter::OutputEquation(float u) {
   // shift all x and y values to the right 1
   if (x_.size()>0) {
     std::rotate(x_.data(), x_.data()+x_.size()-1, x_.data()+x_.size());
@@ -38,18 +70,18 @@ float __GeneralFilter::Run(float input) {
   }
 
   // grab the newest x value
-  x_[0] = input;
+  x_[0] = u;
 
   // apply all num coefficients
   float FeedForward = 0.0f;
   for (size_t i=0; i < num_.size(); i++) {
-    FeedForward += num_[i]*x_[i];
+    FeedForward += num_[i] * x_[i];
   }
 
   // apply all den coefficients
   float FeedBack = 0.0f;
   for (size_t i=1; i < den_.size(); i++) {
-    FeedBack += den_[i]*y_[i];
+    FeedBack += den_[i] * y_[i];
   }
 
   // get the output
@@ -59,7 +91,17 @@ float __GeneralFilter::Run(float input) {
   if (y_.size() > 0) {
     y_[0] = Output;
   }
-  return Output;
+}
+
+void __GeneralFilter::InitializeState() {
+  std::fill(x_.begin(), x_.end(), 0.0f); // Reset to Zero
+}
+
+void __GeneralFilter::Reset() {
+  std::fill(x_.begin(), x_.end(), 0.0f); // Reset to Zero
+
+  mode_ = GenericFunction::Mode::kStandby;
+  initLatch_ = false;
 }
 
 void __GeneralFilter::Clear() {

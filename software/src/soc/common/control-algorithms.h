@@ -16,9 +16,9 @@ class __PID2Class {
     void Clear();
   private:
     uint8_t mode_ = GenericFunction::Mode::kStandby;
+    bool initLatch_ = false;
 
     float Kp_, Ki_, Kd_, Tf_, b_, c_, y_, Min_, Max_;
-    bool initLatch_ = false;
 
     float ProportionalError_, DerivativeError_, IntegralError_, DerivativeErrorState_;
     float PreviousDerivativeError_, PreviousDerivativeErrorState_, IntegralErrorState_;
@@ -38,9 +38,9 @@ class __PID2ClassExcite {
     void Clear();
   private:
     uint8_t mode_ = GenericFunction::Mode::kStandby;
+    bool initLatch_ = false;
 
     float Kp_, Ki_, Kd_, Tf_, b_, c_, y_, ff_, fb_, Min_, Max_;
-    bool initLatch_ = false;
 
     float ffProportionalError_, ffDerivativeError_, ffIntegralError_, ffDerivativeErrorState_;
     float fbProportionalError_, fbDerivativeError_, fbIntegralError_, fbDerivativeErrorState_;
@@ -56,17 +56,19 @@ class __PID2ClassExcite {
 
 class __SSClass {
   public:
-    void Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max);
+    void Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t LatchInit);
     void Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eigen::VectorXf *y);
+    void GetInputInit(Eigen::VectorXf *uInit);
     void Clear();
   private:
     uint8_t mode_ = GenericFunction::Mode::kStandby;
+    bool initLatch_ = false;
+    bool LatchInit_;
 
+    Eigen::VectorXf uInit_;
     Eigen::MatrixXf A_, B_, C_, D_;
     Eigen::VectorXf x_;
     Eigen::VectorXf y_, Min_, Max_;
-
-    bool initLatch_ = false;
 
     Eigen::MatrixXf CA_inv_, CB_;
 

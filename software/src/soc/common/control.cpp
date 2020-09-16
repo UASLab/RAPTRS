@@ -201,7 +201,9 @@ void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Valu
     } else if (ComponentType == "Product") {
       ComponentVec_.push_back(std::make_shared<ProductClass>());
     } else if (ComponentType == "Delay") {
-      ComponentVec_.push_back(std::make_shared<DelayClass>());
+      ComponentVec_.push_back(std::make_shared<ProductClass>());
+    } else if (ComponentType == "ABS") {
+      ComponentVec_.push_back(std::make_shared<ABSClass>());
     } else if (ComponentType == "PID2") {
       ComponentVec_.push_back(std::make_shared<PID2Class>());
     } else if (ComponentType == "PID") {
@@ -216,10 +218,8 @@ void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Valu
       ComponentVec_.push_back(std::make_shared<TecsClass>());
     } else if (ComponentType == "Latch") {
       ComponentVec_.push_back(std::make_shared<LatchClass>());
-    } else if (ComponentType == "FDIPE") {
-      ComponentVec_.push_back(std::make_shared<FDIPEClass>());
-    } else if (ComponentType == "FDIRO") {
-      ComponentVec_.push_back(std::make_shared<FDIROClass>());
+    // } else if (ComponentType == "FDIPE") {
+    //   ComponentVec_.push_back(std::make_shared<FDIPEClass>());
     } else if (ComponentType == "FDIPCA") {
       ComponentVec_.push_back(std::make_shared<FDIPCAClass>());
     } else {

@@ -176,22 +176,19 @@ class SSClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-
-    std::vector<ElementPtr> u_node;
+    std::vector<ElementPtr> u_node, y_node;
     Eigen::VectorXf u;
     Eigen::VectorXf x;
     Eigen::VectorXf y;
     Eigen::MatrixXf A, B, C, D;
     Eigen::VectorXf Min, Max;
 
-    float dt = 0;
+    float dt_ = 0.0f;
     float* TimeSource = 0;
     float timePrev = 0;
 
     bool UseFixedTimeSample = false;
     ElementPtr time_node;
-
-    std::vector<ElementPtr> y_node;
 
     __SSClass SSClass_;
 
@@ -254,76 +251,46 @@ class TecsClass: public GenericFunction {
     int8_t error_diffSat = 0;
 };
 
-class FDIPEClass: public GenericFunction {
-  public:
-    void Configure(const rapidjson::Value& Config,std::string SystemPath);
-    void Initialize();
-    bool Initialized();
-    void Run(Mode mode);
-    void Clear();
-  private:
+//
+// class FDIPEClass: public GenericFunction {
+//   public:
+//     void Configure(const rapidjson::Value& Config,std::string SystemPath);
+//     void Initialize();
+//     bool Initialized();
+//     void Run(Mode mode);
+//     void Clear();
+//   private:
+//
+//     std::vector<ElementPtr> u_node;
+//     Eigen::VectorXf u;
+//     Eigen::VectorXf y;
+//     Eigen::MatrixXf A, B, C, D;
+//     Eigen::VectorXf Min, Max;
+//
+//     float dt_ = 0.0f;
+//     float* TimeSource = 0;
+//     float timePrev = 0;
+//
+//     bool UseFixedTimeSample = false;
+//     ElementPtr time_node;
+//
+//     __GeneralFilter Filter_;
+//     __SSClass SSClass_;
+//
+//     std::vector<float> num;
+//     std::vector<float> den;
+//
+//     ElementPtr p_exp_node;
+//     ElementPtr p_ref_node;
+//     ElementPtr residual_raw_node;
+//     ElementPtr residual_filt_node;
+//
+//     std::string RollKey_;
+//     std::vector<std::string> InputKeys_, OutputKeys_;
+//     std::string TimeKey_;
+// };
 
-    std::vector<ElementPtr> u_node;
-    Eigen::VectorXf u;
-    Eigen::VectorXf y;
-    Eigen::MatrixXf A, B, C, D;
-    Eigen::VectorXf Min, Max;
-
-    float dt = 0;
-    float* TimeSource = 0;
-    float timePrev = 0;
-
-    bool UseFixedTimeSample = false;
-    ElementPtr time_node;
-
-    __GeneralFilter Filter_;
-    __SSClass SSClass_;
-
-    std::vector<float> num;
-    std::vector<float> den;
-
-    ElementPtr p_exp_node;
-    ElementPtr p_ref_node;
-    ElementPtr residual_raw_node;
-    ElementPtr residual_filt_node;
-
-    std::string RollKey_;
-    std::vector<std::string> InputKeys_, OutputKeys_;
-    std::string TimeKey_;
-};
-
-
-class FDIROClass: public GenericFunction {
-  public:
-    void Configure(const rapidjson::Value& Config,std::string SystemPath);
-    void Initialize();
-    bool Initialized();
-    void Run(Mode mode);
-    void Clear();
-  private:
-
-    std::vector<ElementPtr> u_node;
-    Eigen::VectorXf u;
-    Eigen::VectorXf y;
-    Eigen::MatrixXf A, B, C, D;
-    Eigen::VectorXf Min, Max;
-
-    float dt = 0;
-    float* TimeSource = 0;
-    float timePrev = 0;
-
-    bool UseFixedTimeSample = false;
-    ElementPtr time_node;
-
-    __SSClass SSClass_;
-
-    ElementPtr residual_node;
-
-    std::vector<std::string> InputKeys_, OutputKeys_;
-    std::string TimeKey_;
-};
-
-
+//
 class FDIPCAClass: public GenericFunction {
   public:
     void Configure(const rapidjson::Value& Config,std::string SystemPath);
@@ -337,18 +304,25 @@ class FDIPCAClass: public GenericFunction {
     Eigen::VectorXf u;
     Eigen::MatrixXf invSig, Upc, Ures;
     Eigen::MatrixXf T_inner_, Q_inner_;
-    Eigen::VectorXf Tsq, Qsq;
+    float Tsq_raw, Qsq_raw;
+    float Tsq, Qsq;
 
-    float dt = 0;
+    float dt_ = 0.0f;
     float* TimeSource = 0;
     float timePrev = 0;
+
+    std::vector<float> num;
+    std::vector<float> den;
 
     bool UseFixedTimeSample = false;
     ElementPtr time_node;
 
-    std::vector<ElementPtr> Tsq_node;
-    std::vector<ElementPtr> Qsq_node;
+    __GeneralFilter Tsq_filter_, Qsq_filter_;
 
-    std::vector<std::string> InputKeys_, TsqKeys_, QsqKeys_;
+    ElementPtr Tsq_raw_node, Qsq_raw_node;
+    ElementPtr Tsq_node, Qsq_node;
+
+    std::vector<std::string> InputKeys_;
+    std::string TsqKey_, QsqKey_;
     std::string TimeKey_;
 };

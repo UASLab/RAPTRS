@@ -58,7 +58,7 @@ bool PID2ClassExcite::Initialized() {return true;}
 void PID2ClassExcite::Run(Mode mode) {
   // sample time
   float dt = 0.0f;
-  if(!UseFixedTimeSample) {
+  if(UseFixedTimeSample == false) {
     dt = time_node->getFloat();
   } else {
     dt = dt_;
@@ -136,7 +136,7 @@ bool PID2Class::Initialized() {return true;}
 void PID2Class::Run(Mode mode) {
   // sample time
   float dt = 0.0f;
-  if(!UseFixedTimeSample) {
+  if(UseFixedTimeSample == false) {
     dt = time_node->getFloat();
   } else {
     dt = dt_;
@@ -203,7 +203,7 @@ bool PIDClass::Initialized() {return true;}
 void PIDClass::Run(Mode mode) {
   // sample time
   float dt = 0.0f;
-  if(!UseFixedTimeSample) {
+  if(UseFixedTimeSample == false) {
     dt = time_node->getFloat();
   } else {
     dt = dt_;
@@ -232,30 +232,32 @@ void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) 
   LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
   LoadOutput(Config, SystemPath, "Outputs", &y_node);
 
+  // std::string OutputKey = Config["Output"].GetString();
+  int LatchInit = 0;
+  LoadVal(Config, "LatchInit", &LatchInit);
+  bool LatchInitBool = (bool) LatchInit;
+
   // Matrices
-  LoadVal(Config, "A", &A);
-  LoadVal(Config, "B", &B);
-  LoadVal(Config, "C", &C);
-  LoadVal(Config, "D", &D);
+  LoadVal(Config, "A", &A, true);
+  LoadVal(Config, "B", &B, true);
+  LoadVal(Config, "C", &C, true);
+  LoadVal(Config, "D", &D, true);
 
   // resize input vector
-  int numU = C.rows();
+  int numU = D.cols();
+  u_node.resize(numU);
   u.resize(numU);
   u.setZero(numU);
 
-  // resize state vector
-  int numX = A.rows();
-  x.resize(numX);
-  x.setZero(numX);
-
   // Resize output vector
-  int numY = C.rows();
+  int numY = D.rows();
+  // y_node.resize(numY);
   y.resize(numY);
   y.setZero(numY);
 
   // Sample time (required)
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
     UseFixedTimeSample = true;
   } else {
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
@@ -273,24 +275,19 @@ void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) 
   LoadVal(Config, "Max", &Max);
 
   // configure SS Class
-  SSClass_.Configure(A, B, C, D, dt, Min, Max);
+  SSClass_.Configure(A, B, C, D, dt_, Min, Max, LatchInitBool);
 }
 
 void SSClass::Initialize() {}
 bool SSClass::Initialized() {return true;}
 
 void SSClass::Run(Mode mode) {
-  float dt_curr = 0.0f;
-
   // sample time computation
   float dt = 0;
-  if (UseFixedTimeSample == false) {
-    dt_curr = *TimeSource - timePrev;
-    timePrev = *TimeSource;
-    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
-    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
+  if(UseFixedTimeSample == false) {
+    dt = time_node->getFloat();
   } else {
-    dt_curr = dt;
+    dt = dt_;
   }
 
   // inputs to Eigen3 vector
@@ -299,7 +296,7 @@ void SSClass::Run(Mode mode) {
   }
 
   // Call Algorithm
-  SSClass_.Run(mode, u, dt, &y);
+  SSClass_.Run(mode, u, dt, &y); // Call SS System
 
   // outputs to nodes
   for (size_t i=0; i < y_node.size(); i++) {
@@ -407,211 +404,131 @@ void TecsClass::Run(Mode mode) {
 void TecsClass::Clear() {
 }
 
-void FDIPEClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
-  // I/O Signals
-  LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
-  LoadInput(Config, SystemPath, "pRef", &p_ref_node, &RollKey_);
-
-  p_exp_node = deftree.initElement(SystemPath + "/" + "p_exp", ": Expected roll rate computed for a nominal system", LOG_FLOAT, LOG_NONE);
-  residual_raw_node = deftree.initElement(SystemPath + "/" + "residual_raw", ": Residual is difference between measured and expected roll rates", LOG_FLOAT, LOG_NONE);
-
-  LoadOutput(Config, SystemPath, "Output", &residual_filt_node);
-
-  std::string OutputKey = Config["Output"].GetString();
-
-  // Sample time (required)
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
-    UseFixedTimeSample = true;
-  } else {
-    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
-  }
-
-  LoadVal(Config, "SS_A", &A, true);
-  LoadVal(Config, "SS_B", &B, true);
-  LoadVal(Config, "SS_C", &C, true);
-  LoadVal(Config, "SS_D", &D, true);
-
-  // resize input vector
-  int numU = C.rows();
-  u.resize(numU);
-  u.setZero(numU);
-
-  // Resize output vector
-  int numY = C.rows();
-  y.resize(numY);
-  y.setZero(numY);
-
-  // SS Limits
-  Min.resize(numY);
-  Min.setConstant(numY, std::numeric_limits<float>::lowest());
-
-  LoadVal(Config, "SS_Min", &Min);
-
-  Max.resize(numY);
-  Max.setConstant(numY, std::numeric_limits<float>::max());
-
-  LoadVal(Config, "SS_Max", &Max);
-
-  // configure using SS algorithm Class
-  SSClass_.Configure(A, B, C, D, dt, Min, Max);
-
-  // Residual filter
-  LoadVal(Config, "Filt_Num", &num, true);
-  LoadVal(Config, "Filt_Den", &den, true);
-
-  // configure using Filter algorithm Class
-  Filter_.Configure(num, den);
-}
-
-void FDIPEClass::Initialize() {}
-bool FDIPEClass::Initialized() {return true;}
-
-void FDIPEClass::Run(Mode mode) {
-  float dt_curr = 0.0f;
-
-  // sample time computation
-  float dt = 0;
-  if (UseFixedTimeSample == false) {
-    dt_curr = *TimeSource - timePrev;
-    timePrev = *TimeSource;
-    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
-    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
-  } else {
-    dt_curr = dt;
-  }
-
-  float p_ref = p_ref_node->getFloat();
-
-  // inputs to SS vector
-  for (size_t i=0; i < u_node.size(); i++) {
-    u(i) = u_node[i]->getFloat();
-  }
-
-  // Run
-  SSClass_.Run(mode, u, dt, &y); // Call SS System
-  float p_exp = y(0);
-  float residual_raw = abs(p_ref - p_exp); // residual is difference between measured and expected roll rates
-  float residual_filt = Filter_.Run(residual_raw); // filter the residual to reduce susceptibility to noise
-
-  // outputs to nodes
-  p_exp_node->setFloat(p_exp);
-  residual_raw_node->setFloat(residual_raw);
-  residual_filt_node->setFloat(residual_filt);
-}
-
-void FDIPEClass::Clear() {
-  UseFixedTimeSample = false;
-  A.resize(0,0);
-  B.resize(0,0);
-  C.resize(0,0);
-  D.resize(0,0);
-  InputKeys_.clear();
-  RollKey_.clear();
-  TimeKey_.clear();
-  SSClass_.Clear();
-  Filter_.Clear();
-}
-
-void FDIROClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
-  // I/O Signals
-  LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
-  LoadOutput(Config, SystemPath, "Output", &residual_node);
-
-  std::string OutputKey = Config["Output"].GetString();
-
-
-  // Sample time (required)
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
-    UseFixedTimeSample = true;
-  } else {
-    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
-  }
-
-  LoadVal(Config, "A", &A, true);
-  LoadVal(Config, "B", &B, true);
-  LoadVal(Config, "C", &C, true);
-  LoadVal(Config, "D", &D, true);
-
-  // resize input vector
-  int numU = C.rows();
-  u.resize(numU);
-  u.setZero(numU);
-
-  // Resize output vector
-  int numY = C.rows();
-  y.resize(numY);
-  y.setZero(numY);
-
-  // SS Limits
-  Min.resize(numY);
-  Min.setConstant(numY, std::numeric_limits<float>::lowest());
-
-  LoadVal(Config, "Min", &Min);
-
-  Max.resize(numY);
-  Max.setConstant(numY, std::numeric_limits<float>::max());
-
-  LoadVal(Config, "Max", &Max);
-
-  // configure using SS algorithm Class
-  SSClass_.Configure(A, B, C, D, dt, Min, Max);
-}
-
-void FDIROClass::Initialize() {}
-bool FDIROClass::Initialized() {return true;}
-
-void FDIROClass::Run(Mode mode) {
-  float dt_curr = 0.0f;
-
-  // sample time computation
-  float dt = 0;
-  if (UseFixedTimeSample == false) {
-    dt_curr = *TimeSource - timePrev;
-    timePrev = *TimeSource;
-    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
-    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
-  } else {
-    dt_curr = dt;
-  }
-
-  // inputs to SS vector
-  for (size_t i=0; i < u_node.size(); i++) {
-    u(i) = u_node[i]->getFloat();
-  }
-
-  // Run
-  SSClass_.Run(mode, u, dt, &y); // Call SS System
-  float residual = y(0);
-
-  // outputs to nodes
-  residual_node->setFloat(residual);
-}
-
-void FDIROClass::Clear() {
-  UseFixedTimeSample = false;
-  A.resize(0,0);
-  B.resize(0,0);
-  C.resize(0,0);
-  D.resize(0,0);
-  InputKeys_.clear();
-  TimeKey_.clear();
-  SSClass_.Clear();
-}
+//
+// void FDIPEClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+//   // I/O Signals
+//   LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
+//   LoadInput(Config, SystemPath, "pRef", &p_ref_node, &RollKey_);
+//
+//   p_exp_node = deftree.initElement(SystemPath + "/" + "p_exp", ": Expected roll rate computed for a nominal system", LOG_FLOAT, LOG_NONE);
+//   residual_raw_node = deftree.initElement(SystemPath + "/" + "residual_raw", ": Residual is difference between measured and expected roll rates", LOG_FLOAT, LOG_NONE);
+//
+//   LoadOutput(Config, SystemPath, "Output", &residual_filt_node);
+//
+//   std::string OutputKey = Config["Output"].GetString();
+//
+//   // Sample time (required)
+//   LoadVal(Config, "dt", &dt_);
+//   if (dt_ > 0.0) {
+//     UseFixedTimeSample = true;
+//   } else {
+//     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
+//   }
+//
+//   LoadVal(Config, "SS_A", &A, true);
+//   LoadVal(Config, "SS_B", &B, true);
+//   LoadVal(Config, "SS_C", &C, true);
+//   LoadVal(Config, "SS_D", &D, true);
+//
+//   // resize input vector
+//   int numU = D.cols();
+//   u_node.resize(numU);
+//   u.resize(numU);
+//   u.setZero(numU);
+//
+//   // Resize output vector
+//   int numY = D.rows();
+//   y.resize(numY);
+//   y.setZero(numY);
+//
+//   // SS Limits
+//   Min.resize(numY);
+//   Min.setConstant(numY, std::numeric_limits<float>::lowest());
+//
+//   LoadVal(Config, "SS_Min", &Min);
+//
+//   Max.resize(numY);
+//   Max.setConstant(numY, std::numeric_limits<float>::max());
+//
+//   LoadVal(Config, "SS_Max", &Max);
+//
+//   // configure using SS algorithm Class
+//   SSClass_.Configure(A, B, C, D, dt_, Min, Max);
+//
+//   // Residual filter
+//   LoadVal(Config, "Filt_Num", &num, true);
+//   LoadVal(Config, "Filt_Den", &den, true);
+//
+//   // configure using Filter algorithm Class
+//   Filter_.Configure(num, den, dt_);
+// }
+//
+// void FDIPEClass::Initialize() {}
+// bool FDIPEClass::Initialized() {return true;}
+//
+// void FDIPEClass::Run(Mode mode) {
+//   // sample time computation
+//   float dt = 0;
+//   if(UseFixedTimeSample == false) {
+//     dt = time_node->getFloat();
+//   } else {
+//     dt = dt_;
+//   }
+//
+//   float p_ref = p_ref_node->getFloat();
+//
+//   // inputs to SS vector
+//   for (size_t i=0; i < u_node.size(); i++) {
+//     u(i) = u_node[i]->getFloat();
+//   }
+//
+//   // Run
+//   SSClass_.Run(mode, u, dt, &y); // Call SS System
+//   float p_exp = y(0);
+//   float residual_raw = fabs(p_ref - p_exp); // residual is difference between measured and expected roll rates
+//   float residual_filt = 0.0f;
+//   Filter_.Run(mode, residual_raw, dt, &residual_filt); // filter the residual to reduce susceptibility to noise
+//
+//   // outputs to nodes
+//   p_exp_node->setFloat(p_exp);
+//   residual_raw_node->setFloat(residual_raw);
+//   residual_filt_node->setFloat(residual_filt);
+// }
+//
+// void FDIPEClass::Clear() {
+//   UseFixedTimeSample = false;
+//   A.resize(0,0);
+//   B.resize(0,0);
+//   C.resize(0,0);
+//   D.resize(0,0);
+//   InputKeys_.clear();
+//   RollKey_.clear();
+//   TimeKey_.clear();
+//   SSClass_.Clear();
+//   Filter_.Clear();
+// }
 
 void FDIPCAClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
   // I/O Signals
   LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
+
   LoadOutput(Config, SystemPath, "Tsq", &Tsq_node);
   LoadOutput(Config, SystemPath, "Qsq", &Qsq_node);
 
-  // std::string OutputKey = Config["Tsq"].GetString();
+  // std::string TsqKeys = Config["Tsq"].GetString();
+  // std::string QsqKeys = Config["Qsq"].GetString();
 
+  // resize input vector
+  int numU = u_node.size();
+  u.resize(numU);
+  u.setZero(numU);
+
+  Tsq_raw_node = deftree.initElement(SystemPath + "/" + "Tsq_raw", "", LOG_FLOAT, LOG_NONE);
+  Qsq_raw_node = deftree.initElement(SystemPath + "/" + "Qsq_raw", "", LOG_FLOAT, LOG_NONE);
 
   // Sample time (required)
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
     UseFixedTimeSample = true;
   } else {
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
@@ -621,25 +538,27 @@ void FDIPCAClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   LoadVal(Config, "Upc", &Upc, true);
   LoadVal(Config, "Ures", &Ures, true);
 
+  // Residual filter
+  LoadVal(Config, "Num", &num, true);
+  LoadVal(Config, "Den", &den, true);
+
   T_inner_ = Upc * invSig * Upc.transpose();
   Q_inner_ = Ures * Ures.transpose();
+
+  Tsq_filter_.Configure(num, den, dt_);
+  Qsq_filter_.Configure(num, den, dt_);
 }
 
 void FDIPCAClass::Initialize() {}
 bool FDIPCAClass::Initialized() {return true;}
 
 void FDIPCAClass::Run(Mode mode) {
-  float dt_curr = 0.0f;
-
-  // sample time computation
-  float dt = 0;
-  if (UseFixedTimeSample == false) {
-    dt_curr = *TimeSource - timePrev;
-    timePrev = *TimeSource;
-    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
-    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
+  // sample time
+  float dt = 0.0f;
+  if(UseFixedTimeSample == false) {
+    dt = time_node->getFloat();
   } else {
-    dt_curr = dt;
+    dt = dt_;
   }
 
   // inputs to vector
@@ -648,26 +567,27 @@ void FDIPCAClass::Run(Mode mode) {
   }
 
   // Run
-  Tsq = u*T_inner_*u.transpose();
-  Qsq = u*Q_inner_*u.transpose();
+  Tsq_raw = u.transpose() * T_inner_ * u;
+  Qsq_raw = u.transpose() * Q_inner_ * u;
+
+  // filter
+  Tsq_filter_.Run(mode, Tsq_raw, dt, &Tsq);
+  Qsq_filter_.Run(mode, Qsq_raw, dt, &Qsq);
 
   // outputs to nodes
-  for (size_t i=0; i < Tsq_node.size(); i++) {
-    Tsq_node[i]->setFloat(Tsq(i));
-  }
+  Tsq_raw_node->setFloat(Tsq_raw);
+  Qsq_raw_node->setFloat(Qsq_raw);
 
-  for (size_t i=0; i < Qsq_node.size(); i++) {
-    Qsq_node[i]->setFloat(Qsq(i));
-  }
+  Tsq_node->setFloat(Tsq);
+  Qsq_node->setFloat(Qsq);
 }
 
 void FDIPCAClass::Clear() {
   UseFixedTimeSample = false;
   invSig.resize(0,0);
-  Tsq.resize(0,0);
-  Qsq.resize(0,0);
 
   InputKeys_.clear();
-  TsqKeys_.clear();
+  TsqKey_.clear();
+  QsqKey_.clear();
   TimeKey_.clear();
 }

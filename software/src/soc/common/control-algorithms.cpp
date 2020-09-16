@@ -312,7 +312,7 @@ void __PID2ClassExcite::Clear() {
 
 
 /* State Space */
-void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max) {
+void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t LatchInit) {
   Clear(); // Clear and set to defaults
 
   A_ = A;
@@ -321,11 +321,15 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
   D_ = D;
   Min_ = Min;
   Max_ = Max;
+  LatchInit_ = LatchInit;
 
-  uint8_t numU = B_.cols();
+  uint8_t numU = D_.cols();
   uint8_t numX = A_.rows();
-  uint8_t numY = C_.rows();
+  uint8_t numY = D_.rows();
 
+  uInit_.resize(numU);
+
+  x_.resize(numX);
   y_.resize(numY);
   Max_.resize(numY);
   Min_.resize(numY);
@@ -376,19 +380,29 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
   *y = y_;
 }
 
+void __SSClass::GetInputInit(Eigen::VectorXf *uInit) {
+  *uInit = uInit_;
+}
+
 void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) {
-  x_ = CA_inv_ * (y - (CB_*dt + D_) * u);
+  // Initialize the input biases
+  if (LatchInit_ == true) {
+    uInit_ = u;
+  }
+
+  x_.Zero(A_.rows()); // Reset to Zero
+  // x_ = CA_inv_ * (y - (CB_*dt + D_) * u);
 }
 
 void __SSClass::UpdateState(Eigen::VectorXf u, float dt) {
-
   uint8_t numX = A_.rows();
   Eigen::MatrixXf Ix = Eigen::MatrixXf::Identity(numX, numX);
-  x_ = (A_*dt + Ix)*x_ + B_*u*dt;
+  // x_ = A_ * x_ + B_ * u; // A,B,C,D defined as Discrete already
+  x_ = (A_ * dt + Ix) * x_ + B_ * (u - uInit_) * dt; // A,B,B,D defined as Continuous
 }
 
 void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
-  y_ = C_*x_ + D_*u;
+  y_ = C_*x_ + D_*(u - uInit_);
 
   // saturate output
   for (int i=0; i < y_.size(); i++) {
@@ -403,11 +417,12 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
 }
 
 void __SSClass::Reset() {
-  x_.Zero(A_.rows()); // Reset to Zero
-  y_.Zero(C_.cols()); // Reset to Zero
-
   mode_ = GenericFunction::Mode::kStandby;
   initLatch_ = false;
+  uInit_.Zero(D_.cols());
+
+  x_.Zero(A_.rows()); // Reset to Zero
+  y_.Zero(C_.cols()); // Reset to Zero
 }
 
 void __SSClass::Clear() {
@@ -416,6 +431,7 @@ void __SSClass::Clear() {
   C_.resize(0,0);
   D_.resize(0,0);
 
+  uInit_.resize(0);
   Max_.resize(0);
   Min_.resize(0);
 

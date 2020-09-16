@@ -36,19 +36,23 @@ The order of the filter is given by the length of the num and den vectors.
 */
 class GeneralFilter: public GenericFunction {
   public:
-    void Configure(const rapidjson::Value& Config, std::string RootPath);
+    void Configure(const rapidjson::Value& Config, std::string SystemPath);
     void Initialize();
     bool Initialized();
     void Run(Mode mode);
     void Clear();
   private:
-    std::vector<float> num;
-    std::vector<float> den;
+    ElementPtr u_node, y_node;
+    std::vector<float> num, den;
 
-    ElementPtr u_node;
-    ElementPtr y_node;
+    float dt_ = 0.0f;
+    float* TimeSource = 0;
+    float timePrev = 0;
+
+    bool UseFixedTimeSample = false;
+    ElementPtr time_node;
 
     __GeneralFilter filter_;
 
-    std::string InputKey_;
+    std::string InputKey_, TimeKey_;
 };
