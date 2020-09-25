@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef CONTROL_HXX_
-#define CONTROL_HXX_
+#pragma once
 
 #include "Arduino.h"
 #include "definition-tree.h"
@@ -60,5 +59,3 @@ class ControlLaws {
     std::string RootPath_ = "/Control";
     std::vector<std::vector<std::shared_ptr<ControlFunctionClass>>> BaselineControlGroup_;
 };
-
-#endif

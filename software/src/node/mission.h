@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef MISSION_H_
-#define MISSION_H_
+#pragma once
 
 #include "sensors.h"
 #include "effector.h"
@@ -38,5 +37,3 @@ class AircraftMission {
     volatile bool SyncDataCollection_ = false;
     volatile bool SyncEffectorOutput_ = false;
 };
-
-#endif

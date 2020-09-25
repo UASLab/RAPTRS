@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef CONFIGURATION_H_
-#define CONFIGURATION_H_
+#pragma once
 
 #include "effector.h"
 #include "control.h"
@@ -18,13 +17,11 @@ Author: Brian Taylor
 
 class AircraftConfiguration {
   public:
-    struct Config {
-      uint8_t BfsAddr;
-    };
     void Load();
     bool Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr);
+    uint8_t GetBfsAddr() {
+      return bfsAddr_;
+    };
   private:
-    Config config_;
+    uint8_t bfsAddr_;
 };
-
-#endif
