@@ -252,45 +252,6 @@ class TecsClass: public GenericFunction {
 };
 
 //
-// class FDIPEClass: public GenericFunction {
-//   public:
-//     void Configure(const rapidjson::Value& Config,std::string SystemPath);
-//     void Initialize();
-//     bool Initialized();
-//     void Run(Mode mode);
-//     void Clear();
-//   private:
-//
-//     std::vector<ElementPtr> u_node;
-//     Eigen::VectorXf u;
-//     Eigen::VectorXf y;
-//     Eigen::MatrixXf A, B, C, D;
-//     Eigen::VectorXf Min, Max;
-//
-//     float dt_ = 0.0f;
-//     float* TimeSource = 0;
-//     float timePrev = 0;
-//
-//     bool UseFixedTimeSample = false;
-//     ElementPtr time_node;
-//
-//     __GeneralFilter Filter_;
-//     __SSClass SSClass_;
-//
-//     std::vector<float> num;
-//     std::vector<float> den;
-//
-//     ElementPtr p_exp_node;
-//     ElementPtr p_ref_node;
-//     ElementPtr residual_raw_node;
-//     ElementPtr residual_filt_node;
-//
-//     std::string RollKey_;
-//     std::vector<std::string> InputKeys_, OutputKeys_;
-//     std::string TimeKey_;
-// };
-
-//
 class FDIPCAClass: public GenericFunction {
   public:
     void Configure(const rapidjson::Value& Config,std::string SystemPath);
@@ -302,6 +263,7 @@ class FDIPCAClass: public GenericFunction {
 
     std::vector<ElementPtr> u_node;
     Eigen::VectorXf u;
+    Eigen::VectorXf Snorm, Smean, Svar;
     Eigen::MatrixXf invSig, Upc, Ures;
     Eigen::MatrixXf T_inner_, Q_inner_;
     float Tsq_raw, Qsq_raw;

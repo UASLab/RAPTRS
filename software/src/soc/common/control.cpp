@@ -218,8 +218,6 @@ void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Valu
       ComponentVec_.push_back(std::make_shared<TecsClass>());
     } else if (ComponentType == "Latch") {
       ComponentVec_.push_back(std::make_shared<LatchClass>());
-    // } else if (ComponentType == "FDIPE") {
-    //   ComponentVec_.push_back(std::make_shared<FDIPEClass>());
     } else if (ComponentType == "FDIPCA") {
       ComponentVec_.push_back(std::make_shared<FDIPCAClass>());
     } else {
