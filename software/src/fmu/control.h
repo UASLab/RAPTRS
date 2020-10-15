@@ -59,3 +59,4 @@ class ControlLaws {
     std::string RootPath_ = "/Control";
     std::vector<std::vector<std::shared_ptr<ControlFunctionClass>>> BaselineControlGroup_;
 };
+

@@ -6,7 +6,6 @@ Author: Brian Taylor
 
 #pragma once
 
-
 #include "Vector.h"
 #include "i2c_t3.h"
 #include "Arduino.h"
@@ -63,3 +62,4 @@ class Node {
     bool ReceiveMessage(Message *message,std::vector<uint8_t> *Payload);
     void CalcChecksum(size_t ArraySize, uint8_t *ByteArray, uint8_t *Checksum);
 };
+

@@ -312,7 +312,7 @@ void __PID2ClassExcite::Clear() {
 
 
 /* State Space */
-void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t LatchInit) {
+void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch) {
   Clear(); // Clear and set to defaults
 
   A_ = A;
@@ -321,7 +321,7 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
   D_ = D;
   Min_ = Min;
   Max_ = Max;
-  LatchInit_ = LatchInit;
+  initLatch_ = initLatch;
 
   uint8_t numU = D_.cols();
   uint8_t numX = A_.rows();
@@ -386,7 +386,7 @@ void __SSClass::GetInputInit(Eigen::VectorXf *uInit) {
 
 void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) {
   // Initialize the input biases
-  if (LatchInit_ == true) {
+  if (initLatch_ == true) {
     uInit_ = u;
   }
 

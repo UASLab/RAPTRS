@@ -58,6 +58,9 @@ int main(int argc, char* argv[]) {
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
+  std::cout << "\tInitializing FMU..." << std::flush;
+  Fmu.Begin();
+  std::cout << "done!" << std::endl;
 
   /* configure classes and register with global defs */
   std::cout << "Configuring aircraft." << std::endl;
@@ -70,6 +73,8 @@ int main(int argc, char* argv[]) {
   std::cout << "Configuring Simulation..." << std::endl;
   bool simFlag = Sim.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
+  // deftree.PrettyPrint("/");
+  std::cout << std::endl;
 
   /* initialize and configure FMU */
   std::cout << "\tInitializing FMU..." << std::flush;

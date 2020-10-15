@@ -37,3 +37,4 @@ class DefinitionTree {
   private:
     std::map<std::string,VariableDefinition> Data_;
 };
+

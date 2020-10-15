@@ -37,3 +37,4 @@ class AircraftMission {
     volatile bool SyncDataCollection_ = false;
     volatile bool SyncEffectorOutput_ = false;
 };
+

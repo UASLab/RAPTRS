@@ -155,7 +155,7 @@ void RouteMgr::Run() {
 
   // Compute Heading to Lead Point
   Vector3f vecCurr2Lead = pLead_NED_m - pCurr_NED_m; // pLead wrt pCurr
-  float dist2Lead_m = vecCurr2Lead.norm();
+  // float dist2Lead_m = vecCurr2Lead.norm();
   float headingLead_rad = atan2(vecCurr2Lead[1], vecCurr2Lead[0]);
 
   // Compute Heading error
@@ -185,8 +185,8 @@ void RouteCircleHold::Configure(const rapidjson::Value& RouteConfig) {
   LoadVal(RouteConfig, "Radius", &distRadius_m_, true);
   LoadVal(RouteConfig, "Direction", &Direction_, true);
   LoadVal(RouteConfig, "Waypoint", &pCenter_NED_m_, true);
-  LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
   // LoadVal(RouteConfig, "LeadTime", &tLead_s_, true);
+  LoadVal(RouteConfig, "LeadDist", &distLead_m_, true);
   LoadVal(RouteConfig, "HoldDist", &distHold_m_, true);
 }
 
@@ -208,7 +208,7 @@ void RouteCircleHold::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
   // Velocity along segment
   Matrix3f T_seg;
   T_seg = AngleAxisf(headingSeg_rad_, Vector3f::UnitZ());
-  Vector3f vSeg_mps = T_seg * vCurr_NED_mps;
+  // Vector3f vSeg_mps = T_seg * vCurr_NED_mps;
 
   // float distLead_m_ = vSeg_mps[0] * tLead_s_;
 
@@ -303,7 +303,7 @@ void RouteWaypoints::Run(Vector3f pCurr_NED_m, Vector3f vCurr_NED_mps) {
   }
 
   // Velocity along segment
-  Vector3f vSeg_mps = vCurr_NED_mps.cwiseProduct(vecSegUnit_NED_);
+  // Vector3f vSeg_mps = vCurr_NED_mps.cwiseProduct(vecSegUnit_NED_);
   // float distLead_m_ = vSeg_mps[0] * tLead_s_;
 
   // Compute the Lead point and Trail point Locations, distLead from of pAdj

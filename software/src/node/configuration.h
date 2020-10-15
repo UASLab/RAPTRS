@@ -22,3 +22,4 @@ class AircraftConfiguration {
   private:
     uint8_t bfsAddr_;
 };
+

@@ -52,3 +52,4 @@ const float kEffectorVoltageScale = 3.0f;                     // Scale factor fo
 const uint8_t kPwmPins[8] = {21,22,23,2,3,4,5,6};             // Array of pins for PWM output
 const float kPwmFrequency = 50;                               // PWM frequency, Hz
 const float kPwmResolution = 16;                              // PWM resolution, bits
+
