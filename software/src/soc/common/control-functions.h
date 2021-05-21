@@ -268,6 +268,9 @@ class TecsClass: public GenericFunction {
 /*
 */
 
+void fifo(coder::array<double, 2U> &A, const double Arow_data[], const
+                 int Arow_size[2]);
+                 
 class STREAMClass: public GenericFunction {
   public:
     void Configure(const rapidjson::Value& Config,std::string SystemPath);

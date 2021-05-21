@@ -407,6 +407,82 @@ void TecsClass::Run(Mode mode) {
 void TecsClass::Clear() {
 }
 
+// Function Definitions
+void fifo(coder::array<double, 2U> &A, const double Arow_data[], const int
+          Arow_size[2])
+{
+  coder::array<double, 2U> c_A;
+  int b_A;
+  int i;
+  int i1;
+  int loop_ub;
+  int result;
+  short input_sizes_idx_0;
+  signed char sizes_idx_0;
+  bool empty_non_axis_sizes;
+  if (2 > A.size(0)) {
+    i = -1;
+    i1 = -1;
+  } else {
+    i = 0;
+    i1 = A.size(0) - 1;
+  }
+
+  loop_ub = i1 - i;
+  if ((loop_ub != 0) && (A.size(1) != 0)) {
+    result = A.size(1);
+  } else if ((Arow_size[0] != 0) && (Arow_size[1] != 0)) {
+    result = Arow_size[1];
+  } else {
+    if (A.size(1) > 0) {
+      result = A.size(1);
+    } else {
+      result = 0;
+    }
+
+    if (Arow_size[1] > result) {
+      result = Arow_size[1];
+    }
+  }
+
+  empty_non_axis_sizes = (result == 0);
+  if (empty_non_axis_sizes || ((loop_ub != 0) && (A.size(1) != 0))) {
+    input_sizes_idx_0 = static_cast<short>(loop_ub);
+  } else {
+    input_sizes_idx_0 = 0;
+  }
+
+  if (empty_non_axis_sizes || ((Arow_size[0] != 0) && (Arow_size[1] != 0))) {
+    sizes_idx_0 = static_cast<signed char>(Arow_size[0]);
+  } else {
+    sizes_idx_0 = 0;
+  }
+
+  b_A = A.size(1) - 1;
+  c_A.set_size(loop_ub, (b_A + 1));
+  for (i1 = 0; i1 <= b_A; i1++) {
+    for (int i2 = 0; i2 < loop_ub; i2++) {
+      c_A[i2 + c_A.size(0) * i1] = A[((i + i2) + A.size(0) * i1) + 1];
+    }
+  }
+
+  A.set_size((input_sizes_idx_0 + sizes_idx_0), result);
+  for (i = 0; i < result; i++) {
+    loop_ub = input_sizes_idx_0;
+    for (i1 = 0; i1 < loop_ub; i1++) {
+      A[i1 + A.size(0) * i] = c_A[i1 + input_sizes_idx_0 * i];
+    }
+  }
+
+  for (i = 0; i < result; i++) {
+    loop_ub = sizes_idx_0;
+    for (i1 = 0; i1 < loop_ub; i1++) {
+      A[(i1 + input_sizes_idx_0) + A.size(0) * i] = Arow_data[i1 + Arow_size[0] *
+        i];
+    }
+  }
+}
+
 
 /* STREAMClass methods, see control-functions.hxx for more information */
 void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
@@ -522,14 +598,19 @@ void STREAMClass::Run(Mode mode) {
     yMeas[i] = yMeas_node[i]->getFloat();
   }
 
-  // fifo(uMeasBuffer, uMeas, uSingleMeas_size);
-  // fifo(yMeasBuffer, yMeas, ySingleMeas_size);
+  fifo(uMeasBuffer, uMeas, uSingleMeas_size);
+  fifo(yMeasBuffer, yMeas, ySingleMeas_size);
+
+  printf("%f\n", uMeas[0]);
+  printf("%f\n", yMeas[0]);
 
   // Call Algorithm
 	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);
 	STREAM.set_yMeas(yMeasBuffer, y_ind, N_outputs);
 
 	STREAM.steponce(sigma_data, outpsd, outw_data, outw_size);
+
+  printf("%f\n", sigma_data[0]);
 
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {
