@@ -9,6 +9,17 @@ Author: Brian Taylor and Chris Regan
 #include "configuration.h"
 #include "generic-function.h"
 #include "control-algorithms.h"
+#include "control-algorithms.h"
+
+//STREAM
+#include "streamClass.h"
+#include "streamClassWrap.h"
+#include "rt_nonfinite.h"
+#include "coder_array.h"
+#include <string.h>
+// #include "testDataStructs.h"
+#include "string.h"
+// #include "fifo.h"
 
 /* Control related functions. Each function describes its JSON
 configuration below. See generic-function.hxx for more information
@@ -230,4 +241,58 @@ class TecsClass: public GenericFunction {
     float max_mps;
     int8_t error_totalSat = 0;
     int8_t error_diffSat = 0;
+};
+
+
+/*
+*/
+
+class STREAMClass: public GenericFunction {
+  public:
+    void Configure(const rapidjson::Value& Config,std::string SystemPath);
+    void Initialize();
+    bool Initialized();
+    void Run(Mode mode);
+    void Clear();
+  private:
+    // Specific Config interface
+    std::vector<ElementPtr> uMeas_node; // Nodes to populate inputs to STREAM
+    std::vector<ElementPtr> yMeas_node; // Nodes to populate inputs to STREAM
+
+    std::vector<ElementPtr> sigma_node; // Nodes to populate outputs to STREAM
+    std::vector<ElementPtr> psd_node; // Nodes to populate outputs to STREAM
+
+    std::vector<std::string> uMeasKeys_, yMeasKeys_;
+    std::string TimeKey_;
+
+    float dt_ = 0.0f;
+    float* TimeSource = 0;
+    float timePrev = 0;
+
+    bool UseFixedTimeSample = false;
+    ElementPtr time_node;
+
+    // STREAM code interface
+    double outw_data[5001];
+    int outw_size[1];
+    coder::array<double, 2U> outpsd;
+
+    double sigma_data[3];
+    streamClassWrap STREAM;
+
+    int loop_ub;
+    int N_inputs = 7;
+    int N_outputs = 4;
+
+    int u_ind[7] = {0, 1, 2, 3, 4, 5, 6};
+    int y_ind[4] = {3, 4, 5, 6};
+
+    coder::array<double,2U> uMeasBuffer;
+    coder::array<double,2U> yMeasBuffer;
+
+    double uMeas[13];
+    double yMeas[14];
+
+    int uSingleMeas_size[2];
+    int ySingleMeas_size[2];
 };

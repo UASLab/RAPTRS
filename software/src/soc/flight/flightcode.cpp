@@ -27,15 +27,6 @@ Author: Brian Taylor, Chris Regan, Curt Olson
 #include <vector>
 #include <cstring>
 
-// STREAM
-#include "rtwtypes.h"
-#include <cstddef>
-#include <cstdlib>
-#include <stdio.h>
-#include "moveAveSTI.h"
-#include "moveAveSTI_terminate.h"
-#include "moveAveSTI_types.h"
-
 // Note: deftree is defined in common/definitiontree2.h and declared
 // (and initialized) globally in common/definitiontree2.cpp.  Any
 // source file that includes definitiontree2.h may reference and use
@@ -63,26 +54,7 @@ int main(int argc, char* argv[]) {
   TelemetryClient Telemetry;
   RouteMgr Route;
 
-  // STREAM
-  struct0_T r;  // Defined in
-  double dataOut;
 
-  // Set the value of each structure field.
-  // Change this value to the value that the application requires.
-  r.a = 1;
-  r.b = 2;   //
-  r.c = 10;  // Number of points to do moving average over
-
-  // STREAM
-  {
-  int idx0;
-  for (idx0 = 0; idx0 < 25; idx0++)
-    {
-    dataOut = moveAveSTI(double(idx0), &r);
-    }
-	printf("index %i || dataOut=%f\n",idx0,dataOut);
-  }
-  
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
   std::cout << "\tInitializing FMU..." << std::flush;

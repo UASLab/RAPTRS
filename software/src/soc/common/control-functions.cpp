@@ -337,3 +337,145 @@ void TecsClass::Run(Mode mode) {
 
 void TecsClass::Clear() {
 }
+
+
+/* STREAMClass methods, see control-functions.hxx for more information */
+void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPath) {
+  // I/O signals
+  LoadInput(Config, SystemPath, "uMeas", &uMeas_node, &uMeasKeys_);
+  LoadInput(Config, SystemPath, "yMeas", &yMeas_node, &yMeasKeys_);
+  LoadOutput(Config, SystemPath, "OutSigma", &sigma_node);
+  LoadOutput(Config, SystemPath, "OutPsd", &psd_node);
+
+  // Size of internal STREAM inputs
+  STREAM.uMeas.set_size(500, N_inputs);
+  STREAM.yMeas.set_size(500, N_outputs);
+
+  // Resize uMeas vector
+  // int numU = uMeas_node.size();
+  // uMeas.set_size(13);
+  // std::fill(uMeas.begin(), uMeas_.end(), 0.0);
+  for (int idx = 0; idx < 13; idx++) {
+    uMeas[idx] = 0;
+  }
+
+  // Resize yMeas vector
+  // int numY = yMeas_node.size();
+  // yMeas.set_size(14);
+  // std::fill(yMeas.begin(), yMeas.end(), 0.0);
+  for (int idx = 0; idx < 14; idx++) {
+    yMeas[idx] = 0;
+  }
+
+  // Resize sigmaOut vector
+  int numSigma = sigma_node.size();
+  // sigma_data.resize(numSigma);
+  // std::fill(sigma_data.begin(), sigma_data.end(), 0.0);
+  for (int idx = 0; idx < 3; idx++) {
+    sigma_data[idx] = 0;
+  }
+
+  // Resize psdOut vector
+  int numPsd = psd_node.size();
+  // outpsd.set_size(5001); FIXIT - Need to allocate fixed space
+  // std::fill(outpsd.begin(), outpsd.end(), 0.0);
+
+  // Sample time (required)
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
+    UseFixedTimeSample = true;
+  } else {
+    LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
+  }
+
+  // configure Class
+  // STREAMClass_.Configure(dt);
+}
+
+void STREAMClass::Initialize() {
+  printf("Initialize STREAM...\n");
+  // STREAM.init();
+  uSingleMeas_size[0] = 1;
+  uSingleMeas_size[1] = 13;
+  ySingleMeas_size[0] = 1;
+  ySingleMeas_size[1] = 14;
+
+  uMeasBuffer.set_size(500, 13);
+  yMeasBuffer.set_size(500, 14); // Note that this assumes you are storing all measurements in buffer, could store less
+
+  // Loop over the array to initialize each element.
+  for (int idx0 = 0; idx0 < uMeasBuffer.size(0); idx0++) {
+    for (int idx1 = 0; idx1 < uMeasBuffer.size(1); idx1++) {
+      // Set the value of the array element.
+      // Change this value to the value that the application requires.
+      uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] = 0;
+    }
+  }
+
+  // Loop over the array to initialize each element.
+  for (int idx0 = 0; idx0 < yMeasBuffer.size(0); idx0++) {
+    for (int idx1 = 0; idx1 < yMeasBuffer.size(1); idx1++) {
+      // Set the value of the array element.
+      // Change this value to the value that the application requires.
+      yMeasBuffer[idx0 + yMeasBuffer.size(0) * idx1] = 0;
+    }
+  };
+
+  for (int idx = 0; idx < 5001; idx++) {
+    outw_data[idx] = 0;
+  }
+
+  printf("STREAM initalization Complete.\n");
+}
+bool STREAMClass::Initialized() {return true;}
+
+void STREAMClass::Run(Mode mode) {
+  float dt_curr = 0.0f;
+
+  // sample time computation
+  float dt = 0;
+  if (UseFixedTimeSample == false) {
+    dt_curr = *TimeSource - timePrev;
+    timePrev = *TimeSource;
+    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
+    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
+  } else {
+    dt_curr = dt;
+  }
+
+  // input nodes to vector // memcpy(&stateIn,buffer,sizeof(state));
+  for (size_t i=0; i < uMeas_node.size(); i++) {
+    size_t indx = u_ind[i];
+    uMeas[indx] = uMeas_node[i]->getFloat();
+  }
+  for (size_t i=0; i < yMeas_node.size(); i++) {
+    size_t indx = y_ind[i];
+    yMeas[i] = yMeas_node[i]->getFloat();
+  }
+
+  // fifo(uMeasBuffer, uMeas, uSingleMeas_size);
+  // fifo(yMeasBuffer, yMeas, ySingleMeas_size);
+
+  // Call Algorithm
+	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);
+	STREAM.set_yMeas(yMeasBuffer, y_ind, N_outputs);
+
+	STREAM.steponce(sigma_data, outpsd, outw_data, outw_size);
+
+  // output vectors to nodes
+  for (size_t i=0; i < sigma_node.size(); i++) {
+    sigma_node[i]->setFloat(sigma_data[i]);
+  }
+  for (size_t i=0; i < psd_node.size(); i++) {
+    psd_node[i]->setFloat(outpsd[i]);
+  }
+}
+
+void STREAMClass::Clear() {
+  UseFixedTimeSample = false;
+  TimeKey_.clear();
+  uMeasKeys_.clear();
+  yMeasKeys_.clear();
+
+  // STREAM.Clear();
+}

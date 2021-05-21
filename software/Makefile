@@ -157,10 +157,10 @@ NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 # compiler options
 SOC_CPPFLAGS = -Wall -O3 -Wno-psabi -I/usr/include/eigen3 -I$(COMMON) -I$(SOC_COMMON) -I$(SOC_STREAM) -I src/includes/
 SOC_CXXFLAGS = -std=c++17
-SOC_LIBS = -lsti_soc -L$(SOC_STREAM)
+SOC_LIBS = -l:sti_soc.a -L$(SOC_STREAM)
 SIM_CPPFLAGS = -Wall -O3 -Wno-psabi -I/usr/include/eigen3  -I$(COMMON) -I$(SOC_COMMON) -I$(SOC_STREAM) -I src/includes/
 SIM_CXXFLAGS = -std=c++17
-SIM_LIBS = -lsti_sim -L$(SOC_STREAM)
+SIM_LIBS = -l:sti_sim.a -L$(SOC_STREAM)
 FMU_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(FMU_CORE)
 FMU_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti
 FMU_LDSCRIPT = $(FMU_CORE)/mk66fx1m0.ld
