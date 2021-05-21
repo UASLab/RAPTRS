@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef SERIALLINK_h
-#define SERIALLINK_h
+#pragma once
 
 /*
 * Supported:
@@ -22,14 +21,20 @@ Author: Brian Taylor
 
 class SerialLink {
 	public:
+		enum MsgType {
+			NACK = 0,
+			ACK = 1,
+			NOACK = 2,
+			REQACK = 3
+		};
 		SerialLink(HardwareSerial& bus);
 		void begin(unsigned int baud);
-		void beginTransmission();
+		void beginTransmission(MsgType type = REQACK);
 		unsigned int write(unsigned char data);
 		unsigned int write(unsigned char *data, unsigned int len);
-		void endTransmission();
-		void endTransmission(unsigned int timeout);
 		void sendTransmission();
+		void endTransmission(bool ackReq = true);
+		void endTransmission(unsigned int timeout);
 		bool checkReceived();
 		unsigned int available();
 		unsigned char read();
@@ -39,11 +44,6 @@ class SerialLink {
 	private:
 		HardwareSerial* _bus;
 		FastCRC16 _send_crc_16, _recv_crc_16;
-		enum MsgType {
-			COMMAND,
-			ACK,
-			NACK
-		};
 		volatile MsgType _recv_type;
 		volatile MsgType _status;
 		static const unsigned char _frame_byte = 0x7E;
@@ -60,7 +60,5 @@ class SerialLink {
 		unsigned char _send_buf[BUFFER_SIZE];
 		unsigned char _recv_buf[BUFFER_SIZE];
 };
-
-#endif
 
 #endif

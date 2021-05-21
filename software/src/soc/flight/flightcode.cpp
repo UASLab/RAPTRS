@@ -17,9 +17,10 @@ Author: Brian Taylor, Chris Regan, Curt Olson
 #include "datalog.h"
 #include "netSocket.h"
 #include "telnet.h"
-#include "sim-interface.h"
+#include "simMgr.h"
 #include "route_mgr.h"
 #include "rapidjson/document.h"
+#include "elapsedMillis.h"
 
 #include <iostream>
 #include <iomanip>
@@ -53,13 +54,11 @@ int main(int argc, char* argv[]) {
   DatalogClient Datalog;
   TelemetryClient Telemetry;
   RouteMgr Route;
+  SimMgr Sim;
 
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
-  std::cout << "\tInitializing FMU..." << std::flush;
-  Fmu.Begin();
-  std::cout << "done!" << std::endl;
 
   /* configure classes and register with global defs */
   std::cout << "Configuring aircraft." << std::endl;
@@ -69,14 +68,20 @@ int main(int argc, char* argv[]) {
   std::cout << "done!" << std::endl;
 
   /* initialize simulation */
-  std::cout << "Configuring Simulation HIL..." << std::endl;
-  bool sim = sim_init(AircraftConfiguration);
+  std::cout << "Configuring Simulation..." << std::endl;
+  bool simFlag = Sim.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
-  // deftree.PrettyPrint("/");
-  std::cout << std::endl;
 
-  /* configure FMU */
-  std::cout << "\tConfiguring flight management unit..." << std::endl;
+  /* initialize and configure FMU */
+  std::cout << "\tInitializing FMU..." << std::flush;
+  if (simFlag) {
+    Fmu.Begin(Sim.FmuPort, Sim.FmuBaud);
+  } else {
+    Fmu.Begin();
+  }
+  std::cout << "\tdone!" << std::endl;
+
+  std::cout << "\tConfiguring FMU..." << std::endl;
   Fmu.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
   // deftree.PrettyPrint("/Sensors/");
@@ -161,10 +166,6 @@ int main(int argc, char* argv[]) {
   while(1) {
     profMainStart_us = profResponseStart_us = micros();
     if (Fmu.ReceiveSensorData()) {
-      if ( sim ) {
-        sim_sensor_update(); // update sim sensors
-      }
-
       if (SenProc.Initialized()) {
         // Run the Baseline Sensor Processing
         profBaselineStart_us = micros();
@@ -218,18 +219,10 @@ int main(int argc, char* argv[]) {
           Control.EffectorTest(Mission.GetTestRunMode());
         }
         profControl->setInt(micros() - profControlStart_us);
-
         profResponse->setInt(micros() - profResponseStart_us);
-
-        // Write out commands for Sim
-        if ( sim ) {
-          sim_cmd_update();
-        }
 
         // Send effector commands to FMU
         Fmu.SendEffectorCommands(Effectors.Run());
-
-
 
         // Print some status
         float tCurr_ms = 1e-3 * (deftree.getElement("/Sensors/Fmu/Time_us") -> getFloat());

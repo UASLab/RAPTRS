@@ -137,6 +137,7 @@ node_core_src = $(node_core_c_files:.c=.o) $(node_core_cpp_files:.cpp=.o)
 soc_flight_obj = $(foreach src,$(soc_flight_src), $(BUILD)/$(SOC_ARCH)/$(src))
 sim_flight_obj = $(foreach src,$(soc_flight_src), $(BUILD)/$(SIM_ARCH)/$(src))
 soc_datalog_obj = $(foreach src,$(soc_datalog_src), $(BUILD)/$(SOC_ARCH)/$(src))
+sim_datalog_obj = $(foreach src,$(soc_datalog_src), $(BUILD)/$(SIM_ARCH)/$(src))
 soc_telem_obj = $(foreach src,$(soc_telem_src), $(BUILD)/$(SOC_ARCH)/$(src))
 soc_surf_cal_obj = $(foreach src,$(soc_surf_cal_src), $(BUILD)/$(SOC_ARCH)/$(src))
 fmu_obj = $(foreach src,$(fmu_src), $(BUILD)/$(FMU_ARCH)/$(src))
@@ -176,10 +177,10 @@ NODE_LIBS = -larm_cortexM4lf_math -lm -lstdc++ -L$(TOOLS)
 all: soc_flight soc_datalog soc_telem soc_surf_cal fmu_hex node_hex display
 
 flight: soc_flight display
-
 flight_amd64: sim_flight display
 
 datalog: soc_datalog display
+datalog_amd64: sim_datalog display
 
 telem: soc_telem display
 
@@ -194,10 +195,10 @@ fmu_build: $(BIN)/fmu.elf
 node_build: $(BIN)/node.elf
 
 soc_flight: $(BIN)/flight
-
 sim_flight: $(BIN)/flight_amd64
 
 soc_datalog: $(BIN)/datalog-server
+sim_datalog: $(BIN)/datalog-server_amd64
 
 soc_telem: $(BIN)/telem-server
 
@@ -274,6 +275,11 @@ $(BIN)/datalog-server: $(soc_datalog_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
 	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_datalog_obj)
+
+$(BIN)/datalog-server_amd64: $(sim_datalog_obj)
+	@echo -e "[CXX]\t$<"
+	@mkdir -p "$(dir $@)"
+	@$(SIM_CXX) $(SIM_CPPFLAGS) $(SIM_CXXFLAGS) -o "$@" $(sim_datalog_obj)
 
 $(BIN)/telem-server: $(soc_telem_obj)
 	@echo -e "[CXX]\t$<"

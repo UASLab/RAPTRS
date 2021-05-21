@@ -15,10 +15,10 @@ using std::endl;
 #include "fmu_messages.h"
 
 /* Opens port to communicate with FMU. */
-void FlightManagementUnit::Begin() {
-  _serial = new HardwareSerial(Port_);
+void FlightManagementUnit::Begin(std::string Port, uint32_t Baud) {
+  _serial = new HardwareSerial(Port);
   _bus = new SerialLink(*_serial);
-  _bus->begin(Baud_);
+  _bus->begin(Baud);
 }
 
 /* Updates FMU configuration given a JSON value and registers data with global defs */
@@ -78,136 +78,126 @@ void FlightManagementUnit::SendModeCommand(Mode mode) {
 
 /* Receive sensor data from FMU */
 bool FlightManagementUnit::ReceiveSensorData(bool publish) {
-  uint8_t message;
+  uint8_t id;
+  uint8_t index;
   std::vector<uint8_t> Payload;
-  bool freshdata = 0;
-  while (ReceiveMessage(&message,&Payload)) {
+  bool freshdata = false;
+  size_t mpu9250_counter = 0;
+  size_t ublox_counter = 0;
+  size_t swift_counter = 0;
+  size_t ams5915_counter = 0;
+  size_t sbus_counter = 0;
+  size_t analog_counter = 0;
+  while ( ReceiveMessage(&id, &index, &Payload) ) {
     // printf("received msg: %d\n", message);
-    if ( message == message::data_compound_id ) {
-      size_t counter = 0;
-      size_t mpu9250_counter = 0;
-      size_t ublox_counter = 0;
-      size_t swift_counter = 0;
-      size_t ams5915_counter = 0;
-      size_t sbus_counter = 0;
-      size_t analog_counter = 0;
-      while ( counter <= Payload.size() - 3 ) {
-        uint8_t id = Payload[counter++];
-        uint8_t index = Payload[counter++];
-        uint8_t len = Payload[counter++];
-        if ( counter + len <= Payload.size() ) {
-          if ( id == message::data_time_id ) {
-            message::data_time_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            SensorData_.Time_us = msg.time_us;
-          } else if ( id == message::data_mpu9250_id ) {
-            // note: full message assumed to be the internal mpu9250
-            message::data_mpu9250_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            SensorData_.InternalMpu9250.AccelX_mss = msg.AccelX_mss;
-            SensorData_.InternalMpu9250.AccelY_mss = msg.AccelY_mss;
-            SensorData_.InternalMpu9250.AccelZ_mss = msg.AccelZ_mss;
-            SensorData_.InternalMpu9250.GyroX_rads = msg.GyroX_rads;
-            SensorData_.InternalMpu9250.GyroY_rads = msg.GyroY_rads;
-            SensorData_.InternalMpu9250.GyroZ_rads = msg.GyroZ_rads;
-            SensorData_.InternalMpu9250.MagX_uT = msg.MagX_uT;
-            SensorData_.InternalMpu9250.MagY_uT = msg.MagY_uT;
-            SensorData_.InternalMpu9250.MagZ_uT = msg.MagZ_uT;
-            SensorData_.InternalMpu9250.Temperature_C = msg.Temperature_C;
-          } else if ( id == message::data_mpu9250_short_id ) {
-            message::data_mpu9250_short_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            size_t i = mpu9250_counter;
-            SensorData_.Mpu9250[i].AccelX_mss = msg.AccelX_mss;
-            SensorData_.Mpu9250[i].AccelY_mss = msg.AccelY_mss;
-            SensorData_.Mpu9250[i].AccelZ_mss = msg.AccelZ_mss;
-            SensorData_.Mpu9250[i].GyroX_rads = msg.GyroX_rads;
-            SensorData_.Mpu9250[i].GyroY_rads = msg.GyroY_rads;
-            SensorData_.Mpu9250[i].GyroZ_rads = msg.GyroZ_rads;
-            mpu9250_counter++;
-          } else if ( id == message::data_bme280_id ) {
-            message::data_bme280_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            SensorData_.InternalBme280.Pressure_Pa = msg.Pressure_Pa;
-            SensorData_.InternalBme280.Temperature_C = msg.Temperature_C;
-            SensorData_.InternalBme280.Humidity_RH = msg.Humidity_RH;
-          } else if ( id == message::data_ublox_id ) {
-            message::data_ublox_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            size_t i = ublox_counter;
-            SensorData_.uBlox[i].Fix = msg.Fix;
-            SensorData_.uBlox[i].NumberSatellites = msg.NumberSatellites;
-            SensorData_.uBlox[i].TOW = msg.TOW;
-            SensorData_.uBlox[i].Year = msg.Year;
-            SensorData_.uBlox[i].Month = msg.Month;
-            SensorData_.uBlox[i].Day = msg.Day;
-            SensorData_.uBlox[i].Hour = msg.Hour;
-            SensorData_.uBlox[i].Min = msg.Min;
-            SensorData_.uBlox[i].Sec = msg.Sec;
-            SensorData_.uBlox[i].Latitude_rad = msg.Latitude_rad;
-            SensorData_.uBlox[i].Longitude_rad = msg.Longitude_rad;
-            SensorData_.uBlox[i].Altitude_m = msg.Altitude_m;
-            SensorData_.uBlox[i].NorthVelocity_ms = msg.NorthVelocity_ms;
-            SensorData_.uBlox[i].EastVelocity_ms = msg.EastVelocity_ms;
-            SensorData_.uBlox[i].DownVelocity_ms = msg.DownVelocity_ms;
-            SensorData_.uBlox[i].HorizontalAccuracy_m = msg.HorizontalAccuracy_m;
-            SensorData_.uBlox[i].VerticalAccuracy_m = msg.VerticalAccuracy_m;
-            SensorData_.uBlox[i].VelocityAccuracy_ms = msg.VelocityAccuracy_ms;
-            SensorData_.uBlox[i].pDOP = msg.pDOP;
-            ublox_counter++;
-          } else if ( id == message::data_swift_id ) {
-            size_t i = swift_counter;
-            message::data_swift_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            SensorData_.Swift[i].Static.status = msg.static_ReadStatus;
-            SensorData_.Swift[i].Static.Pressure_Pa = msg.static_Pressure_Pa;
-            SensorData_.Swift[i].Static.Temperature_C = msg.static_Temperature_C;
-            SensorData_.Swift[i].Differential.status = msg.diff_ReadStatus;
-            SensorData_.Swift[i].Differential.Pressure_Pa = msg.diff_Pressure_Pa;
-            SensorData_.Swift[i].Differential.Temperature_C = msg.diff_Temperature_C;
-            swift_counter++;
-          } else if ( id == message::data_ams5915_id ) {
-            int i = ams5915_counter;
-            message::data_ams5915_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            SensorData_.Ams5915[i].status = msg.ReadStatus;
-            SensorData_.Ams5915[i].Pressure_Pa = msg.Pressure_Pa;
-            SensorData_.Ams5915[i].Temperature_C = msg.Temperature_C;
-            ams5915_counter++;
-          } else if ( id == message::data_sbus_id ) {
-            int i = sbus_counter;
-            message::data_sbus_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            for ( int j = 0; j < 16; j++ ) {
-              SensorData_.Sbus[i].Channels[j] = msg.channels[j];
-            }
-            SensorData_.Sbus[i].FailSafe = msg.FailSafe;
-            SensorData_.Sbus[i].LostFrames = msg.LostFrames;
-            sbus_counter++;
-          } else if ( id == message::data_analog_id ) {
-            message::data_analog_t msg;
-            msg.unpack(Payload.data()+counter, len);
-            size_t i = analog_counter;
-            SensorData_.Analog[i].CalibratedValue = msg.calibrated_value;
-            analog_counter++;
-	        } else {
-            printf("SensorNode received an unhandled message id: %d\n", id);
-          }
-        }
-        counter += len;
-      } // while processing compound message
-
-      if ( publish ) {
-          // copy the incoming sensor data into the definition tree
-          PublishSensors();
+    if ( id == message::data_time_id ) {
+      // time message signals end of a frame of data
+      message::data_time_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      SensorData_.Time_us = msg.time_us;
+      freshdata = true;
+      break;
+    } else if ( id == message::data_mpu9250_id ) {
+      // note: full message assumed to be the internal mpu9250
+      message::data_mpu9250_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      SensorData_.InternalMpu9250.AccelX_mss = msg.AccelX_mss;
+      SensorData_.InternalMpu9250.AccelY_mss = msg.AccelY_mss;
+      SensorData_.InternalMpu9250.AccelZ_mss = msg.AccelZ_mss;
+      SensorData_.InternalMpu9250.GyroX_rads = msg.GyroX_rads;
+      SensorData_.InternalMpu9250.GyroY_rads = msg.GyroY_rads;
+      SensorData_.InternalMpu9250.GyroZ_rads = msg.GyroZ_rads;
+      SensorData_.InternalMpu9250.MagX_uT = msg.MagX_uT;
+      SensorData_.InternalMpu9250.MagY_uT = msg.MagY_uT;
+      SensorData_.InternalMpu9250.MagZ_uT = msg.MagZ_uT;
+      SensorData_.InternalMpu9250.Temperature_C = msg.Temperature_C;
+    } else if ( id == message::data_mpu9250_short_id ) {
+      message::data_mpu9250_short_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      size_t i = mpu9250_counter;
+      SensorData_.Mpu9250[i].AccelX_mss = msg.AccelX_mss;
+      SensorData_.Mpu9250[i].AccelY_mss = msg.AccelY_mss;
+      SensorData_.Mpu9250[i].AccelZ_mss = msg.AccelZ_mss;
+      SensorData_.Mpu9250[i].GyroX_rads = msg.GyroX_rads;
+      SensorData_.Mpu9250[i].GyroY_rads = msg.GyroY_rads;
+      SensorData_.Mpu9250[i].GyroZ_rads = msg.GyroZ_rads;
+      mpu9250_counter++;
+    } else if ( id == message::data_bme280_id ) {
+      message::data_bme280_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      SensorData_.InternalBme280.Pressure_Pa = msg.Pressure_Pa;
+      SensorData_.InternalBme280.Temperature_C = msg.Temperature_C;
+      SensorData_.InternalBme280.Humidity_RH = msg.Humidity_RH;
+    } else if ( id == message::data_ublox_id ) {
+      message::data_ublox_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      size_t i = ublox_counter;
+      SensorData_.uBlox[i].Fix = msg.Fix;
+      SensorData_.uBlox[i].NumberSatellites = msg.NumberSatellites;
+      SensorData_.uBlox[i].TOW = msg.TOW;
+      SensorData_.uBlox[i].Year = msg.Year;
+      SensorData_.uBlox[i].Month = msg.Month;
+      SensorData_.uBlox[i].Day = msg.Day;
+      SensorData_.uBlox[i].Hour = msg.Hour;
+      SensorData_.uBlox[i].Min = msg.Min;
+      SensorData_.uBlox[i].Sec = msg.Sec;
+      SensorData_.uBlox[i].Latitude_rad = msg.Latitude_rad;
+      SensorData_.uBlox[i].Longitude_rad = msg.Longitude_rad;
+      SensorData_.uBlox[i].Altitude_m = msg.Altitude_m;
+      SensorData_.uBlox[i].NorthVelocity_ms = msg.NorthVelocity_ms;
+      SensorData_.uBlox[i].EastVelocity_ms = msg.EastVelocity_ms;
+      SensorData_.uBlox[i].DownVelocity_ms = msg.DownVelocity_ms;
+      SensorData_.uBlox[i].HorizontalAccuracy_m = msg.HorizontalAccuracy_m;
+      SensorData_.uBlox[i].VerticalAccuracy_m = msg.VerticalAccuracy_m;
+      SensorData_.uBlox[i].VelocityAccuracy_ms = msg.VelocityAccuracy_ms;
+      SensorData_.uBlox[i].pDOP = msg.pDOP;
+      ublox_counter++;
+    } else if ( id == message::data_swift_id ) {
+      message::data_swift_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      size_t i = swift_counter;
+      SensorData_.Swift[i].Static.status = msg.static_ReadStatus;
+      SensorData_.Swift[i].Static.Pressure_Pa = msg.static_Pressure_Pa;
+      SensorData_.Swift[i].Static.Temperature_C = msg.static_Temperature_C;
+      SensorData_.Swift[i].Differential.status = msg.diff_ReadStatus;
+      SensorData_.Swift[i].Differential.Pressure_Pa = msg.diff_Pressure_Pa;
+      SensorData_.Swift[i].Differential.Temperature_C = msg.diff_Temperature_C;
+      swift_counter++;
+    } else if ( id == message::data_ams5915_id ) {
+      message::data_ams5915_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      int i = ams5915_counter;
+      SensorData_.Ams5915[i].status = msg.ReadStatus;
+      SensorData_.Ams5915[i].Pressure_Pa = msg.Pressure_Pa;
+      SensorData_.Ams5915[i].Temperature_C = msg.Temperature_C;
+      ams5915_counter++;
+    } else if ( id == message::data_sbus_id ) {
+      message::data_sbus_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      int i = sbus_counter;
+      for ( int j = 0; j < 16; j++ ) {
+        SensorData_.Sbus[i].Channels[j] = msg.channels[j];
       }
+      SensorData_.Sbus[i].FailSafe = msg.FailSafe;
+      SensorData_.Sbus[i].LostFrames = msg.LostFrames;
+      sbus_counter++;
+    } else if ( id == message::data_analog_id ) {
+      message::data_analog_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      size_t i = analog_counter;
+      SensorData_.Analog[i].CalibratedValue = msg.calibrated_value;
+      analog_counter++;
+    } else {
+      printf("SensorNode received an unhandled message id: %d\n", id);
+    }
+  } // while processing compound message
 
-      return true;
-      freshdata = 1;
-    } // if compound message
+  if ( freshdata and publish ) {
+    // copy the incoming sensor data into the definition tree
+    PublishSensors();
   }
-  return freshdata;
 
+  return freshdata;
 }
 
 /* Sends effector commands to FMU */
@@ -241,17 +231,18 @@ void FlightManagementUnit::SendBifrostData() {
 }
 
 /* Wait for Ack message */
-bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_millis) {
-  uint8_t msg_id;
+bool FlightManagementUnit::WaitForAck(uint8_t wait_id, uint8_t subid, float timeout_millis) {
+  uint8_t id;
+  uint8_t index;
   std::vector<uint8_t> Payload;
   uint64_t start = millis();
   while ( millis() < start + timeout_millis ) {
-    if ( ReceiveMessage(&msg_id, &Payload) ) {
-      if ( msg_id == message::config_ack_id ) {
+    if ( ReceiveMessage(&id, &index, &Payload) ) {
+      if ( id == message::config_ack_id ) {
         message::config_ack_t msg;
       	msg.unpack(Payload.data(), Payload.size());
       	printf("  received ack: %d ", msg.ack_id);
-      	if ( id == msg.ack_id and subid == msg.ack_subid ) {
+      	if ( wait_id == msg.ack_id and subid == msg.ack_subid ) {
       	  printf("ok\n");
       	  return true;
       	} else {
@@ -260,7 +251,7 @@ bool FlightManagementUnit::WaitForAck(uint8_t id, uint8_t subid, float timeout_m
       }
     }
   }
-  printf("Timeout waiting for ack: %d (%d)\n", id, subid);
+  printf("Timeout waiting for ack: %d (%d)\n", wait_id, subid);
   return false;
 }
 
@@ -844,7 +835,7 @@ bool FlightManagementUnit::ConfigureControlLaws(const rapidjson::Value& Config) 
     }
     printf("Control laws size: %d\n", Config["ControlDef"][control_name.c_str()].Size());
     for ( size_t j = 0; j < Config["ControlDef"][control_name.c_str()].Size(); j++ ) {
-      printf("  component: %d\n", i);
+      printf("  component: %d\n", (int) i);
       const rapidjson::Value &Component = Config["ControlDef"][control_name.c_str()][j];
       if ( Component.HasMember("Type") and Component["Type"] == "Gain" ) {
         message::config_control_gain_t msg;
@@ -969,22 +960,28 @@ void FlightManagementUnit::SendMessage(Message message, uint8_t address, std::ve
 
 /* Send a (Serial) BFS Bus message. */
 void FlightManagementUnit::SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len) {
-  _bus->beginTransmission();
+
+  bool ackReq = false;
+  SerialLink::MsgType type = SerialLink::MsgType::NOACK;
+
+  if ((message == kModeCommand)||(message == kConfigMesg)) {
+    ackReq = true;
+    type = SerialLink::MsgType::REQACK;
+  }
+
+  _bus->beginTransmission(type);
   _bus->write(message);
   _bus->write(address);
   _bus->write(Payload, len);
-  if ((message == kModeCommand)||(message == kConfigMesg)) {
-    _bus->endTransmission();
-  } else {
-    _bus->sendTransmission();
-  }
+  _bus->endTransmission(ackReq);
+  // printf("send msg: %d (size = %d)\n", message, len);
 }
 
 /* Receive a BFS Bus message. */
-bool FlightManagementUnit::ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload) {
+bool FlightManagementUnit::ReceiveMessage(uint8_t *message, uint8_t *index, std::vector<uint8_t> *Payload) {
   if (_bus->checkReceived()) {
     *message = _bus->read();
-    uint8_t address = _bus->read();
+    *index = _bus->read();
     // printf("received msg: %d (size = %d)\n", *message, _bus->available());
     Payload->resize(_bus->available());
     _bus->read(Payload->data(),Payload->size());

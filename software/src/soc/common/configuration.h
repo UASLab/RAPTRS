@@ -31,6 +31,7 @@ void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::str
 void LoadOutput(const rapidjson::Value& Config, std::string SystemName, std::string OutputName, std::vector<ElementPtr> *Node);
 
 void LoadVal(const rapidjson::Value& Config, std::string ValName, int *Val, bool required = 0);
+void LoadVal(const rapidjson::Value& Config, std::string ValName, uint *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, float *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string ValName, std::string *Val, bool required = 0);
 void LoadVal(const rapidjson::Value& Config, std::string VecName, std::vector<float> *Val, bool required = 0);

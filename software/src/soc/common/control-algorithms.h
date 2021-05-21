@@ -12,6 +12,28 @@ Author: Brian Taylor and Chris Regan
 class __PID2Class {
   public:
     void Configure(float Kp, float Ki, float Kd, float Tf, float b, float c, float Min, float Max);
+    void Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y);
+    void Clear();
+  private:
+    uint8_t mode_ = GenericFunction::Mode::kStandby;
+
+    float Kp_, Ki_, Kd_, Tf_, b_, c_, y_, Min_, Max_;
+    bool initLatch_ = false;
+
+    float ProportionalError_, DerivativeError_, IntegralError_, DerivativeErrorState_;
+    float PreviousDerivativeError_, PreviousDerivativeErrorState_, IntegralErrorState_;
+
+    void InitializeState(float y);
+    void ComputeDerivative(float dt);
+    void UpdateState(float dt);
+    void CalculateCommand();
+    void Reset();
+};
+
+// PID2 with excitation exposure
+class __PID2ClassExcite {
+  public:
+    void Configure(float Kp, float Ki, float Kd, float Tf, float b, float c, float Min, float Max);
     void Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y, float *ff, float *fb);
     void Clear();
   private:

@@ -21,7 +21,7 @@ void SerialLink::begin(unsigned int baud)
 /*
 * Starting to build a new packet to send.
 */
-void SerialLink::beginTransmission()
+void SerialLink::beginTransmission(MsgType type)
 {
   /* resetting payload length */
   _payload_len = 0;
@@ -30,7 +30,7 @@ void SerialLink::beginTransmission()
   /* framing byte */
   _send_buf[_send_fpos++] = _frame_byte;
   /* control byte */
-  _send_buf[_send_fpos++] = MsgType::COMMAND;
+  _send_buf[_send_fpos++] = type;
   _send_crc = _send_crc_16.xmodem(&_send_buf[1],_send_fpos - 1);
 }
 /*
@@ -73,64 +73,6 @@ unsigned int SerialLink::write(unsigned char *data, unsigned int len)
   return len;
 }
 /*
-* Send packet and wait indefinitely for ack.
-*/
-void SerialLink::endTransmission()
-{
-  unsigned char crc_bytes[2];
-  /* crc */
-  crc_bytes[0] = _send_crc & 0xFF;
-  crc_bytes[1] = (_send_crc >> 8) & 0xFF;
-  for (unsigned int i = 0; i < ARRAY_SIZE(crc_bytes); ++i) {
-    if ((crc_bytes[i] == _frame_byte) || (crc_bytes[i] == _esc_byte)) {
-      _send_buf[_send_fpos++] = _esc_byte;
-      _send_buf[_send_fpos++] = crc_bytes[i] ^ _invert_byte;
-    } else {
-      _send_buf[_send_fpos++] = crc_bytes[i];
-    }
-  }
-  /* framing byte */
-  _send_buf[_send_fpos++] = _frame_byte;
-  /* update send status */
-  _status = NACK;
-  /* write frame */
-  _bus->write(_send_buf,_send_fpos);
-  /* elapsedMicros sendTime = 0; */
-  /* wait for ACK */
-  while (_status != ACK) {
-    checkReceived();
-  }
-}
-/*
-* Send packet and wait for ack or timeout.
-*/
-void SerialLink::endTransmission(unsigned int timeout)
-{
-  unsigned char crc_bytes[2];
-  /* crc */
-  crc_bytes[0] = _send_crc & 0xFF;
-  crc_bytes[1] = (_send_crc >> 8) & 0xFF;
-  for (unsigned int i = 0; i < ARRAY_SIZE(crc_bytes); ++i) {
-    if ((crc_bytes[i] == _frame_byte) || (crc_bytes[i] == _esc_byte)) {
-      _send_buf[_send_fpos++] = _esc_byte;
-      _send_buf[_send_fpos++] = crc_bytes[i] ^ _invert_byte;
-    } else {
-      _send_buf[_send_fpos++] = crc_bytes[i];
-    }
-  }
-  /* framing byte */
-  _send_buf[_send_fpos++] = _frame_byte;
-  /* update send status */
-  _status = NACK;
-  /* write frame */
-  _bus->write(_send_buf,_send_fpos);
-  /* wait for ACK */
-  elapsedMicros t = 0 /*, sendTime = 0*/ ;
-  while ((_status != ACK) && (t < timeout)) {
-    checkReceived();
-  }
-}
-/*
 * Send packet without waiting for ack.
 */
 void SerialLink::sendTransmission()
@@ -154,6 +96,36 @@ void SerialLink::sendTransmission()
   /* write frame */
   _bus->write(_send_buf,_send_fpos);
 }
+/*
+* Send packet and wait indefinitely for ack.
+*/
+void SerialLink::endTransmission(bool ackReq)
+{
+  /* Send packet */
+  sendTransmission();
+
+  if (ackReq) { /* wait for ACK */
+    while (_status != ACK) {
+      checkReceived();
+    }
+  } else { /* maintain the status flag */
+    _status = ACK;
+  }
+}
+/*
+* Send packet and wait for ack or timeout.
+*/
+void SerialLink::endTransmission(unsigned int timeout)
+{
+  /* Send packet */
+  sendTransmission();
+  /* wait for ACK */
+  elapsedMicros t = 0;
+  while ((_status != ACK) && (t < timeout)) {
+    checkReceived();
+  }
+}
+
 /*
 * Check to see if we've received any new messages.
 */
@@ -255,33 +227,12 @@ unsigned int SerialLink::read(unsigned char *data, unsigned int len)
 */
 void SerialLink::sendStatus(bool ack)
 {
-  unsigned char buf[_header_len + 2 * _footer_len];
-  unsigned char crc_bytes[2];
-  unsigned short crc;
-  unsigned int pos = 0;
-  MsgType type;
-  /* framing byte */
-  buf[pos++] = _frame_byte;
   /* control byte */
+  MsgType type;
   type = ack ? ACK : NACK;
-  buf[pos++] = type;
-  /* compute crc */
-  crc = _recv_crc_16.xmodem(&buf[1],pos - 1);
-  /* crc */
-  crc_bytes[0] = crc & 0xFF;
-  crc_bytes[1] = (crc >> 8) & 0xFF;
-  for (unsigned int i = 0; i < ARRAY_SIZE(crc_bytes); ++i) {
-    if ((crc_bytes[i] == _frame_byte) || (crc_bytes[i] == _esc_byte)) {
-      buf[pos++] = _esc_byte;
-      buf[pos++] = crc_bytes[i] ^ _invert_byte;
-    } else {
-      buf[pos++] = crc_bytes[i];
-    }
-  }
-  /* framing byte */
-  buf[pos++] = _frame_byte;
-  /* write frame */
-  _bus->write(buf,pos);
+
+  beginTransmission(type);
+  sendTransmission();
 }
 /*
 * Get ack or nack status

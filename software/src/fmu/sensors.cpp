@@ -977,17 +977,17 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     // only continue if this is a supported sensor config message ...
     if ( id == message::config_basic_id or id == message::config_mpu9250_id or id == message::config_bme280_id or id == message::config_swift_id or id == message::config_ams5915_id or id == message::config_analog_id ) {
       int found = -1;
-      for ( size_t i = 0; i < classes_.Nodes.size(); i++ ) {
-        if ( classes_.Nodes[i].GetBfsAddr() == address ) {
+      for ( size_t i = 0; i < classes.Nodes.size(); i++ ) {
+        if ( classes.Nodes[i].GetBfsAddr() == address ) {
           found = i;
         }
       }
       if ( found < 0 ) {
-        found = classes_.Nodes.size();
-        classes_.Nodes.push_back(SensorNodes(address));
-        // data_.Nodes.resize(classes_.Nodes.size());
+        found = classes.Nodes.size();
+        classes.Nodes.push_back(SensorNodes(address));
+        // data_.Nodes.resize(classes.Nodes.size());
       }
-      classes_.Nodes[found].UpdateConfig(id, Payload, RootPath_, DefinitionTreePtr);
+      classes.Nodes[found].UpdateConfig(id, Payload, RootPath_, DefinitionTreePtr);
       return true;
     } else {
       return false;
@@ -997,85 +997,85 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     msg.unpack(Payload->data(), Payload->size());
     if ( msg.sensor == message::sensor_type::time ) {
       Serial.println("Time");
-      if (AcquireTimeData_) {
-	HardFail("ERROR: Time already initialized.");
+      if (AcquireTimeData) {
+	       HardFail("ERROR: Time already initialized.");
       }
-      AcquireTimeData_ = true;
+      AcquireTimeData = true;
       std::string Output = msg.output;
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Time.Time_us);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes.Time.Time_us);
       return true;
     } else if ( msg.sensor == message::sensor_type::input_voltage ) {
       Serial.println("InputVoltage");
-      if (AcquireInputVoltageData_) {
-	HardFail("ERROR: Input voltage already initialized.");
+      if (AcquireInputVoltageData) {
+	       HardFail("ERROR: Input voltage already initialized.");
       }
-      AcquireInputVoltageData_ = true;
+      AcquireInputVoltageData = true;
       AnalogSensor::Config config;
       config.DirectPin = kInputVoltagePin;
       config.Calibration.clear();
       config.Calibration.push_back(kInputVoltageScale);
       config.Calibration.push_back(0.0);
-      classes_.Analog.push_back(AnalogSensor());
-      classes_.Analog.back().SetConfig(config);
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
+      classes.Analog.push_back(AnalogSensor());
+      classes.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes.Analog.back().CalibratedValue);
       return true;
     } else if ( msg.sensor == message::sensor_type::regulated_voltage ) {
       Serial.println("RegulatedVoltage");
-      if (AcquireRegulatedVoltageData_) {
-	HardFail("ERROR: Regulated voltage already initialized.");
+      if (AcquireRegulatedVoltageData) {
+	       HardFail("ERROR: Regulated voltage already initialized.");
       }
-      AcquireRegulatedVoltageData_ = true;
+      AcquireRegulatedVoltageData = true;
       AnalogSensor::Config config;
       config.DirectPin = kRegulatedVoltagePin;
       config.Calibration.clear();
       config.Calibration.push_back(kRegulatedVoltageScale);
       config.Calibration.push_back(0.0);
-      classes_.Analog.push_back(AnalogSensor());
-      classes_.Analog.back().SetConfig(config);
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
+      classes.Analog.push_back(AnalogSensor());
+      classes.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes.Analog.back().CalibratedValue);
       return true;
     } else if ( msg.sensor == message::sensor_type::pwm_voltage ) {
       Serial.println("PwmVoltage");
-      if (AcquirePwmVoltageData_) {
-	HardFail("ERROR: Pwm voltage already initialized.");
+      if (AcquirePwmVoltageData) {
+	       HardFail("ERROR: Pwm voltage already initialized.");
       }
-      AcquirePwmVoltageData_ = true;
+      AcquirePwmVoltageData = true;
       AnalogSensor::Config config;
       config.DirectPin = kPwmVoltagePin;
       config.Calibration.clear();
       config.Calibration.push_back(kEffectorVoltageScale);
       config.Calibration.push_back(0.0);
-      classes_.Analog.push_back(AnalogSensor());
-      classes_.Analog.back().SetConfig(config);
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
+      classes.Analog.push_back(AnalogSensor());
+      classes.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes.Analog.back().CalibratedValue);
       return true;
     } else if (msg.sensor == message::sensor_type::sbus_voltage ) {
       Serial.println("SbusVoltage");
-      if (AcquireSbusVoltageData_) {
-	HardFail("ERROR: Sbus voltage already initialized.");
+      if (AcquireSbusVoltageData) {
+	       HardFail("ERROR: Sbus voltage already initialized.");
       }
-      AcquireSbusVoltageData_ = true;
+      AcquireSbusVoltageData = true;
       AnalogSensor::Config config;
       config.DirectPin = kSbusVoltagePin;
       config.Calibration.clear();
       config.Calibration.push_back(kEffectorVoltageScale);
       config.Calibration.push_back(0.0);
-      classes_.Analog.push_back(AnalogSensor());
-      classes_.Analog.back().SetConfig(config);
-      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes_.Analog.back().CalibratedValue);
+      classes.Analog.push_back(AnalogSensor());
+      classes.Analog.back().SetConfig(config);
+      DefinitionTreePtr->InitMember(RootPath_ + "/" + msg.output, &classes.Analog.back().CalibratedValue);
       return true;
     } else if ( msg.sensor == message::sensor_type::internal_bme280 ) {
       Serial.println("InternalBme280");
-      if (AcquireInternalBme280Data_) {
-	HardFail("ERROR: Internal BME280 already initialized.");
+      if (AcquireInternalBme280Data) {
+	       HardFail("ERROR: Internal BME280 already initialized.");
       }
-      AcquireInternalBme280Data_ = true;
-      classes_.InternalBme280.UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
+      AcquireInternalBme280Data = true;
+      classes.InternalBme280.UpdateConfig(msg.output,RootPath_,DefinitionTreePtr);
       return true;
     } else if ( msg.sensor == message::sensor_type::sbus ) {
       Serial.println("Sbus");
-      classes_.Sbus.push_back(SbusSensor());
-      classes_.Sbus.back().UpdateConfig(msg.output, RootPath_, DefinitionTreePtr);
+      classes.Sbus.push_back(SbusSensor());
+      classes.Sbus.back().UpdateConfig(msg.output, RootPath_, DefinitionTreePtr);
       return true;
     }
   } else if ( id == message::config_mpu9250_id ) {
@@ -1083,52 +1083,52 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     msg.unpack(Payload->data(), Payload->size());
     if ( msg.internal ) {
       Serial.println("InternalMpu9250");
-      if (AcquireInternalMpu9250Data_) {
-	HardFail("ERROR: Internal MPU9250 already initialized.");
+      if (AcquireInternalMpu9250Data) {
+	       HardFail("ERROR: Internal MPU9250 already initialized.");
       }
-      AcquireInternalMpu9250Data_ = true;
-      classes_.InternalMpu9250.UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+      AcquireInternalMpu9250Data = true;
+      classes.InternalMpu9250.UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
       return true;
     } else {
       Serial.println("Mpu9250");
-      classes_.Mpu9250.push_back(Mpu9250Sensor());
-      classes_.Mpu9250.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+      classes.Mpu9250.push_back(Mpu9250Sensor());
+      classes.Mpu9250.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
       return true;
     }
   } else if ( id  == message::config_ublox_id ) {
     Serial.println("uBlox");
     message::config_ublox_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    classes_.uBlox.push_back(uBloxSensor());
-    classes_.uBlox.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    classes.uBlox.push_back(uBloxSensor());
+    classes.uBlox.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_swift_id ) {
     Serial.println("Swift");
     message::config_swift_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    classes_.Swift.push_back(SwiftSensor());
-    classes_.Swift.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    classes.Swift.push_back(SwiftSensor());
+    classes.Swift.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_bme280_id ) {
     Serial.println("Bme280");
     message::config_bme280_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    classes_.Bme280.push_back(Bme280Sensor());
-    classes_.Bme280.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    classes.Bme280.push_back(Bme280Sensor());
+    classes.Bme280.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_ams5915_id ) {
     Serial.println("Ams5915");
     message::config_ams5915_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    classes_.Ams5915.push_back(Ams5915Sensor());
-    classes_.Ams5915.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    classes.Ams5915.push_back(Ams5915Sensor());
+    classes.Ams5915.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   } else if ( id == message::config_analog_id ) {
     Serial.println("Analog");
     message::config_analog_t msg;
     msg.unpack(Payload->data(), Payload->size());
-    classes_.Analog.push_back(AnalogSensor());
-    classes_.Analog.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    classes.Analog.push_back(AnalogSensor());
+    classes.Analog.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
   }
   return false;
@@ -1146,9 +1146,9 @@ void AircraftSensors::Begin() {
   digitalWrite(kBme280CsPin,HIGH);
 
   Serial.println("\tSetting Pins for MPU9250...");
-  for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
+  for (size_t i=0; i < classes.Mpu9250.size(); i++) {
     Mpu9250Sensor::Config TempConfig;
-    classes_.Mpu9250[i].GetConfig(&TempConfig);
+    classes.Mpu9250[i].GetConfig(&TempConfig);
     if (TempConfig.UseSpi) {
       pinMode(TempConfig.CsPin,OUTPUT);
       digitalWrite(TempConfig.CsPin,HIGH);
@@ -1156,9 +1156,9 @@ void AircraftSensors::Begin() {
   }
 
   Serial.println("\tSetting Pins for BME280...");
-  for (size_t i=0; i < classes_.Bme280.size(); i++) {
+  for (size_t i=0; i < classes.Bme280.size(); i++) {
     Bme280Sensor::Config TempConfig;
-    classes_.Bme280[i].GetConfig(&TempConfig);
+    classes.Bme280[i].GetConfig(&TempConfig);
     if (TempConfig.UseSpi) {
       pinMode(TempConfig.CsPin,OUTPUT);
       digitalWrite(TempConfig.CsPin,HIGH);
@@ -1166,76 +1166,76 @@ void AircraftSensors::Begin() {
   }
   // begin all sensors
   Serial.print("\tTime: ");
-  Serial.println(AcquireTimeData_);
+  Serial.println(AcquireTimeData);
   Serial.print("\tInput voltage: ");
-  Serial.println(AcquireInputVoltageData_);
+  Serial.println(AcquireInputVoltageData);
   Serial.print("\tRegulated voltage: ");
-  Serial.println(AcquireRegulatedVoltageData_);
+  Serial.println(AcquireRegulatedVoltageData);
 
   Serial.print("\tInternal Mpu9250: ");
-  classes_.InternalMpu9250.Begin();
-  Serial.println(AcquireInternalMpu9250Data_);
+  classes.InternalMpu9250.Begin();
+  Serial.println(AcquireInternalMpu9250Data);
 
   Serial.print("\tInternal Bme280: ");
-  classes_.InternalBme280.Begin();
-  Serial.println(AcquireInternalBme280Data_);
+  classes.InternalBme280.Begin();
+  Serial.println(AcquireInternalBme280Data);
 
   Serial.print("\tMpu9250: ");
-  for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
-    classes_.Mpu9250[i].Begin();
+  for (size_t i=0; i < classes.Mpu9250.size(); i++) {
+    classes.Mpu9250[i].Begin();
   }
-  Serial.println(classes_.Mpu9250.size());
+  Serial.println(classes.Mpu9250.size());
 
   Serial.print("\tBme280: ");
-  for (size_t i=0; i < classes_.Bme280.size(); i++) {
-    classes_.Bme280[i].Begin();
+  for (size_t i=0; i < classes.Bme280.size(); i++) {
+    classes.Bme280[i].Begin();
   }
-  Serial.println(classes_.Bme280.size());
+  Serial.println(classes.Bme280.size());
 
   Serial.print("\tuBlox: ");
-  for (size_t i=0; i < classes_.uBlox.size(); i++) {
-    classes_.uBlox[i].Begin();
+  for (size_t i=0; i < classes.uBlox.size(); i++) {
+    classes.uBlox[i].Begin();
   }
-  Serial.println(classes_.uBlox.size());
+  Serial.println(classes.uBlox.size());
 
   Serial.print("\tSwift: ");
-  for (size_t i=0; i < classes_.Swift.size(); i++) {
-    classes_.Swift[i].Begin();
+  for (size_t i=0; i < classes.Swift.size(); i++) {
+    classes.Swift[i].Begin();
   }
-  Serial.println(classes_.Swift.size());
+  Serial.println(classes.Swift.size());
 
   Serial.print("\tAms5915: ");
-  for (size_t i=0; i < classes_.Ams5915.size(); i++) {
-    classes_.Ams5915[i].Begin();
+  for (size_t i=0; i < classes.Ams5915.size(); i++) {
+    classes.Ams5915[i].Begin();
   }
-  Serial.println(classes_.Ams5915.size());
+  Serial.println(classes.Ams5915.size());
 
   Serial.print("\tSbus: ");
-  for (size_t i=0; i < classes_.Sbus.size(); i++) {
-    classes_.Sbus[i].Begin();
+  for (size_t i=0; i < classes.Sbus.size(); i++) {
+    classes.Sbus[i].Begin();
   }
-  Serial.println(classes_.Sbus.size());
+  Serial.println(classes.Sbus.size());
   Serial.print("\tSbus voltage: ");
-  Serial.println(AcquireSbusVoltageData_);
+  Serial.println(AcquireSbusVoltageData);
 
   Serial.print("\tAnalog: ");
-  for (size_t i=0; i < classes_.Analog.size(); i++) {
-    classes_.Analog[i].Begin();
+  for (size_t i=0; i < classes.Analog.size(); i++) {
+    classes.Analog[i].Begin();
   }
-  Serial.println(classes_.Analog.size());
+  Serial.println(classes.Analog.size());
 
   Serial.print("\tPwm voltage: ");
-  Serial.println(AcquirePwmVoltageData_);
+  Serial.println(AcquirePwmVoltageData);
 
 
   Serial.println("Initializing Nodes...");
-  for (size_t i=0; i < classes_.Nodes.size(); i++) {
+  for (size_t i=0; i < classes.Nodes.size(); i++) {
     Serial.println("\tBegin().. ");
-    classes_.Nodes[i].Begin(/*&data_.Nodes[i]*/);
+    classes.Nodes[i].Begin(/*&data_.Nodes[i]*/);
 
     Serial.println("\tGetConfig().. ");
     SensorNodes::Config TempConfig;
-    classes_.Nodes[i].GetConfig(&TempConfig);
+    classes.Nodes[i].GetConfig(&TempConfig);
 
 #if 0
     // FIXME: this is useful output, so we need to find a way to
@@ -1275,67 +1275,67 @@ void AircraftSensors::ReadSyncSensors() {
   ResetBfsBus_ = false;
   digitalWriteFast(kBfsInt1Pin,HIGH);
   digitalWriteFast(kBfsInt2Pin,LOW);
-  if (AcquireTimeData_) {
-    classes_.Time.ReadSensor();
+  if (AcquireTimeData) {
+    classes.Time.ReadSensor();
   }
-  if (AcquireInternalMpu9250Data_) {
-    classes_.InternalMpu9250.ReadSensor();
+  if (AcquireInternalMpu9250Data) {
+    classes.InternalMpu9250.ReadSensor();
   }
-  if (AcquireInternalBme280Data_) {
-    classes_.InternalBme280.ReadSensor();
+  if (AcquireInternalBme280Data) {
+    classes.InternalBme280.ReadSensor();
   }
-  for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
+  for (size_t i=0; i < classes.Mpu9250.size(); i++) {
     int8_t status;
-    status = classes_.Mpu9250[i].ReadSensor();
+    status = classes.Mpu9250[i].ReadSensor();
     if (status < 0) {
       Mpu9250Sensor::Config TempConfig;
-      classes_.Mpu9250[i].GetConfig(&TempConfig);
+      classes.Mpu9250[i].GetConfig(&TempConfig);
       if (!TempConfig.UseSpi) {
         ResetI2cBus_ = true;
       }
     }
   }
-  for (size_t i=0; i < classes_.Bme280.size(); i++) {
+  for (size_t i=0; i < classes.Bme280.size(); i++) {
     int8_t status;
-    status = classes_.Bme280[i].ReadSensor();
+    status = classes.Bme280[i].ReadSensor();
     if (status < 0) {
       Bme280Sensor::Config TempConfig;
-      classes_.Bme280[i].GetConfig(&TempConfig);
+      classes.Bme280[i].GetConfig(&TempConfig);
       if (!TempConfig.UseSpi) {
         ResetI2cBus_ = true;
       }
     }
   }
-  for (size_t i=0; i < classes_.uBlox.size(); i++) {
-    classes_.uBlox[i].ReadSensor();
+  for (size_t i=0; i < classes.uBlox.size(); i++) {
+    classes.uBlox[i].ReadSensor();
   }
-  for (size_t i=0; i < classes_.Swift.size(); i++) {
+  for (size_t i=0; i < classes.Swift.size(); i++) {
     int8_t status;
-    status = classes_.Swift[i].ReadSensor();
+    status = classes.Swift[i].ReadSensor();
     if (status < 0) {
       ResetI2cBus_ = true;
     }
   }
-  for (size_t i=0; i < classes_.Ams5915.size(); i++) {
+  for (size_t i=0; i < classes.Ams5915.size(); i++) {
     int8_t status;
-    status = classes_.Ams5915[i].ReadSensor();
+    status = classes.Ams5915[i].ReadSensor();
     if (status < 0) {
       ResetI2cBus_ = true;
     }
   }
-  for (size_t i=0; i < classes_.Sbus.size(); i++) {
-    classes_.Sbus[i].ReadSensor();
+  for (size_t i=0; i < classes.Sbus.size(); i++) {
+    classes.Sbus[i].ReadSensor();
   }
-  for (size_t i=0; i < classes_.Analog.size(); i++) {
-    classes_.Analog[i].ReadSensor();
+  for (size_t i=0; i < classes.Analog.size(); i++) {
+    classes.Analog[i].ReadSensor();
     // if ( i == 0 ) {
     //   Serial.print("analog: ");
-    //   Serial.println(classes_.Analog[i].CalibratedValue);
+    //   Serial.println(classes.Analog[i].CalibratedValue);
     // }
   }
-  for (size_t i=0; i < classes_.Nodes.size(); i++) {
+  for (size_t i=0; i < classes.Nodes.size(); i++) {
     int8_t status;
-    status = classes_.Nodes[i].ReadSensor();
+    status = classes.Nodes[i].ReadSensor();
     if (!status) {
       ResetBfsBus_ = true;
     }
@@ -1350,24 +1350,12 @@ void AircraftSensors::ReadSyncSensors() {
 
 /* read all asynchronous sensors and store in data struct */
 void AircraftSensors::ReadAsyncSensors() {
-  for (size_t i=0; i < classes_.uBlox.size(); i++) {
-    classes_.uBlox[i].ReadSensor();
+  for (size_t i=0; i < classes.uBlox.size(); i++) {
+    classes.uBlox[i].ReadSensor();
   }
-  for (size_t i=0; i < classes_.Sbus.size(); i++) {
-    classes_.Sbus[i].ReadSensor();
+  for (size_t i=0; i < classes.Sbus.size(); i++) {
+    classes.Sbus[i].ReadSensor();
   }
-}
-
-static void add_msg(std::vector<uint8_t> *Buffer, uint8_t id, uint8_t index, uint8_t len, uint8_t *payload) {
-  if ( Buffer->size() + len > Buffer->capacity() ) {
-    Buffer->resize(Buffer->size() + len);
-    Serial.print("Notice: increasing Buffer size to: ");
-    Serial.println(Buffer->capacity());
-  }
-  Buffer->push_back(id);
-  Buffer->push_back(index);
-  Buffer->push_back(len);
-  Buffer->insert(Buffer->end(), payload, payload + len);
 }
 
 static void add_compound_msg(std::vector<uint8_t> *Buffer, size_t len, uint8_t *payload) {
@@ -1379,152 +1367,53 @@ static void add_compound_msg(std::vector<uint8_t> *Buffer, size_t len, uint8_t *
   Buffer->insert(Buffer->end(), payload, payload + len);
 }
 
-/* get data buffer */
-void AircraftSensors::MakeCompoundMessage(std::vector<uint8_t> *Buffer) {
-  Buffer->clear();
-  if ( AcquireTimeData_ ) {
-    message::data_time_t msg;
-    classes_.Time.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  if ( AcquireInternalMpu9250Data_ ) {
-    message::data_mpu9250_t msg;
-    classes_.InternalMpu9250.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  if ( AcquireInternalBme280Data_ ) {
-    message::data_bme280_t msg;
-    classes_.InternalBme280.UpdateMessage(&msg);
-    msg.pack();
-    add_msg(Buffer, msg.id, 0, msg.len, msg.payload);
-  }
-  {
-    message::data_mpu9250_short_t msg;
-    for ( size_t i = 0; i < classes_.Mpu9250.size(); i++ ) {
-      classes_.Mpu9250[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  {
-    message::data_bme280_t msg;
-    for ( size_t i = 0; i < classes_.Bme280.size(); i++ ) {
-      classes_.Bme280[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  {
-    message::data_ublox_t msg;
-    for ( size_t i = 0; i < classes_.uBlox.size(); i++ ) {
-      classes_.uBlox[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  {
-    message::data_swift_t msg;
-    for ( size_t i = 0; i < classes_.Swift.size(); i++ ) {
-      classes_.Swift[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  {
-    message::data_sbus_t msg;
-    for ( size_t i = 0; i < classes_.Sbus.size(); i++ ) {
-      classes_.Sbus[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  {
-    message::data_ams5915_t msg;
-    for ( size_t i = 0; i < classes_.Ams5915.size(); i++ ) {
-      classes_.Ams5915[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  {
-    message::data_analog_t msg;
-    for ( size_t i = 0; i < classes_.Analog.size(); i++ ) {
-      classes_.Analog[i].UpdateMessage(&msg);
-      msg.pack();
-      add_msg(Buffer, msg.id, i, msg.len, msg.payload);
-    }
-  }
-  for (size_t i=0; i < classes_.Nodes.size(); i++) {
-    std::vector<uint8_t> NodeBuffer;
-    classes_.Nodes[i].GetMessage(&NodeBuffer);
-    add_compound_msg(Buffer, NodeBuffer.size(), NodeBuffer.data());
-  }
-}
-
 /* free all sensor resources and reset sensor vectors and states */
 void AircraftSensors::End() {
   Serial.print("Freeing sensors...");
   // free up sensor resources
-  classes_.InternalMpu9250.End();
-  classes_.InternalBme280.End();
-  for (size_t i=0; i < classes_.Mpu9250.size(); i++) {
-    classes_.Mpu9250[i].End();
+  classes.InternalMpu9250.End();
+  classes.InternalBme280.End();
+  for (size_t i=0; i < classes.Mpu9250.size(); i++) {
+    classes.Mpu9250[i].End();
   }
-  for (size_t i=0; i < classes_.Bme280.size(); i++) {
-    classes_.Bme280[i].End();
+  for (size_t i=0; i < classes.Bme280.size(); i++) {
+    classes.Bme280[i].End();
   }
-  for (size_t i=0; i < classes_.uBlox.size(); i++) {
-    classes_.uBlox[i].End();
+  for (size_t i=0; i < classes.uBlox.size(); i++) {
+    classes.uBlox[i].End();
   }
-  for (size_t i=0; i < classes_.Swift.size(); i++) {
-    classes_.Swift[i].End();
+  for (size_t i=0; i < classes.Swift.size(); i++) {
+    classes.Swift[i].End();
   }
-  for (size_t i=0; i < classes_.Ams5915.size(); i++) {
-    classes_.Ams5915[i].End();
+  for (size_t i=0; i < classes.Ams5915.size(); i++) {
+    classes.Ams5915[i].End();
   }
-  for (size_t i=0; i < classes_.Sbus.size(); i++) {
-    classes_.Sbus[i].End();
+  for (size_t i=0; i < classes.Sbus.size(); i++) {
+    classes.Sbus[i].End();
   }
-  for (size_t i=0; i < classes_.Analog.size(); i++) {
-    classes_.Analog[i].End();
+  for (size_t i=0; i < classes.Analog.size(); i++) {
+    classes.Analog[i].End();
   }
-  for (size_t i=0; i < classes_.Nodes.size(); i++) {
-    classes_.Nodes[i].End();
+  for (size_t i=0; i < classes.Nodes.size(); i++) {
+    classes.Nodes[i].End();
   }
   // clear class and data vectors
-  classes_.Mpu9250.clear();
-  classes_.Bme280.clear();
-  classes_.uBlox.clear();
-  classes_.Swift.clear();
-  classes_.Ams5915.clear();
-  classes_.Sbus.clear();
-  classes_.Analog.clear();
-  classes_.Nodes.clear();
-  // data_.Time_us.clear();
-  // data_.InternalMpu9250.clear();
-  // data_.InternalBme280.clear();
-  // data_.InputVoltage_V.clear();
-  // data_.RegulatedVoltage_V.clear();
-  // data_.PwmVoltage_V.clear();
-  // data_.SbusVoltage_V.clear();
-  // data_.Mpu9250.clear();
-  // data_.Bme280.clear();
-  // data_.uBlox.clear();
-  // data_.Swift.clear();
-  // data_.Ams5915.clear();
-  // data_.Sbus.clear();
-  // data_.Analog.clear();
-  // data_.Nodes.clear();
+  classes.Mpu9250.clear();
+  classes.Bme280.clear();
+  classes.uBlox.clear();
+  classes.Swift.clear();
+  classes.Ams5915.clear();
+  classes.Sbus.clear();
+  classes.Analog.clear();
+  classes.Nodes.clear();
 
   // reset data acquisition flags
-  AcquireTimeData_ = false;
-  AcquireInternalMpu9250Data_ = false;
-  AcquireInternalBme280Data_ = false;
-  AcquireInputVoltageData_ = false;
-  AcquireRegulatedVoltageData_ = false;
-  AcquirePwmVoltageData_ = false;
-  AcquireSbusVoltageData_ = false;
+  AcquireTimeData = false;
+  AcquireInternalMpu9250Data = false;
+  AcquireInternalBme280Data = false;
+  AcquireInputVoltageData = false;
+  AcquireRegulatedVoltageData = false;
+  AcquirePwmVoltageData = false;
+  AcquireSbusVoltageData = false;
   Serial.println("done!");
 }

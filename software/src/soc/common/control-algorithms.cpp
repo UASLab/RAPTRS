@@ -19,7 +19,145 @@ void __PID2Class::Configure(float Kp, float Ki, float Kd, float Tf, float b, flo
   Max_ = Max;
 }
 
-void __PID2Class::Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y, float *ff, float *fb) {
+void __PID2Class::Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y) {
+
+  // error for proportional
+  ProportionalError_ = b_ * Reference - Feedback;
+
+  // error for integral
+  IntegralError_ = Reference - Feedback;
+
+  // error for derivative
+  DerivativeError_ = c_ * Reference - Feedback;
+
+  mode_ = mode;
+  switch(mode_) {
+    case GenericFunction::Mode::kStandby: {
+      initLatch_ = false;
+      break;
+    }
+    case GenericFunction::Mode::kArm: {
+      Reset();
+      ComputeDerivative(dt);
+      InitializeState(0.0f);
+      initLatch_ = true;
+      CalculateCommand();
+      break;
+    }
+    case GenericFunction::Mode::kHold: {
+      ComputeDerivative(dt);
+      CalculateCommand();
+      break;
+    }
+    case GenericFunction::Mode::kEngage: {
+      ComputeDerivative(dt);
+      if (initLatch_ == false) {
+        InitializeState(0.0f);
+        initLatch_ = true;
+      }
+      UpdateState(dt);
+      CalculateCommand();
+      break;
+    }
+  }
+  *y = y_;
+}
+
+void __PID2Class::InitializeState(float y) {
+  // Protect for Ki == 0
+  if (Ki_ != 0.0f) {
+    // IntegralErrorState_ = (y - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
+    IntegralErrorState_ = (y - (Kp_*ProportionalError_)) / Ki_; // Ignore the derivative term to reduce noise on limits
+  } else {
+    IntegralErrorState_ = 0.0f;
+  }
+}
+
+void __PID2Class::ComputeDerivative(float dt) {
+
+  float ErrorChange = DerivativeError_ - PreviousDerivativeError_;
+
+  if (Tf_ != 0) {
+    DerivativeErrorState_ = (1 / Tf_) * ErrorChange + (1 - dt/Tf_) * PreviousDerivativeErrorState_;
+  } else {
+    DerivativeErrorState_ = 0.0f;
+  }
+
+  PreviousDerivativeError_ = DerivativeError_;
+  PreviousDerivativeErrorState_ = DerivativeErrorState_;
+}
+
+void __PID2Class::UpdateState(float dt) {
+  // Protect for unlimited windup when Ki == 0
+  if (Ki_ != 0.0f) {
+    IntegralErrorState_ += (dt * IntegralError_);
+  } else {
+    IntegralErrorState_ = 0.0;
+  }
+}
+
+void __PID2Class::CalculateCommand() {
+  y_ = Kp_*ProportionalError_ + Ki_*IntegralErrorState_ + Kd_*DerivativeErrorState_;
+
+  // saturate cmd, set iErr to limit that produces saturated cmd
+  // saturate command
+  if (y_ <= Min_) {
+    y_ = Min_;
+    // Re-compute the integrator state
+    InitializeState(y_);
+  } else if (y_ >= Max_) {
+    y_ = Max_;
+    // Re-compute the integrator state
+    InitializeState(y_);
+  }
+}
+
+void __PID2Class::Reset() {
+  // Reset internal values
+  ProportionalError_ = 0.0f;
+  DerivativeError_ = 0.0f;
+  IntegralError_ = 0.0f;
+  DerivativeErrorState_ = 0.0f;
+
+  // Reset States
+  PreviousDerivativeError_ = 0.0f;
+  IntegralErrorState_ = 0.0f;
+
+  // reset mode
+  mode_ = GenericFunction::Mode::kStandby;
+  initLatch_ = false;
+}
+
+void __PID2Class::Clear() {
+  Reset();
+
+  Kp_ = 1.0f;
+  Ki_ = 0.0f;
+  Kd_ = 0.0f;
+  Tf_ = 0.0f;
+  b_ = 1.0f;
+  c_ = 1.0f;
+  Min_ = 0.0f;
+  Max_ = 0.0f;
+
+  y_ = 0.0f;
+}
+
+// PID2 with Excitation exposure
+void __PID2ClassExcite::Configure(float Kp, float Ki, float Kd, float Tf, float b, float c, float Min, float Max) {
+  Clear();  // Set Defaults
+
+  Kp_ = Kp;
+  Kd_ = Kd;
+  Ki_ = Ki;
+  Tf_ = Tf;
+  b_ = b;
+  c_ = c;
+  Min_ = Min;
+  Max_ = Max;
+}
+
+void __PID2ClassExcite::Run(GenericFunction::Mode mode, float Reference, float Feedback, float dt, float *y, float *ff, float *fb) {
 
   // error for proportional
   ffProportionalError_ = b_ * Reference;
@@ -68,7 +206,7 @@ void __PID2Class::Run(GenericFunction::Mode mode, float Reference, float Feedbac
   *fb = fb_;
 }
 
-void __PID2Class::InitializeState(float ff, float fb) {
+void __PID2ClassExcite::InitializeState(float ff, float fb) {
   // Protect for Ki == 0
   if (Ki_ != 0.0f) {
     // IntegralErrorState_ = (y - (Kp_*ProportionalError_ + Kd_*DerivativeErrorState_)) / Ki_;
@@ -81,14 +219,14 @@ void __PID2Class::InitializeState(float ff, float fb) {
   }
 }
 
-void __PID2Class::ComputeDerivative(float dt) {
+void __PID2ClassExcite::ComputeDerivative(float dt) {
 
   float ffErrorChange = ffDerivativeError_ - ffPreviousDerivativeError_;
   float fbErrorChange = fbDerivativeError_ - fbPreviousDerivativeError_;
 
-  if ((Tf_ + dt) != 0) {
-    ffDerivativeErrorState_ = Tf_ * (ffPreviousDerivativeErrorState_ + ffErrorChange) / (Tf_ + dt);
-    fbDerivativeErrorState_ = Tf_ * (fbPreviousDerivativeErrorState_ + fbErrorChange) / (Tf_ + dt);
+  if (Tf_ != 0) {
+    ffDerivativeErrorState_ = (1 / Tf_) * ffErrorChange + (1 - dt/Tf_) * ffPreviousDerivativeErrorState_;
+    fbDerivativeErrorState_ = (1 / Tf_) * fbErrorChange + (1 - dt/Tf_) * fbPreviousDerivativeErrorState_;
   } else {
     ffDerivativeErrorState_ = 0.0f;
     fbDerivativeErrorState_ = 0.0f;
@@ -101,7 +239,7 @@ void __PID2Class::ComputeDerivative(float dt) {
   fbPreviousDerivativeErrorState_ = fbDerivativeErrorState_;
 }
 
-void __PID2Class::UpdateState(float dt) {
+void __PID2ClassExcite::UpdateState(float dt) {
   // Protect for unlimited windup when Ki == 0
   if (Ki_ != 0.0f) {
     ffIntegralErrorState_ += (dt*ffIntegralError_);
@@ -112,7 +250,7 @@ void __PID2Class::UpdateState(float dt) {
   }
 }
 
-void __PID2Class::CalculateCommand() {
+void __PID2ClassExcite::CalculateCommand() {
   ff_ = Kp_*ffProportionalError_ + Ki_*ffIntegralErrorState_ + Kd_*ffDerivativeErrorState_;
   fb_ = Kp_*fbProportionalError_ + Ki_*fbIntegralErrorState_ + Kd_*fbDerivativeErrorState_;
 
@@ -135,7 +273,7 @@ void __PID2Class::CalculateCommand() {
   }
 }
 
-void __PID2Class::Reset() {
+void __PID2ClassExcite::Reset() {
   // Reset internal values
   ffProportionalError_ = 0.0f;
   fbProportionalError_ = 0.0f;
@@ -157,7 +295,7 @@ void __PID2Class::Reset() {
   initLatch_ = false;
 }
 
-void __PID2Class::Clear() {
+void __PID2ClassExcite::Clear() {
   Reset();
 
   Kp_ = 1.0f;

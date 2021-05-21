@@ -38,7 +38,7 @@ class FlightManagementUnit {
       kConfigMode,
       kRunMode
     };
-    void Begin();
+    void Begin(std::string Port = FmuPort, uint32_t Baud = FmuBaud);
     void Configure(const rapidjson::Value& Config);
     void SendModeCommand(Mode mode);
     bool ReceiveSensorData(bool publish=true);
@@ -106,7 +106,7 @@ class FlightManagementUnit {
       ElementPtr hum;
     };
     struct uBloxSensorData {
-      bool Fix;                                 // True for 3D fix only
+      uint8_t Fix;                              // True for 3D fix only
       uint8_t NumberSatellites;                 // Number of satellites used in solution
       uint32_t TOW;                             // GPS time of the navigation epoch
       uint16_t Year;                            // UTC year
@@ -161,7 +161,7 @@ class FlightManagementUnit {
     };
     struct SbusSensorData {
       float Channels[16];
-      bool FailSafe;
+      uint8_t FailSafe;
       uint64_t LostFrames;
     };
     struct SbusSensorNodes {
@@ -209,15 +209,13 @@ class FlightManagementUnit {
       vector<SbusSensorNodes> Sbus;
       vector<AnalogSensorNodes> Analog;
     };
-    const std::string Port_ = FmuPort;
     const std::string RootPath_ = "/Sensors";
-    const uint32_t Baud_ = FmuBaud;
     HardwareSerial *_serial;
     SerialLink *_bus;
     SensorData SensorData_;
     SensorNodes SensorNodes_;
     // static const
-    bool WaitForAck(uint8_t id, uint8_t subid, float timeout_millis=500);
+    bool WaitForAck(uint8_t wait_id, uint8_t subid, float timeout_millis=500);
     bool GenConfigMessage(const rapidjson::Value& Sensor, uint8_t node_address);
     void ConfigureSensors(const rapidjson::Value& Config, uint8_t node_address);
     bool ConfigureMissionManager(const rapidjson::Value& Config);
@@ -225,6 +223,6 @@ class FlightManagementUnit {
     void ConfigureEffectors(const rapidjson::Value& Config, uint8_t node_address);
     void SendMessage(Message message, uint8_t address, std::vector<uint8_t> &Payload);
     void SendMessage(uint8_t message, uint8_t address, uint8_t *Payload, int len);
-    bool ReceiveMessage(uint8_t *message, std::vector<uint8_t> *Payload);
+    bool ReceiveMessage(uint8_t *message, uint8_t *index, std::vector<uint8_t> *Payload);
     void PublishSensors();
 };

@@ -1,0 +1,391 @@
+{
+  "JSBSim": {
+    "SimFmuPort": "ptySimSoc",
+    "SimFmuBaud": 1500000
+  },
+
+  "Sensors": [
+    {"Type": "Time", "Output": "Fmu/Time_us"},
+    {"Type": "InputVoltage", "Output": "Fmu/Voltage/Input_V"},
+    {"Type": "RegulatedVoltage", "Output": "Fmu/Voltage/Regulated_V"},
+    {"Type": "PwmVoltage", "Output": "Power/FuselageServoVoltage_V"},
+    {"Type": "InternalMpu9250", "Output": "Fmu/Mpu9250", "Rotation": [-1,0,0,0,-1,0,0,0,1], "SRD": 19, "DLPF-Bandwidth": "20Hz"},
+    {"Type": "InternalBme280", "Output": "Fmu/Bme280"},
+    {"Type": "Sbus", "Output": "Sbus"},
+    {"Type": "uBlox", "Output": "uBlox", "Uart": 4, "Baud": 115200},
+    {"Type": "Node", "Address": 3,
+      "Sensors": [
+        {"Type": "PwmVoltage", "Output": "Power/WingServoVoltage_V"},
+        {"Type": "Swift", "Output": "Pitot", "I2c": 1,
+          "Static": {"Address": 20},
+          "Differential": {"Address": 21, "Transducer": "AMS5915-0020-D"}
+        }
+      ]
+    }
+  ],
+
+  "Effectors": [
+    {"Type": "Motor", "Input": "/Control/cmdMotor_nd", "Channel": 0, "Calibration": [800, 1200], "Safed-Command": 0},
+    {"Type": "Pwm", "Input": "/Control/cmdElev_rad", "Channel": 1, "Calibration": [ 0.0, 0.0, 945.56893619, 1532.92371906]},
+    {"Type": "Pwm", "Input": "/Control/cmdRud_rad", "Channel": 2, "Calibration": [ -406.23428499, -72.84894531, -822.84212170, 1495.85430736]},
+    {"Type": "Node", "Address": 3,
+      "Effectors": [
+        {"Type": "Pwm", "Input": "/Control/cmdAilR_rad", "Channel": 0, "Calibration": [ 0.0, 24.74931945, -877.03584524, 1501.05819261]},
+        {"Type": "Pwm", "Input": "/Control/cmdFlapR_rad", "Channel": 2, "Calibration": [ 0.0, -167.40715677, 830.81057931, 1499.57954854]},
+        {"Type": "Pwm", "Input": "/Control/cmdFlapL_rad", "Channel": 5, "Calibration": [ -280.29921208, 75.65078940, -855.43748599, 1442.51416948]},
+        {"Type": "Pwm", "Input": "/Control/cmdAilL_rad", "Channel": 7, "Calibration": [ 0.0, -64.70244278, 828.18022105, 1519.68482092]}
+      ]
+    }
+  ],
+
+  "Telemetry": {
+    "Uart": "/dev/ttyO2",
+    "Baud": 115200,
+    "Time": "/Sensors/Fmu/Time_us",
+    "Static-Pressure": "/Sensors/Fmu/Bme280",
+    "Airspeed": "/Sensor-Processing/vIAS_ms",
+    "Altitude": "/Sensor-Processing/hBaro_m",
+    "Filter": "/Sensor-Processing",
+    "Gps": "/Sensors/uBlox",
+    "Imu": "/Sensors/Fmu/Mpu9250",
+    "Sbus": "/Sensors/Sbus",
+    "Power": "/Sensor-Processing"
+  },
+
+  "Sensor-Processing": {
+    "Fmu": "Standard",
+    "Baseline": "Standard",
+    "Test": [],
+
+    "Def": {
+      "Standard": [
+        {"Type": "AGL", "Output": "hBaro_m",
+          "Static-Pressure": ["/Sensors/Pitot/Static/Pressure_Pa"], "Initialization-Time": 10},
+        {"Type": "IAS", "Output": "vIAS_ms",
+          "Differential-Pressure": ["/Sensors/Pitot/Differential/Pressure_Pa"], "Initialization-Time": 10},
+        {"Type": "EKF15StateINS", "Output": "INS",
+          "Time": "/Sensors/Fmu/Time_us", "GPS": "/Sensors/uBlox", "IMU": "/Sensors/Fmu/Mpu9250"},
+        {"Type": "MinCellVolt", "Output": "MinCellVolt_V",
+          "Inputs": ["/Sensors/Fmu/Voltage/Input_V"],
+          "NumCells": [3]}
+      ]
+    }
+  },
+
+  "Route": {
+    "InputDef": {
+      "Lat": "/Sensor-Processing/Latitude_rad",
+      "Lon": "/Sensor-Processing/Longitude_rad",
+      "Alt": "/Sensor-Processing/Altitude_m",
+      "Heading": "/Sensor-Processing/Heading_rad",
+      "VelNorth": "/Sensor-Processing/NorthVelocity_ms",
+      "VelEast": "/Sensor-Processing/EastVelocity_ms",
+      "VelDown": "/Sensor-Processing/DownVelocity_ms"
+    },
+
+    "OutputDef": {
+      "AltRef": "refAlt_m",
+      "AltError": "errAlt_m",
+      "Crosstrack": "crosstrack_m",
+      "HeadingRef": "refHeading_rad",
+      "HeadingError": "errHeading_rad"
+    },
+
+    "WaypointDef": {
+      "Home": {"Waypoint": [44.725801, -93.075866, 285.2111], "WaypointRef": "WGS84_deg"}
+    },
+
+    "RouteDef": {
+      "Loiter": {
+        "Type": "CircleHold", "Radius": 800, "Direction": "Left",
+        "Waypoint": [0.0, 0.0, -75], "LeadTime": 3, "HoldDist": 20
+      },
+
+      "Path_1": {
+        "Type": "Waypoints", "LeadTime": 3, "HoldDist": 20,
+        "WaypointList": [
+          [800, 0, -75],
+          [0, 800, -75],
+          [-800, 0, -75],
+          [0, -800, -75] ]
+      }
+    }
+  },
+
+  "Control": {
+    "Fmu": ["PilotDirect"],
+    "Baseline": ["PilotRate", "PilotAttitudeMan"],
+    "Test": ["PilotAttitudeMan", "PilotAttitude17", "Route17"],
+
+    "GroupDef": {
+      "PilotDirect": {"Pilot": "Direct"},
+      "PilotRate": {"Pilot": "Pilot-Rate", "Alloc": "Allocator", "Eff": "Effector"},
+      "PilotAttitudeMan": {
+        "Pilot": "Pilot-Att",
+        "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"},
+      "PilotAttitude17": {
+        "Guid_Ref": "Guid_Ref17", "Pilot": "Pilot-Att", "Guid_Long": "Guidance_Longitudinal",
+        "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"},
+      "Route17": {
+        "Guid_Route": "Guid_Route17", "Pilot": "Pilot-Att",
+        "Guid_Lat": "Guidance_Lateral", "Guid_Long": "Guidance_Longitudinal",
+        "SCAS": "SCAS-Att_HighGain", "Alloc": "Allocator", "Eff": "Effector"}
+    },
+
+    "ControlDef": {
+      "Direct": [
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdMotor_nd", "Gain": 1, "Limits": {"Upper": 1, "Lower": 0}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdAilL_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdAilR_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdElev_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdRud_rad", "Gain": -0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapL_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapR_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}}
+      ],
+
+      "Guid_Route17": [
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 17},
+        {"Type": "Gain", "Input": "/Route/errAlt_m", "Output": "errAlt_m", "Gain": 1}
+      ],
+
+      "Guid_Route20": [
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 20},
+        {"Type": "Gain", "Input": "/Route/errAlt_m", "Output": "errAlt_m", "Gain": 1}
+      ],
+
+      "Guid_Ref17": [
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 17},
+        {"Type": "Latch", "Input": "/Sensor-Processing/hBaro_m", "Output": "refAlt_m"},
+        {"Type": "Gain", "Input": "/Sensor-Processing/hBaro_m", "Output": "negAlt_m", "Gain": -1},
+        {"Type": "Sum", "Inputs": ["refAlt_m", "negAlt_m"], "Output": "errAlt_m"}
+      ],
+
+      "Guid_Ref20": [
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 20},
+        {"Type": "Latch", "Input": "/Sensor-Processing/hBaro_m", "Output": "refAlt_m"},
+        {"Type": "Gain", "Input": "/Sensor-Processing/hBaro_m", "Output": "negAlt_m", "Gain": -1},
+        {"Type": "Sum", "Inputs": ["refAlt_m", "negAlt_m"], "Output": "errAlt_m"}
+      ],
+
+      "Guidance_Longitudinal": [
+        {"Type": "PID2", "Reference": "../refV_ms", "Feedback": "/Sensor-Processing/vIAS_ms", "Output": "cmdThrust_nd",
+          "Kp": 0.200, "Ki": 0.075, "Kd": 0.0, "Tf": 0.2, "dt": 0.02,
+          "b": 1.0, "c": 0.0, "Max": 1, "Min": 0},
+
+        {"Type": "PID", "Input": "../errAlt_m", "Output": "refTheta_guid",
+          "Kp": 0.02, "Ki": 0.001, "Kd": 0.01, "Tf": 0.2, "dt": 0.02,
+          "b": 1.0, "c": 0.0, "Max": 0.523599, "Min": -0.523599},
+        {"Type": "Sum", "Inputs": ["refTheta_guid", "../refTheta_rad"], "Output": "refTheta_rad"}
+      ],
+
+      "Guidance_Lateral": [
+        {"Type": "PID", "Input": "/Route/errHeading_rad", "Output": "refPhi_head",
+          "Kp": 0.75, "Ki": 0.20, "Kd": 0.20, "Tf": 0.2, "dt": 0.02,
+          "Max": 0.523599, "Min": -0.523599},
+        {"Type": "PID", "Input": "/Route/crosstrack_m", "Output": "refPhi_xtrack",
+          "Kp": -0.01, "Ki": -0.0005, "Kd": -0.0, "Tf": 0.2, "dt": 0.02,
+          "Max": 0.174533, "Min": -0.174533},
+        {"Type": "Sum", "Inputs": ["refPhi_head", "refPhi_xtrack"], "Output": "refPhi_guid"},
+
+        {"Type": "Sum", "Inputs": ["refPhi_guid", "../refPhi_rad"], "Output": "refPhi_rad"}
+      ],
+
+      "Pilot-Rate": [
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdThrust_nd", "Gain": 1, "Max": 1, "Min": 0},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdRoll_rps", "Gain": 1.0472},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdPitch_rps", "Gain": 1.0472},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdYaw_rps", "Gain": 0.523599},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_nd", "Gain": 1.0, "Max": 1, "Min": -1}
+      ],
+
+      "Pilot-Att": [
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdThrust_nd", "Gain": 1, "Max": 1, "Min": 0},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refPhi_rad", "Gain": 1.047198},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refTheta_rad", "Gain": 0.7854},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw_rps", "Gain": 0.174533},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_nd", "Gain": 1.0, "Max": 1, "Min": -1}
+      ],
+
+      "SCAS-Att": [
+        {"Type": "PID2", "Reference": "../refPhi_rad", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "cmdRoll_pid_rps",
+          "Kp": 0.64, "Ki": 0.20, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+        {"Type": "Gain", "Input": "/Sensor-Processing/GyroX_rads", "Output": "cmdRoll_damp_rps", "Gain": -0.070},
+        {"Type": "Sum", "Inputs": ["cmdRoll_pid_rps", "cmdRoll_damp_rps"], "Output": "cmdRoll_rps",
+          "Max": 1.0472, "Min": -1.0472},
+
+        {"Type": "PID2", "Reference": "../refTheta_rad", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "cmdPitch_pid_rps",
+          "Kp": 0.90, "Ki": 0.30, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+        {"Type": "Gain", "Input": "/Sensor-Processing/GyroY_rads", "Output": "cmdPitch_damp_rps", "Gain": -0.080},
+        {"Type": "Sum", "Inputs": ["cmdPitch_pid_rps", "cmdPitch_damp_rps"], "Output": "cmdPitch_rps",
+          "Max": 1.0472, "Min": -1.0472},
+
+        {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps",
+          "num": [-0.030, 0.030], "den": [1.0, -0.8919]},
+        {"Type": "Sum", "Inputs": ["../refYaw_rps", "cmdYaw_damp_rps"], "Output": "cmdYaw_rps"}
+      ],
+
+      "SCAS-Att_HighGain": [
+        {"Type": "PID2", "Reference": "../refPhi_rad", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "cmdRoll_pid_rps",
+          "Kp": 0.96, "Ki": 0.30, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+        {"Type": "Gain", "Input": "/Sensor-Processing/GyroX_rads", "Output": "cmdRoll_damp_rps", "Gain": -0.105},
+        {"Type": "Sum", "Inputs": ["cmdRoll_pid_rps", "cmdRoll_damp_rps"], "Output": "cmdRoll_rps",
+          "Max": 1.0472, "Min": -1.0472},
+
+        {"Type": "PID2", "Reference": "../refTheta_rad", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "cmdPitch_pid_rps",
+          "Kp": 1.35, "Ki": 0.45, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+        {"Type": "Gain", "Input": "/Sensor-Processing/GyroY_rads", "Output": "cmdPitch_damp_rps", "Gain": -0.120},
+        {"Type": "Sum", "Inputs": ["cmdPitch_pid_rps", "cmdPitch_damp_rps"], "Output": "cmdPitch_rps",
+          "Max": 1.0472, "Min": -1.0472},
+
+        {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps",
+          "num": [-0.045, 0.045], "den": [1.0, -0.8919]},
+        {"Type": "Sum", "Inputs": ["../refYaw_rps", "cmdYaw_damp_rps"], "Output": "cmdYaw_rps"}
+      ],
+
+      "Allocator": [
+        {"Type": "PseudoInverse",
+          "Inputs": ["../cmdRoll_rps", "../cmdPitch_rps", "../cmdYaw_rps"],
+          "Outputs": ["cmdElev_rad", "cmdRud_rad", "cmdAilR_rad", "cmdFlapR_rad", "cmdFlapL_rad", "cmdAilL_rad"],
+          "Effectiveness": [
+            [0.00000, -0.1418,-1.33413, -0.5634, 0.5634, 1.33413],
+            [-2.2716, 0.00000, 0.06000, 0.05800, 0.05800, 0.06000],
+            [0.00000,-1.59190, 0.00000, 0.00000, 0.00000, 0.00000]],
+          "Min": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
+          "Max": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
+        },
+        {"Type": "Filter", "Input": "../refFlap_nd", "Output": "cmdFlap_nd",
+          "num": [0.131311455359006, 0.0863219057948165], "den": [1.0, -1.06697618218221, 0.284609543336029]}
+      ],
+
+      "Effector": [
+        {"Type": "Gain", "Input": "../cmdFlap_nd", "Output": "cmdElev_flap_rad", "Gain": 0.02947},
+        {"Type": "Gain", "Input": "../cmdFlap_nd", "Output": "cmdAilR_flap_rad", "Gain": 0.22472},
+        {"Type": "Gain", "Input": "../cmdFlap_nd", "Output": "cmdFlapR_flap_rad", "Gain": 0.34907},
+        {"Type": "Gain", "Input": "../cmdFlap_nd", "Output": "cmdFlapL_flap_rad", "Gain": 0.34907},
+        {"Type": "Gain", "Input": "../cmdFlap_nd", "Output": "cmdAilL_flap_rad", "Gain": 0.22472},
+
+        {"Type": "Sum", "Inputs": ["../cmdElev_rad", "cmdElev_flap_rad"], "Output": "cmdElev_rad"},
+        {"Type": "Sum", "Inputs": ["../cmdAilR_rad", "cmdAilR_flap_rad"], "Output": "cmdAilR_rad"},
+        {"Type": "Sum", "Inputs": ["../cmdFlapR_rad", "cmdFlapR_flap_rad"], "Output": "cmdFlapR_rad"},
+        {"Type": "Sum", "Inputs": ["../cmdFlapL_rad", "cmdFlapL_flap_rad"], "Output": "cmdFlapL_rad"},
+        {"Type": "Sum", "Inputs": ["../cmdAilL_rad", "cmdAilL_flap_rad"], "Output": "cmdAilL_rad"},
+
+        {"Type": "Gain", "Input": "../cmdThrust_nd", "Output": "cmdMotor_nd", "Gain": 1.0}
+      ]
+    }
+  },
+
+  "Excitation": {
+    "Time": "/Sensors/Fmu/Time_us",
+    "ExciteDef": {
+      "RTSM": {"Level": "Alloc", "Waveforms": [
+        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
+      ]},
+      "RTSM_Long": {"Level": "Alloc", "Waveforms": [
+        {"Wave": "OMS_Long_1", "Signal": "/Control/Test/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_2", "Signal": "/Control/Test/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_3", "Signal": "/Control/Test/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.0698132}
+      ]},
+      "RTSM_Large": {"Level": "Alloc", "Waveforms": [
+        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRoll_rps", "Start-Time": 1, "Scale-Factor": 0.139626},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdPitch_rps", "Start-Time": 1, "Scale-Factor": 0.139626},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdYaw_rps", "Start-Time": 1, "Scale-Factor": 0.139626}
+      ]},
+
+      "AeroSym": {"Level": "Eff", "Waveforms": [
+        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdElev_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdAilL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdAilR_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdFlapL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdFlapR_rad", "Start-Time": 1, "Scale-Factor": 0.0698132}
+      ]},
+      "AeroAsym": {"Level": "Eff", "Waveforms": [
+        {"Wave": "OMS_1", "Signal": "/Control/Test/cmdRud_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdAilL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_2", "Signal": "/Control/Test/cmdAilR_rad", "Start-Time": 1, "Scale-Factor": -0.0698132},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdFlapL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_3", "Signal": "/Control/Test/cmdFlapR_rad", "Start-Time": 1, "Scale-Factor": -0.0698132}
+      ]},
+
+      "AeroSym_Long": {"Level": "Eff", "Waveforms": [
+        {"Wave": "OMS_Long_1", "Signal": "/Control/Test/cmdElev_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_2", "Signal": "/Control/Test/cmdAilL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_2", "Signal": "/Control/Test/cmdAilR_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_3", "Signal": "/Control/Test/cmdFlapL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_3", "Signal": "/Control/Test/cmdFlapR_rad", "Start-Time": 1, "Scale-Factor": 0.0698132}
+      ]},
+      "AeroAsym_Long": {"Level": "Eff", "Waveforms": [
+        {"Wave": "OMS_Long_1", "Signal": "/Control/Test/cmdRud_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_2", "Signal": "/Control/Test/cmdAilL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_2", "Signal": "/Control/Test/cmdAilR_rad", "Start-Time": 1, "Scale-Factor": -0.0698132},
+        {"Wave": "OMS_Long_3", "Signal": "/Control/Test/cmdFlapL_rad", "Start-Time": 1, "Scale-Factor": 0.0698132},
+        {"Wave": "OMS_Long_3", "Signal": "/Control/Test/cmdFlapR_rad", "Start-Time": 1, "Scale-Factor": -0.0698132}
+      ]}
+    },
+
+    "WaveDef": {
+      "OMS_1": {"Type": "MultiSine", "Duration": 10.0,
+        "Frequency": [0.6283185307179586, 4.360530603182633, 8.092742675647308, 11.824954748111981, 15.557166820576658, 19.28937889304133, 23.021590965506004, 26.753803037970677, 30.486015110435353, 34.21822718290002, 37.9504392553647, 41.682651327829376, 45.414863400294045, 49.14707547275872, 52.8792875452234, 56.61149961768807, 60.34371169015275],
+        "Phase": [6.174200357528524, 5.448037839217776, 3.8454607850193847, 1.6650584957876886, 3.9242402680243402, 4.630080151304789, 5.912432865757586, 5.316652321008593, 2.7342570964241117, 6.546636801464082, 8.454702155760696, 8.24574027481253, 8.722410829390709, 7.878019406341706, 5.298703900733216, 7.7365320512089255, 9.81651753182983],
+        "Amplitude": [0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396]
+      },
+      "OMS_2": {"Type": "MultiSine", "Duration": 10.0,
+        "Frequency": [1.872389221539517, 5.604601294004191, 9.336813366468867, 13.06902543893354, 16.801237511398217, 20.53344958386289, 24.265661656327563, 27.997873728792232, 31.73008580125691, 35.46229787372159, 39.19450994618626, 42.926722018650935, 46.65893409111561, 50.39114616358028, 54.12335823604496, 57.855570308509634, 61.5877823809743],
+        "Phase": [0.11707077907146102, 5.879081252281665, 2.654293566021632, 6.39167677462466, 2.303111141503079, 2.800338003458348, 2.8375030086581976, 1.0089459497629825, 4.815200987699559, 1.6973325623185964, 2.783418143160966, 2.755628470222243, 2.1451236583654723, 6.926060216141984, 3.9516557880470744, 6.20624518523016, 1.2930439886508232],
+        "Amplitude": [0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514]
+      },
+      "OMS_3": {"Type": "MultiSine", "Duration": 10.0,
+        "Frequency": [3.1164599123610746, 6.848671984825749, 10.580884057290424, 14.313096129755097, 18.045308202219775, 21.77752027468445, 25.509732347149118, 29.241944419613795, 32.97415649207847, 36.70636856454314, 40.43858063700782, 44.170792709472494, 47.90300478193716, 51.63521685440184, 55.36742892686651, 59.09964099933119, 62.83185307179586],
+        "Phase": [6.211686565669407, 5.899844951398339, 3.505168117640797, 6.180092311325341, 8.254160205185341, 8.737306098422593, 9.388424380628422, 8.244859651857812, 5.6682884849905975, 8.788152243105346, 9.847341770112095, 9.543702569226786, 9.4984232787195, 7.611871646984754, 11.38939708047327, 14.142510674662724, 14.85221814913478],
+        "Amplitude": [0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345]
+      },
+
+      "OMS_Long_1": {"Type": "MultiSine", "Duration": 30.0,
+        "Frequency": [0.6283185307179586, 4.360530603182633, 8.092742675647308, 11.824954748111981, 15.557166820576658, 19.28937889304133, 23.021590965506004, 26.753803037970677, 30.486015110435353, 34.21822718290002, 37.9504392553647, 41.682651327829376, 45.414863400294045, 49.14707547275872, 52.8792875452234, 56.61149961768807, 60.34371169015275],
+        "Phase": [6.174200357528524, 5.448037839217776, 3.8454607850193847, 1.6650584957876886, 3.9242402680243402, 4.630080151304789, 5.912432865757586, 5.316652321008593, 2.7342570964241117, 6.546636801464082, 8.454702155760696, 8.24574027481253, 8.722410829390709, 7.878019406341706, 5.298703900733216, 7.7365320512089255, 9.81651753182983],
+        "Amplitude": [0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396, 0.19810717087274396]
+      },
+      "OMS_Long_2": {"Type": "MultiSine", "Duration": 30.0,
+        "Frequency": [1.872389221539517, 5.604601294004191, 9.336813366468867, 13.06902543893354, 16.801237511398217, 20.53344958386289, 24.265661656327563, 27.997873728792232, 31.73008580125691, 35.46229787372159, 39.19450994618626, 42.926722018650935, 46.65893409111561, 50.39114616358028, 54.12335823604496, 57.855570308509634, 61.5877823809743],
+        "Phase": [0.11707077907146102, 5.879081252281665, 2.654293566021632, 6.39167677462466, 2.303111141503079, 2.800338003458348, 2.8375030086581976, 1.0089459497629825, 4.815200987699559, 1.6973325623185964, 2.783418143160966, 2.755628470222243, 2.1451236583654723, 6.926060216141984, 3.9516557880470744, 6.20624518523016, 1.2930439886508232],
+        "Amplitude": [0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514, 0.22691997229221514]
+      },
+      "OMS_Long_3": {"Type": "MultiSine", "Duration": 30.0,
+        "Frequency": [3.1164599123610746, 6.848671984825749, 10.580884057290424, 14.313096129755097, 18.045308202219775, 21.77752027468445, 25.509732347149118, 29.241944419613795, 32.97415649207847, 36.70636856454314, 40.43858063700782, 44.170792709472494, 47.90300478193716, 51.63521685440184, 55.36742892686651, 59.09964099933119, 62.83185307179586],
+        "Phase": [6.211686565669407, 5.899844951398339, 3.505168117640797, 6.180092311325341, 8.254160205185341, 8.737306098422593, 9.388424380628422, 8.244859651857812, 5.6682884849905975, 8.788152243105346, 9.847341770112095, 9.543702569226786, 9.4984232787195, 7.611871646984754, 11.38939708047327, 14.142510674662724, 14.85221814913478],
+        "Amplitude": [0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345, 0.19694268116397345]
+      },
+
+      "LinChirp": {"Type": "LinearChirp",
+        "Duration": 10, "Amplitude": [1, 1], "Frequency": [1, 25]
+      },
+      "LogChirp": {"Type": "LogChirp",
+        "Duration": 10, "Amplitude": [1, 1], "Frequency": [1, 25]
+      }
+    }
+  },
+
+  "Mission-Manager": {
+    "Soc-Engage-Switch": {"Source": "/Sensors/Sbus/Channels/0", "Gain": 1,
+      "ModeSel": {"Fmu": -2, "Soc": 0}},
+    "Throttle-Safety-Switch": {"Source": "/Sensors/Sbus/Channels/1", "Gain": 1,
+      "ModeSel": {"Safe": -2, "Engage": 0.5}},
+    "Test-Mode-Switch": {"Source": "/Sensors/Sbus/Channels/8", "Gain": 1,
+      "ModeSel": {"Standby": -2, "Arm": -0.5, "Engage": 0.5}},
+    "Test-Select-Switch": {"Source": "/Sensors/Sbus/Channels/9", "Gain": 1,
+      "ModeSel": {"Decrement": -2, "Excite": -0.5, "Increment": 0.5}},
+    "Trigger-Switch": {"Source": "/Sensors/Sbus/Channels/10", "Gain": 1,
+      "ModeSel": {"Standby": -2, "Trigger": 0.0}},
+
+    "Baseline-Select-Switch": {"Source": "/Sensors/Sbus/Channels/11", "Gain": 1,
+      "ControlSel": {"PilotRate": -2, "PilotAttitudeMan": -0.5, "PilotAttitudeMan": 0.5}},
+
+    "Test-Points": [
+      {"Test-ID": "0", "Sensor-Processing": "Standard", "Control": "PilotAttitude17", "Excitation": "RTSM"},
+      {"Test-ID": "1", "Sensor-Processing": "Standard", "Route": "Loiter", "Control": "Route17", "Excitation": "RTSM"},
+      {"Test-ID": "2", "Sensor-Processing": "Standard", "Route": "Path_1", "Control": "Route17", "Excitation": "RTSM"}
+    ]
+  }
+}
