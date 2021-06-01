@@ -6,6 +6,7 @@ Author: Brian Taylor and Chris Regan
 
 #include "control-functions.h"
 
+
 /* PID2 class methods, see control-functions.hxx for more information */
 void PID2ClassExcite::Configure(const rapidjson::Value& Config, std::string SystemPath) {
   float Kp = 1.0;
@@ -490,7 +491,7 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   LoadInput(Config, SystemPath, "uMeas", &uMeas_node, &uMeasKeys_);
   LoadInput(Config, SystemPath, "yMeas", &yMeas_node, &yMeasKeys_);
   LoadOutput(Config, SystemPath, "OutSigma", &sigma_node);
-  LoadOutput(Config, SystemPath, "OutPsd", &psd_node);
+  // LoadOutput(Config, SystemPath, "OutPsd", &psd_node);
 
   // Size of internal STREAM inputs
   STREAM.uMeas.set_size(500, N_inputs);
@@ -521,8 +522,8 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   }
 
   // Resize psdOut vector
-  int numPsd = psd_node.size();
-  // outpsd.set_size(5001); FIXIT - Need to allocate fixed space
+  // int numPsd = psd_node.size();
+  // outpsd.set_size(5001); // FIXIT - Need to allocate fixed space
   // std::fill(outpsd.begin(), outpsd.end(), 0.0);
 
   // Sample time (required)
@@ -532,6 +533,9 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   } else {
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
   }
+
+  uMeasFid = fopen ("uMeas.dat","w");
+  yMeasFid = fopen ("yMeas.dat","w");
 
   // configure Class
   // STREAMClass_.Configure(dt);
@@ -553,7 +557,7 @@ void STREAMClass::Initialize() {
     for (int idx1 = 0; idx1 < uMeasBuffer.size(1); idx1++) {
       // Set the value of the array element.
       // Change this value to the value that the application requires.
-      uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] = 0;
+      uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] = 0.0f;
     }
   }
 
@@ -562,13 +566,17 @@ void STREAMClass::Initialize() {
     for (int idx1 = 0; idx1 < yMeasBuffer.size(1); idx1++) {
       // Set the value of the array element.
       // Change this value to the value that the application requires.
-      yMeasBuffer[idx0 + yMeasBuffer.size(0) * idx1] = 0;
+      yMeasBuffer[idx0 + yMeasBuffer.size(0) * idx1] = 0.0f;
     }
   };
 
   for (int idx = 0; idx < 5001; idx++) {
     outw_data[idx] = 0;
   }
+
+  // for (int idx = 0; idx < 5001; idx++) {
+  //   outpsd[idx] = 0;
+  // }
 
   printf("STREAM initalization Complete.\n");
 }
@@ -595,14 +603,26 @@ void STREAMClass::Run(Mode mode) {
   }
   for (size_t i=0; i < yMeas_node.size(); i++) {
     size_t indx = y_ind[i];
-    yMeas[i] = yMeas_node[i]->getFloat();
+    yMeas[indx] = yMeas_node[i]->getFloat();
   }
+
+  // for (int i = 0; i < 13; i++) {
+  // // 	printf("%f\t", uMeas[i]);
+  //     fprintf(uMeasFid, "%f\t", uMeas[i]);
+	// }
+  // fprintf(uMeasFid, "\n");
+
+  // for (int i = 0; i < 14; i++) {
+  // // 	printf("%f\t", yMeas[i]);
+  //     fprintf(yMeasFid, "%f\t", yMeas[i]);
+	// }
+  // fprintf(yMeasFid, "\n");
 
   fifo(uMeasBuffer, uMeas, uSingleMeas_size);
   fifo(yMeasBuffer, yMeas, ySingleMeas_size);
 
-  printf("%f\n", uMeas[0]);
-  printf("%f\n", yMeas[0]);
+  // printf("%f\t", uMeasBuffer[1]);
+  // printf("%f\t", yMeasBuffer[1]);
 
   // Call Algorithm
 	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);
@@ -610,15 +630,18 @@ void STREAMClass::Run(Mode mode) {
 
 	STREAM.steponce(sigma_data, outpsd, outw_data, outw_size);
 
-  printf("%f\n", sigma_data[0]);
+  for (int i = 0; i < 3; i++) {
+  	printf("%f\t", sigma_data[i]);
+	}
+  printf("\n");
 
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {
     sigma_node[i]->setFloat(sigma_data[i]);
   }
-  for (size_t i=0; i < psd_node.size(); i++) {
-    psd_node[i]->setFloat(outpsd[i]);
-  }
+  // for (size_t i=0; i < psd_node.size(); i++) {
+  //   psd_node[i]->setFloat(outpsd[i]);
+  // }
 }
 
 void STREAMClass::Clear() {

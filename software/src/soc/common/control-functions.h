@@ -270,7 +270,7 @@ class TecsClass: public GenericFunction {
 
 void fifo(coder::array<double, 2U> &A, const double Arow_data[], const
                  int Arow_size[2]);
-                 
+
 class STREAMClass: public GenericFunction {
   public:
     void Configure(const rapidjson::Value& Config,std::string SystemPath);
@@ -284,7 +284,7 @@ class STREAMClass: public GenericFunction {
     std::vector<ElementPtr> yMeas_node; // Nodes to populate inputs to STREAM
 
     std::vector<ElementPtr> sigma_node; // Nodes to populate outputs to STREAM
-    std::vector<ElementPtr> psd_node; // Nodes to populate outputs to STREAM
+    // std::vector<ElementPtr> psd_node; // Nodes to populate outputs to STREAM
 
     std::vector<std::string> uMeasKeys_, yMeasKeys_;
     std::string TimeKey_;
@@ -319,4 +319,7 @@ class STREAMClass: public GenericFunction {
 
     int uSingleMeas_size[2];
     int ySingleMeas_size[2];
+
+    FILE *uMeasFid;
+    FILE *yMeasFid;
 };
