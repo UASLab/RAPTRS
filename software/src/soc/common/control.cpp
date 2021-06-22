@@ -214,6 +214,8 @@ void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Valu
       ComponentVec_.push_back(std::make_shared<PseudoInverseAllocation>());
     } else if (ComponentType == "Tecs") {
       ComponentVec_.push_back(std::make_shared<TecsClass>());
+    } else if (ComponentType == "STREAM") {
+      ComponentVec_.push_back(std::make_shared<STREAMClass>());
     } else if (ComponentType == "Latch") {
       ComponentVec_.push_back(std::make_shared<LatchClass>());
     } else {

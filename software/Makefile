@@ -274,12 +274,12 @@ $(BIN)/flight_amd64: $(sim_flight_obj)
 $(BIN)/datalog-server: $(soc_datalog_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_datalog_obj)
+	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_datalog_obj) $(SOC_LIBS)
 
 $(BIN)/datalog-server_amd64: $(sim_datalog_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(SIM_CXX) $(SIM_CPPFLAGS) $(SIM_CXXFLAGS) -o "$@" $(sim_datalog_obj)
+	@$(SIM_CXX) $(SIM_CPPFLAGS) $(SIM_CXXFLAGS) -o "$@" $(sim_datalog_obj) $(SIM_LIBS)
 
 $(BIN)/telem-server: $(soc_telem_obj)
 	@echo -e "[CXX]\t$<"
