@@ -539,6 +539,7 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
 
   // configure Class
   // STREAMClass_.Configure(dt);
+  Initialize();
 }
 
 void STREAMClass::Initialize() {
@@ -555,17 +556,14 @@ void STREAMClass::Initialize() {
   // Loop over the array to initialize each element.
   for (int idx0 = 0; idx0 < uMeasBuffer.size(0); idx0++) {
     for (int idx1 = 0; idx1 < uMeasBuffer.size(1); idx1++) {
-      // Set the value of the array element.
-      // Change this value to the value that the application requires.
       uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] = 0.0f;
+      std::cout << uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] << std::endl;
     }
   }
 
   // Loop over the array to initialize each element.
   for (int idx0 = 0; idx0 < yMeasBuffer.size(0); idx0++) {
     for (int idx1 = 0; idx1 < yMeasBuffer.size(1); idx1++) {
-      // Set the value of the array element.
-      // Change this value to the value that the application requires.
       yMeasBuffer[idx0 + yMeasBuffer.size(0) * idx1] = 0.0f;
     }
   };
@@ -579,11 +577,16 @@ void STREAMClass::Initialize() {
   // }
 
   printf("STREAM initalization Complete.\n");
+  initFlag = true;
 }
-bool STREAMClass::Initialized() {return true;}
+bool STREAMClass::Initialized() {return initFlag;}
 
 void STREAMClass::Run(Mode mode) {
   float dt_curr = 0.0f;
+
+  if ( initFlag == false ) {
+    Initialize();
+  }
 
   // sample time computation
   float dt = 0;
@@ -606,34 +609,17 @@ void STREAMClass::Run(Mode mode) {
     yMeas[indx] = yMeas_node[i]->getFloat();
   }
 
-  // for (int i = 0; i < 13; i++) {
-  // // 	printf("%f\t", uMeas[i]);
-  //     fprintf(uMeasFid, "%f\t", uMeas[i]);
-	// }
-  // fprintf(uMeasFid, "\n");
-
-  // for (int i = 0; i < 14; i++) {
-  // // 	printf("%f\t", yMeas[i]);
-  //     fprintf(yMeasFid, "%f\t", yMeas[i]);
-	// }
-  // fprintf(yMeasFid, "\n");
-
   fifo(uMeasBuffer, uMeas, uSingleMeas_size);
   fifo(yMeasBuffer, yMeas, ySingleMeas_size);
 
-  // printf("%f\t", uMeasBuffer[1]);
-  // printf("%f\t", yMeasBuffer[1]);
+  // printf("%f\t", uMeasBuffer[0]);
+  // printf("%f\t", yMeasBuffer[0]);
 
   // Call Algorithm
 	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);
 	STREAM.set_yMeas(yMeasBuffer, y_ind, N_outputs);
 
 	STREAM.steponce(sigma_data, outpsd, outw_data, outw_size);
-
-  for (int i = 0; i < 3; i++) {
-  	printf("%f\t", sigma_data[i]);
-	}
-  printf("\n");
 
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {

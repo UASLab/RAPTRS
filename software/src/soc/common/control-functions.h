@@ -302,6 +302,7 @@ class STREAMClass: public GenericFunction {
     coder::array<double, 2U> outpsd;
 
     double sigma_data[3];
+    bool initFlag = false;
     streamClassWrap STREAM;
 
     int loop_ub;
