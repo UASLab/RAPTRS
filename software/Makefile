@@ -284,7 +284,7 @@ $(BIN)/datalog-server_amd64: $(sim_datalog_obj)
 $(BIN)/telem-server: $(soc_telem_obj)
 	@echo -e "[CXX]\t$<"
 	@mkdir -p "$(dir $@)"
-	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_telem_obj)
+	@$(SOC_CXX) $(SOC_CPPFLAGS) $(SOC_CXXFLAGS) -o "$@" $(soc_telem_obj) $(SOC_LIBS)
 
 $(BIN)/surf_cal: $(soc_surf_cal_obj)
 	@echo -e "[CXX]\t$<"

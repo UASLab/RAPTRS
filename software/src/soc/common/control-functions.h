@@ -10,6 +10,13 @@ Author: Brian Taylor and Chris Regan
 #include "generic-function.h"
 #include "control-algorithms.h"
 #include "control-algorithms.h"
+//STREAM
+#include "streamClass.h"
+#include "streamClassWrap.h"
+#include "rt_nonfinite.h"
+#include "coder_array.h"
+#include <string.h>
+#include "string.h"
 
 /* Control related functions. Each function describes its JSON
 configuration below. See generic-function.hxx for more information

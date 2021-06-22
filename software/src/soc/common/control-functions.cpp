@@ -534,9 +534,6 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
   }
 
-  uMeasFid = fopen ("uMeas.dat","w");
-  yMeasFid = fopen ("yMeas.dat","w");
-
   // configure Class
   // STREAMClass_.Configure(dt);
   Initialize();
@@ -557,7 +554,6 @@ void STREAMClass::Initialize() {
   for (int idx0 = 0; idx0 < uMeasBuffer.size(0); idx0++) {
     for (int idx1 = 0; idx1 < uMeasBuffer.size(1); idx1++) {
       uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] = 0.0f;
-      std::cout << uMeasBuffer[idx0 + uMeasBuffer.size(0) * idx1] << std::endl;
     }
   }
 
