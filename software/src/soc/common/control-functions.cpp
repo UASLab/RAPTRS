@@ -517,7 +517,7 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   int numSigma = sigma_node.size();
   // sigma_data.resize(numSigma);
   // std::fill(sigma_data.begin(), sigma_data.end(), 0.0);
-  for (int idx = 0; idx < 3; idx++) {
+  for (int idx = 0; idx < numSigma; idx++) {
     sigma_data[idx] = 0;
   }
 
