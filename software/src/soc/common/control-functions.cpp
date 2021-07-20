@@ -491,7 +491,6 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   LoadInput(Config, SystemPath, "uMeas", &uMeas_node, &uMeasKeys_);
   LoadInput(Config, SystemPath, "yMeas", &yMeas_node, &yMeasKeys_);
   LoadOutput(Config, SystemPath, "OutSigma", &sigma_node);
-  // LoadOutput(Config, SystemPath, "OutPsd", &psd_node);
 
   // Size of internal STREAM inputs
   STREAM.uMeas.set_size(500, N_inputs);
@@ -520,11 +519,6 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   for (int idx = 0; idx < numSigma; idx++) {
     sigma_data[idx] = 0;
   }
-
-  // Resize psdOut vector
-  // int numPsd = psd_node.size();
-  // outpsd.set_size(5001); // FIXIT - Need to allocate fixed space
-  // std::fill(outpsd.begin(), outpsd.end(), 0.0);
 
   // Sample time (required)
   LoadVal(Config, "dt", &dt_);
@@ -562,15 +556,7 @@ void STREAMClass::Initialize() {
     for (int idx1 = 0; idx1 < yMeasBuffer.size(1); idx1++) {
       yMeasBuffer[idx0 + yMeasBuffer.size(0) * idx1] = 0.0f;
     }
-  };
-
-  for (int idx = 0; idx < 5001; idx++) {
-    outw_data[idx] = 0;
   }
-
-  // for (int idx = 0; idx < 5001; idx++) {
-  //   outpsd[idx] = 0;
-  // }
 
   printf("STREAM initalization Complete.\n");
   initFlag = true;
@@ -615,15 +601,12 @@ void STREAMClass::Run(Mode mode) {
 	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);
 	STREAM.set_yMeas(yMeasBuffer, y_ind, N_outputs);
 
-	STREAM.steponce(sigma_data, outpsd, outw_data, outw_size);
+	STREAM.steponce(sigma_data);
 
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {
     sigma_node[i]->setFloat(sigma_data[i]);
   }
-  // for (size_t i=0; i < psd_node.size(); i++) {
-  //   psd_node[i]->setFloat(outpsd[i]);
-  // }
 }
 
 void STREAMClass::Clear() {

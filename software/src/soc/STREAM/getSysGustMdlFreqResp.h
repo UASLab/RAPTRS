@@ -14,14 +14,10 @@
 #include <cstddef>
 #include <cstdlib>
 
-// Type Declarations
-struct cell_wrap_1;
-struct cell_wrap_2;
-
 // Function Declarations
-void getSysGustMdlFreqResp(const cell_wrap_1 sysTF_num[13], const cell_wrap_2
-  sysTF_den[13], const double outInd[4], const double freq_data[], const int
-  freq_size[1], coder::array<double, 3U> &freqResp2);
+void getSysGustMdlFreqResp(const double outInd[4], const double w_data[], const
+  int w_size[1], const double freqRespLUT_w[150], const creal_T
+  freqRespLUT_freqResp[27300], coder::array<double, 3U> &freqResp2);
 
 #endif
 

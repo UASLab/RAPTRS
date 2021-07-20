@@ -20,8 +20,7 @@ namespace coder
   {
     namespace blas
     {
-      double xnrm2(int n, const double x[12], int ix0);
-      double xnrm2(const double x[3], int ix0);
+      double xnrm2(int n, const double x[8], int ix0);
     }
   }
 }

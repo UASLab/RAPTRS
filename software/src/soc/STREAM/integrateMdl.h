@@ -17,7 +17,7 @@
 // Function Declarations
 void integrateMdl(const coder::array<double, 3U> &mdlFreqResp, const coder::
                   array<double, 3U> &PHIbar, const double freq_data[], const int
-                  freq_size[1], double freqUpperInd, double RHSbar[12]);
+                  freq_size[1], double freqUpperInd, double RHSbar[8]);
 
 #endif
 

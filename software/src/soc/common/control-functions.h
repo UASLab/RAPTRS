@@ -279,10 +279,7 @@ class STREAMClass: public GenericFunction {
     // Specific Config interface
     std::vector<ElementPtr> uMeas_node; // Nodes to populate inputs to STREAM
     std::vector<ElementPtr> yMeas_node; // Nodes to populate inputs to STREAM
-
     std::vector<ElementPtr> sigma_node; // Nodes to populate outputs to STREAM
-    // std::vector<ElementPtr> psd_node; // Nodes to populate outputs to STREAM
-
     std::vector<std::string> uMeasKeys_, yMeasKeys_;
     std::string TimeKey_;
 
@@ -294,10 +291,6 @@ class STREAMClass: public GenericFunction {
     ElementPtr time_node;
 
     // STREAM code interface
-    double outw_data[5001];
-    int outw_size[1];
-    coder::array<double, 2U> outpsd;
-
     double sigma_data[3];
     bool initFlag = false;
     streamClassWrap STREAM;

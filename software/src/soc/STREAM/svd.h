@@ -18,7 +18,7 @@ namespace coder
 {
   namespace internal
   {
-    void svd(const double A[12], double U[12], double s[3], double V[9]);
+    void svd(const double A[8], double U[8], double s[2], double V[4]);
   }
 }
 

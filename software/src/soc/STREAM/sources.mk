@@ -1,4 +1,5 @@
-SRCS = FFTImplementationCallback.cpp \
+SRCS = \
+FFTImplementationCallback.cpp \
 cosineTaper.cpp \
 estimateGustIntensity.cpp \
 fftfunc.cpp \
@@ -7,6 +8,7 @@ getGustMdlParams.cpp \
 getMeasuredDataFft.cpp \
 getSysGustMdlFreqResp.cpp \
 integrateMdl.cpp \
+interp1.cpp \
 psdft.cpp \
 removeInputsFromMeasFft.cpp \
 repmat.cpp \
@@ -19,12 +21,10 @@ steponce_rtwutil.cpp \
 streamClass.cpp \
 sum.cpp \
 svd.cpp \
-tffreqresp_sti.cpp \
 trapz.cpp \
 xaxpy.cpp \
-xdotc.cpp \
 xnrm2.cpp \
 xrot.cpp \
 xrotg.cpp \
 xswap.cpp \
-streamClassWrap.cpp
+streamClassWrap.cpp 

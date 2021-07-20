@@ -318,12 +318,25 @@ struct cb_struct_T
 {
   double wmax;
   double dt;
+  double winSize;
+  double startTime;
+  boolean_T pseudoRealTime;
+  boolean_T useCalcTime;
+  double stepSkip;
+  boolean_T printDevOutput;
+  boolean_T detrendData;
+  i_struct_T fredaSettings;
   double gustFunction;
   double gustFunctionInputs[3];
-  i_struct_T fredaSettings;
 };
 
 struct db_struct_T
+{
+  double w[150];
+  creal_T freqResp[27300];
+};
+
+struct eb_struct_T
 {
   double airspeed;
   double cg_offset;
@@ -333,21 +346,22 @@ struct db_struct_T
   boolean_T doActuatorUpdate;
 };
 
-struct eb_struct_T
+struct fb_struct_T
 {
-  db_struct_T flags;
+  eb_struct_T flags;
   j_struct_T bareairframe;
   y_struct_T AC;
 };
 
-struct fb_struct_T
+struct gb_struct_T
 {
-  eb_struct_T info;
+  fb_struct_T info;
   double outputIndices[4];
   double ctrlSurfIndices[7];
   double gustIndices;
   ab_struct_T sysSS;
   bb_struct_T sysTF;
+  db_struct_T freqRespLUT;
 };
 
 struct b_steponceStackData
@@ -383,6 +397,7 @@ struct b_steponceStackData
 
   struct {
     double wDblSided_data[5001];
+    double b_wDblSided_data[5001];
     double psd_data[5001];
   } f5;
 };
@@ -392,10 +407,9 @@ class streamClass
  public:
   streamClass();
   ~streamClass();
-  void steponce(double sigma[3], coder::array<double, 2U> &outpsd,
-                double outw_data[], int outw_size[1]);
+  void steponce(double sigma[3]);
   b_steponceStackData *getStackData();
-  fb_struct_T dynamMdlParams;
+  gb_struct_T dynamMdlParams;
   cb_struct_T algSettings;
   coder::array<double, 2U> uMeas;
   coder::array<double, 2U> yMeas;
