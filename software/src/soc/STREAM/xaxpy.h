@@ -20,7 +20,7 @@ namespace coder
   {
     namespace blas
     {
-      void xaxpy(int n, double a, int ix0, double y[8], int iy0);
+      void xaxpy(int n, float a, int ix0, float y[8], int iy0);
     }
   }
 }

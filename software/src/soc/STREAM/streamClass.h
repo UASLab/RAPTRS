@@ -119,21 +119,21 @@ struct h_struct_T
 
 struct i_struct_T
 {
-  double useSmoothing;
-  double binRatio;
-  double binSize;
-  double dt;
-  double psdTaper;
+  float useSmoothing;
+  float binRatio;
+  float binSize;
+  float dt;
+  float psdTaper;
 };
 
 struct cell_wrap_1
 {
-  double f1[392];
+  float f1[392];
 };
 
 struct cell_wrap_2
 {
-  double f1[28];
+  float f1[28];
 };
 
 struct j_struct_T
@@ -302,10 +302,10 @@ struct y_struct_T
 
 struct ab_struct_T
 {
-  double A[729];
-  double B[351];
-  double C[378];
-  double D[182];
+  float A[729];
+  float B[351];
+  float C[378];
+  float D[182];
 };
 
 struct bb_struct_T
@@ -316,24 +316,24 @@ struct bb_struct_T
 
 struct cb_struct_T
 {
-  double wmax;
-  double dt;
-  double winSize;
-  double startTime;
+  float wmax;
+  float dt;
+  float winSize;
+  float startTime;
   boolean_T pseudoRealTime;
   boolean_T useCalcTime;
-  double stepSkip;
+  float stepSkip;
   boolean_T printDevOutput;
   boolean_T detrendData;
   i_struct_T fredaSettings;
-  double gustFunction;
-  double gustFunctionInputs[3];
+  float gustFunction;
+  float gustFunctionInputs[3];
 };
 
 struct db_struct_T
 {
-  double w[150];
-  creal_T freqResp[27300];
+  float w[150];
+  creal32_T freqResp[27300];
 };
 
 struct eb_struct_T
@@ -356,9 +356,9 @@ struct fb_struct_T
 struct gb_struct_T
 {
   fb_struct_T info;
-  double outputIndices[4];
-  double ctrlSurfIndices[7];
-  double gustIndices;
+  float outputIndices[4];
+  float ctrlSurfIndices[7];
+  float gustIndices;
   ab_struct_T sysSS;
   bb_struct_T sysTF;
   db_struct_T freqRespLUT;
@@ -367,39 +367,21 @@ struct gb_struct_T
 struct b_steponceStackData
 {
   struct {
-    double a_data[5001];
-    double y_data[5001];
+    float costab_data[10001];
+    float sintab_data[10001];
   } f0;
 
   struct {
-    double hcostab_data[5001];
+    float costab_data[10001];
+    float sintab_data[10001];
+    float sintabinv_data[10001];
+    float costab1q_data[5001];
   } f1;
 
   struct {
-    double costable_data[5001];
-    double sintable_data[5001];
-    double unusedU0_data[5001];
-    double hsintab_data[5001];
-    double hcostabinv_data[5001];
-    double hsintabinv_data[5001];
-    creal_T ytmp_data[2500];
+    float PHIbar_data[9180];
+    float wDblSided_data[5001];
   } f2;
-
-  struct {
-    double taperIndex_data[7500];
-    double tmp_data[7500];
-    double x_data[7500];
-  } f3;
-
-  struct {
-    double costab1q_data[5001];
-  } f4;
-
-  struct {
-    double wDblSided_data[5001];
-    double b_wDblSided_data[5001];
-    double psd_data[5001];
-  } f5;
 };
 
 class streamClass
@@ -407,12 +389,12 @@ class streamClass
  public:
   streamClass();
   ~streamClass();
-  void steponce(double sigma[3]);
+  void steponce(float sigma[3]);
+  coder::array<float, 2U> uMeas;
+  coder::array<float, 2U> yMeas;
   b_steponceStackData *getStackData();
   gb_struct_T dynamMdlParams;
   cb_struct_T algSettings;
-  coder::array<double, 2U> uMeas;
-  coder::array<double, 2U> yMeas;
  private:
   b_steponceStackData SD_;
 };

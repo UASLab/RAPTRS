@@ -14,7 +14,7 @@
 #include <cstdlib>
 
 // Function Declarations
-extern double rt_hypotd_snf(double u0, double u1);
+extern float rt_hypotf_snf(float u0, float u1);
 
 #endif
 

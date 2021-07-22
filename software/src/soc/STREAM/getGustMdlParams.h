@@ -10,17 +10,13 @@
 
 // Include files
 #include "rtwtypes.h"
-#include "coder_array.h"
 #include <cstddef>
 #include <cstdlib>
 
-// Type Declarations
-class streamClass;
-
 // Function Declarations
-void getGustMdlParams(streamClass *aInstancePtr, const double gustFunInputs[3],
-                      const double w_data[], const int w_size[1], double phiHat
-                      [6], coder::array<double, 3U> &PHIbar);
+void getGustMdlParams(const float gustFunInputs[3], const float w_data[], const
+                      int w_size[1], float phiHat[6], float PHIbar_data[], int
+                      PHIbar_size[3]);
 
 #endif
 

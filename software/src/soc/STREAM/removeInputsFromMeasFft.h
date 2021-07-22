@@ -15,10 +15,10 @@
 #include <cstdlib>
 
 // Function Declarations
-void removeInputsFromMeasFft(const coder::array<creal_T, 2U> &Fy, const coder::
-  array<creal_T, 2U> &Fu, const double w_data[], const double ctrlSurfInd[7],
-  const double outInd[4], const double freqRespLUT_w[150], const creal_T
-  freqRespLUT_freqResp[27300], coder::array<creal_T, 2U> &Fyuse);
+void removeInputsFromMeasFft(const coder::array<creal32_T, 2U> &Fy, const coder::
+  array<creal32_T, 2U> &Fu, const float w_data[], const float ctrlSurfInd[7],
+  const float outInd[4], const float freqRespLUT_w[150], const creal32_T
+  freqRespLUT_freqResp[27300], coder::array<creal32_T, 2U> &Fyuse);
 
 #endif
 

@@ -16,8 +16,8 @@
 // Function Declarations
 namespace coder
 {
-  double trapz(const double x_data[], const int x_size[1], const double y_data[],
-               const int y_size[1]);
+  float trapz(const float x_data[], const int x_size[1], const float y_data[],
+              const int y_size[1]);
 }
 
 #endif

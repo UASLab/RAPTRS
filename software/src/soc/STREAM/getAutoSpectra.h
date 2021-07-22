@@ -15,11 +15,10 @@
 #include <cstdlib>
 
 // Function Declarations
-void getAutoSpectra(const coder::array<creal_T, 2U> &Fy, double
-                    fredaSettings_useSmoothing, double fredaSettings_binRatio,
-                    double fredaSettings_binSize, double fredaSettings_dt,
-                    double w_data[], int w_size[1], coder::array<double, 2U>
-                    &psd);
+void getAutoSpectra(const coder::array<creal32_T, 2U> &Fy, float
+                    fredaSettings_useSmoothing, float fredaSettings_binRatio,
+                    float fredaSettings_binSize, float fredaSettings_dt, float
+                    w_data[], int w_size[1], coder::array<float, 2U> &psd);
 
 #endif
 

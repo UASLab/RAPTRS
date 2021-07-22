@@ -17,8 +17,10 @@
 // Function Declarations
 namespace coder
 {
-  void sum(const ::coder::array<double, 2U> &x, double y_data[], int y_size[2]);
-  void sum(const ::coder::array<creal_T, 2U> &x, creal_T y_data[], int y_size[2]);
+  void sum(const ::coder::array<float, 2U> &x, float y_data[], int y_size[2]);
+  float sum(const float x_data[], const int x_size[1]);
+  void sum(const ::coder::array<creal32_T, 2U> &x, creal32_T y_data[], int
+           y_size[2]);
 }
 
 #endif

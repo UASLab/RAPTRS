@@ -14,12 +14,8 @@
 #include <cstddef>
 #include <cstdlib>
 
-// Type Declarations
-class streamClass;
-
 // Function Declarations
-void cosineTaper(streamClass *aInstancePtr, coder::array<double, 2U> &x, double
-                 tfrRange);
+void cosineTaper(coder::array<float, 2U> &x, float tfrRange);
 
 #endif
 

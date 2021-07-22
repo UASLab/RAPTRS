@@ -15,7 +15,7 @@
 #include <cstdlib>
 
 // Function Declarations
-extern void fifo(coder::array<double, 2U> &A, const double Arow_data[], const
+extern void fifo(coder::array<float, 2U> &A, const float Arow_data[], const
                  int Arow_size[2]);
 
 #endif

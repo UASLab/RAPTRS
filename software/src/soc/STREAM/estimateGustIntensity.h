@@ -14,8 +14,8 @@
 #include <cstdlib>
 
 // Function Declarations
-void estimateGustIntensity(const double RHSbar[8], const double sigmaYHat[4],
-  const double phiHat[6], double SIG[2]);
+void estimateGustIntensity(const float RHSbar[8], const float sigmaYHat[4],
+  const float phiHat[6], float SIG[2]);
 
 #endif
 

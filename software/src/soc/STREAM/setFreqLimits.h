@@ -14,8 +14,8 @@
 #include <cstdlib>
 
 // Function Declarations
-double setFreqLimits(const double freq_data[], const int freq_size[1], double
-                     maxFreq);
+unsigned char setFreqLimits(const float freq_data[], const int freq_size[1],
+  float maxFreq);
 
 #endif
 

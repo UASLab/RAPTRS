@@ -409,10 +409,10 @@ void TecsClass::Clear() {
 }
 
 // Function Definitions
-void fifo(coder::array<double, 2U> &A, const double Arow_data[], const int
+void fifo(coder::array<float, 2U> &A, const float Arow_data[], const int
           Arow_size[2])
 {
-  coder::array<double, 2U> c_A;
+  coder::array<float, 2U> c_A;
   int b_A;
   int i;
   int i1;
@@ -505,17 +505,12 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   }
 
   // Resize yMeas vector
-  // int numY = yMeas_node.size();
-  // yMeas.set_size(14);
-  // std::fill(yMeas.begin(), yMeas.end(), 0.0);
   for (int idx = 0; idx < 14; idx++) {
     yMeas[idx] = 0;
   }
 
   // Resize sigmaOut vector
   int numSigma = sigma_node.size();
-  // sigma_data.resize(numSigma);
-  // std::fill(sigma_data.begin(), sigma_data.end(), 0.0);
   for (int idx = 0; idx < numSigma; idx++) {
     sigma_data[idx] = 0;
   }
@@ -529,7 +524,6 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   }
 
   // configure Class
-  // STREAMClass_.Configure(dt);
   Initialize();
 }
 
@@ -593,9 +587,6 @@ void STREAMClass::Run(Mode mode) {
 
   fifo(uMeasBuffer, uMeas, uSingleMeas_size);
   fifo(yMeasBuffer, yMeas, ySingleMeas_size);
-
-  // printf("%f\t", uMeasBuffer[0]);
-  // printf("%f\t", yMeasBuffer[0]);
 
   // Call Algorithm
 	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);

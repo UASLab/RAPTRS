@@ -2,7 +2,6 @@ SRCS = \
 FFTImplementationCallback.cpp \
 cosineTaper.cpp \
 estimateGustIntensity.cpp \
-fftfunc.cpp \
 getAutoSpectra.cpp \
 getGustMdlParams.cpp \
 getMeasuredDataFft.cpp \

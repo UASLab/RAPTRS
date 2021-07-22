@@ -20,7 +20,7 @@ namespace coder
   {
     namespace blas
     {
-      void xrotg(double *a, double *b, double *c, double *s);
+      void xrotg(float *a, float *b, float *c, float *s);
     }
   }
 }

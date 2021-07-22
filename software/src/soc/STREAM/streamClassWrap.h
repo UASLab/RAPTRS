@@ -21,9 +21,9 @@
 class streamClassWrap : public streamClass
 {
  public:
-  void set_uMeas(coder::array<double, 2U> UIN, const int u_ind[], const int u_ind_size);
+  void set_uMeas(coder::array<float, 2U> UIN, const int u_ind[], const int u_ind_size);
 
-  void set_yMeas(coder::array<double, 2U> YIN, const int y_ind[], const int y_ind_size);
+  void set_yMeas(coder::array<float, 2U> YIN, const int y_ind[], const int y_ind_size);
 
 };
 

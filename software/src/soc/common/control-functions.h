@@ -265,7 +265,7 @@ class TecsClass: public GenericFunction {
 /*
 */
 
-void fifo(coder::array<double, 2U> &A, const double Arow_data[], const
+void fifo(coder::array<float, 2U> &A, const float Arow_data[], const
                  int Arow_size[2]);
 
 class STREAMClass: public GenericFunction {
@@ -291,7 +291,7 @@ class STREAMClass: public GenericFunction {
     ElementPtr time_node;
 
     // STREAM code interface
-    double sigma_data[3];
+    float sigma_data[3];
     bool initFlag = false;
     streamClassWrap STREAM;
 
@@ -302,11 +302,11 @@ class STREAMClass: public GenericFunction {
     int u_ind[7] = {0, 1, 2, 3, 4, 5, 6};
     int y_ind[4] = {3, 4, 5, 6};
 
-    coder::array<double,2U> uMeasBuffer;
-    coder::array<double,2U> yMeasBuffer;
+    coder::array<float,2U> uMeasBuffer;
+    coder::array<float,2U> yMeasBuffer;
 
-    double uMeas[13];
-    double yMeas[14];
+    float uMeas[13];
+    float yMeas[14];
 
     int uSingleMeas_size[2];
     int ySingleMeas_size[2];

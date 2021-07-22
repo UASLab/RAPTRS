@@ -10,10 +10,10 @@
 #include "coder_array.h"
 
 // Function Definitions
-void fifo(coder::array<double, 2U> &A, const double Arow_data[], const int
+void fifo(coder::array<float, 2U> &A, const float Arow_data[], const int
           Arow_size[2])
 {
-  coder::array<double, 2U> c_A;
+  coder::array<float, 2U> c_A;
   int b_A;
   int i;
   int i1;
