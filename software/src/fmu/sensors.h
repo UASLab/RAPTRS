@@ -225,8 +225,8 @@ class Ams5915Sensor {
 class HX711Sensor {
   public:
     struct Config {
-      uint8_t Addr;          // I2C address
-      HX711::Transducer Transducer; // Transducer type
+      uint8_t Dout_pin = 14; // DOUT Pin connect to pin# on Teensy (GPIO_0 = 14 = A0)
+      uint8_t Sck_pin = 16; // Sck Pin connect to pin# on Teensy (GPIO_1 = 16 = A2)
     };
     // Data
     int8_t ReadStatus = -1; // positive if a good read or negative if not
