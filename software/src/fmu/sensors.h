@@ -8,6 +8,8 @@ Author: Brian Taylor
 #define SENSORS_H_
 
 #include "AMS5915.h"
+#include "Adafruit_ADS1X15.h"
+#include "HX711.h"
 #include "BME280.h"
 #include "MPU9250.h"
 #include "SBUS.h"
@@ -215,6 +217,29 @@ class Ams5915Sensor {
     void End();
   private:
     AMS5915 *ams_;
+    Config config_;
+    int8_t status_;
+};
+
+/* class for Load Cell HX711 sensors */
+class HX711Sensor {
+  public:
+    struct Config {
+      uint8_t Addr;          // I2C address
+      HX711::Transducer Transducer; // Transducer type
+    };
+    // Data
+    int8_t ReadStatus = -1; // positive if a good read or negative if not
+    float Load = 0.0f;      // Load, grams
+    bool UpdateConfig(message::config_hx711_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
+    void SetConfig(const Config &ConfigRef);
+    void GetConfig(Config *ConfigPtr);
+    void Begin();
+    int ReadSensor();
+    void UpdateMessage(message::data_ams5915_t *msg);
+    void End();
+  private:
+    HX711 *hx711_;
     Config config_;
     int8_t status_;
 };
