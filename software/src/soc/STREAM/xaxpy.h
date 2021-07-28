@@ -20,7 +20,11 @@ namespace coder
   {
     namespace blas
     {
-      void xaxpy(int n, float a, int ix0, float y[8], int iy0);
+      void b_xaxpy(int n, float a, const float x[4], int ix0, float y[12], int
+                   iy0);
+      void xaxpy(int n, float a, const float x[12], int ix0, float y[4], int iy0);
+      void xaxpy(int n, float a, int ix0, float y[12], int iy0);
+      void xaxpy(float a, float y[9], int iy0);
     }
   }
 }

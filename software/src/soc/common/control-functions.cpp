@@ -5,6 +5,7 @@ Author: Brian Taylor and Chris Regan
 */
 
 #include "control-functions.h"
+#include "elapsedMillis.h"
 
 
 /* PID2 class methods, see control-functions.hxx for more information */
@@ -552,6 +553,8 @@ void STREAMClass::Initialize() {
     }
   }
 
+  myflag = 1;
+
   printf("STREAM initalization Complete.\n");
   initFlag = true;
 }
@@ -592,7 +595,17 @@ void STREAMClass::Run(Mode mode) {
 	STREAM.set_uMeas(uMeasBuffer, u_ind, N_inputs);
 	STREAM.set_yMeas(yMeasBuffer, y_ind, N_outputs);
 
-	STREAM.steponce(sigma_data);
+	// STREAM.steponce(sigma_data);
+  uint64_t profStart_us = micros();
+
+  if (myflag == 1) {
+    STREAM.steptwo(myflag, sigma_data);
+    myflag = 2;
+  } else if (myflag == 2) {
+    STREAM.steptwo(myflag, sigma_data);
+    myflag = 1;
+  }
+  std::cout << myflag << "\t" << micros() - profStart_us << std::endl;
 
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {

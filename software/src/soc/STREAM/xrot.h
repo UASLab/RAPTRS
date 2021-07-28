@@ -20,8 +20,8 @@ namespace coder
   {
     namespace blas
     {
-      void xrot(float x[4], int iy0, float c, float s);
-      void xrot(float x[8], int ix0, int iy0, float c, float s);
+      void b_xrot(float x[12], int ix0, int iy0, float c, float s);
+      void xrot(float x[9], int ix0, int iy0, float c, float s);
     }
   }
 }

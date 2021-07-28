@@ -364,7 +364,14 @@ struct gb_struct_T
   db_struct_T freqRespLUT;
 };
 
-struct b_steponceStackData
+struct b_steptwoPersistentData
+{
+  float RHSbar[12];
+  float sigmaYHat[4];
+  float phiHat[6];
+};
+
+struct b_steptwoStackData
 {
   struct {
     float costab_data[10001];
@@ -382,6 +389,8 @@ struct b_steponceStackData
     float PHIbar_data[9180];
     float wDblSided_data[5001];
   } f2;
+
+  b_steptwoPersistentData *pd;
 };
 
 class streamClass
@@ -389,14 +398,15 @@ class streamClass
  public:
   streamClass();
   ~streamClass();
-  void steponce(float sigma[3]);
+  void steptwo(int flag, float sigma[3]);
   coder::array<float, 2U> uMeas;
   coder::array<float, 2U> yMeas;
-  b_steponceStackData *getStackData();
+  b_steptwoStackData *getStackData();
   gb_struct_T dynamMdlParams;
   cb_struct_T algSettings;
  private:
-  b_steponceStackData SD_;
+  b_steptwoPersistentData pd_;
+  b_steptwoStackData SD_;
 };
 
 #endif

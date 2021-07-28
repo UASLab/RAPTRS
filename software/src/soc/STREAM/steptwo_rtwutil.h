@@ -1,12 +1,12 @@
 //
-//  steponce_rtwutil.h
+//  steptwo_rtwutil.h
 //
-//  Code generation for function 'steponce_rtwutil'
+//  Code generation for function 'steptwo_rtwutil'
 //
 
 
-#ifndef STEPONCE_RTWUTIL_H
-#define STEPONCE_RTWUTIL_H
+#ifndef STEPTWO_RTWUTIL_H
+#define STEPTWO_RTWUTIL_H
 
 // Include files
 #include "rtwtypes.h"
@@ -18,4 +18,4 @@ extern float rt_hypotf_snf(float u0, float u1);
 
 #endif
 
-// End of code generation (steponce_rtwutil.h)
+// End of code generation (steptwo_rtwutil.h)

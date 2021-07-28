@@ -18,7 +18,7 @@ namespace coder
 {
   namespace internal
   {
-    void svd(const float A[8], float U[8], float s[2], float V[4]);
+    void svd(const float A[12], float U[12], float s[3], float V[9]);
   }
 }
 

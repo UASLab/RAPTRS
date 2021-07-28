@@ -16,7 +16,7 @@
 // Function Declarations
 void integrateMdl(const float mdlFreqResp_data[], const float PHIbar_data[],
                   const float freq_data[], const int freq_size[1], unsigned char
-                  freqUpperInd, float RHSbar[8]);
+                  freqUpperInd, float RHSbar[12]);
 
 #endif
 

@@ -20,7 +20,8 @@ namespace coder
   {
     namespace blas
     {
-      void xswap(float x[8]);
+      void b_xswap(float x[12], int ix0, int iy0);
+      void xswap(float x[9], int ix0, int iy0);
     }
   }
 }

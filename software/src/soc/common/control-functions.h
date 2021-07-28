@@ -310,6 +310,7 @@ class STREAMClass: public GenericFunction {
 
     int uSingleMeas_size[2];
     int ySingleMeas_size[2];
+    int myflag;
 
     FILE *uMeasFid;
     FILE *yMeasFid;
