@@ -30,6 +30,7 @@ const uint8_t config_analog_id = 27;
 const uint8_t config_effector_id = 28;
 const uint8_t config_mission_id = 29;
 const uint8_t config_control_gain_id = 30;
+const uint8_t config_hx711_id = 31;
 const uint8_t data_time_id = 40;
 const uint8_t data_mpu9250_short_id = 41;
 const uint8_t data_mpu9250_id = 42;
@@ -40,6 +41,7 @@ const uint8_t data_swift_id = 46;
 const uint8_t data_sbus_id = 47;
 const uint8_t data_analog_id = 48;
 const uint8_t data_bifrost_id = 49;
+const uint8_t data_hx711_id = 50;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
@@ -861,6 +863,64 @@ struct config_control_gain_t {
     }
 };
 
+// Message: config_hx711 (id: 31)
+struct config_hx711_t {
+    // public fields
+    uint8_t dout_pin;
+    uint8_t sck_pin;
+    float calibration[max_calibration];
+    string output;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t dout_pin;
+        uint8_t sck_pin;
+        float calibration[max_calibration];
+        uint8_t output_len;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 31;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        size += output.length();
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->dout_pin = dout_pin;
+        _buf->sck_pin = sck_pin;
+        for (int _i=0; _i<max_calibration; _i++) _buf->calibration[_i] = calibration[_i];
+        _buf->output_len = output.length();
+        memcpy(&(payload[len]), output.c_str(), output.length());
+        len += output.length();
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        dout_pin = _buf->dout_pin;
+        sck_pin = _buf->sck_pin;
+        for (int _i=0; _i<max_calibration; _i++) calibration[_i] = _buf->calibration[_i];
+        output = string((char *)&(payload[len]), _buf->output_len);
+        len += _buf->output_len;
+        return true;
+    }
+};
+
 // Message: data_time (id: 40)
 struct data_time_t {
     // public fields
@@ -1481,6 +1541,52 @@ struct data_bifrost_t {
         soc_eng = _buf->soc_eng;
         cont_sel = _buf->cont_sel;
         ext_eng = _buf->ext_eng;
+        return true;
+    }
+};
+
+// Message: data_hx711 (id: 50)
+struct data_hx711_t {
+    // public fields
+    int8_t status;
+    float load;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        int8_t status;
+        float load;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 50;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->status = status;
+        _buf->load = load;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        status = _buf->status;
+        load = _buf->load;
         return true;
     }
 };

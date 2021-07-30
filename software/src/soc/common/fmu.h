@@ -177,6 +177,14 @@ class FlightManagementUnit {
       // ElementPtr volt;
       ElementPtr val;
     };
+    struct Hx711SensorData {
+      int8_t status;
+      float Load;
+    };
+    struct Hx711SensorNodes {
+      ElementPtr status;
+      ElementPtr Load;
+    };
     struct SensorData {
       uint64_t Time_us;
       InternalMpu9250SensorData InternalMpu9250;
@@ -192,6 +200,7 @@ class FlightManagementUnit {
       std::vector<Ams5915SensorData> Ams5915;
       std::vector<SbusSensorData> Sbus;
       std::vector<AnalogSensorData> Analog;
+      std::vector<Hx711SensorData> Hx711;
     };
     struct SensorNodes {
       ElementPtr Time_us;
@@ -208,6 +217,7 @@ class FlightManagementUnit {
       vector<Ams5915SensorNodes> Ams5915;
       vector<SbusSensorNodes> Sbus;
       vector<AnalogSensorNodes> Analog;
+      vector<Hx711SensorNodes> Hx711;
     };
     const std::string RootPath_ = "/Sensors";
     HardwareSerial *_serial;

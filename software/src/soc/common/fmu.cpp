@@ -88,6 +88,7 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
   size_t ams5915_counter = 0;
   size_t sbus_counter = 0;
   size_t analog_counter = 0;
+  size_t hx711_counter = 0;
   while ( ReceiveMessage(&id, &index, &Payload) ) {
     // printf("received msg: %d\n", message);
     if ( id == message::data_time_id ) {
@@ -187,6 +188,13 @@ bool FlightManagementUnit::ReceiveSensorData(bool publish) {
       size_t i = analog_counter;
       SensorData_.Analog[i].CalibratedValue = msg.calibrated_value;
       analog_counter++;
+    } else if ( id == message::data_hx711_id ) {
+      message::data_hx711_t msg;
+      msg.unpack(Payload.data(), Payload.size());
+      int i = hx711_counter;
+      SensorData_.Hx711[i].status = msg.status;
+      SensorData_.Hx711[i].Load = msg.load;
+      hx711_counter++;
     } else {
       printf("SensorNode received an unhandled message id: %d\n", id);
     }
@@ -661,6 +669,41 @@ bool FlightManagementUnit::GenConfigMessage(const rapidjson::Value& Sensor, uint
     if ( WaitForAck(msg.id, 0, 2000) ) {
       return true;
     }
+
+  } else if ( Sensor["Type"] == "Hx711" ) {
+    printf("Configuring Hx711\n");
+    {
+      string Path = RootPath_ + "/" + Sensor["Output"].GetString();
+      SensorNodes_.Hx711.push_back(Hx711SensorNodes());
+      size_t i = SensorNodes_.Hx711.size() - 1;
+      SensorNodes_.Hx711[i].status = deftree.initElement(Path+"/Status", "Hx711_" + to_string(i) + " read status, positive if a good sensor read", LOG_UINT8, LOG_NONE);
+      SensorNodes_.Hx711[i].Load = deftree.initElement(Path+"/Load", "Hx711_" + to_string(i) + " load", LOG_FLOAT, LOG_NONE);
+      SensorData_.Hx711.push_back(Hx711SensorData());
+    }
+    message::config_hx711_t msg;
+    msg.output = Sensor["Output"].GetString();
+    msg.dout_pin = Sensor["Dout_pin"].GetInt();
+    msg.sck_pin = Sensor["Sck_pin"].GetInt();
+
+    msg.calibration[0] = nanf("");
+    msg.calibration[1] = nanf("");
+    msg.calibration[2] = nanf("");
+    msg.calibration[3] = nanf("");
+    if ( Sensor.HasMember("Calibration") ) {
+      if ( Sensor["Calibration"].IsArray() and Sensor["Calibration"].Size() <= 4 ) {
+        for ( size_t i = 0; i < Sensor["Calibration"].Size(); i++ ) {
+          msg.calibration[i] = Sensor["Calibration"][i].GetFloat();
+        }
+      } else {
+        printf("ERROR: analog calibration incorrect\n");
+      }
+    }
+
+    msg.pack();
+    SendMessage(msg.id, node_address, msg.payload, msg.len);
+    if ( WaitForAck(msg.id, 0, 2000) ) {
+      return true;
+    }
   } else if ( Sensor["Type"] == "Analog" ) {
     printf("Configuring Analog\n");
     {
@@ -1076,5 +1119,9 @@ void FlightManagementUnit::PublishSensors() {
   for (size_t i=0; i < SensorData_.Analog.size(); i++) {
     // SensorNodes_.Analog[i].volt->setFloat(SensorData_.Analog[i].Voltage_V);
     SensorNodes_.Analog[i].val->setFloat(SensorData_.Analog[i].CalibratedValue);
+  }
+  for (size_t i=0; i < SensorData_.Hx711.size(); i++) {
+    SensorNodes_.Hx711[i].status->setInt(SensorData_.Hx711[i].status);
+    SensorNodes_.Hx711[i].Load->setFloat(SensorData_.Hx711[i].Load);
   }
 }

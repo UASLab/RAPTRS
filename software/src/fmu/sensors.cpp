@@ -656,6 +656,71 @@ void Ams5915Sensor::End() {
   delete ams_;
 }
 
+/* HX711 Load Cell Amp */
+bool Hx711Sensor::UpdateConfig(message::config_hx711_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
+  config_.Dout_pin = msg->dout_pin;
+  config_.Sck_pin = msg->sck_pin;
+
+  for (int i=0; i < message::max_calibration; i++) {
+    if ( !isnanf(msg->calibration[i]) ) {
+      config_.Calibration.push_back(msg->calibration[i]);
+    }
+  }
+
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Status",(int8_t*)&status);
+  DefinitionTreePtr->InitMember(RootPath+"/"+msg->output+"/Load",&load);
+
+  return true;
+}
+
+/* set the Hx711Sensor configuration */
+void Hx711Sensor::SetConfig(const Config &ConfigRef) {
+  config_ = ConfigRef;
+}
+
+/* get the HX711 sensor configuration */
+void Hx711Sensor::GetConfig(Config *ConfigPtr) {
+  *ConfigPtr = config_;
+}
+
+/* start communication with the HX711 sensor */
+void Hx711Sensor::Begin() {
+  hx711_ = new HX711();
+  hx711_ -> begin(config_.Dout_pin, config_.Sck_pin);
+  while (hx711_ -> is_ready() == false) {
+    Serial.println("Not Ready");
+    delay(100);
+  }
+}
+
+/* get data from the HX711 sensor */
+int Hx711Sensor::ReadSensor() {
+  if (hx711_ -> is_ready()) {
+    load_cnt = hx711_ -> read();
+    float load_float = (float)load_cnt / (powf(2, 24) - 1.0f);
+    load = PolyVal(config_.Calibration, load_float);
+
+    status = 1;
+  } else {
+    status = -1;
+  }
+
+  return status;
+}
+
+/* get data from the HX711 */
+void Hx711Sensor::UpdateMessage(message::data_hx711_t *msg) {
+  msg->status = status;
+  msg->load = load;
+}
+
+/* free resources used by the HX711 */
+void Hx711Sensor::End() {
+  hx711_ -> power_down();
+  delete hx711_;
+}
+
+
 /* update the Swift sensor configuration */
 bool SwiftSensor::UpdateConfig(message::config_swift_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr) {
   config_.Static.Addr = msg->static_i2c_addr;
@@ -918,6 +983,12 @@ bool SensorNodes::UpdateConfig(uint8_t id, std::vector<uint8_t> *Payload, std::s
     DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Status",(int8_t*)&data_.Ams5915.back().ReadStatus);
     DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Pressure_Pa",&data_.Ams5915.back().Pressure_Pa);
     DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Temperature_C",&data_.Ams5915.back().Temperature_C);
+  } else if ( id == message::config_hx711_id ) {
+    message::config_Hx711_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    data_.Hx711.resize(data_.Hx711.size()+1);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Status",(int8_t*)&data_.Hx711.back().status);
+    DefinitionTreePtr->InitMember(RootPath+"/"+msg.output+"/Load",&data_.Hx711.back().load);
   } else if ( id == message::config_analog_id ) {
     message::config_analog_t msg;
     msg.unpack(Payload->data(), Payload->size());
@@ -975,7 +1046,7 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
   if ( address > 0 ) {
     // this message is for a node
     // only continue if this is a supported sensor config message ...
-    if ( id == message::config_basic_id or id == message::config_mpu9250_id or id == message::config_bme280_id or id == message::config_swift_id or id == message::config_ams5915_id or id == message::config_analog_id ) {
+    if ( id == message::config_basic_id or id == message::config_mpu9250_id or id == message::config_bme280_id or id == message::config_swift_id or id == message::config_ams5915_id or id == message::config_analog_id or id == message::config_hx711_id ) {
       int found = -1;
       for ( size_t i = 0; i < classes.Nodes.size(); i++ ) {
         if ( classes.Nodes[i].GetBfsAddr() == address ) {
@@ -1123,6 +1194,13 @@ bool AircraftSensors::UpdateConfig(uint8_t id, uint8_t address, std::vector<uint
     classes.Ams5915.push_back(Ams5915Sensor());
     classes.Ams5915.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
     return true;
+  } else if ( id == message::config_hx711_id ) {
+    Serial.println("Hx711");
+    message::config_hx711_t msg;
+    msg.unpack(Payload->data(), Payload->size());
+    classes.Hx711.push_back(Hx711Sensor());
+    classes.Hx711.back().UpdateConfig(&msg, RootPath_, DefinitionTreePtr);
+    return true;
   } else if ( id == message::config_analog_id ) {
     Serial.println("Analog");
     message::config_analog_t msg;
@@ -1209,6 +1287,12 @@ void AircraftSensors::Begin() {
     classes.Ams5915[i].Begin();
   }
   Serial.println(classes.Ams5915.size());
+
+  Serial.print("\tHx711: ");
+  for (size_t i=0; i < classes.Hx711.size(); i++) {
+    classes.Hx711[i].Begin();
+  }
+  Serial.println(classes.Hx711.size());
 
   Serial.print("\tSbus: ");
   for (size_t i=0; i < classes.Sbus.size(); i++) {
@@ -1323,6 +1407,10 @@ void AircraftSensors::ReadSyncSensors() {
       ResetI2cBus_ = true;
     }
   }
+  for (size_t i=0; i < classes.Hx711.size(); i++) {
+    int8_t status;
+    status = classes.Hx711[i].ReadSensor();
+  }
   for (size_t i=0; i < classes.Sbus.size(); i++) {
     classes.Sbus[i].ReadSensor();
   }
@@ -1388,6 +1476,9 @@ void AircraftSensors::End() {
   for (size_t i=0; i < classes.Ams5915.size(); i++) {
     classes.Ams5915[i].End();
   }
+  for (size_t i=0; i < classes.Hx711.size(); i++) {
+    classes.Hx711[i].End();
+  }
   for (size_t i=0; i < classes.Sbus.size(); i++) {
     classes.Sbus[i].End();
   }
@@ -1403,6 +1494,7 @@ void AircraftSensors::End() {
   classes.uBlox.clear();
   classes.Swift.clear();
   classes.Ams5915.clear();
+  classes.Hx711.clear();
   classes.Sbus.clear();
   classes.Analog.clear();
   classes.Nodes.clear();

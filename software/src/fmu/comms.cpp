@@ -68,9 +68,10 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
   size_t ublox_counter = 0;
   size_t swift_counter = 0;
   size_t ams5915_counter = 0;
+  size_t hx711_counter = 0;
   size_t sbus_counter = 0;
   size_t analog_counter = 0;
-  
+
   if ( Sensors->AcquireInternalMpu9250Data ) {
     message::data_mpu9250_t msg;
     Sensors->classes.InternalMpu9250.UpdateMessage(&msg);
@@ -132,6 +133,14 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
     }
   }
   {
+    message::data_hx711_t msg;
+    for ( size_t i = 0; i < Sensors->classes.Hx711.size(); i++ ) {
+      Sensors->classes.Hx711[i].UpdateMessage(&msg);
+      msg.pack();
+      SendMessage(msg.id, hx711_counter++, msg.payload, msg.len);
+    }
+  }
+  {
     message::data_analog_t msg;
     for ( size_t i = 0; i < Sensors->classes.Analog.size(); i++ ) {
       Sensors->classes.Analog[i].UpdateMessage(&msg);
@@ -139,7 +148,7 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
       SendMessage(msg.id, analog_counter++, msg.payload, msg.len);
     }
   }
-  
+
   // fixme: Unpack the compound sensor message from each node in order
   // and send the proper individual messages to the SOC.
   for (size_t i = 0; i < Sensors->classes.Nodes.size(); i++) {
@@ -163,6 +172,8 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
           SendMessage(id, sbus_counter++, NodeBuffer.data(), len);
         } else if ( id == message::data_ams5915_id ) {
           SendMessage(id, ams5915_counter++, NodeBuffer.data(), len);
+        } else if ( id == message::data_hx711_id ) {
+          SendMessage(id, hx711_counter++, NodeBuffer.data(), len);
         } else if ( id == message::data_analog_id ) {
           SendMessage(id, analog_counter++, NodeBuffer.data(), len);
         }
@@ -170,7 +181,7 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
       counter += len;
     } // while processing compound message
   } // for each node
-  
+
   if ( Sensors->AcquireTimeData ) {
     message::data_time_t msg;
     Sensors->classes.Time.UpdateMessage(&msg);

@@ -14,6 +14,7 @@ config_analog_id = 27
 config_effector_id = 28
 config_mission_id = 29
 config_control_gain_id = 30
+config_hx711_id = 31
 data_time_id = 40
 data_mpu9250_short_id = 41
 data_mpu9250_id = 42
@@ -24,6 +25,7 @@ data_swift_id = 46
 data_sbus_id = 47
 data_analog_id = 48
 data_bifrost_id = 49
+data_hx711_id = 50
 
 # Constants
 num_effectors = 16  # number of effector channels
@@ -597,6 +599,48 @@ class config_control_gain():
         self.output = extra[:self.output_len].decode()
         extra = extra[self.output_len:]
 
+# Message: config_hx711
+# Id: 31
+class config_hx711():
+    id = 31
+    _pack_string = "<BBffffB"
+
+    def __init__(self, msg=None):
+        # public fields
+        self.dout_pin = 0
+        self.sck_pin = 0
+        self.calibration = [0.0] * max_calibration
+        self.output = ""
+        # unpack if requested
+        if msg: self.unpack(msg)
+
+    def pack(self):
+        msg = struct.pack(self._pack_string,
+                          self.dout_pin,
+                          self.sck_pin,
+                          self.calibration[0],
+                          self.calibration[1],
+                          self.calibration[2],
+                          self.calibration[3],
+                          len(self.output))
+        msg += str.encode(self.output)
+        return msg
+
+    def unpack(self, msg):
+        base_len = struct.calcsize(self._pack_string)
+        extra = msg[base_len:]
+        msg = msg[:base_len]
+        self.calibration_len = [0] * max_calibration
+        (self.dout_pin,
+         self.sck_pin,
+         self.calibration[0],
+         self.calibration[1],
+         self.calibration[2],
+         self.calibration[3],
+         self.output_len) = struct.unpack(self._pack_string, msg)
+        self.output = extra[:self.output_len].decode()
+        extra = extra[self.output_len:]
+
 # Message: data_time
 # Id: 40
 class data_time():
@@ -1021,3 +1065,27 @@ class data_bifrost():
          self.soc_eng,
          self.cont_sel,
          self.ext_eng) = struct.unpack(self._pack_string, msg)
+
+# Message: data_hx711
+# Id: 50
+class data_hx711():
+    id = 50
+    _pack_string = "<bf"
+
+    def __init__(self, msg=None):
+        # public fields
+        self.status = 0
+        self.load = 0.0
+        # unpack if requested
+        if msg: self.unpack(msg)
+
+    def pack(self):
+        msg = struct.pack(self._pack_string,
+                          self.status,
+                          self.load)
+        return msg
+
+    def unpack(self, msg):
+        (self.status,
+         self.load) = struct.unpack(self._pack_string, msg)
+

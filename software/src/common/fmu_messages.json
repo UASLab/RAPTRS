@@ -159,6 +159,15 @@
       ]
     },
     {
+      "name": "config_hx711",
+      "fields": [
+        { "type": "uint8_t", "name": "dout_pin" },
+        { "type": "uint8_t", "name": "sck_pin" },
+        { "type": "float", "name": "calibration[max_calibration]" },
+        { "type": "string", "name": "output" }
+      ]
+    },
+    {
       "id": 40,
       "name": "data_time",
       "fields": [
@@ -270,6 +279,13 @@
         { "type": "bool", "name": "soc_eng"},
         { "type": "uint8_t", "name": "cont_sel"},
         { "type": "bool", "name": "ext_eng"}
+      ]
+    },
+    {
+      "name": "data_hx711",
+      "fields": [
+        { "type": "int8_t", "name": "status" },
+        { "type": "float", "name": "load" }
       ]
     }
   ]

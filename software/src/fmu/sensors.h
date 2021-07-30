@@ -8,7 +8,6 @@ Author: Brian Taylor
 #define SENSORS_H_
 
 #include "AMS5915.h"
-#include "Adafruit_ADS1X15.h"
 #include "HX711.h"
 #include "BME280.h"
 #include "MPU9250.h"
@@ -222,26 +221,27 @@ class Ams5915Sensor {
 };
 
 /* class for Load Cell HX711 sensors */
-class HX711Sensor {
+class Hx711Sensor {
   public:
     struct Config {
       uint8_t Dout_pin = 14; // DOUT Pin connect to pin# on Teensy (GPIO_0 = 14 = A0)
       uint8_t Sck_pin = 16; // Sck Pin connect to pin# on Teensy (GPIO_1 = 16 = A2)
+      std::vector<float> Calibration;
     };
     // Data
-    int8_t ReadStatus = -1; // positive if a good read or negative if not
-    float Load = 0.0f;      // Load, grams
+    int8_t status = 0; // positive if a good read or negative if not
+    float load = 0.0f;      // Load, nominally grams but depends on calibration values
     bool UpdateConfig(message::config_hx711_t *msg, std::string RootPath, DefinitionTree *DefinitionTreePtr);
     void SetConfig(const Config &ConfigRef);
     void GetConfig(Config *ConfigPtr);
     void Begin();
     int ReadSensor();
-    void UpdateMessage(message::data_ams5915_t *msg);
+    void UpdateMessage(message::data_hx711_t *msg);
     void End();
   private:
     HX711 *hx711_;
     Config config_;
-    int8_t status_;
+    long load_cnt = 0;
 };
 
 /* class for Swift sensors */
@@ -350,6 +350,7 @@ class AircraftSensors {
       std::vector<Ams5915Sensor> Ams5915;
       std::vector<SbusSensor> Sbus;
       std::vector<AnalogSensor> Analog;
+      std::vector<Hx711Sensor> Hx711;
       std::vector<SensorNodes> Nodes;
     };
     Classes classes;
