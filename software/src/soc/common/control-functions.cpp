@@ -553,7 +553,7 @@ void STREAMClass::Initialize() {
     }
   }
 
-  myflag = 1;
+  frame_cnt = 1;
 
   printf("STREAM initalization Complete.\n");
   initFlag = true;
@@ -565,17 +565,6 @@ void STREAMClass::Run(Mode mode) {
 
   if ( initFlag == false ) {
     Initialize();
-  }
-
-  // sample time computation
-  float dt = 0;
-  if (UseFixedTimeSample == false) {
-    dt_curr = *TimeSource - timePrev;
-    timePrev = *TimeSource;
-    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
-    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
-  } else {
-    dt_curr = dt;
   }
 
   // input nodes to vector // memcpy(&stateIn,buffer,sizeof(state));
@@ -598,14 +587,17 @@ void STREAMClass::Run(Mode mode) {
 	// STREAM.steponce(sigma_data);
   uint64_t profStart_us = micros();
 
-  if (myflag == 1) {
-    STREAM.steptwo(myflag, sigma_data);
-    myflag = 2;
-  } else if (myflag == 2) {
-    STREAM.steptwo(myflag, sigma_data);
-    myflag = 1;
+  if (frame_cnt == 1) {
+    STREAM.steptwo(1, sigma_data);
+  } else if (frame_cnt == 6) {
+    STREAM.steptwo(2, sigma_data);
   }
-  std::cout << myflag << "\t" << micros() - profStart_us << std::endl;
+  std::cout << frame_cnt << "\t" << micros() - profStart_us << std::endl;
+  frame_cnt++;
+  if (frame_cnt > 10) {
+    frame_cnt = 1;
+  }
+
 
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {
