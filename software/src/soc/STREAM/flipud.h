@@ -1,12 +1,12 @@
 //
-//  sum.h
+//  flipud.h
 //
-//  Code generation for function 'sum'
+//  Code generation for function 'flipud'
 //
 
 
-#ifndef SUM_H
-#define SUM_H
+#ifndef FLIPUD_H
+#define FLIPUD_H
 
 // Include files
 #include "rtwtypes.h"
@@ -17,9 +17,9 @@
 // Function Declarations
 namespace coder
 {
-  float sum(const ::coder::array<float, 1U> &x);
+  void flipud(::coder::array<creal32_T, 2U> &x);
 }
 
 #endif
 
-// End of code generation (sum.h)
+// End of code generation (flipud.h)

@@ -366,9 +366,10 @@ struct gb_struct_T
 
 struct b_steptwoPersistentData
 {
-  float RHSbar[12];
-  float sigmaYHat[4];
-  float phiHat[6];
+  coder::array<creal32_T, 2U> Fyhat;
+  boolean_T Fyhat_not_empty;
+  coder::array<float, 2U> wDblSided;
+  coder::array<creal32_T, 2U> Fu;
 };
 
 struct b_steptwoStackData
@@ -376,6 +377,7 @@ struct b_steptwoStackData
   struct {
     float costab_data[10001];
     float sintab_data[10001];
+    float costab1q_data[5001];
   } f0;
 
   struct {
@@ -386,9 +388,15 @@ struct b_steptwoStackData
   } f1;
 
   struct {
-    float PHIbar_data[9180];
+    creal32_T tmp_data[2501];
     float wDblSided_data[5001];
   } f2;
+
+  struct {
+    creal32_T tmp_data[5000];
+    float PHIbar_data[9180];
+    creal32_T freqData_data[3060];
+  } f3;
 
   b_steptwoPersistentData *pd;
 };
@@ -398,7 +406,7 @@ class streamClass
  public:
   streamClass();
   ~streamClass();
-  void steptwo(int flag, float sigma[3]);
+  void steptwo(unsigned char flag, float sigma[3]);
   coder::array<float, 2U> uMeas;
   coder::array<float, 2U> yMeas;
   b_steptwoStackData *getStackData();

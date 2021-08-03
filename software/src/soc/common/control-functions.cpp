@@ -589,10 +589,11 @@ void STREAMClass::Run(Mode mode) {
 
   if (frame_cnt == 1) {
     STREAM.steptwo(1, sigma_data);
+    std::cout << frame_cnt << "\t" << "1" << "\t" << micros() - profStart_us << std::endl;
   } else if (frame_cnt == 6) {
     STREAM.steptwo(2, sigma_data);
+    std::cout << frame_cnt << "\t" << "2" << "\t" << micros() - profStart_us << std::endl;
   }
-  std::cout << frame_cnt << "\t" << micros() - profStart_us << std::endl;
   frame_cnt++;
   if (frame_cnt > 10) {
     frame_cnt = 1;

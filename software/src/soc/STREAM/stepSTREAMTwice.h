@@ -24,13 +24,8 @@ void stepSTREAMTwice(streamClass *aInstancePtr, const coder::array<float, 2U> &u
                      dynamicMdlParams_ctrlSurfIndices[7], const float
                      dynamicMdlParams_freqRespLUT_w[150], const creal32_T
                      dynamicMdlParams_freqRespLUT_freqResp[27300], float
-                     algSettings_wmax, float
-                     algSettings_fredaSettings_useSmoothing, float
-                     algSettings_fredaSettings_binRatio, float
-                     algSettings_fredaSettings_binSize, float
                      algSettings_fredaSettings_dt, float
-                     algSettings_fredaSettings_psdTaper, const float
-                     algSettings_gustFunctionInputs[3]);
+                     algSettings_fredaSettings_psdTaper);
 
 #endif
 

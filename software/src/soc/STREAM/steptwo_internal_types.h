@@ -12,15 +12,17 @@
 #include "rtwtypes.h"
 #include "steptwo_types.h"
 #include "streamClass.h"
+#include "coder_array.h"
 
 // Type Definitions
 struct steptwoPersistentData
 {
   gb_struct_T dynamMdlParams;
   cb_struct_T algSettings;
-  float RHSbar[12];
-  float sigmaYHat[4];
-  float phiHat[6];
+  coder::array<creal32_T, 2U> Fyhat;
+  boolean_T Fyhat_not_empty;
+  coder::array<float, 2U> wDblSided;
+  coder::array<creal32_T, 2U> Fu;
 };
 
 #endif

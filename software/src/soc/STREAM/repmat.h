@@ -17,7 +17,7 @@
 // Function Declarations
 namespace coder
 {
-  void repmat(const creal32_T a_data[], const int a_size[1], double varargin_2, ::
+  void repmat(const creal32_T a_data[], const int a_size[1], float varargin_2, ::
               coder::array<creal32_T, 2U> &b);
 }
 
