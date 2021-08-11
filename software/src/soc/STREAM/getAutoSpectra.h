@@ -17,8 +17,8 @@
 // Function Declarations
 void getAutoSpectra(const coder::array<creal32_T, 2U> &Fy, float
                     fredaSettings_useSmoothing, float fredaSettings_binRatio,
-                    float fredaSettings_binSize, float fredaSettings_dt, coder::
-                    array<float, 1U> &w, coder::array<float, 2U> &psd);
+                    float fredaSettings_binSize, float fredaSettings_dt, float
+                    w_data[], int w_size[1], coder::array<float, 2U> &psd);
 
 #endif
 

@@ -1,7 +1,7 @@
 //
 //  rt_nonfinite.h
 //
-//  Code generation for function 'steptwo'
+//  Code generation for function 'stepthrice'
 //
 
 

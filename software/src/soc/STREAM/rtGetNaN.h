@@ -1,7 +1,7 @@
 //
 //  rtGetNaN.h
 //
-//  Code generation for function 'steptwo'
+//  Code generation for function 'stepthrice'
 //
 
 

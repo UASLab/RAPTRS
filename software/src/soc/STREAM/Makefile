@@ -12,11 +12,11 @@ include sources.mk
 
 
 # Compile Defines
-#CXX = arm-linux-gnueabihf-g++-8 -Wall -O3 -Wno-psabi
-#STILIB = sti_soc.a
+CXX = arm-linux-gnueabihf-g++-8 -Wall -O3 -Wno-psabi
+STILIB = sti_soc.a
 
-CXX = g++ -Wall -O3 -Wno-psabi
-STILIB = sti_sim.a
+#CXX = g++ -Wall -O3 -Wno-psabi
+#STILIB = sti_sim.a
 
 OBJS = $(SRCS:.cpp=.o)
 

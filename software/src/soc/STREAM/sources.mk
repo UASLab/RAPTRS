@@ -1,20 +1,24 @@
 SRCS = \
 FFTImplementationCallback.cpp \
+abs.cpp \
 cosineTaper.cpp \
-flipud.cpp \
+estimateGustIntensity.cpp \
+fftfunc.cpp \
 getAutoSpectra.cpp \
-getMeasuredDataFft.cpp \
+getGustMdlParams.cpp \
+getSysGustMdlFreqResp.cpp \
+integrateMdl.cpp \
 interp1.cpp \
 psdft.cpp \
 repmat.cpp \
 rtGetInf.cpp \
 rtGetNaN.cpp \
 rt_nonfinite.cpp \
-stepSTREAMTwice.cpp \
-steptwo_data.cpp \
-steptwo_rtwutil.cpp \
+setFreqLimits.cpp \
+stepSTREAMThrice.cpp \
+stepthrice_data.cpp \
+stepthrice_rtwutil.cpp \
 streamClass.cpp \
 sum.cpp \
-tffreqresp_sti_est.cpp \
 trapz.cpp \
 streamClassWrap.cpp 

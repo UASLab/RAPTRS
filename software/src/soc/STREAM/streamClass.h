@@ -364,41 +364,38 @@ struct gb_struct_T
   db_struct_T freqRespLUT;
 };
 
-struct b_steptwoPersistentData
+struct b_stepthricePersistentData
 {
-  coder::array<creal32_T, 2U> Fyhat;
-  boolean_T Fyhat_not_empty;
-  coder::array<float, 2U> wDblSided;
+  coder::bounded_array<float, 5001U, 1U> wDblSided;
+  boolean_T wDblSided_not_empty;
   coder::array<creal32_T, 2U> Fu;
+  boolean_T Fu_not_empty;
+  coder::array<creal32_T, 2U> Fy;
+  boolean_T Fy_not_empty;
 };
 
-struct b_steptwoStackData
+struct b_stepthriceStackData
 {
   struct {
     float costab_data[10001];
     float sintab_data[10001];
-    float costab1q_data[5001];
   } f0;
+
+  struct {
+    float PHIbar_data[9180];
+  } f1;
 
   struct {
     float costab_data[10001];
     float sintab_data[10001];
     float sintabinv_data[10001];
-    float costab1q_data[5001];
-  } f1;
-
-  struct {
-    creal32_T tmp_data[2501];
-    float wDblSided_data[5001];
   } f2;
 
   struct {
-    creal32_T tmp_data[5000];
-    float PHIbar_data[9180];
-    creal32_T freqData_data[3060];
+    float w_data[5001];
   } f3;
 
-  b_steptwoPersistentData *pd;
+  b_stepthricePersistentData *pd;
 };
 
 class streamClass
@@ -406,15 +403,15 @@ class streamClass
  public:
   streamClass();
   ~streamClass();
-  void steptwo(unsigned char flag, float sigma[3]);
+  void stepthrice(unsigned char flag, float sigma[3]);
   coder::array<float, 2U> uMeas;
   coder::array<float, 2U> yMeas;
-  b_steptwoStackData *getStackData();
+  b_stepthriceStackData *getStackData();
   gb_struct_T dynamMdlParams;
   cb_struct_T algSettings;
  private:
-  b_steptwoPersistentData pd_;
-  b_steptwoStackData SD_;
+  b_stepthricePersistentData pd_;
+  b_stepthriceStackData SD_;
 };
 
 #endif

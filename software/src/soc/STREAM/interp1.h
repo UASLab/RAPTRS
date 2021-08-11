@@ -10,7 +10,6 @@
 
 // Include files
 #include "rtwtypes.h"
-#include "coder_array.h"
 #include <cstddef>
 #include <cstdlib>
 
@@ -18,8 +17,8 @@
 namespace coder
 {
   void interp1(const float varargin_1[150], const creal32_T varargin_2[150],
-               const ::coder::array<float, 1U> &varargin_3, ::coder::array<
-               creal32_T, 1U> &Vq);
+               const float varargin_3_data[], const int varargin_3_size[1],
+               creal32_T Vq_data[], int Vq_size[1]);
 }
 
 #endif

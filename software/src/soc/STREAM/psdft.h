@@ -15,9 +15,12 @@
 #include <cstdlib>
 
 // Function Declarations
-void logsmooth(const coder::array<float, 2U> &yin, const coder::array<float, 1U>
-               &binWidths, float dt, coder::array<float, 1U> &w, coder::array<
-               float, 2U> &smy);
+void logsmooth(const coder::array<float, 2U> &yin, const float binWidths_data[],
+               const int binWidths_size[1], float dt, float w_data[], int
+               w_size[1], coder::array<float, 2U> &smy);
+void logsmooth(const coder::array<creal32_T, 2U> &yin, const float
+               binWidths_data[], const int binWidths_size[1], float dt, float
+               w_data[], int w_size[1], coder::array<creal32_T, 2U> &smy);
 
 #endif
 

@@ -588,14 +588,20 @@ void STREAMClass::Run(Mode mode) {
   uint64_t profStart_us = micros();
 
   if (frame_cnt == 1) {
-    STREAM.steptwo(1, sigma_data);
+    STREAM.stepthrice(1, sigma_data);
     std::cout << frame_cnt << "\t" << "1" << "\t" << micros() - profStart_us << std::endl;
   } else if (frame_cnt == 6) {
-    STREAM.steptwo(2, sigma_data);
+    STREAM.stepthrice(2, sigma_data);
     std::cout << frame_cnt << "\t" << "2" << "\t" << micros() - profStart_us << std::endl;
+  } else if (frame_cnt == 11) {
+    STREAM.stepthrice(3, sigma_data);
+    std::cout << frame_cnt << "\t" << "3" << "\t" << micros() - profStart_us << std::endl;
+  } else if (frame_cnt == 16) {
+    STREAM.stepthrice(4, sigma_data);
+    std::cout << frame_cnt << "\t" << "4" << "\t" << micros() - profStart_us << std::endl;
   }
   frame_cnt++;
-  if (frame_cnt > 10) {
+  if (frame_cnt > 20) {
     frame_cnt = 1;
   }
 
