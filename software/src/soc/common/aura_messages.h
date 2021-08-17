@@ -3,6 +3,11 @@
 #include <stdint.h>  // uint8_t, et. al.
 #include <string.h>  // memcpy()
 
+#include <string>
+using std::string;
+
+namespace message {
+
 static inline int32_t intround(float f) {
     return (int32_t)(f >= 0.0 ? (f + 0.5) : (f - 0.5));
 }
@@ -12,41 +17,45 @@ static inline uint32_t uintround(float f) {
 }
 
 // Message id constants
-const uint8_t message_gps_v2_id = 16;
-const uint8_t message_gps_v3_id = 26;
-const uint8_t message_gps_v4_id = 34;
-const uint8_t message_imu_v3_id = 17;
-const uint8_t message_imu_v4_id = 35;
-const uint8_t message_airdata_v5_id = 18;
-const uint8_t message_airdata_v6_id = 40;
-const uint8_t message_airdata_v7_id = 43;
-const uint8_t message_filter_v2_id = 22;
-const uint8_t message_filter_v3_id = 31;
-const uint8_t message_filter_v4_id = 36;
-const uint8_t message_actuator_v2_id = 21;
-const uint8_t message_actuator_v3_id = 37;
-const uint8_t message_pilot_v2_id = 20;
-const uint8_t message_pilot_v3_id = 38;
-const uint8_t message_ap_status_v4_id = 30;
-const uint8_t message_ap_status_v5_id = 32;
-const uint8_t message_ap_status_v6_id = 33;
-const uint8_t message_ap_status_v7_id = 39;
-const uint8_t message_system_health_v4_id = 19;
-const uint8_t message_system_health_v5_id = 41;
-const uint8_t message_payload_v2_id = 23;
-const uint8_t message_payload_v3_id = 42;
-const uint8_t message_event_v1_id = 27;
-const uint8_t message_event_v2_id = 44;
-const uint8_t message_command_v1_id = 28;
+const uint8_t gps_v2_id = 16;
+const uint8_t gps_v3_id = 26;
+const uint8_t gps_v4_id = 34;
+const uint8_t gps_raw_v1_id = 48;
+const uint8_t imu_v3_id = 17;
+const uint8_t imu_v4_id = 35;
+const uint8_t imu_v5_id = 45;
+const uint8_t airdata_v5_id = 18;
+const uint8_t airdata_v6_id = 40;
+const uint8_t airdata_v7_id = 43;
+const uint8_t filter_v3_id = 31;
+const uint8_t filter_v4_id = 36;
+const uint8_t filter_v5_id = 47;
+const uint8_t actuator_v2_id = 21;
+const uint8_t actuator_v3_id = 37;
+const uint8_t pilot_v2_id = 20;
+const uint8_t pilot_v3_id = 38;
+const uint8_t ap_status_v4_id = 30;
+const uint8_t ap_status_v5_id = 32;
+const uint8_t ap_status_v6_id = 33;
+const uint8_t ap_status_v7_id = 39;
+const uint8_t system_health_v4_id = 19;
+const uint8_t system_health_v5_id = 41;
+const uint8_t system_health_v6_id = 46;
+const uint8_t payload_v2_id = 23;
+const uint8_t payload_v3_id = 42;
+const uint8_t event_v1_id = 27;
+const uint8_t event_v2_id = 44;
+const uint8_t command_v1_id = 28;
+const uint8_t stream_v1_id = 49;
 
 // max of one byte used to store message len
 static const uint8_t message_max_len = 255;
 
-#include <string>
-using std::string;
+// Constants
+static const uint8_t max_raw_sats = 12;  // maximum array size to store satellite raw data
 
 // Message: gps_v2 (id: 16)
-struct message_gps_v2_t {
+struct gps_v2_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -80,7 +89,7 @@ struct message_gps_v2_t {
 
     // public info fields
     static const uint8_t id = 16;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -128,7 +137,7 @@ struct message_gps_v2_t {
 };
 
 // Message: gps_v3 (id: 26)
-struct message_gps_v3_t {
+struct gps_v3_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -168,7 +177,7 @@ struct message_gps_v3_t {
 
     // public info fields
     static const uint8_t id = 26;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -222,7 +231,7 @@ struct message_gps_v3_t {
 };
 
 // Message: gps_v4 (id: 34)
-struct message_gps_v4_t {
+struct gps_v4_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -262,7 +271,7 @@ struct message_gps_v4_t {
 
     // public info fields
     static const uint8_t id = 34;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -315,8 +324,74 @@ struct message_gps_v4_t {
     }
 };
 
+// Message: gps_raw_v1 (id: 48)
+struct gps_raw_v1_t {
+    // public fields
+    uint8_t index;
+    float timestamp_sec;
+    double receiver_tow;
+    uint8_t num_sats;
+    uint8_t svid[max_raw_sats];
+    double pseudorange[max_raw_sats];
+    double doppler[max_raw_sats];
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t index;
+        float timestamp_sec;
+        double receiver_tow;
+        uint8_t num_sats;
+        uint8_t svid[max_raw_sats];
+        double pseudorange[max_raw_sats];
+        double doppler[max_raw_sats];
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 48;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->index = index;
+        _buf->timestamp_sec = timestamp_sec;
+        _buf->receiver_tow = receiver_tow;
+        _buf->num_sats = num_sats;
+        for (int _i=0; _i<max_raw_sats; _i++) _buf->svid[_i] = svid[_i];
+        for (int _i=0; _i<max_raw_sats; _i++) _buf->pseudorange[_i] = pseudorange[_i];
+        for (int _i=0; _i<max_raw_sats; _i++) _buf->doppler[_i] = doppler[_i];
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        index = _buf->index;
+        timestamp_sec = _buf->timestamp_sec;
+        receiver_tow = _buf->receiver_tow;
+        num_sats = _buf->num_sats;
+        for (int _i=0; _i<max_raw_sats; _i++) svid[_i] = _buf->svid[_i];
+        for (int _i=0; _i<max_raw_sats; _i++) pseudorange[_i] = _buf->pseudorange[_i];
+        for (int _i=0; _i<max_raw_sats; _i++) doppler[_i] = _buf->doppler[_i];
+        return true;
+    }
+};
+
 // Message: imu_v3 (id: 17)
-struct message_imu_v3_t {
+struct imu_v3_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -354,7 +429,7 @@ struct message_imu_v3_t {
 
     // public info fields
     static const uint8_t id = 17;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -406,7 +481,7 @@ struct message_imu_v3_t {
 };
 
 // Message: imu_v4 (id: 35)
-struct message_imu_v4_t {
+struct imu_v4_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -444,7 +519,7 @@ struct message_imu_v4_t {
 
     // public info fields
     static const uint8_t id = 35;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -495,8 +570,122 @@ struct message_imu_v4_t {
     }
 };
 
+// Message: imu_v5 (id: 45)
+struct imu_v5_t {
+    // public fields
+    uint8_t index;
+    float timestamp_sec;
+    float p_rad_sec;
+    float q_rad_sec;
+    float r_rad_sec;
+    float ax_mps_sec;
+    float ay_mps_sec;
+    float az_mps_sec;
+    float hx;
+    float hy;
+    float hz;
+    float ax_raw;
+    float ay_raw;
+    float az_raw;
+    float hx_raw;
+    float hy_raw;
+    float hz_raw;
+    float temp_C;
+    uint8_t status;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t index;
+        float timestamp_sec;
+        float p_rad_sec;
+        float q_rad_sec;
+        float r_rad_sec;
+        float ax_mps_sec;
+        float ay_mps_sec;
+        float az_mps_sec;
+        float hx;
+        float hy;
+        float hz;
+        float ax_raw;
+        float ay_raw;
+        float az_raw;
+        float hx_raw;
+        float hy_raw;
+        float hz_raw;
+        int16_t temp_C;
+        uint8_t status;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 45;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->index = index;
+        _buf->timestamp_sec = timestamp_sec;
+        _buf->p_rad_sec = p_rad_sec;
+        _buf->q_rad_sec = q_rad_sec;
+        _buf->r_rad_sec = r_rad_sec;
+        _buf->ax_mps_sec = ax_mps_sec;
+        _buf->ay_mps_sec = ay_mps_sec;
+        _buf->az_mps_sec = az_mps_sec;
+        _buf->hx = hx;
+        _buf->hy = hy;
+        _buf->hz = hz;
+        _buf->ax_raw = ax_raw;
+        _buf->ay_raw = ay_raw;
+        _buf->az_raw = az_raw;
+        _buf->hx_raw = hx_raw;
+        _buf->hy_raw = hy_raw;
+        _buf->hz_raw = hz_raw;
+        _buf->temp_C = intround(temp_C * 10);
+        _buf->status = status;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        index = _buf->index;
+        timestamp_sec = _buf->timestamp_sec;
+        p_rad_sec = _buf->p_rad_sec;
+        q_rad_sec = _buf->q_rad_sec;
+        r_rad_sec = _buf->r_rad_sec;
+        ax_mps_sec = _buf->ax_mps_sec;
+        ay_mps_sec = _buf->ay_mps_sec;
+        az_mps_sec = _buf->az_mps_sec;
+        hx = _buf->hx;
+        hy = _buf->hy;
+        hz = _buf->hz;
+        ax_raw = _buf->ax_raw;
+        ay_raw = _buf->ay_raw;
+        az_raw = _buf->az_raw;
+        hx_raw = _buf->hx_raw;
+        hy_raw = _buf->hy_raw;
+        hz_raw = _buf->hz_raw;
+        temp_C = _buf->temp_C / (float)10;
+        status = _buf->status;
+        return true;
+    }
+};
+
 // Message: airdata_v5 (id: 18)
-struct message_airdata_v5_t {
+struct airdata_v5_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -532,7 +721,7 @@ struct message_airdata_v5_t {
 
     // public info fields
     static const uint8_t id = 18;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -582,7 +771,7 @@ struct message_airdata_v5_t {
 };
 
 // Message: airdata_v6 (id: 40)
-struct message_airdata_v6_t {
+struct airdata_v6_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -618,7 +807,7 @@ struct message_airdata_v6_t {
 
     // public info fields
     static const uint8_t id = 40;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -668,7 +857,7 @@ struct message_airdata_v6_t {
 };
 
 // Message: airdata_v7 (id: 43)
-struct message_airdata_v7_t {
+struct airdata_v7_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -706,7 +895,7 @@ struct message_airdata_v7_t {
 
     // public info fields
     static const uint8_t id = 43;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -757,98 +946,8 @@ struct message_airdata_v7_t {
     }
 };
 
-// Message: filter_v2 (id: 22)
-struct message_filter_v2_t {
-    // public fields
-    uint8_t index;
-    double timestamp_sec;
-    double latitude_deg;
-    double longitude_deg;
-    float altitude_m;
-    float vn_ms;
-    float ve_ms;
-    float vd_ms;
-    float roll_deg;
-    float pitch_deg;
-    float yaw_deg;
-    uint8_t sequence_num;
-    uint8_t status;
-
-    // internal structure for packing
-    uint8_t payload[message_max_len];
-    #pragma pack(push, 1)
-    struct _compact_t {
-        uint8_t index;
-        double timestamp_sec;
-        double latitude_deg;
-        double longitude_deg;
-        float altitude_m;
-        int16_t vn_ms;
-        int16_t ve_ms;
-        int16_t vd_ms;
-        int16_t roll_deg;
-        int16_t pitch_deg;
-        int16_t yaw_deg;
-        uint8_t sequence_num;
-        uint8_t status;
-    };
-    #pragma pack(pop)
-
-    // public info fields
-    static const uint8_t id = 22;
-    uint16_t len = 0;
-
-    bool pack() {
-        len = sizeof(_compact_t);
-        // size sanity check
-        int size = len;
-        if ( size > message_max_len ) {
-            return false;
-        }
-        // copy values
-        _compact_t *_buf = (_compact_t *)payload;
-        _buf->index = index;
-        _buf->timestamp_sec = timestamp_sec;
-        _buf->latitude_deg = latitude_deg;
-        _buf->longitude_deg = longitude_deg;
-        _buf->altitude_m = altitude_m;
-        _buf->vn_ms = intround(vn_ms * 100);
-        _buf->ve_ms = intround(ve_ms * 100);
-        _buf->vd_ms = intround(vd_ms * 100);
-        _buf->roll_deg = intround(roll_deg * 10);
-        _buf->pitch_deg = intround(pitch_deg * 10);
-        _buf->yaw_deg = intround(yaw_deg * 10);
-        _buf->sequence_num = sequence_num;
-        _buf->status = status;
-        return true;
-    }
-
-    bool unpack(uint8_t *external_message, int message_size) {
-        if ( message_size > message_max_len ) {
-            return false;
-        }
-        memcpy(payload, external_message, message_size);
-        _compact_t *_buf = (_compact_t *)payload;
-        len = sizeof(_compact_t);
-        index = _buf->index;
-        timestamp_sec = _buf->timestamp_sec;
-        latitude_deg = _buf->latitude_deg;
-        longitude_deg = _buf->longitude_deg;
-        altitude_m = _buf->altitude_m;
-        vn_ms = _buf->vn_ms / (float)100;
-        ve_ms = _buf->ve_ms / (float)100;
-        vd_ms = _buf->vd_ms / (float)100;
-        roll_deg = _buf->roll_deg / (float)10;
-        pitch_deg = _buf->pitch_deg / (float)10;
-        yaw_deg = _buf->yaw_deg / (float)10;
-        sequence_num = _buf->sequence_num;
-        status = _buf->status;
-        return true;
-    }
-};
-
 // Message: filter_v3 (id: 31)
-struct message_filter_v3_t {
+struct filter_v3_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -898,7 +997,7 @@ struct message_filter_v3_t {
 
     // public info fields
     static const uint8_t id = 31;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -962,7 +1061,7 @@ struct message_filter_v3_t {
 };
 
 // Message: filter_v4 (id: 36)
-struct message_filter_v4_t {
+struct filter_v4_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -1012,7 +1111,7 @@ struct message_filter_v4_t {
 
     // public info fields
     static const uint8_t id = 36;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1075,8 +1174,134 @@ struct message_filter_v4_t {
     }
 };
 
+// Message: filter_v5 (id: 47)
+struct filter_v5_t {
+    // public fields
+    uint8_t index;
+    float timestamp_sec;
+    double latitude_deg;
+    double longitude_deg;
+    float altitude_m;
+    float vn_ms;
+    float ve_ms;
+    float vd_ms;
+    float roll_deg;
+    float pitch_deg;
+    float yaw_deg;
+    float p_bias;
+    float q_bias;
+    float r_bias;
+    float ax_bias;
+    float ay_bias;
+    float az_bias;
+    float max_pos_cov;
+    float max_vel_cov;
+    float max_att_cov;
+    uint8_t sequence_num;
+    uint8_t status;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t index;
+        float timestamp_sec;
+        double latitude_deg;
+        double longitude_deg;
+        float altitude_m;
+        int16_t vn_ms;
+        int16_t ve_ms;
+        int16_t vd_ms;
+        int16_t roll_deg;
+        int16_t pitch_deg;
+        int16_t yaw_deg;
+        int16_t p_bias;
+        int16_t q_bias;
+        int16_t r_bias;
+        int16_t ax_bias;
+        int16_t ay_bias;
+        int16_t az_bias;
+        uint16_t max_pos_cov;
+        uint16_t max_vel_cov;
+        uint16_t max_att_cov;
+        uint8_t sequence_num;
+        uint8_t status;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 47;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->index = index;
+        _buf->timestamp_sec = timestamp_sec;
+        _buf->latitude_deg = latitude_deg;
+        _buf->longitude_deg = longitude_deg;
+        _buf->altitude_m = altitude_m;
+        _buf->vn_ms = intround(vn_ms * 100);
+        _buf->ve_ms = intround(ve_ms * 100);
+        _buf->vd_ms = intround(vd_ms * 100);
+        _buf->roll_deg = intround(roll_deg * 10);
+        _buf->pitch_deg = intround(pitch_deg * 10);
+        _buf->yaw_deg = intround(yaw_deg * 10);
+        _buf->p_bias = intround(p_bias * 10000);
+        _buf->q_bias = intround(q_bias * 10000);
+        _buf->r_bias = intround(r_bias * 10000);
+        _buf->ax_bias = intround(ax_bias * 1000);
+        _buf->ay_bias = intround(ay_bias * 1000);
+        _buf->az_bias = intround(az_bias * 1000);
+        _buf->max_pos_cov = uintround(max_pos_cov * 100);
+        _buf->max_vel_cov = uintround(max_vel_cov * 1000);
+        _buf->max_att_cov = uintround(max_att_cov * 10000);
+        _buf->sequence_num = sequence_num;
+        _buf->status = status;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        index = _buf->index;
+        timestamp_sec = _buf->timestamp_sec;
+        latitude_deg = _buf->latitude_deg;
+        longitude_deg = _buf->longitude_deg;
+        altitude_m = _buf->altitude_m;
+        vn_ms = _buf->vn_ms / (float)100;
+        ve_ms = _buf->ve_ms / (float)100;
+        vd_ms = _buf->vd_ms / (float)100;
+        roll_deg = _buf->roll_deg / (float)10;
+        pitch_deg = _buf->pitch_deg / (float)10;
+        yaw_deg = _buf->yaw_deg / (float)10;
+        p_bias = _buf->p_bias / (float)10000;
+        q_bias = _buf->q_bias / (float)10000;
+        r_bias = _buf->r_bias / (float)10000;
+        ax_bias = _buf->ax_bias / (float)1000;
+        ay_bias = _buf->ay_bias / (float)1000;
+        az_bias = _buf->az_bias / (float)1000;
+        max_pos_cov = _buf->max_pos_cov / (float)100;
+        max_vel_cov = _buf->max_vel_cov / (float)1000;
+        max_att_cov = _buf->max_att_cov / (float)10000;
+        sequence_num = _buf->sequence_num;
+        status = _buf->status;
+        return true;
+    }
+};
+
 // Message: actuator_v2 (id: 21)
-struct message_actuator_v2_t {
+struct actuator_v2_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1110,7 +1335,7 @@ struct message_actuator_v2_t {
 
     // public info fields
     static const uint8_t id = 21;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1158,7 +1383,7 @@ struct message_actuator_v2_t {
 };
 
 // Message: actuator_v3 (id: 37)
-struct message_actuator_v3_t {
+struct actuator_v3_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -1192,7 +1417,7 @@ struct message_actuator_v3_t {
 
     // public info fields
     static const uint8_t id = 37;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1240,7 +1465,7 @@ struct message_actuator_v3_t {
 };
 
 // Message: pilot_v2 (id: 20)
-struct message_pilot_v2_t {
+struct pilot_v2_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1260,7 +1485,7 @@ struct message_pilot_v2_t {
 
     // public info fields
     static const uint8_t id = 20;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1294,7 +1519,7 @@ struct message_pilot_v2_t {
 };
 
 // Message: pilot_v3 (id: 38)
-struct message_pilot_v3_t {
+struct pilot_v3_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -1314,7 +1539,7 @@ struct message_pilot_v3_t {
 
     // public info fields
     static const uint8_t id = 38;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1348,7 +1573,7 @@ struct message_pilot_v3_t {
 };
 
 // Message: ap_status_v4 (id: 30)
-struct message_ap_status_v4_t {
+struct ap_status_v4_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1390,7 +1615,7 @@ struct message_ap_status_v4_t {
 
     // public info fields
     static const uint8_t id = 30;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1446,7 +1671,7 @@ struct message_ap_status_v4_t {
 };
 
 // Message: ap_status_v5 (id: 32)
-struct message_ap_status_v5_t {
+struct ap_status_v5_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1490,7 +1715,7 @@ struct message_ap_status_v5_t {
 
     // public info fields
     static const uint8_t id = 32;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1548,7 +1773,7 @@ struct message_ap_status_v5_t {
 };
 
 // Message: ap_status_v6 (id: 33)
-struct message_ap_status_v6_t {
+struct ap_status_v6_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1596,7 +1821,7 @@ struct message_ap_status_v6_t {
 
     // public info fields
     static const uint8_t id = 33;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1658,7 +1883,7 @@ struct message_ap_status_v6_t {
 };
 
 // Message: ap_status_v7 (id: 39)
-struct message_ap_status_v7_t {
+struct ap_status_v7_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -1706,7 +1931,7 @@ struct message_ap_status_v7_t {
 
     // public info fields
     static const uint8_t id = 39;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1768,7 +1993,7 @@ struct message_ap_status_v7_t {
 };
 
 // Message: system_health_v4 (id: 19)
-struct message_system_health_v4_t {
+struct system_health_v4_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1796,7 +2021,7 @@ struct message_system_health_v4_t {
 
     // public info fields
     static const uint8_t id = 19;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1838,7 +2063,7 @@ struct message_system_health_v4_t {
 };
 
 // Message: system_health_v5 (id: 41)
-struct message_system_health_v5_t {
+struct system_health_v5_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -1866,7 +2091,7 @@ struct message_system_health_v5_t {
 
     // public info fields
     static const uint8_t id = 41;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1884,7 +2109,7 @@ struct message_system_health_v5_t {
         _buf->main_vcc = uintround(main_vcc * 1000);
         _buf->cell_vcc = uintround(cell_vcc * 1000);
         _buf->main_amps = uintround(main_amps * 1000);
-        _buf->total_mah = uintround(total_mah * 10);
+        _buf->total_mah = uintround(total_mah * 0.1);
         return true;
     }
 
@@ -1902,13 +2127,87 @@ struct message_system_health_v5_t {
         main_vcc = _buf->main_vcc / (float)1000;
         cell_vcc = _buf->cell_vcc / (float)1000;
         main_amps = _buf->main_amps / (float)1000;
-        total_mah = _buf->total_mah / (float)10;
+        total_mah = _buf->total_mah / (float)0.1;
+        return true;
+    }
+};
+
+// Message: system_health_v6 (id: 46)
+struct system_health_v6_t {
+    // public fields
+    uint8_t index;
+    float timestamp_sec;
+    float system_load_avg;
+    uint16_t fmu_timer_misses;
+    float avionics_vcc;
+    float main_vcc;
+    float cell_vcc;
+    float main_amps;
+    float total_mah;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        uint8_t index;
+        float timestamp_sec;
+        uint16_t system_load_avg;
+        uint16_t fmu_timer_misses;
+        uint16_t avionics_vcc;
+        uint16_t main_vcc;
+        uint16_t cell_vcc;
+        uint16_t main_amps;
+        uint16_t total_mah;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 46;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->index = index;
+        _buf->timestamp_sec = timestamp_sec;
+        _buf->system_load_avg = uintround(system_load_avg * 100);
+        _buf->fmu_timer_misses = fmu_timer_misses;
+        _buf->avionics_vcc = uintround(avionics_vcc * 1000);
+        _buf->main_vcc = uintround(main_vcc * 1000);
+        _buf->cell_vcc = uintround(cell_vcc * 1000);
+        _buf->main_amps = uintround(main_amps * 1000);
+        _buf->total_mah = uintround(total_mah * 0.1);
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        index = _buf->index;
+        timestamp_sec = _buf->timestamp_sec;
+        system_load_avg = _buf->system_load_avg / (float)100;
+        fmu_timer_misses = _buf->fmu_timer_misses;
+        avionics_vcc = _buf->avionics_vcc / (float)1000;
+        main_vcc = _buf->main_vcc / (float)1000;
+        cell_vcc = _buf->cell_vcc / (float)1000;
+        main_amps = _buf->main_amps / (float)1000;
+        total_mah = _buf->total_mah / (float)0.1;
         return true;
     }
 };
 
 // Message: payload_v2 (id: 23)
-struct message_payload_v2_t {
+struct payload_v2_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -1926,7 +2225,7 @@ struct message_payload_v2_t {
 
     // public info fields
     static const uint8_t id = 23;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -1958,7 +2257,7 @@ struct message_payload_v2_t {
 };
 
 // Message: payload_v3 (id: 42)
-struct message_payload_v3_t {
+struct payload_v3_t {
     // public fields
     uint8_t index;
     float timestamp_sec;
@@ -1976,7 +2275,7 @@ struct message_payload_v3_t {
 
     // public info fields
     static const uint8_t id = 42;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -2008,7 +2307,7 @@ struct message_payload_v3_t {
 };
 
 // Message: event_v1 (id: 27)
-struct message_event_v1_t {
+struct event_v1_t {
     // public fields
     uint8_t index;
     double timestamp_sec;
@@ -2026,7 +2325,7 @@ struct message_event_v1_t {
 
     // public info fields
     static const uint8_t id = 27;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -2062,7 +2361,7 @@ struct message_event_v1_t {
 };
 
 // Message: event_v2 (id: 44)
-struct message_event_v2_t {
+struct event_v2_t {
     // public fields
     float timestamp_sec;
     uint8_t sequence_num;
@@ -2080,7 +2379,7 @@ struct message_event_v2_t {
 
     // public info fields
     static const uint8_t id = 44;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -2116,7 +2415,7 @@ struct message_event_v2_t {
 };
 
 // Message: command_v1 (id: 28)
-struct message_command_v1_t {
+struct command_v1_t {
     // public fields
     uint8_t sequence_num;
     string message;
@@ -2132,7 +2431,7 @@ struct message_command_v1_t {
 
     // public info fields
     static const uint8_t id = 28;
-    uint16_t len = 0;
+    int len = 0;
 
     bool pack() {
         len = sizeof(_compact_t);
@@ -2165,3 +2464,54 @@ struct message_command_v1_t {
     }
 };
 
+// Message: stream_v1 (id: 49)
+struct stream_v1_t {
+    // public fields
+    float sigma1;
+    float sigma2;
+    float sigma3;
+
+    // internal structure for packing
+    uint8_t payload[message_max_len];
+    #pragma pack(push, 1)
+    struct _compact_t {
+        float sigma1;
+        float sigma2;
+        float sigma3;
+    };
+    #pragma pack(pop)
+
+    // public info fields
+    static const uint8_t id = 49;
+    int len = 0;
+
+    bool pack() {
+        len = sizeof(_compact_t);
+        // size sanity check
+        int size = len;
+        if ( size > message_max_len ) {
+            return false;
+        }
+        // copy values
+        _compact_t *_buf = (_compact_t *)payload;
+        _buf->sigma1 = sigma1;
+        _buf->sigma2 = sigma2;
+        _buf->sigma3 = sigma3;
+        return true;
+    }
+
+    bool unpack(uint8_t *external_message, int message_size) {
+        if ( message_size > message_max_len ) {
+            return false;
+        }
+        memcpy(payload, external_message, message_size);
+        _compact_t *_buf = (_compact_t *)payload;
+        len = sizeof(_compact_t);
+        sigma1 = _buf->sigma1;
+        sigma2 = _buf->sigma2;
+        sigma3 = _buf->sigma3;
+        return true;
+    }
+};
+
+} // namespace message

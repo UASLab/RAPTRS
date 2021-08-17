@@ -103,6 +103,12 @@ class TelemetryClient {
       ElementPtr AvionicsVolt;
       ElementPtr MinCellVolt;
     } PowerNodes;
+    struct {
+      ElementPtr myFlag;
+      ElementPtr sigma1;
+      ElementPtr sigma2;
+      ElementPtr sigma3;
+    } StreamNodes;
     int count = 0;
     void SendPacket(uint16_t pkt_id, uint8_t *Buffer, uint16_t len);
 };

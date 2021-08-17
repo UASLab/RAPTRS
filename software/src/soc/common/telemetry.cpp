@@ -134,6 +134,12 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
     PowerNodes.MinCellVolt = deftree.getElement(Power+"/MinCellVolt_V");
     usePower = true;
   }
+  {
+    StreamNodes.myFlag = deftree.getElement("/Control/Test/STREAM/myFlag", true);
+    StreamNodes.sigma1 = deftree.getElement("/Control/Test/STREAM/Sigma1", true);
+    StreamNodes.sigma2 = deftree.getElement("/Control/Test/STREAM/Sigma2", true);
+    StreamNodes.sigma3 = deftree.getElement("/Control/Test/STREAM/Sigma3", true);
+  }
 }
 
 void TelemetryClient::Send() {
@@ -146,7 +152,7 @@ void TelemetryClient::Send() {
   // cout << count << " " << timestamp_sec << endl;
 
   if ( useGps && (count+0)%10 == 0 ) { // 5hz
-    message_gps_v4_t gps;
+    message::gps_v4_t gps;
     gps.index = 0;
     gps.timestamp_sec = timestamp_sec;
     gps.latitude_deg = GpsNodes.Lat->getDouble() * (180/M_PI);
@@ -166,7 +172,7 @@ void TelemetryClient::Send() {
   }
 
   if ( (count+1)%10 == 0 ) {	// 5hz
-    message_airdata_v7_t air;
+    message::airdata_v7_t air;
     air.index = 0;
     air.timestamp_sec = timestamp_sec;
     if ( useStaticPressure ) {
@@ -198,7 +204,7 @@ void TelemetryClient::Send() {
   }
 
   if ( useImu && (count+2)%10 == 0) { // 5hz
-    message_imu_v4_t imu;
+    message::imu_v4_t imu;
     imu.index = 0;
     imu.timestamp_sec = timestamp_sec;
     imu.p_rad_sec = ImuNodes.Gx->getFloat();
@@ -217,7 +223,7 @@ void TelemetryClient::Send() {
   }
 
   if ( useAttitude && (count+3)%5 == 0 ) { // 10hz
-    message_filter_v4_t nav;
+    message::filter_v4_t nav;
     nav.index = 0;
     nav.timestamp_sec = timestamp_sec;
     nav.latitude_deg = AttitudeNodes.Lat->getDouble() * (180/M_PI);
@@ -242,7 +248,7 @@ void TelemetryClient::Send() {
   }
 
   if ( useSbus && (count+4)%10 == 0 ) { // 5hz
-    message_pilot_v3_t pilot;
+    message::pilot_v3_t pilot;
     pilot.index = 0;
     pilot.timestamp_sec = timestamp_sec;
     for ( size_t j = 0; j < 8; j++ ) {
@@ -254,7 +260,7 @@ void TelemetryClient::Send() {
   }
 
   if ( usePower && (count+5)%10 == 0 ) { // 5hz
-    message_system_health_v5_t health;
+    message::system_health_v5_t health;
     // health.index;
     health.timestamp_sec = timestamp_sec;
     health.system_load_avg = 0.0;
@@ -265,6 +271,15 @@ void TelemetryClient::Send() {
     health.total_mah = 0.0;
     health.pack();
     SendPacket(health.id, health.payload, health.len);
+  }
+
+  if ( StreamNodes.myFlag->getInt() == 4 ) {
+    message::stream_v1_t stream;
+    stream.sigma1 = StreamNodes.sigma1->getFloat();
+    stream.sigma2 = StreamNodes.sigma2->getFloat();
+    stream.sigma3 = StreamNodes.sigma3->getFloat();
+    stream.pack();
+    SendPacket(stream.id, stream.payload, stream.len);
   }
 }
 
@@ -489,9 +504,9 @@ bool TelemetryServer::read_message() {
 
 bool TelemetryServer::process_message() {
   // printf("received: %d %d\n", pkt_id, pkt_len);
-  if ( pkt_id == message_command_v1_id ) {
-    message_command_v1_t cmd;
-    message_event_v2_t response;
+  if ( pkt_id == message::command_v1_id ) {
+    message::command_v1_t cmd;
+    message::event_v2_t response;
     cmd.unpack(payload, pkt_len);
     sequence_num = cmd.sequence_num;
     // printf("  command: %s\n", cmd.message.c_str());
