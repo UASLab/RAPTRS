@@ -280,6 +280,7 @@ class STREAMClass: public GenericFunction {
     std::vector<ElementPtr> uMeas_node; // Nodes to populate inputs to STREAM
     std::vector<ElementPtr> yMeas_node; // Nodes to populate inputs to STREAM
     std::vector<ElementPtr> sigma_node; // Nodes to populate outputs to STREAM
+    ElementPtr myflag_node;
     std::vector<std::string> uMeasKeys_, yMeasKeys_;
     std::string TimeKey_;
 

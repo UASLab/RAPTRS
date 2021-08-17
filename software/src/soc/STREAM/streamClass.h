@@ -395,6 +395,10 @@ struct b_stepthriceStackData
     float w_data[5001];
   } f3;
 
+  struct {
+    float w_data[5001];
+  } f4;
+
   b_stepthricePersistentData *pd;
 };
 

@@ -15,7 +15,6 @@
 
 // Function Declarations
 extern float rt_hypotf_snf(float u0, float u1);
-extern double rt_roundd_snf(double u);
 
 #endif
 

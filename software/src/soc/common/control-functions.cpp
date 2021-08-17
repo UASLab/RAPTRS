@@ -492,6 +492,7 @@ void STREAMClass::Configure(const rapidjson::Value& Config, std::string SystemPa
   LoadInput(Config, SystemPath, "uMeas", &uMeas_node, &uMeasKeys_);
   LoadInput(Config, SystemPath, "yMeas", &yMeas_node, &yMeasKeys_);
   LoadOutput(Config, SystemPath, "OutSigma", &sigma_node);
+  myflag_node = deftree.initElement(SystemPath + "myflag", ": frame flag", LOG_UINT8, LOG_NONE);
 
   // Size of internal STREAM inputs
   STREAM.uMeas.set_size(500, N_inputs);
@@ -586,30 +587,33 @@ void STREAMClass::Run(Mode mode) {
 
 	// STREAM.steponce(sigma_data);
   uint64_t profStart_us = micros();
-
+  uint8_t myflag = 0;
   if (frame_cnt == 1) {
-    STREAM.stepthrice(1, sigma_data);
-    std::cout << frame_cnt << "\t" << "1" << "\t" << micros() - profStart_us << std::endl;
+    myflag = 1;
+    STREAM.stepthrice(myflag, sigma_data);
   } else if (frame_cnt == 6) {
-    STREAM.stepthrice(2, sigma_data);
-    std::cout << frame_cnt << "\t" << "2" << "\t" << micros() - profStart_us << std::endl;
+    myflag = 2;
+    STREAM.stepthrice(myflag, sigma_data);
   } else if (frame_cnt == 11) {
-    STREAM.stepthrice(3, sigma_data);
-    std::cout << frame_cnt << "\t" << "3" << "\t" << micros() - profStart_us << std::endl;
+    myflag = 3;
+    STREAM.stepthrice(myflag, sigma_data);
   } else if (frame_cnt == 16) {
-    STREAM.stepthrice(4, sigma_data);
-    std::cout << frame_cnt << "\t" << "4" << "\t" << micros() - profStart_us << std::endl;
+    myflag = 4;
+    STREAM.stepthrice(myflag, sigma_data);
   }
+
+  // std::cout << std::to_string(frame_cnt) << "\t" << std::to_string(myflag) << "\t" << micros() - profStart_us << std::endl;
+
   frame_cnt++;
   if (frame_cnt > 20) {
     frame_cnt = 1;
   }
 
-
   // output vectors to nodes
   for (size_t i=0; i < sigma_node.size(); i++) {
     sigma_node[i]->setFloat(sigma_data[i]);
   }
+  myflag_node->setInt(myflag);
 }
 
 void STREAMClass::Clear() {

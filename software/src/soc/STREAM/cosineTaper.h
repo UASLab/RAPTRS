@@ -15,7 +15,8 @@
 #include <cstdlib>
 
 // Function Declarations
-void cosineTaper(coder::array<float, 2U> &x, float tfrRange);
+void cosineTaper(coder::array<float, 2U> &x, float tfrRange, coder::array<float,
+                 2U> &y);
 
 #endif
 
