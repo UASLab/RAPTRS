@@ -70,7 +70,7 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
   size_t ams5915_counter = 0;
   size_t sbus_counter = 0;
   size_t analog_counter = 0;
-  
+
   if ( Sensors->AcquireInternalMpu9250Data ) {
     message::data_mpu9250_t msg;
     Sensors->classes.InternalMpu9250.UpdateMessage(&msg);
@@ -139,7 +139,7 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
       SendMessage(msg.id, analog_counter++, msg.payload, msg.len);
     }
   }
-  
+
   // fixme: Unpack the compound sensor message from each node in order
   // and send the proper individual messages to the SOC.
   for (size_t i = 0; i < Sensors->classes.Nodes.size(); i++) {
@@ -152,25 +152,32 @@ void AircraftSocComms::SendSensorMessages(AircraftSensors *Sensors) {
       uint8_t len = NodeBuffer[counter++];
       if ( counter + len <= NodeBuffer.size() ) {
         if ( id == message::data_mpu9250_short_id ) {
-          SendMessage(id, mpu9250_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, mpu9250_counter++, buf.data(), len);
         } else if ( id == message::data_bme280_id ) {
-          SendMessage(id, bme280_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, bme280_counter++, buf.data(), len);
         } else if ( id == message::data_ublox_id ) {
-          SendMessage(id, ublox_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, ublox_counter++, buf.data(), len);
         } else if ( id == message::data_swift_id ) {
-          SendMessage(id, swift_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, swift_counter++, buf.data(), len);
         } else if ( id == message::data_sbus_id ) {
-          SendMessage(id, sbus_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, sbus_counter++, buf.data(), len);
         } else if ( id == message::data_ams5915_id ) {
-          SendMessage(id, ams5915_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, ams5915_counter++, buf.data(), len);
         } else if ( id == message::data_analog_id ) {
-          SendMessage(id, analog_counter++, NodeBuffer.data(), len);
+          std::vector<uint8_t> buf(&NodeBuffer[counter],&NodeBuffer[counter+len]);
+          SendMessage(id, analog_counter++, buf.data(), len);
         }
       }
       counter += len;
     } // while processing compound message
   } // for each node
-  
+
   if ( Sensors->AcquireTimeData ) {
     message::data_time_t msg;
     Sensors->classes.Time.UpdateMessage(&msg);
