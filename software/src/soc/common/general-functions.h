@@ -203,3 +203,31 @@ class LatchClass: public GenericFunction {
 
     std::string InputKey_,OutputKey_;
 };
+
+/*
+ABS Class - Absolute Value
+Example JSON configuration:
+{
+  "Type": "ABS",
+  "Output": "OutputName",
+  "Input": "InputName",
+  }
+}
+Where:
+   * Output gives a convenient name for the block (i.e. SpeedControl).
+   * Input is the full path name of the input signal.
+Data types for the input and output are both float.
+*/
+class ABSClass: public GenericFunction {
+  public:
+    void Configure(const rapidjson::Value& Config,std::string RootPath);
+    void Initialize();
+    bool Initialized();
+    void Run(Mode mode);
+    void Clear();
+  private:
+    ElementPtr Input_node_;
+    ElementPtr Output_node_;
+
+    std::string InputKey_;
+};

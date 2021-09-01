@@ -32,3 +32,4 @@ class AircraftSocComms {
     SerialLink *bus_;
     uint32_t baud_;
 };
+

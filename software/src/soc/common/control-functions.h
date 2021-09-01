@@ -183,22 +183,19 @@ class SSClass: public GenericFunction {
     void Run(Mode mode);
     void Clear();
   private:
-
-    std::vector<ElementPtr> u_node;
+    std::vector<ElementPtr> u_node, y_node;
     Eigen::VectorXf u;
     Eigen::VectorXf x;
     Eigen::VectorXf y;
     Eigen::MatrixXf A, B, C, D;
     Eigen::VectorXf Min, Max;
 
-    float dt = 0;
+    float dt_ = 0.0f;
     float* TimeSource = 0;
     float timePrev = 0;
 
     bool UseFixedTimeSample = false;
     ElementPtr time_node;
-
-    std::vector<ElementPtr> y_node;
 
     __SSClass SSClass_;
 

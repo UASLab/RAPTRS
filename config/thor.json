@@ -88,26 +88,27 @@
       "AltError": "errAlt_m",
       "Crosstrack": "crosstrack_m",
       "HeadingRef": "refHeading_rad",
+      "HeadingLead": "refHeadingLead_rad",
       "HeadingError": "errHeading_rad"
     },
 
     "WaypointDef": {
-      "Home": {"Waypoint": [44.725801, -93.075866, 285.2111], "WaypointRef": "WGS84_deg"}
+      "Home": {"Waypoint": [45.22042591817238, -93.1452303908616, 287.0], "WaypointRef": "WGS84_deg"}
     },
 
     "RouteDef": {
       "Loiter": {
-        "Type": "CircleHold", "Radius": 800, "Direction": "Left",
-        "Waypoint": [0.0, 0.0, -75], "LeadTime": 3, "HoldDist": 20
+        "Type": "CircleHold", "Radius": 400, "Direction": "Left",
+        "Waypoint": [0.0, 0.0, -75], "LeadDist": 60, "HoldDist": 20
       },
 
       "Path_1": {
-        "Type": "Waypoints", "LeadTime": 3, "HoldDist": 20,
+        "Type": "Waypoints", "LeadDist": 60, "HoldDist": 20,
         "WaypointList": [
-          [800, 0, -75],
-          [0, 800, -75],
-          [-800, 0, -75],
-          [0, -800, -75] ]
+          [400, 0, -75],
+          [0, 400, -75],
+          [-400, 0, -75],
+          [0, -400, -75] ]
       }
     }
   },
@@ -124,12 +125,13 @@
         "Pilot": "Pilot-Att",
         "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"},
       "PilotAttitude17": {
-        "Guid_Ref": "Guid_Ref17", "Pilot": "Pilot-Att", "Guid_Long": "Guidance_Longitudinal",
+        "Guid_RefV": "Guid_RefV17", "Guid_RefAlt": "Guid_RefAltLatch", "Pilot": "Pilot-Att",
+        "Guid_Long": "Guidance_Longitudinal",
         "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"},
       "Route17": {
-        "Guid_Route": "Guid_Route17", "Pilot": "Pilot-Att",
+        "Guid_RefV": "Guid_RefV17", "Guid_RefAlt": "Guid_RouteAlt", "Pilot": "Pilot-Att",
         "Guid_Lat": "Guidance_Lateral", "Guid_Long": "Guidance_Longitudinal",
-        "SCAS": "SCAS-Att_HighGain", "Alloc": "Allocator", "Eff": "Effector"}
+        "SCAS": "SCAS-Att", "Alloc": "Allocator", "Eff": "Effector"}
     },
 
     "ControlDef": {
@@ -143,101 +145,94 @@
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdFlapR_rad", "Gain": 0.45, "Limits": {"Upper": 0.45, "Lower": -0.45}}
       ],
 
-      "Guid_Route17": [
-        {"Type": "Constant", "Output": "refV_ms", "Constant": 17},
-        {"Type": "Gain", "Input": "/Route/errAlt_m", "Output": "errAlt_m", "Gain": 1}
+      "Guid_RefV17": [
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 17}
+      ],
+      "Guid_RefV20": [
+        {"Type": "Constant", "Output": "refV_ms", "Constant": 20}
       ],
 
-      "Guid_Route20": [
-        {"Type": "Constant", "Output": "refV_ms", "Constant": 20},
-        {"Type": "Gain", "Input": "/Route/errAlt_m", "Output": "errAlt_m", "Gain": 1}
-      ],
-
-      "Guid_Ref17": [
-        {"Type": "Constant", "Output": "refV_ms", "Constant": 17},
+      "Guid_RefAltLatch": [
         {"Type": "Latch", "Input": "/Sensor-Processing/hBaro_m", "Output": "refAlt_m"},
-        {"Type": "Gain", "Input": "/Sensor-Processing/hBaro_m", "Output": "negAlt_m", "Gain": -1},
-        {"Type": "Sum", "Inputs": ["refAlt_m", "negAlt_m"], "Output": "errAlt_m"}
+        {"Type": "Gain", "Input": "/Sensor-Processing/hBaro_m", "Output": "sensAltNeg_m", "Gain": -1},
+        {"Type": "Sum", "Inputs": ["refAlt_m", "sensAltNeg_m"], "Output": "errAlt_m"}
       ],
-
-      "Guid_Ref20": [
-        {"Type": "Constant", "Output": "refV_ms", "Constant": 20},
-        {"Type": "Latch", "Input": "/Sensor-Processing/hBaro_m", "Output": "refAlt_m"},
-        {"Type": "Gain", "Input": "/Sensor-Processing/hBaro_m", "Output": "negAlt_m", "Gain": -1},
-        {"Type": "Sum", "Inputs": ["refAlt_m", "negAlt_m"], "Output": "errAlt_m"}
+      "Guid_RouteAlt": [
+        {"Type": "Gain", "Input": "/Route/errAlt_m", "Output": "errAlt_m", "Gain": 1}
       ],
 
       "Guidance_Longitudinal": [
         {"Type": "PID2", "Reference": "../refV_ms", "Feedback": "/Sensor-Processing/vIAS_ms", "Output": "cmdThrust_nd",
           "Kp": 0.200, "Ki": 0.075, "Kd": 0.0, "Tf": 0.2, "dt": 0.02,
-          "b": 1.0, "c": 0.0, "Max": 1, "Min": 0},
+          "b": 1.0, "c": 0.0, "Min": 0, "Max": 1},
 
         {"Type": "PID", "Input": "../errAlt_m", "Output": "refTheta_guid",
           "Kp": 0.02, "Ki": 0.001, "Kd": 0.01, "Tf": 0.2, "dt": 0.02,
-          "b": 1.0, "c": 0.0, "Max": 0.523599, "Min": -0.523599},
+          "b": 1.0, "c": 0.0, "Min": -0.523599, "Max": 0.523599},
         {"Type": "Sum", "Inputs": ["refTheta_guid", "../refTheta_rad"], "Output": "refTheta_rad"}
       ],
 
       "Guidance_Lateral": [
         {"Type": "PID", "Input": "/Route/errHeading_rad", "Output": "refPhi_head",
-          "Kp": 0.75, "Ki": 0.20, "Kd": 0.20, "Tf": 0.2, "dt": 0.02,
-          "Max": 0.523599, "Min": -0.523599},
+          "Kp": 0.75, "Ki": 0.10, "Kd": 0.10, "Tf": 0.2, "dt": 0.02,
+          "Min": -0.523599, "Max": 0.523599},
+
         {"Type": "PID", "Input": "/Route/crosstrack_m", "Output": "refPhi_xtrack",
           "Kp": -0.01, "Ki": -0.0005, "Kd": -0.0, "Tf": 0.2, "dt": 0.02,
-          "Max": 0.174533, "Min": -0.174533},
-        {"Type": "Sum", "Inputs": ["refPhi_head", "refPhi_xtrack"], "Output": "refPhi_guid"},
+          "Min": -0.174533, "Max": 0.174533},
 
+        {"Type": "Sum", "Inputs": ["refPhi_head", "refPhi_xtrack"], "Output": "refPhi_guid"},
         {"Type": "Sum", "Inputs": ["refPhi_guid", "../refPhi_rad"], "Output": "refPhi_rad"}
       ],
 
       "Pilot-Rate": [
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdThrust_nd", "Gain": 1, "Max": 1, "Min": 0},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdThrust_nd", "Gain": 1, "Min": 0, "Max": 1},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "cmdRoll_rps", "Gain": 1.0472},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "cmdPitch_rps", "Gain": 1.0472},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "cmdYaw_rps", "Gain": 0.523599},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_nd", "Gain": 1.0, "Max": 1, "Min": -1}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_nd", "Gain": 1.0, "Min": -1, "Max": 1}
       ],
 
       "Pilot-Att": [
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdThrust_nd", "Gain": 1, "Max": 1, "Min": 0},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdThrust_nd", "Gain": 1, "Min": 0, "Max": 1},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refPhi_rad", "Gain": 1.047198},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refTheta_rad", "Gain": 0.7854},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw_rps", "Gain": 0.174533},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_nd", "Gain": 1.0, "Max": 1, "Min": -1}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "refFlap_nd", "Gain": 1.0, "Min": -1, "Max": 1}
       ],
 
       "SCAS-Att": [
         {"Type": "PID2", "Reference": "../refPhi_rad", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "cmdRoll_pid_rps",
-          "Kp": 0.64, "Ki": 0.20, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+          "Kp": 0.64, "Ki": 0.20, "dt": 0.02, "Min": -1.0472, "Max": 1.0472},
         {"Type": "Gain", "Input": "/Sensor-Processing/GyroX_rads", "Output": "cmdRoll_damp_rps", "Gain": -0.070},
         {"Type": "Sum", "Inputs": ["cmdRoll_pid_rps", "cmdRoll_damp_rps"], "Output": "cmdRoll_rps",
-          "Max": 1.0472, "Min": -1.0472},
+          "Min": -1.0472, "Max": 1.0472},
 
         {"Type": "PID2", "Reference": "../refTheta_rad", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "cmdPitch_pid_rps",
-          "Kp": 0.90, "Ki": 0.30, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+          "Kp": 0.90, "Ki": 0.30, "dt": 0.02, "Min": -1.0472, "Max": 1.0472},
         {"Type": "Gain", "Input": "/Sensor-Processing/GyroY_rads", "Output": "cmdPitch_damp_rps", "Gain": -0.080},
         {"Type": "Sum", "Inputs": ["cmdPitch_pid_rps", "cmdPitch_damp_rps"], "Output": "cmdPitch_rps",
-          "Max": 1.0472, "Min": -1.0472},
+          "Min": -1.0472, "Max": 1.0472},
 
-        {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps",
+        {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps", "dt": 0.02,
           "num": [-0.030, 0.030], "den": [1.0, -0.8919]},
         {"Type": "Sum", "Inputs": ["../refYaw_rps", "cmdYaw_damp_rps"], "Output": "cmdYaw_rps"}
       ],
 
       "SCAS-Att_HighGain": [
         {"Type": "PID2", "Reference": "../refPhi_rad", "Feedback": "/Sensor-Processing/Roll_rad", "Output": "cmdRoll_pid_rps",
-          "Kp": 0.96, "Ki": 0.30, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+          "Kp": 0.96, "Ki": 0.30, "dt": 0.02, "Min": -1.0472, "Max": 1.0472},
         {"Type": "Gain", "Input": "/Sensor-Processing/GyroX_rads", "Output": "cmdRoll_damp_rps", "Gain": -0.105},
         {"Type": "Sum", "Inputs": ["cmdRoll_pid_rps", "cmdRoll_damp_rps"], "Output": "cmdRoll_rps",
-          "Max": 1.0472, "Min": -1.0472},
+          "Min": -1.0472, "Max": 1.0472},
 
         {"Type": "PID2", "Reference": "../refTheta_rad", "Feedback": "/Sensor-Processing/Pitch_rad", "Output": "cmdPitch_pid_rps",
-          "Kp": 1.35, "Ki": 0.45, "dt": 0.02, "Max": 1.0472, "Min": -1.0472},
+          "Kp": 1.35, "Ki": 0.45, "dt": 0.02, "Min": -1.0472, "Max": 1.0472},
         {"Type": "Gain", "Input": "/Sensor-Processing/GyroY_rads", "Output": "cmdPitch_damp_rps", "Gain": -0.120},
         {"Type": "Sum", "Inputs": ["cmdPitch_pid_rps", "cmdPitch_damp_rps"], "Output": "cmdPitch_rps",
-          "Max": 1.0472, "Min": -1.0472},
+          "Min": -1.0472, "Max": 1.0472},
 
-        {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps",
+        {"Type": "Filter", "Input": "/Sensor-Processing/GyroZ_rads", "Output": "cmdYaw_damp_rps", "dt": 0.02,
           "num": [-0.045, 0.045], "den": [1.0, -0.8919]},
         {"Type": "Sum", "Inputs": ["../refYaw_rps", "cmdYaw_damp_rps"], "Output": "cmdYaw_rps"}
       ],
@@ -253,7 +248,7 @@
           "Min": [-0.436332, -0.261799, -0.436332, -0.436332, -0.436332, -0.436332],
           "Max": [0.436332, 0.261799, 0.436332, 0.436332, 0.436332, 0.436332]
         },
-        {"Type": "Filter", "Input": "../refFlap_nd", "Output": "cmdFlap_nd",
+        {"Type": "Filter", "Input": "../refFlap_nd", "Output": "cmdFlap_nd", "dt": 0.02,
           "num": [0.131311455359006, 0.0863219057948165], "den": [1.0, -1.06697618218221, 0.284609543336029]}
       ],
 

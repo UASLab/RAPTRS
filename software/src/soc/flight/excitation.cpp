@@ -122,7 +122,14 @@ bool ExcitationWrapper::Run(float tEngaged_s) {
 
     // Apply the Excitation to the Signal
     ElementPtr NodeSignal = WaveVec_[iWave].NodeSignal;
-    NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
+    std::string AugType = WaveVec_[iWave].Type;
+    if (AugType == "Add") {
+      NodeSignal->setFloat( NodeSignal->getFloat() + ExciteScaled );
+    } else if (AugType == "Replace") {
+      NodeSignal->setFloat( ExciteScaled );
+    } else if (AugType == "Gain") {
+      NodeSignal->setFloat( NodeSignal->getFloat() * ExciteScaled );
+    }
   }
 
   return active;
@@ -146,6 +153,9 @@ void ExcitationWrapper::Configure(std::string ExcitePath, const rapidjson::Value
 
     std::string SignalKey;
     LoadInput(WaveformDef, ExcitePath, "Signal", &WaveStructInst.NodeSignal, &SignalKey);
+
+    WaveStructInst.Type = "Add";
+    LoadVal(WaveformDef, "Augment-Type", &WaveStructInst.Type);
 
     std::string ExciteKey = ExcitePath + "/" + SignalKey.substr (SignalKey.rfind("/")+1);
     WaveStructInst.NodeExcite = deftree.initElement(ExciteKey, ": Excitation Signal", LOG_FLOAT, LOG_NONE);

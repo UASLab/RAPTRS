@@ -59,6 +59,9 @@ int main(int argc, char* argv[]) {
 
   /* initialize classes */
   std::cout << "Initializing software modules." << std::endl;
+  std::cout << "\tInitializing FMU..." << std::flush;
+  Fmu.Begin();
+  std::cout << "done!" << std::endl;
 
   /* configure classes and register with global defs */
   std::cout << "Configuring aircraft." << std::endl;
@@ -71,6 +74,8 @@ int main(int argc, char* argv[]) {
   std::cout << "Configuring Simulation..." << std::endl;
   bool simFlag = Sim.Configure(AircraftConfiguration);
   std::cout << "\tdone!" << std::endl;
+  // deftree.PrettyPrint("/");
+  std::cout << std::endl;
 
   /* initialize and configure FMU */
   std::cout << "\tInitializing FMU..." << std::flush;
@@ -187,11 +192,18 @@ int main(int argc, char* argv[]) {
 
         // Run Test Sensor-Processing
         profSenProcStart_us = micros(); // Start Test timer
+float val1 = deftree.getElement("/Sensors/Fmu/Mpu9250/GyroX_rads") -> getFloat();
+float val2 = deftree.getElement("/Control/Test/GyroX_fault_rads") -> getFloat();
+
+deftree.getElement("/Sensors/Fmu/Mpu9250/GyroX_rads") -> setFloat(val1 + val2);
+
         if (Mission.GetTestRunMode() > 0) { // Armed or Engaged
           SenProc.RunTest(Mission.GetTestRunMode());
         }
         profSenProc->setInt(micros() - profSenProcStart_us);
 
+// float val3 = deftree.getElement("/Sensors/Fmu/Mpu9250/GyroX_rads") -> getFloat();
+// std::cout << val1 << "\t" << val2 << "\t" << val3 << std::endl;
         // Run Route Manager
         profRouteStart_us = micros(); // Start Test timer
         if (Mission.GetTestRunMode() > 0) { // Armed or Engaged

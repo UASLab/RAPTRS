@@ -60,7 +60,7 @@ bool PID2ClassExcite::Initialized() {return true;}
 void PID2ClassExcite::Run(Mode mode) {
   // sample time
   float dt = 0.0f;
-  if(!UseFixedTimeSample) {
+  if(UseFixedTimeSample == false) {
     dt = time_node->getFloat();
   } else {
     dt = dt_;
@@ -138,7 +138,7 @@ bool PID2Class::Initialized() {return true;}
 void PID2Class::Run(Mode mode) {
   // sample time
   float dt = 0.0f;
-  if(!UseFixedTimeSample) {
+  if(UseFixedTimeSample == false) {
     dt = time_node->getFloat();
   } else {
     dt = dt_;
@@ -205,7 +205,7 @@ bool PIDClass::Initialized() {return true;}
 void PIDClass::Run(Mode mode) {
   // sample time
   float dt = 0.0f;
-  if(!UseFixedTimeSample) {
+  if(UseFixedTimeSample == false) {
     dt = time_node->getFloat();
   } else {
     dt = dt_;
@@ -234,30 +234,32 @@ void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) 
   LoadInput(Config, SystemPath, "Inputs", &u_node, &InputKeys_);
   LoadOutput(Config, SystemPath, "Outputs", &y_node);
 
+  // std::string OutputKey = Config["Output"].GetString();
+  int LatchInit = 0;
+  LoadVal(Config, "LatchInit", &LatchInit);
+  bool LatchInitBool = (bool) LatchInit;
+
   // Matrices
-  LoadVal(Config, "A", &A);
-  LoadVal(Config, "B", &B);
-  LoadVal(Config, "C", &C);
-  LoadVal(Config, "D", &D);
+  LoadVal(Config, "A", &A, true);
+  LoadVal(Config, "B", &B, true);
+  LoadVal(Config, "C", &C, true);
+  LoadVal(Config, "D", &D, true);
 
   // resize input vector
-  int numU = C.rows();
+  int numU = D.cols();
+  u_node.resize(numU);
   u.resize(numU);
   u.setZero(numU);
 
-  // resize state vector
-  int numX = A.rows();
-  x.resize(numX);
-  x.setZero(numX);
-
   // Resize output vector
-  int numY = C.rows();
+  int numY = D.rows();
+  // y_node.resize(numY);
   y.resize(numY);
   y.setZero(numY);
 
   // Sample time (required)
-  LoadVal(Config, "dt", &dt);
-  if (dt > 0.0) {
+  LoadVal(Config, "dt", &dt_);
+  if (dt_ > 0.0) {
     UseFixedTimeSample = true;
   } else {
     LoadInput(Config, SystemPath, "Time-Source", &time_node, &TimeKey_);
@@ -275,24 +277,19 @@ void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) 
   LoadVal(Config, "Max", &Max);
 
   // configure SS Class
-  SSClass_.Configure(A, B, C, D, dt, Min, Max);
+  SSClass_.Configure(A, B, C, D, dt_, Min, Max, LatchInitBool);
 }
 
 void SSClass::Initialize() {}
 bool SSClass::Initialized() {return true;}
 
 void SSClass::Run(Mode mode) {
-  float dt_curr = 0.0f;
-
   // sample time computation
   float dt = 0;
-  if (UseFixedTimeSample == false) {
-    dt_curr = *TimeSource - timePrev;
-    timePrev = *TimeSource;
-    if (dt_curr > 2*dt) {dt_curr = dt;} // Catch large dt
-    if (dt_curr <= 0) {dt_curr = dt;} // Catch negative and zero dt
+  if(UseFixedTimeSample == false) {
+    dt = time_node->getFloat();
   } else {
-    dt_curr = dt;
+    dt = dt_;
   }
 
   // inputs to Eigen3 vector
@@ -301,7 +298,7 @@ void SSClass::Run(Mode mode) {
   }
 
   // Call Algorithm
-  SSClass_.Run(mode, u, dt, &y);
+  SSClass_.Run(mode, u, dt, &y); // Call SS System
 
   // outputs to nodes
   for (size_t i=0; i < y_node.size(); i++) {

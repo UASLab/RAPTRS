@@ -93,7 +93,8 @@ class RouteCircleHold: public RoutePathBase {
     Vector3f pCenter_NED_m_;
     float distRadius_m_;
     std::string Direction_;
-    float tLead_s_;
+    // float tLead_s_;
+    float distLead_m_;
     float distHold_m_;
     bool holdFlag_ = false; // true is tracking within distHold
 
@@ -118,7 +119,8 @@ class RouteWaypoints: public RoutePathBase {
     void ComputeSegment();
 
     std::vector<Vector3f> WaypointList_NED_;
-    float tLead_s_;
+    // float tLead_s_;
+    float distLead_m_;
     float distHold_m_;
     bool holdFlag_ = false; // true if tracking within distHold
 
@@ -153,7 +155,7 @@ class RouteMgr {
     } NodeIn_;
 
     struct StructNodeOut {
-      ElementPtr AltRef, AltError, CrossTrack, HeadingRef, HeadingError;
+      ElementPtr AltRef, AltError, CrossTrack, HeadingRef, HeadingLead, HeadingError;
     } NodeOut_;
 
     Vector3d pHome_D_rrm_;

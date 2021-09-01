@@ -12,7 +12,7 @@ Author: Brian Taylor
 #include <iostream>
 
 // Software version number
-const std::string SoftwareVersion = "0.10.0";
+const std::string SoftwareVersion = "0.11.0";
 
 // FMU port, baud, and maximum buffer size
 const char FmuPort[] = "/dev/ttyO4";

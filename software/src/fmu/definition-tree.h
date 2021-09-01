@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef DEFINITION_TREE_HXX_
-#define DEFINITION_TREE_HXX_
+#pragma once
 
 #include <Arduino.h>
 #include <vector>
@@ -39,4 +38,3 @@ class DefinitionTree {
     std::map<std::string,VariableDefinition> Data_;
 };
 
-#endif

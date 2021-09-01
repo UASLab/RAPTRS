@@ -11,14 +11,14 @@ Author: Brian Taylor
 void AircraftConfiguration::Load() {
   uint16_t EepromLocation = 0;
   Serial.println("Loading configuration...");
-  config_.BfsAddr = EEPROM.read(EepromLocation);
+  bfsAddr_ = EEPROM.read(EepromLocation);
   Serial.print("\tBFS Address: ");
-  Serial.println(config_.BfsAddr);
+  Serial.println(bfsAddr_);
   Serial.println("done!");
 }
 
 /* Update configuration structure from message */
-bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr,AircraftSensors *AircraftSensorsPtr,ControlLaws *ControlLawsPtr,AircraftEffectors *AircraftEffectorsPtr,DefinitionTree *DefinitionTreePtr) {
+bool AircraftConfiguration::Update(uint8_t id, uint8_t address, std::vector<uint8_t> *Payload, AircraftMission *AircraftMissionPtr, AircraftSensors *AircraftSensorsPtr, ControlLaws *ControlLawsPtr, AircraftEffectors *AircraftEffectorsPtr, DefinitionTree *DefinitionTreePtr) {
   if ( AircraftSensorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr) ) {
     return true;
   } else if ( AircraftEffectorsPtr->UpdateConfig(id, address, Payload, DefinitionTreePtr) ) {

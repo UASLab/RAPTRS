@@ -63,6 +63,7 @@ class ExcitationWrapper {
     struct WaveStruct {
       float TimeStart_s;
       float Scale;
+      std::string Type;
       ElementPtr NodeSignal;
       ElementPtr NodeExcite;
       std::shared_ptr<Waveform> WaveFunc;

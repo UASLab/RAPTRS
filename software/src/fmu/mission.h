@@ -4,8 +4,7 @@ MIT License; See LICENSE.md for complete details
 Author: Brian Taylor
 */
 
-#ifndef MISSION_H_
-#define MISSION_H_
+#pragma once
 
 #include "definition-tree.h"
 #include "effector.h"
@@ -66,4 +65,3 @@ class AircraftMission {
     elapsedMicros EffectorOutputTimer_;
 };
 
-#endif

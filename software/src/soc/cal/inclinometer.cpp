@@ -48,7 +48,7 @@ void Incline::SetDamping() {
   if ((count = read(InclineFileDesc_, RxBuffer, 2)) > 0) {
 
     uint8_t status = RxBuffer[0];
-    uint8_t checksum = RxBuffer[1];
+    // uint8_t checksum = RxBuffer[1];
 
     if (status != 0) {
       std::cout << "Status: " << unsigned(status) << std::endl;
