@@ -68,8 +68,6 @@ SOC_TELEM = src/soc/telem
 SOC_SURF_CAL = src/soc/cal
 #soc common code
 SOC_COMMON = src/soc/common
-#soc STREAM code
-SOC_STREAM = src/soc/STREAM
 # fmu
 FMU = src/fmu
 # node
@@ -156,12 +154,12 @@ NODE_CXX = $(NODE_COMPILER)/arm-none-eabi-g++
 NODE_OBJCOPY = $(NODE_COMPILER)/arm-none-eabi-objcopy
 NODE_SIZE = $(NODE_COMPILER)/arm-none-eabi-size
 # compiler options
-SOC_CPPFLAGS = -static -Wall -O3 -Wno-psabi -I/usr/include/eigen3 -I$(COMMON) -I$(SOC_COMMON) -I$(SOC_STREAM) -I src/includes/
+SOC_CPPFLAGS = -static -Wall -O3 -Wno-psabi -I/usr/include/eigen3 -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SOC_CXXFLAGS = -static -std=c++17
-SOC_LIBS = -l:sti_soc.a -L$(SOC_STREAM)
-SIM_CPPFLAGS = -static -Wall -O3 -Wno-psabi -I/usr/include/eigen3  -I$(COMMON) -I$(SOC_COMMON) -I$(SOC_STREAM) -I src/includes/
+SOC_LIBS = -l:sti_soc.a
+SIM_CPPFLAGS = -static -Wall -O3 -Wno-psabi -I/usr/include/eigen3  -I$(COMMON) -I$(SOC_COMMON) -I src/includes/
 SIM_CXXFLAGS = -static -std=c++17
-SIM_LIBS = -l:sti_sim.a -L$(SOC_STREAM)
+SIM_LIBS = -l:sti_sim.a
 FMU_CPPFLAGS = -g -ffunction-sections -fdata-sections -nostdlib -MMD -Os -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -D__MK66FX1M0__ -DF_CPU=240000000 -DTEENSYDUINO=144 -DARDUINO=10807 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -I$(COMMON) -I$(ARDUINO_LIBS) -I$(FMU_CORE)
 FMU_CXXFLAGS = -fno-exceptions -felide-constructors -std=gnu++17 -Wno-psabi -Wno-error=narrowing -fno-rtti
 FMU_LDSCRIPT = $(FMU_CORE)/mk66fx1m0.ld

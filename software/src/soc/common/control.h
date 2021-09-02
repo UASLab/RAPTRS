@@ -20,7 +20,6 @@ Author: Brian Taylor and Chris Regan
 #include <unistd.h>
 #include <termios.h>
 #include <stdint.h>
-#include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <vector>
