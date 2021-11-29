@@ -65,11 +65,12 @@ class __SSClass {
     bool initLatch_ = false;
 
     Eigen::VectorXf uInit_;
-    Eigen::MatrixXf A_, B_, C_, D_;
+    Eigen::MatrixXf Ix_, Iy_;
+    Eigen::MatrixXf Ad_, Bd_, C_, D_;
     Eigen::VectorXf x_;
     Eigen::VectorXf y_, Min_, Max_;
-
-    Eigen::MatrixXf CA_inv_, CB_;
+    uint8_t numU_, numX_, numY_;
+    Eigen::MatrixXf C_inv_;
 
     void InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt);
     void UpdateState(Eigen::VectorXf u, float dt);

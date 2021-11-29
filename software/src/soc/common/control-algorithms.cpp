@@ -315,36 +315,36 @@ void __PID2ClassExcite::Clear() {
 void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch) {
   Clear(); // Clear and set to defaults
 
-  A_ = A;
-  B_ = B;
   C_ = C;
   D_ = D;
+
   Min_ = Min;
   Max_ = Max;
   initLatch_ = initLatch;
 
-  uint8_t numU = D_.cols();
-  uint8_t numX = A_.rows();
-  uint8_t numY = D_.rows();
+  numU_ = D.cols();
+  numX_ = A.rows();
+  numY_ = D.rows();
 
-  uInit_.resize(numU);
+  Ix_ = Eigen::MatrixXf::Identity(numX_, numX_);
+  Iy_ = Eigen::MatrixXf::Identity(numY_, numY_);
 
-  x_.resize(numX);
-  y_.resize(numY);
-  Max_.resize(numY);
-  Min_.resize(numY);
+  uInit_.resize(numU_);
+
+  x_.resize(numX_);
+  y_.resize(numY_);
+  Max_.resize(numY_);
+  Min_.resize(numY_);
 
   Reset(); // Initialize states and output
 
+  // Discetize with zero-order hold
+  Ad_ = A*dt + Ix_;
+  Bd_ = B*dt;
+
   // Compute the Inverse of C
   // Pseduo-Inverse using singular value decomposition
-  Eigen::MatrixXf Ix = Eigen::MatrixXf::Identity(numX, numX);
-  Eigen::MatrixXf Iy = Eigen::MatrixXf::Identity(numY, numY);
-  CA_inv_ = (C_ * (A_*dt + Ix)).jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Iy); // Jacobi SVD
-
-  // Pre-compute C*B
-  CB_ = C_*B_;
-  CB_.resize(numY, numU);
+  C_inv_ = ( C_ ).jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Iy_); // Jacobi SVD
 }
 
 void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eigen::VectorXf *y) {
@@ -390,15 +390,12 @@ void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) 
     uInit_ = u;
   }
 
-  x_.Zero(A_.rows()); // Reset to Zero
-  // x_ = CA_inv_ * (y - (CB_*dt + D_) * u);
+  x_.Zero(Ad_.rows()); // Reset to Zero
+  x_ = C_inv_ * (y - D_ * u);
 }
 
 void __SSClass::UpdateState(Eigen::VectorXf u, float dt) {
-  uint8_t numX = A_.rows();
-  Eigen::MatrixXf Ix = Eigen::MatrixXf::Identity(numX, numX);
-  // x_ = A_ * x_ + B_ * u; // A,B,C,D defined as Discrete already
-  x_ = (A_ * dt + Ix) * x_ + B_ * (u - uInit_) * dt; // A,B,B,D defined as Continuous
+  x_ = Ad_ * x_ + Bd_ * (u - uInit_);
 }
 
 void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
@@ -413,7 +410,7 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
     }
   }
 
-  //InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
+  InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
 }
 
 void __SSClass::Reset() {
@@ -421,13 +418,13 @@ void __SSClass::Reset() {
   initLatch_ = false;
   uInit_.Zero(D_.cols());
 
-  x_.Zero(A_.rows()); // Reset to Zero
+  x_.Zero(Ad_.rows()); // Reset to Zero
   y_.Zero(C_.cols()); // Reset to Zero
 }
 
 void __SSClass::Clear() {
-  A_.resize(0,0);
-  B_.resize(0,0);
+  Ad_.resize(0,0);
+  Bd_.resize(0,0);
   C_.resize(0,0);
   D_.resize(0,0);
 
@@ -435,8 +432,7 @@ void __SSClass::Clear() {
   Max_.resize(0);
   Min_.resize(0);
 
-  CA_inv_.resize(0,0);
-  CB_.resize(0,0);
+  C_inv_.resize(0,0);
 
   Reset();
 }

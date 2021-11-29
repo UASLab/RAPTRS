@@ -161,7 +161,7 @@ Where:
 Data types for all input and output values are float.
 
 The implemented algorithm uses a discrete state space model, with variable dt.
-The A and B matrices supplied are the continuous form, a simple zero-order hold is used to compute the discrete form.
+The A and B matrices supplied are the continuous form, a simple zero-order hold is used internally to compute the discrete form.
 xDot = A*x + B*u;
 y = C*x + D*u;
   where:  Ad = (Ac*dt + I);
