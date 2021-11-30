@@ -101,6 +101,8 @@ class SumClass: public GenericFunction {
     float Min_ = std::numeric_limits<float>::lowest();
     float Max_ = std::numeric_limits<float>::max();
 
+    std::vector<float > Gain_;
+
     std::vector<ElementPtr > Input_nodes_;
     ElementPtr Output_node_;
 

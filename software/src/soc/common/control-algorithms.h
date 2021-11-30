@@ -56,17 +56,18 @@ class __PID2ClassExcite {
 
 class __SSClass {
   public:
-    void Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch);
+    void Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch, std::string Disc);
     void Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eigen::VectorXf *y);
     void GetInputInit(Eigen::VectorXf *uInit);
+    void GetOutputInit(Eigen::VectorXf *yInit);
     void Clear();
   private:
     uint8_t mode_ = GenericFunction::Mode::kStandby;
     bool initLatch_ = false;
 
-    Eigen::VectorXf uInit_;
+    Eigen::VectorXf uInit_, yInit_;
     Eigen::MatrixXf Ix_, Iy_;
-    Eigen::MatrixXf Ad_, Bd_, C_, D_;
+    Eigen::MatrixXf A_, B_, C_, D_;
     Eigen::VectorXf x_;
     Eigen::VectorXf y_, Min_, Max_;
     uint8_t numU_, numX_, numY_;

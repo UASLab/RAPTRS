@@ -312,9 +312,11 @@ void __PID2ClassExcite::Clear() {
 
 
 /* State Space */
-void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch) {
+void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch, std::string Disc) {
   Clear(); // Clear and set to defaults
 
+  A_ = A;
+  B_ = B;
   C_ = C;
   D_ = D;
 
@@ -322,14 +324,15 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
   Max_ = Max;
   initLatch_ = initLatch;
 
-  numU_ = D.cols();
-  numX_ = A.rows();
-  numY_ = D.rows();
+  numU_ = D_.cols();
+  numX_ = A_.rows();
+  numY_ = D_.rows();
 
   Ix_ = Eigen::MatrixXf::Identity(numX_, numX_);
   Iy_ = Eigen::MatrixXf::Identity(numY_, numY_);
 
   uInit_.resize(numU_);
+  yInit_.resize(numY_);
 
   x_.resize(numX_);
   y_.resize(numY_);
@@ -339,8 +342,10 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
   Reset(); // Initialize states and output
 
   // Discetize with zero-order hold
-  Ad_ = A*dt + Ix_;
-  Bd_ = B*dt;
+  if (Disc.compare("zoh") == 0) { // Perform ZOH discretization
+    A_ = A_*dt + Ix_;
+    B_ = B_*dt;
+  }
 
   // Compute the Inverse of C
   // Pseduo-Inverse using singular value decomposition
@@ -358,6 +363,7 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
     case GenericFunction::Mode::kArm: {
       Reset();
       InitializeState(u, *y, dt);
+std::cout << yInit_ << std::endl;
       initLatch_ = true;
       UpdateState(u, dt);
       OutputEquation(u, dt);
@@ -372,6 +378,7 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
         InitializeState(u, *y, dt);
         initLatch_ = true;
       }
+std::cout << yInit_ << std::endl;
       UpdateState(u, dt);
       OutputEquation(u, dt);
       break;
@@ -384,22 +391,25 @@ void __SSClass::GetInputInit(Eigen::VectorXf *uInit) {
   *uInit = uInit_;
 }
 
-void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) {
-  // Initialize the input biases
-  if (initLatch_ == true) {
-    uInit_ = u;
-  }
+void __SSClass::GetOutputInit(Eigen::VectorXf *yInit) {
+  *yInit = yInit_;
+}
 
-  x_.Zero(Ad_.rows()); // Reset to Zero
-  x_ = C_inv_ * (y - D_ * u);
+void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) {
+  // Initialize the input and output biases
+  uInit_ = u;
+  yInit_ = y;
+
+  x_.Zero(numX_); // Reset to Zero
+  // x_ = C_inv_ * (y - D_ * u);
 }
 
 void __SSClass::UpdateState(Eigen::VectorXf u, float dt) {
-  x_ = Ad_ * x_ + Bd_ * (u - uInit_);
+  x_ = A_ * x_ + B_ * (u - uInit_);
 }
 
 void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
-  y_ = C_*x_ + D_*(u - uInit_);
+  y_ = C_*x_ + D_*(u - uInit_) + yInit_;
 
   // saturate output
   for (int i=0; i < y_.size(); i++) {
@@ -410,25 +420,28 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
     }
   }
 
-  InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
+  // InitializeState(u, y_, dt); // Re-initialize the states with saturated outputs
 }
 
 void __SSClass::Reset() {
   mode_ = GenericFunction::Mode::kStandby;
   initLatch_ = false;
-  uInit_.Zero(D_.cols());
+  uInit_.Zero(numU_);
+  yInit_.Zero(numY_);
 
-  x_.Zero(Ad_.rows()); // Reset to Zero
-  y_.Zero(C_.cols()); // Reset to Zero
+  x_.Zero(numX_); // Reset to Zero
+  y_.Zero(numY_); // Reset to Zero
 }
 
 void __SSClass::Clear() {
-  Ad_.resize(0,0);
-  Bd_.resize(0,0);
+  A_.resize(0,0);
+  B_.resize(0,0);
   C_.resize(0,0);
   D_.resize(0,0);
 
   uInit_.resize(0);
+  yInit_.resize(0);
+
   Max_.resize(0);
   Min_.resize(0);
 

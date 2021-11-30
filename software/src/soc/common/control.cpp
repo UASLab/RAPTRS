@@ -204,6 +204,8 @@ void ComponentWrapper::Configure (std::string ControlPath, const rapidjson::Valu
       ComponentVec_.push_back(std::make_shared<DelayClass>());
     } else if (ComponentType == "ABS") {
       ComponentVec_.push_back(std::make_shared<ABSClass>());
+    } else if (ComponentType == "PID2Exc") {
+      ComponentVec_.push_back(std::make_shared<PID2ClassExcite>());
     } else if (ComponentType == "PID2") {
       ComponentVec_.push_back(std::make_shared<PID2Class>());
     } else if (ComponentType == "PID") {

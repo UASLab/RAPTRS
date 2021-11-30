@@ -65,6 +65,15 @@ void SumClass::Configure(const rapidjson::Value& Config,std::string SystemName) 
 
   LoadInput(Config, SystemName, "Inputs", &Input_nodes_, &InputKeys_);
   LoadOutput(Config, SystemName, "Output", &Output_node_);
+
+  for (size_t i=0; i < InputKeys_.size(); i++) {
+    std::cout << InputKeys_[i] << std::endl;
+  }
+
+  Gain_.resize(Input_nodes_.size());
+  std::fill (Gain_.begin(), Gain_.end(), 1.0);
+  LoadVal(Config, "Gains", &Gain_);
+
   LoadVal(Config, "Min", &Min_);
   LoadVal(Config, "Max", &Max_);
 }
@@ -75,8 +84,10 @@ bool SumClass::Initialized() {return true;}
 void SumClass::Run(Mode mode) {
   float Val = 0.0;
   for (size_t i=0; i < Input_nodes_.size(); i++) {
-    Val += Input_nodes_[i]->getFloat();
+    Val += Gain_[i] * Input_nodes_[i]->getFloat();
+    // std::cout << Input_nodes_[i] << "\t" << Gain_[i] << std::endl;
   }
+  // std::cout << Val << std::endl;
 
   // saturate command
   if (Val <= Min_) {

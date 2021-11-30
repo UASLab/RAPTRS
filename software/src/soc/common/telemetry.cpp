@@ -134,12 +134,6 @@ void TelemetryClient::Configure(const rapidjson::Value& Config) {
     PowerNodes.MinCellVolt = deftree.getElement(Power+"/MinCellVolt_V");
     usePower = true;
   }
-  {
-    StreamNodes.myFlag = deftree.getElement("/Control/Test/STREAM/myFlag", true);
-    StreamNodes.sigma1 = deftree.getElement("/Control/Test/STREAM/Sigma1", true);
-    StreamNodes.sigma2 = deftree.getElement("/Control/Test/STREAM/Sigma2", true);
-    StreamNodes.sigma3 = deftree.getElement("/Control/Test/STREAM/Sigma3", true);
-  }
 }
 
 void TelemetryClient::Send() {
@@ -271,15 +265,6 @@ void TelemetryClient::Send() {
     health.total_mah = 0.0;
     health.pack();
     SendPacket(health.id, health.payload, health.len);
-  }
-
-  if ( StreamNodes.myFlag->getInt() == 4 ) {
-    message::stream_v1_t stream;
-    stream.sigma1 = StreamNodes.sigma1->getFloat();
-    stream.sigma2 = StreamNodes.sigma2->getFloat();
-    stream.sigma3 = StreamNodes.sigma3->getFloat();
-    stream.pack();
-    SendPacket(stream.id, stream.payload, stream.len);
   }
 }
 

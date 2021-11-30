@@ -115,6 +115,7 @@ void LoadVal(const rapidjson::Value& Config, std::string ValName, std::string *V
 }
 void LoadVal(const rapidjson::Value& Config, std::string ValName, std::vector<float> *Val, bool required) {
   if (Config.HasMember(ValName.c_str())) {
+    (*Val).clear();
     for (size_t m=0; m < Config[ValName.c_str()].Size(); m++) {
       (*Val).push_back(Config[ValName.c_str()][m].GetFloat());
     }

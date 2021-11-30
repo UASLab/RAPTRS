@@ -145,6 +145,7 @@ Example JSON configuration:
   "Inputs": ["InputNames"],
   "Outputs": ["OutputNames"],
   "dt": "dt" or X,
+  "Disc": [X],
   "A": [[X]],
   "B": [[X]],
   "C": [[X]],
@@ -183,6 +184,7 @@ class SSClass: public GenericFunction {
     Eigen::VectorXf y;
     Eigen::MatrixXf A, B, C, D;
     Eigen::VectorXf Min, Max;
+    std::string Disc;
 
     float dt_ = 0.0f;
     float* TimeSource = 0;
