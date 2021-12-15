@@ -312,7 +312,7 @@ void __PID2ClassExcite::Clear() {
 
 
 /* State Space */
-void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch, std::string Disc) {
+void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf C, Eigen::MatrixXf D, float dt, Eigen::VectorXf Min, Eigen::VectorXf Max, uint8_t initLatch) {
   Clear(); // Clear and set to defaults
 
   A_ = A;
@@ -341,12 +341,6 @@ void __SSClass::Configure(Eigen::MatrixXf A, Eigen::MatrixXf B, Eigen::MatrixXf 
 
   Reset(); // Initialize states and output
 
-  // Discetize with zero-order hold
-  if (Disc.compare("zoh") == 0) { // Perform ZOH discretization
-    A_ = A_*dt + Ix_;
-    B_ = B_*dt;
-  }
-
   // Compute the Inverse of C
   // Pseduo-Inverse using singular value decomposition
   C_inv_ = ( C_ ).jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Iy_); // Jacobi SVD
@@ -363,7 +357,7 @@ void __SSClass::Run(GenericFunction::Mode mode, Eigen::VectorXf u, float dt, Eig
     case GenericFunction::Mode::kArm: {
       Reset();
       InitializeState(u, *y, dt);
-std::cout << yInit_ << std::endl;
+
       initLatch_ = true;
       UpdateState(u, dt);
       OutputEquation(u, dt);
@@ -378,7 +372,7 @@ std::cout << yInit_ << std::endl;
         InitializeState(u, *y, dt);
         initLatch_ = true;
       }
-std::cout << yInit_ << std::endl;
+
       UpdateState(u, dt);
       OutputEquation(u, dt);
       break;
@@ -399,8 +393,10 @@ void __SSClass::InitializeState(Eigen::VectorXf u, Eigen::VectorXf y, float dt) 
   // Initialize the input and output biases
   uInit_ = u;
   yInit_ = y;
+  uInit_.setZero(numU_);
+  yInit_.setZero(numY_);
 
-  x_.Zero(numX_); // Reset to Zero
+  x_.setZero(numX_); // Reset to Zero
   // x_ = C_inv_ * (y - D_ * u);
 }
 
@@ -409,7 +405,7 @@ void __SSClass::UpdateState(Eigen::VectorXf u, float dt) {
 }
 
 void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
-  y_ = C_*x_ + D_*(u - uInit_) + yInit_;
+  y_ = C_ * x_ + D_*(u - uInit_) + yInit_;
 
   // saturate output
   for (int i=0; i < y_.size(); i++) {
@@ -426,11 +422,11 @@ void __SSClass::OutputEquation(Eigen::VectorXf u, float dt) {
 void __SSClass::Reset() {
   mode_ = GenericFunction::Mode::kStandby;
   initLatch_ = false;
-  uInit_.Zero(numU_);
-  yInit_.Zero(numY_);
+  uInit_.setZero(numU_);
+  yInit_.setZero(numY_);
 
-  x_.Zero(numX_); // Reset to Zero
-  y_.Zero(numY_); // Reset to Zero
+  x_.setZero(numX_); // Reset to Zero
+  y_.setZero(numY_); // Reset to Zero
 }
 
 void __SSClass::Clear() {

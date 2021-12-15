@@ -276,11 +276,8 @@ void SSClass::Configure(const rapidjson::Value& Config, std::string SystemPath) 
 
   LoadVal(Config, "Max", &Max);
 
-  Disc = "None";
-  LoadVal(Config, "Disc", &Disc);
-  
   // configure SS Class
-  SSClass_.Configure(A, B, C, D, dt_, Min, Max, LatchInitBool, Disc);
+  SSClass_.Configure(A, B, C, D, dt_, Min, Max, LatchInitBool);
 }
 
 void SSClass::Initialize() {}
