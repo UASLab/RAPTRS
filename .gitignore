@@ -47,3 +47,4 @@ software/bin/
 # emacs droppings
 *~
 *.pyc
+*.pyc
