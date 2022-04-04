@@ -69,5 +69,12 @@ $ tail -f out.txt
 $ python3 bin2hdf.py data0.bin
 ```
 
+The hdf5 log data can also be loaded in MATLAB, or converted to .mat format from MATLAB using /RAPTRS/analysis-tools/hdfLoad.m and /RAPTRS/analysis-tools/hdf2mat.m.
+```
+fileLoad = 'data000.hdf5';
+hdf2mat(fileLoad);
+[data, desc] = hdfLoad(fileLoad);
+```
+
 ## Feedback
 Pull requests improving our software or documentation are always appreciated.
