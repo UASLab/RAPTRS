@@ -64,9 +64,9 @@ $ nohup ./flight config.json > out.txt &
 $ tail -f out.txt
 ```
 5. You can check that the datalog file (_dataX.bin_) is growing and disconnect from the BeagleBone Black.
-6. After the flight, download the datalog file and convert to HDF5 using 'bin2hdf_clo.py' in /RAPTRS/analysis-tools. Note that this script requires python3 and h5py installed.
+6. After the flight, download the datalog file and convert to HDF5 using 'bin2hdf.py' in /RAPTRS/analysis-tools. Note that this script requires python3 and h5py installed.
 ```
-$ python3 bin2hdf_clo.py data0.bin
+$ python3 bin2hdf.py data0.bin
 ```
 
 ## Feedback
