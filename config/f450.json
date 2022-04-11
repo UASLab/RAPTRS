@@ -1,5 +1,5 @@
 {
-  "JSBSim": {
+  "#JSBSim": {
     "SimFmuPort": "ptySimSoc",
     "SimFmuBaud": 1500000
   },
@@ -11,14 +11,17 @@
     {"Type": "InternalMpu9250", "Output": "Fmu/Mpu9250", "Rotation": [-1,0,0,0,-1,0,0,0,1], "SRD": 19, "DLPF-Bandwidth": "20Hz"},
     {"Type": "InternalBme280", "Output": "Fmu/Bme280"},
     {"Type": "Sbus", "Output": "Sbus"},
-    {"Type": "uBlox", "Output": "uBlox", "Uart": 4, "Baud": 115200}
+    {"Type": "uBlox", "Output": "uBlox", "Uart": 4, "Baud": 115200},
+    {"Type": "Analog", "Output": "JoyAxis0", "Channel": 0, "Calibration": [1, -2.710]},
+    {"Type": "Analog", "Output": "JoyAxis1", "Channel": 1, "Calibration": [1, -2.866]}
   ],
 
   "Effectors": [
     {"Type": "Motor", "Input": "/Control/cmdFR_nd", "Channel": 0, "Calibration": [900, 1100], "Safed-Command": 0},
     {"Type": "Motor", "Input": "/Control/cmdAL_nd", "Channel": 1, "Calibration": [900, 1100], "Safed-Command": 0},
     {"Type": "Motor", "Input": "/Control/cmdFL_nd", "Channel": 2, "Calibration": [900, 1100], "Safed-Command": 0},
-    {"Type": "Motor", "Input": "/Control/cmdAR_nd", "Channel": 3, "Calibration": [900, 1100], "Safed-Command": 0}
+    {"Type": "Motor", "Input": "/Control/cmdAR_nd", "Channel": 3, "Calibration": [900, 1100], "Safed-Command": 0},
+    {"Type": "PWM", "Input": "/Control/cmdIris_nd", "Channel": 5, "Calibration": [375, 1350], "Safed-Command": -1}
   ],
 
   "Telemetry": {
@@ -203,14 +206,16 @@
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdFR_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdAL_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdFL_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdAR_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "cmdAR_nd", "Gain": 1, "Limits": {"Lower": 0, "Upper": 1}},
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/6", "Output": "cmdIris_nd", "Gain": 1.0}
       ],
 
       "Pilot-Attitude": [
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "refNorm", "Gain": 1.0},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refPhi", "Gain": 0.523599},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refTheta", "Gain": 0.523599},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw", "Gain": 1.0}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw", "Gain": 1.0},
+        {"Type": "Constant", "Output": "refIris_nd", "Constant": 1.0}
       ],
 
       "SCAS-Attitude": [
@@ -225,7 +230,8 @@
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/7", "Output": "refNorm", "Gain": 1.0},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/3", "Output": "refRoll", "Gain": 1.0},
         {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/4", "Output": "refPitch", "Gain": 1.0},
-        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw", "Gain": 1.0}
+        {"Type": "Gain", "Input": "/Sensors/Sbus/Channels/5", "Output": "refYaw", "Gain": 1.0},
+        {"Type": "Constant", "Output": "refIris_nd", "Constant": 1.0}
       ],
 
       "SCAS-Rate": [
@@ -258,7 +264,8 @@
             [ 0.25000, 0.25000,-0.25000,-0.25000]],
           "Min": [0.025, 0.025, 0.025, 0.025],
           "Max": [1.0, 1.0, 1.0, 1.0]
-        }
+        },
+        {"Type": "Gain", "Input": "../refIris_nd", "Output": "cmdIris_nd", "Gain": 1.0, "Min": 0, "Max": 1}
       ]
     }
   },
@@ -266,7 +273,18 @@
   "Excitation": {
     "Time": "/Sensors/Fmu/Time_us",
     "ExciteDef": {
-      "RTSM_att": {
+      "Iris": {
+        "Level": "Alloc",
+        "Waveforms": [
+          {
+            "Wave": "Pulse_180",
+            "Signal": "/Control/Test/refIris_nd",
+            "Start-Time": 1,
+            "Scale-Factor": -2
+          }
+        ]
+      },
+      "RollPitch_OMS": {
         "Level": "Alloc",
         "Waveforms": [
           {
@@ -280,10 +298,16 @@
             "Signal": "/Control/Test/cmdPitch",
             "Start-Time": 1,
             "Scale-Factor": 0.005
+          },
+          {
+            "Wave": "Pulse_180",
+            "Signal": "/Control/Test/refIris_nd",
+            "Start-Time": 1,
+            "Scale-Factor": -2
           }
         ]
       },
-      "RTSM_vert": {
+      "Vert_Chirp": {
         "Level": "Alloc",
         "Waveforms": [
           {
@@ -291,6 +315,12 @@
             "Signal": "/Control/Test/cmdNorm",
             "Start-Time": 1,
             "Scale-Factor": 0.2
+          },
+          {
+            "Wave": "Pulse_30",
+            "Signal": "/Control/Test/refIris_nd",
+            "Start-Time": 1,
+            "Scale-Factor": -2
           }
         ]
       }
@@ -316,7 +346,10 @@
         "Duration": 180,
         "FreqStart": 0.628318531,
         "FreqEnd": 25.13274123
-      }
+      },
+      "Pulse_10": {"Type": "Pulse", "Duration": 10},
+      "Pulse_30": {"Type": "Pulse", "Duration": 30},
+      "Pulse_180": {"Type": "Pulse", "Duration": 180}
     }
   },
 
@@ -336,8 +369,9 @@
       "ControlSel": {"PilotRate": -2, "PilotRate": -0.5, "PilotAttitude": 0.5}},
 
     "Test-Points": [
-      {"Test-ID": "0", "Sensor-Processing": "Standard", "Route": "Loiter", "Control": "PilotAttitude", "Excitation": "RTSM_att"},
-      {"Test-ID": "1", "Sensor-Processing": "Standard", "Route": "Loiter", "Control": "PilotAttitude", "Excitation": "RTSM_vert"}
+      {"Test-ID": "0", "Sensor-Processing": "Standard", "Route": "Loiter", "Control": "PilotAttitude", "Excitation": "Iris"},
+      {"Test-ID": "1", "Sensor-Processing": "Standard", "Route": "Loiter", "Control": "PilotAttitude", "Excitation": "Vert_Chirp"},
+      {"Test-ID": "2", "Sensor-Processing": "Standard", "Route": "Loiter", "Control": "PilotAttitude", "Excitation": "RollPitch_OMS"}
     ]
   }
 }
